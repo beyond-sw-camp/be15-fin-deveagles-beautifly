@@ -16,13 +16,26 @@ jobs:
         with:
           script: |
             const pr      = context.payload.pull_request;
-            const numbers = pr.title.match(/#(\d+)/g) || [];
-            if (numbers.length === 0) {
-              console.log('No issue number found in PR title');
+
+            // PR 타이틀과 브랜치명에서 이슈 번호 찾기
+            const titleNumbers = pr.title.match(/#(\d+)/g) || [];
+            const branchNumbers = pr.head.ref.match(/(\d+)/g) || [];
+
+            let issueNo = null;
+
+            // 우선순위: PR 타이틀 > 브랜치명
+            if (titleNumbers.length > 0) {
+              issueNo = titleNumbers[0].replace('#', '');
+              console.log(`Found issue number in PR title: ${issueNo}`);
+            } else if (branchNumbers.length > 0) {
+              issueNo = branchNumbers[0];
+              console.log(`Found issue number in branch name: ${issueNo}`);
+            }
+
+            if (!issueNo) {
+              console.log('No issue number found in PR title or branch name');
               return;
             }
-            const issueNo = numbers[0].replace('#', '');
-            console.log(`Found issue number: ${issueNo}`);
 
             try {
               const {data: issue} = await github.rest.issues.get({
