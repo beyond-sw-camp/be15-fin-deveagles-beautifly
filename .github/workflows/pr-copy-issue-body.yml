@@ -1,0 +1,53 @@
+# .github/workflows/copy-issue-body.yml
+name: copy issue body to PR
+on:
+  pull_request:
+    types: [opened]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  sync-body:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const pr      = context.payload.pull_request;
+            const numbers = pr.title.match(/#(\d+)/g) || [];
+            if (numbers.length === 0) {
+              console.log('No issue number found in PR title');
+              return;
+            }
+            const issueNo = numbers[0].replace('#', '');
+            console.log(`Found issue number: ${issueNo}`);
+
+            try {
+              const {data: issue} = await github.rest.issues.get({
+                ...context.repo,
+                issue_number: issueNo
+              });
+              
+              // 체크리스트 분석
+              const checkboxes = issue.body.match(/- \[([ x])\]/g) || [];
+              const totalChecks = checkboxes.length;
+              const completedChecks = checkboxes.filter(cb => cb.includes('[x]')).length;
+              const isComplete = totalChecks > 0 && completedChecks === totalChecks;
+              
+              let checklistStatus = '';
+              if (totalChecks > 0) {
+                checklistStatus = `\n\n## 🔍 이슈 체크리스트 상태\n${isComplete ? '✅' : '⚠️'} **${completedChecks}/${totalChecks} 완료** ${isComplete ? '(모든 항목 완료!)' : '(미완료 항목 있음)'}\n`;
+              }
+              
+              const newBody = `${issue.body}${checklistStatus}\n\n---\n\n${pr.body || ''}`;
+              await github.rest.pulls.update({
+                ...context.repo,
+                pull_number: pr.number,
+                body: newBody
+              });
+              console.log('Successfully updated PR body with issue context');
+            } catch (error) {
+              console.error(`Failed to process issue #${issueNo}:`, error.message);
+            }

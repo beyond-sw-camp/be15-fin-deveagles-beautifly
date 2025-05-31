@@ -1,0 +1,140 @@
+name: Notify Reviewers on PR
+
+on:
+  pull_request:
+    types: [review_requested]
+  workflow_dispatch:
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Wait for reviewers to settle
+        run: sleep 0
+
+      - name: Map GitHub usernames to Discord IDs
+        id: map-reviewers
+        env:
+          REVIEWERS_JSON: ${{ toJson(github.event.pull_request.requested_reviewers) }}
+        run: |
+
+          echo "🔄 Mapping GitHub reviewers to Discord mentions..."
+
+          declare -A USER_MAP=(
+            ["64etuor"]="637937081875824650"
+            ["wishbornDev"]="1313511515407777865"
+            ["gyeongmin03"]="377380180467122178"
+            ["hwan1023"]="963059572812157010"
+            ["nineeko"]="821058142795333655"
+            ["Jayboo816"]="1326066071676915763"
+          )
+
+          mentions=""
+
+          while read login; do
+            id=${USER_MAP[$login]}
+            if [ -n "$id" ]; then
+              mentions+="<@$id> "
+            else
+              echo "⚠️ No Discord ID mapped for $login"
+            fi
+          done < <(echo "$REVIEWERS_JSON" | jq -r '.[].login')
+
+          echo "mentions=$mentions" >> "$GITHUB_OUTPUT"
+
+      - name: Check if notification already sent
+        id: check
+        run: |
+          mkdir -p .cache
+          SENT_FILE=".cache/sent-${{ github.event.pull_request.number }}.flag"
+
+          if [ -f "$SENT_FILE" ]; then
+            echo "🔁 Already sent notification for this PR. Skipping..."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "✅ Sending notification for the first time."
+            touch "$SENT_FILE"
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Send Discord Notification
+        if: steps.check.outputs.skip == 'false'
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          MENTIONS: ${{ steps.map-reviewers.outputs.mentions }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO_NAME: ${{ github.repository }}
+          AUTHOR_NAME: ${{ github.event.pull_request.user.login }}
+          AUTHOR_AVATAR: ${{ github.event.pull_request.user.avatar_url }}
+          CREATED_AT: ${{ github.event.pull_request.created_at }}
+          COMMITS: ${{ github.event.pull_request.commits }}
+          CHANGED_FILES: ${{ github.event.pull_request.changed_files }}
+        run: |
+          PR_BODY="${{ github.event.pull_request.body }}"
+
+          # Format the current time in a readable format
+          FORMATTED_DATE=$(date "+%Y년 %m월 %d일")
+
+          # PR 본문을 안전하게 처리 (이스케이프 처리, 줄바꿈 등)
+          if [ -z "$PR_BODY" ]; then
+            ESCAPED_PR_BODY="PR 내용이 없습니다."
+          else
+            # 줄바꿈을 \\n으로 변환하고 쌍따옴표를 이스케이프
+            ESCAPED_PR_BODY=$(echo "$PR_BODY" | jq -Rs .)
+            # jq에서 추가된 바깥쪽 따옴표 제거
+            ESCAPED_PR_BODY="${ESCAPED_PR_BODY:1:-1}"
+          fi
+
+          curl -X POST -H "Content-Type: application/json" \
+          -d "{
+            \"content\": \"📣 $MENTIONS님! Pull Request 리뷰어로 지정됐습니다. 확인해 주세요.\\n🔗 PR: $PR_URL\",
+            \"embeds\": [
+              {
+                \"title\": \"$PR_TITLE\",
+                \"url\": \"$PR_URL\",
+                \"color\": 16737792,
+                \"author\": {
+                  \"name\": \"$AUTHOR_NAME\",
+                  \"icon_url\": \"$AUTHOR_AVATAR\"
+                },
+                \"fields\": [
+                  {
+                    \"name\": \"📝 내용\",
+                    \"value\": \"$ESCAPED_PR_BODY\",
+                    \"inline\": false
+                  }
+                ],
+                \"footer\": {
+                  \"text\": \"$REPO_NAME • #$PR_NUMBER • $FORMATTED_DATE\"
+                },
+                \"thumbnail\": {
+                  \"url\": \"https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png\"
+                }
+              },
+              {
+                \"color\": 5814783,
+                \"fields\": [
+                  {
+                    \"name\": \"#$PR_NUMBER $PR_TITLE\",
+                    \"value\": \"\"
+                  },
+                  {
+                    \"name\": \"\",
+                    \"value\": \"💬 0 comments • 👀 0 reviews • 📂 $CHANGED_FILES files\",
+                    \"inline\": true
+                  }
+                ],
+                \"footer\": {
+                  \"text\": \"$AUTHOR_NAME • $FORMATTED_DATE • $COMMITS commit(s)\",
+                  \"icon_url\": \"$AUTHOR_AVATAR\"
+                }
+              }
+            ],
+            \"allowed_mentions\": {
+              \"parse\": [\"users\"]
+            }
+          }" \
+          "$DISCORD_WEBHOOK_URL"
