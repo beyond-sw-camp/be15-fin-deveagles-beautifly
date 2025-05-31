@@ -12,11 +12,11 @@ if [ -z "$ISSUE_NUMBER" ] || [ -z "$DESCRIPTION" ]; then
     exit 1
 fi
 
-# 브랜치명 생성
-BRANCH_NAME="feature/${ISSUE_NUMBER}-${DESCRIPTION}"
+# 브랜치명 생성 (#포함)
+BRANCH_NAME="feature/#${ISSUE_NUMBER}-${DESCRIPTION}"
 
 # 브랜치 생성 및 체크아웃
 git checkout -b "$BRANCH_NAME"
 
 echo "브랜치 '$BRANCH_NAME' 생성 완료!"
-echo "이제 GitHub에서 PR 생성 시 제목이 자동으로 설정됩니다." 
+echo "GitHub에서 PR 생성 시 제목에 자동으로 #${ISSUE_NUMBER}이 포함됩니다." 
