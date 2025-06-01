@@ -1,5 +1,5 @@
 # .github/workflows/copy-issue-body.yml
-name: copy issue body to PR
+name: Copy issue body to PR
 on:
   pull_request:
     types: [opened]
@@ -54,7 +54,10 @@ jobs:
                 checklistStatus = `\n\n## 🔍 이슈 체크리스트 상태\n${isComplete ? '✅' : '⚠️'} **${completedChecks}/${totalChecks} 완료** ${isComplete ? '(모든 항목 완료!)' : '(미완료 항목 있음)'}\n`;
               }
               
-              const newBody = `${issue.body}${checklistStatus}\n\n---\n\n${pr.body || ''}`;
+              // Closes 키워드 자동 추가
+              const closesSection = `\n\n## 🔗 관련 이슈\nCloses #${issueNo}`;
+              
+              const newBody = `${issue.body}${checklistStatus}${closesSection}\n\n---\n\n${pr.body || ''}`;
               await github.rest.pulls.update({
                 ...context.repo,
                 pull_number: pr.number,

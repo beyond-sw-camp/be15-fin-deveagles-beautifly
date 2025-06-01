@@ -1,0 +1,40 @@
+name: 기능 개발
+description: 새로운 기능을 개발합니다
+title: "[BE/FE] 기능명 - 간단한 설명"
+labels: ["feat"]
+projects: ["deveagles-final"]
+assignees: []
+body:
+  - type: dropdown
+    id: area
+    attributes:
+      label: 개발 영역
+      description: 백엔드/프론트엔드 중 해당 영역을 선택해주세요
+      options:
+        - Backend
+        - Frontend
+        - Full Stack
+      default: 0
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: 📋 기능 설명
+      description: 구현할 기능에 대해 설명해주세요
+      placeholder: |
+        어떤 기능을 개발할 것인지 설명해주세요.
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: ✅ 개발 체크리스트
+      description: 개발 과정에서 확인해야 할 항목들입니다
+      options:
+        - label: 요구사항 분석 완료
+        - label: 구현 완료
+        - label: 단위 테스트 작성
+        - label: 문서 업데이트
