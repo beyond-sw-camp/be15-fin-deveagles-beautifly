@@ -2,7 +2,7 @@ name: Notify Assignee on Bug Issue Created
 
 on:
   issues:
-    types: [opened, assigned]
+    types: [assigned]
 
 jobs:
   notify:
@@ -74,10 +74,10 @@ jobs:
 
           curl -X POST -H "Content-Type: application/json" \
           -d "{
-            \"content\": \"🚨 $MENTION님! 버그 수정 요청이 할당되었습니다.\\n\\n**담당자**: @$ASSIGNEE_NAME\\n**요청자**: @$AUTHOR_NAME\\n**티켓 번호**: DEV-$ISSUE_NUMBER\\n\\n🔗 **이슈 확인**: $ISSUE_URL\",
+            \"content\": \"🚨 $MENTION님! 수정 요청 티켓이 발행되었습니다.\",
             \"embeds\": [
               {
-                \"title\": \"🐛 수정 티켓 발행됨 (클릭하여 이슈로 이동)\",
+                \"title\": \"🐛 수정 요청 티켓 (클릭하여 이슈로 이동)\",
                 \"url\": \"$ISSUE_URL\",
                 \"color\": 15158332,
                 \"fields\": [
@@ -93,17 +93,17 @@ jobs:
                   },
                   {
                     \"name\": \"👤 담당자\",
-                    \"value\": \"@$ASSIGNEE_NAME\",
+                    \"value\": \"$MENTION\",
                     \"inline\": true
                   },
                   {
-                    \"name\": \"📅 티켓 번호\",
-                    \"value\": \"**DEV-$ISSUE_NUMBER**\",
+                    \"name\": \"📅 이슈 번호\",
+                    \"value\": \"**#$ISSUE_NUMBER**\",
                     \"inline\": true
                   }
                 ],
                 \"footer\": {
-                  \"text\": \"* 담당자 확인 후 본선 진행하시기 바랍니다. ✅ 해결시 제목에 (완료) 추가\",
+                  \"text\": \"* 담당자는 티켓 확인 시 ✅ 반드시 체크해주세요.*\",
                   \"icon_url\": \"https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png\"
                 },
                 \"timestamp\": \"$CREATED_AT\"
