@@ -16,10 +16,6 @@ on:
   watch:
     types: [started]
   fork:
-  member:
-    types: [added, removed]
-  repository:
-    types: [publicized, privatized]
 
 jobs:
   notify:
@@ -115,28 +111,6 @@ jobs:
               TITLE="🍴 레포지토리 포크됨"
               COLOR="8359053"
               DESCRIPTION="**$AUTHOR**님이 레포지토리를 포크했습니다!"
-              URL="https://github.com/$REPO"
-              ;;
-            "member")
-              if [ "${{ github.event.action }}" = "added" ]; then
-                TITLE="👥 새 멤버 추가됨"
-                DESCRIPTION="**${{ github.event.member.login }}**님이 팀에 추가되었습니다."
-              else
-                TITLE="👥 멤버 제거됨"
-                DESCRIPTION="**${{ github.event.member.login }}**님이 팀에서 제거되었습니다."
-              fi
-              COLOR="13369599"
-              URL="https://github.com/$REPO"
-              ;;
-            "repository")
-              if [ "${{ github.event.action }}" = "publicized" ]; then
-                TITLE="🌍 레포지토리 공개됨"
-                DESCRIPTION="레포지토리가 공개로 변경되었습니다."
-              else
-                TITLE="🔒 레포지토리 비공개됨"
-                DESCRIPTION="레포지토리가 비공개로 변경되었습니다."
-              fi
-              COLOR="13369599"
               URL="https://github.com/$REPO"
               ;;
             *)
