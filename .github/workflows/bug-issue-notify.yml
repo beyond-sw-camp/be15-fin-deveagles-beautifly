@@ -66,22 +66,8 @@ jobs:
           AUTHOR_AVATAR: ${{ github.event.issue.user.avatar_url }}
           CREATED_AT: ${{ github.event.issue.created_at }}
         run: |
-          ISSUE_BODY="${{ github.event.issue.body }}"
-
           # Format the current time in a readable format
           FORMATTED_DATE=$(date "+%Y년 %m월 %d일 %H:%M")
-
-          # 이슈 본문을 안전하게 처리
-          if [ -z "$ISSUE_BODY" ]; then
-            ESCAPED_ISSUE_BODY="이슈 내용이 없습니다."
-          else
-            # 본문이 너무 길면 요약
-            ESCAPED_ISSUE_BODY=$(echo "$ISSUE_BODY" | jq -Rs . | head -c 1000)
-            ESCAPED_ISSUE_BODY="${ESCAPED_ISSUE_BODY:1:-1}"
-            if [ ${#ISSUE_BODY} -gt 800 ]; then
-              ESCAPED_ISSUE_BODY="$ESCAPED_ISSUE_BODY... (자세한 내용은 이슈 참고)"
-            fi
-          fi
 
           # 이슈 라벨들 가져오기
           LABELS="${{ join(github.event.issue.labels.*.name, ', ') }}"
@@ -91,7 +77,7 @@ jobs:
             \"content\": \"🚨 $MENTION님! 버그 수정 요청이 할당되었습니다.\\n\\n**담당자**: @$ASSIGNEE_NAME\\n**요청자**: @$AUTHOR_NAME\\n**티켓 번호**: DEV-$ISSUE_NUMBER\\n\\n🔗 **이슈 확인**: $ISSUE_URL\",
             \"embeds\": [
               {
-                \"title\": \"🐛 수정 티켓 발행됨 (클릭하여 자라로 이동)\",
+                \"title\": \"🐛 수정 티켓 발행됨 (클릭하여 이슈로 이동)\",
                 \"url\": \"$ISSUE_URL\",
                 \"color\": 15158332,
                 \"fields\": [
@@ -114,16 +100,6 @@ jobs:
                     \"name\": \"📅 티켓 번호\",
                     \"value\": \"**DEV-$ISSUE_NUMBER**\",
                     \"inline\": true
-                  },
-                  {
-                    \"name\": \"🏷️ 라벨\",
-                    \"value\": \"$LABELS\",
-                    \"inline\": false
-                  },
-                  {
-                    \"name\": \"📝 내용\",
-                    \"value\": \"$ESCAPED_ISSUE_BODY\",
-                    \"inline\": false
                   }
                 ],
                 \"footer\": {
