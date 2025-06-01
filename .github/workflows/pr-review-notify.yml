@@ -16,24 +16,16 @@ jobs:
       - name: Map GitHub usernames to Discord IDs
         id: map-reviewers
         env:
+          USER_MAPPING: ${{ secrets.USER_MAPPING }}
           REVIEWERS_JSON: ${{ toJson(github.event.pull_request.requested_reviewers) }}
         run: |
-
           echo "🔄 Mapping GitHub reviewers to Discord mentions..."
-
-          declare -A USER_MAP=(
-            ["64etuor"]="637937081875824650"
-            ["wishbornDev"]="1313511515407777865"
-            ["gyeongmin03"]="377380180467122178"
-            ["hwan1023"]="963059572812157010"
-            ["nineeko"]="821058142795333655"
-            ["Jayboo816"]="1326066071676915763"
-          )
 
           mentions=""
 
           while read login; do
-            id=${USER_MAP[$login]}
+            # JSON에서 Discord ID 찾기
+            id=$(echo "$USER_MAPPING" | jq -r --arg login "$login" '.[$login] // empty')
             if [ -n "$id" ]; then
               mentions+="<@$id> "
             else

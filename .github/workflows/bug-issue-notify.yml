@@ -28,20 +28,13 @@ jobs:
         if: steps.check-assignee.outputs.has_assignee == 'true'
         id: map-assignee
         env:
+          USER_MAPPING: ${{ secrets.USER_MAPPING }}
           ASSIGNEE_LOGIN: ${{ steps.check-assignee.outputs.assignee_login }}
         run: |
           echo "🔄 Mapping GitHub assignee to Discord mention..."
 
-          declare -A USER_MAP=(
-            ["64etuor"]="637937081875824650"
-            ["wishbornDev"]="1313511515407777865"
-            ["gyeongmin03"]="377380180467122178"
-            ["hwan1023"]="963059572812157010"
-            ["nineeko"]="821058142795333655"
-            ["Jayboo816"]="1326066071676915763"
-          )
-
-          DISCORD_ID=${USER_MAP[$ASSIGNEE_LOGIN]}
+          # JSON에서 Discord ID 찾기
+          DISCORD_ID=$(echo "$USER_MAPPING" | jq -r --arg login "$ASSIGNEE_LOGIN" '.[$login] // empty')
 
           if [ -n "$DISCORD_ID" ]; then
             echo "mention=<@$DISCORD_ID>" >> "$GITHUB_OUTPUT"
