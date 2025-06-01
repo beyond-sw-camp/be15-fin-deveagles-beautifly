@@ -1,0 +1,54 @@
+name: 버그 수정 / 수정 요청
+description: 버그를 수정하거나 기존 기능을 개선합니다
+title: "[도메인명] 버그/수정명 - 간단한 설명"
+labels: ["bug"]
+type: "Bug"
+projects: ["deveagles-final"]
+assignees: []
+body:
+  - type: dropdown
+    id: area
+    attributes:
+      label: 개발 영역
+      description: 백엔드/프론트엔드 중 해당 영역을 선택해주세요
+      options:
+        - Backend
+        - Frontend
+        - Full Stack
+      default: 0
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: 🐛 문제 설명
+      description: 어떤 버그인지, 무엇을 수정해야 하는지 설명해주세요
+      placeholder: |
+        현재 어떤 문제가 발생하고 있는지, 어떻게 수정되어야 하는지 설명해주세요.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: 🔄 문제 재연 방법
+      description: 이 문제를 어떻게 재현할 수 있는지 단계별로 설명해주세요
+      placeholder: |
+        1. 특정 페이지로 이동
+        2. 특정 버튼 클릭
+        3. 특정 데이터 입력
+        4. 문제 발생 확인
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: ✅ 수정 체크리스트
+      description: 수정 과정에서 확인해야 할 항목들입니다
+      options:
+        - label: 문제 원인 파악 완료
+        - label: 수정 완료
+        - label: 테스트 완료
+        - label: 문서 업데이트

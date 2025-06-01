@@ -1,0 +1,56 @@
+name: 리팩토링
+description: 코드 구조 개선, 성능 최적화 등 기존 코드를 개선합니다
+title: "[도메인명] 리팩토링 대상 - 간단한 설명"
+labels: ["refactor"]
+type: "Task"
+projects: ["deveagles-final"]
+assignees: []
+body:
+  - type: dropdown
+    id: area
+    attributes:
+      label: 개발 영역
+      description: 백엔드/프론트엔드 중 해당 영역을 선택해주세요
+      options:
+        - Backend
+        - Frontend
+        - Full Stack
+      default: 0
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: 🔄 리팩토링 내용
+      description: 어떤 코드를 왜 리팩토링할 것인지 설명해주세요
+      placeholder: |
+        - 리팩토링 대상: (파일/클래스/함수 등)
+        - 현재 문제점: 
+        - 개선 방향: 
+        - 기대 효과: (성능 향상, 가독성 개선, 유지보수성 등)
+    validations:
+      required: true
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: 📍 영향 범위
+      description: 리팩토링이 영향을 줄 수 있는 범위를 설명해주세요
+      placeholder: |
+        - 수정될 파일들:
+        - 영향받는 기능들:
+        - 호환성 고려사항:
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: ✅ 리팩토링 체크리스트
+      description: 리팩토링 과정에서 확인해야 할 항목들입니다
+      options:
+        - label: 기존 동작 분석 완료
+        - label: 리팩토링 계획 수립 완료
+        - label: 코드 수정 완료
+        - label: 기존 기능 정상 동작 확인

@@ -1,7 +1,8 @@
 name: 기능 개발
 description: 새로운 기능을 개발합니다
-title: "[BE/FE] 기능명 - 간단한 설명"
+title: "[도메인명] 기능명 - 간단한 설명"
 labels: ["feat"]
+type: "Feature"
 projects: ["deveagles-final"]
 assignees: []
 body:
