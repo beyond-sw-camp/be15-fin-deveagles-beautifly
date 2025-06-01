@@ -1,0 +1,200 @@
+name: All Events Notification
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    types: [opened, closed, reopened, ready_for_review, converted_to_draft]
+  issues:
+    types: [opened, closed, reopened]
+  issue_comment:
+    types: [created]
+  release:
+    types: [published]
+  create:
+  delete:
+  watch:
+    types: [started]
+  fork:
+  member:
+    types: [added, removed]
+  repository:
+    types: [publicized, privatized]
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Determine Event Details
+        id: event-details
+        run: |
+          EVENT_NAME="${{ github.event_name }}"
+          AUTHOR="${{ github.actor }}"
+          REPO="${{ github.repository }}"
+
+          case "$EVENT_NAME" in
+            "push")
+              TITLE="📝 새 커밋 푸시됨"
+              COLOR="5814783"
+              DESCRIPTION="**$AUTHOR**님이 **${{ github.ref_name }}** 브랜치에 ${{ github.event.commits[0].message }}를 푸시했습니다."
+              URL="${{ github.event.compare }}"
+              ;;
+            "pull_request")
+              if [ "${{ github.event.action }}" = "opened" ]; then
+                TITLE="🔄 새 PR 생성됨"
+                COLOR="16737792"
+              elif [ "${{ github.event.action }}" = "closed" ] && [ "${{ github.event.pull_request.merged }}" = "true" ]; then
+                TITLE="✅ PR 병합됨"
+                COLOR="65280"
+              elif [ "${{ github.event.action }}" = "closed" ]; then
+                TITLE="❌ PR 닫힘"
+                COLOR="15158332"
+              else
+                TITLE="🔄 PR 업데이트됨"
+                COLOR="16737792"
+              fi
+              DESCRIPTION="**${{ github.event.pull_request.title }}**"
+              URL="${{ github.event.pull_request.html_url }}"
+              ;;
+            "issues")
+              if [ "${{ github.event.action }}" = "opened" ]; then
+                TITLE="🆕 새 이슈 생성됨"
+                COLOR="16737792"
+              elif [ "${{ github.event.action }}" = "closed" ]; then
+                TITLE="✅ 이슈 완료됨"
+                COLOR="65280"
+              else
+                TITLE="🔄 이슈 업데이트됨"
+                COLOR="16737792"
+              fi
+              DESCRIPTION="**${{ github.event.issue.title }}**"
+              URL="${{ github.event.issue.html_url }}"
+              ;;
+            "issue_comment")
+              TITLE="💬 이슈에 댓글 추가됨"
+              COLOR="11184810"
+              DESCRIPTION="**${{ github.event.issue.title }}**에 새 댓글"
+              URL="${{ github.event.comment.html_url }}"
+              ;;
+            "release")
+              TITLE="🚀 새 릴리즈 발행됨"
+              COLOR="3066993"
+              DESCRIPTION="**${{ github.event.release.tag_name }}** - ${{ github.event.release.name }}"
+              URL="${{ github.event.release.html_url }}"
+              ;;
+            "create")
+              if [ "${{ github.event.ref_type }}" = "branch" ]; then
+                TITLE="🌿 새 브랜치 생성됨"
+                DESCRIPTION="**${{ github.event.ref }}** 브랜치가 생성되었습니다."
+              else
+                TITLE="🏷️ 새 태그 생성됨"
+                DESCRIPTION="**${{ github.event.ref }}** 태그가 생성되었습니다."
+              fi
+              COLOR="9936031"
+              URL="https://github.com/$REPO"
+              ;;
+            "delete")
+              if [ "${{ github.event.ref_type }}" = "branch" ]; then
+                TITLE="🗑️ 브랜치 삭제됨"
+                DESCRIPTION="**${{ github.event.ref }}** 브랜치가 삭제되었습니다."
+              else
+                TITLE="🗑️ 태그 삭제됨"
+                DESCRIPTION="**${{ github.event.ref }}** 태그가 삭제되었습니다."
+              fi
+              COLOR="15158332"
+              URL="https://github.com/$REPO"
+              ;;
+            "watch")
+              TITLE="⭐ 새 스타 획득"
+              COLOR="16766720"
+              DESCRIPTION="**$AUTHOR**님이 레포지토리에 스타를 눌렀습니다!"
+              URL="https://github.com/$REPO"
+              ;;
+            "fork")
+              TITLE="🍴 레포지토리 포크됨"
+              COLOR="8359053"
+              DESCRIPTION="**$AUTHOR**님이 레포지토리를 포크했습니다!"
+              URL="https://github.com/$REPO"
+              ;;
+            "member")
+              if [ "${{ github.event.action }}" = "added" ]; then
+                TITLE="👥 새 멤버 추가됨"
+                DESCRIPTION="**${{ github.event.member.login }}**님이 팀에 추가되었습니다."
+              else
+                TITLE="👥 멤버 제거됨"
+                DESCRIPTION="**${{ github.event.member.login }}**님이 팀에서 제거되었습니다."
+              fi
+              COLOR="13369599"
+              URL="https://github.com/$REPO"
+              ;;
+            "repository")
+              if [ "${{ github.event.action }}" = "publicized" ]; then
+                TITLE="🌍 레포지토리 공개됨"
+                DESCRIPTION="레포지토리가 공개로 변경되었습니다."
+              else
+                TITLE="🔒 레포지토리 비공개됨"
+                DESCRIPTION="레포지토리가 비공개로 변경되었습니다."
+              fi
+              COLOR="13369599"
+              URL="https://github.com/$REPO"
+              ;;
+            *)
+              TITLE="📢 레포지토리 이벤트"
+              COLOR="7506394"
+              DESCRIPTION="$EVENT_NAME 이벤트가 발생했습니다."
+              URL="https://github.com/$REPO"
+              ;;
+          esac
+
+          echo "title=$TITLE" >> "$GITHUB_OUTPUT"
+          echo "color=$COLOR" >> "$GITHUB_OUTPUT"
+          echo "description=$DESCRIPTION" >> "$GITHUB_OUTPUT"
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+
+      - name: Send Discord Notification
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_EVENT_WEBHOOK_URL }}
+          TITLE: ${{ steps.event-details.outputs.title }}
+          COLOR: ${{ steps.event-details.outputs.color }}
+          DESCRIPTION: ${{ steps.event-details.outputs.description }}
+          URL: ${{ steps.event-details.outputs.url }}
+          AUTHOR: ${{ github.actor }}
+          AUTHOR_AVATAR: ${{ github.event.sender.avatar_url }}
+          REPO: ${{ github.repository }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          FORMATTED_DATE=$(date "+%Y년 %m월 %d일 %H:%M")
+
+          curl -X POST -H "Content-Type: application/json" \
+          -d "{
+            \"embeds\": [
+              {
+                \"title\": \"$TITLE\",
+                \"url\": \"$URL\",
+                \"color\": $COLOR,
+                \"description\": \"$DESCRIPTION\",
+                \"author\": {
+                  \"name\": \"@$AUTHOR\",
+                  \"icon_url\": \"$AUTHOR_AVATAR\"
+                },
+                \"fields\": [
+                  {
+                    \"name\": \"📁 레포지토리\",
+                    \"value\": \"$REPO\",
+                    \"inline\": true
+                  },
+                  {
+                    \"name\": \"📅 시간\",
+                    \"value\": \"$FORMATTED_DATE\",
+                    \"inline\": true
+                  }
+                ],
+                \"footer\": {
+                  \"text\": \"GitHub 이벤트 • $EVENT_NAME\",
+                  \"icon_url\": \"https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png\"
+                }
+              }
+            ]
+          }" \
+          "$DISCORD_WEBHOOK_URL"
