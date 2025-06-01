@@ -74,7 +74,7 @@ jobs:
 
           curl -X POST -H "Content-Type: application/json" \
           -d "{
-            \"content\": \"🚨 $MENTION님! 수정 요청 티켓이 발행행되었습니다.\",
+            \"content\": \"🚨 $MENTION님! 수정 요청 티켓이 발행되었습니다.\",
             \"embeds\": [
               {
                 \"title\": \"🐛 수정 요청 티켓 (클릭하여 이슈로 이동)\",
