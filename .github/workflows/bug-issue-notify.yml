@@ -1,0 +1,140 @@
+name: Notify Assignee on Bug Issue Created
+
+on:
+  issues:
+    types: [opened, assigned]
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    if: contains(github.event.issue.labels.*.name, 'bug')
+
+    steps:
+      - name: Wait for issue to settle
+        run: sleep 2
+
+      - name: Check if issue has assignee
+        id: check-assignee
+        run: |
+          if [ "${{ github.event.issue.assignee }}" != "null" ] && [ -n "${{ github.event.issue.assignee.login }}" ]; then
+            echo "has_assignee=true" >> "$GITHUB_OUTPUT"
+            echo "assignee_login=${{ github.event.issue.assignee.login }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_assignee=false" >> "$GITHUB_OUTPUT"
+            echo "⚠️ No assignee found for this bug issue"
+          fi
+
+      - name: Map GitHub username to Discord ID
+        if: steps.check-assignee.outputs.has_assignee == 'true'
+        id: map-assignee
+        env:
+          ASSIGNEE_LOGIN: ${{ steps.check-assignee.outputs.assignee_login }}
+        run: |
+          echo "🔄 Mapping GitHub assignee to Discord mention..."
+
+          declare -A USER_MAP=(
+            ["64etuor"]="637937081875824650"
+            ["wishbornDev"]="1313511515407777865"
+            ["gyeongmin03"]="377380180467122178"
+            ["hwan1023"]="963059572812157010"
+            ["nineeko"]="821058142795333655"
+            ["Jayboo816"]="1326066071676915763"
+          )
+
+          DISCORD_ID=${USER_MAP[$ASSIGNEE_LOGIN]}
+
+          if [ -n "$DISCORD_ID" ]; then
+            echo "mention=<@$DISCORD_ID>" >> "$GITHUB_OUTPUT"
+            echo "✅ Mapped $ASSIGNEE_LOGIN to Discord ID: $DISCORD_ID"
+          else
+            echo "mention=" >> "$GITHUB_OUTPUT"
+            echo "⚠️ No Discord ID mapped for $ASSIGNEE_LOGIN"
+          fi
+
+      - name: Send Discord Notification
+        if: steps.check-assignee.outputs.has_assignee == 'true'
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_REQUEST_WEBHOOK_URL }}
+          MENTION: ${{ steps.map-assignee.outputs.mention }}
+          ISSUE_URL: ${{ github.event.issue.html_url }}
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          REPO_NAME: ${{ github.repository }}
+          ASSIGNEE_NAME: ${{ github.event.issue.assignee.login }}
+          ASSIGNEE_AVATAR: ${{ github.event.issue.assignee.avatar_url }}
+          AUTHOR_NAME: ${{ github.event.issue.user.login }}
+          AUTHOR_AVATAR: ${{ github.event.issue.user.avatar_url }}
+          CREATED_AT: ${{ github.event.issue.created_at }}
+        run: |
+          ISSUE_BODY="${{ github.event.issue.body }}"
+
+          # Format the current time in a readable format
+          FORMATTED_DATE=$(date "+%Y년 %m월 %d일 %H:%M")
+
+          # 이슈 본문을 안전하게 처리
+          if [ -z "$ISSUE_BODY" ]; then
+            ESCAPED_ISSUE_BODY="이슈 내용이 없습니다."
+          else
+            # 본문이 너무 길면 요약
+            ESCAPED_ISSUE_BODY=$(echo "$ISSUE_BODY" | jq -Rs . | head -c 1000)
+            ESCAPED_ISSUE_BODY="${ESCAPED_ISSUE_BODY:1:-1}"
+            if [ ${#ISSUE_BODY} -gt 800 ]; then
+              ESCAPED_ISSUE_BODY="$ESCAPED_ISSUE_BODY... (자세한 내용은 이슈 참고)"
+            fi
+          fi
+
+          # 이슈 라벨들 가져오기
+          LABELS="${{ join(github.event.issue.labels.*.name, ', ') }}"
+
+          curl -X POST -H "Content-Type: application/json" \
+          -d "{
+            \"content\": \"🚨 $MENTION님! 버그 수정 요청이 할당되었습니다.\\n\\n**담당자**: @$ASSIGNEE_NAME\\n**요청자**: @$AUTHOR_NAME\\n**티켓 번호**: DEV-$ISSUE_NUMBER\\n\\n🔗 **이슈 확인**: $ISSUE_URL\",
+            \"embeds\": [
+              {
+                \"title\": \"🐛 수정 티켓 발행됨 (클릭하여 자라로 이동)\",
+                \"url\": \"$ISSUE_URL\",
+                \"color\": 15158332,
+                \"fields\": [
+                  {
+                    \"name\": \"🔖 요약\",
+                    \"value\": \"**$ISSUE_TITLE**\",
+                    \"inline\": false
+                  },
+                  {
+                    \"name\": \"📋 요청자\",
+                    \"value\": \"@$AUTHOR_NAME\",
+                    \"inline\": true
+                  },
+                  {
+                    \"name\": \"👤 담당자\",
+                    \"value\": \"@$ASSIGNEE_NAME\",
+                    \"inline\": true
+                  },
+                  {
+                    \"name\": \"📅 티켓 번호\",
+                    \"value\": \"**DEV-$ISSUE_NUMBER**\",
+                    \"inline\": true
+                  },
+                  {
+                    \"name\": \"🏷️ 라벨\",
+                    \"value\": \"$LABELS\",
+                    \"inline\": false
+                  },
+                  {
+                    \"name\": \"📝 내용\",
+                    \"value\": \"$ESCAPED_ISSUE_BODY\",
+                    \"inline\": false
+                  }
+                ],
+                \"footer\": {
+                  \"text\": \"* 담당자 확인 후 본선 진행하시기 바랍니다. ✅ 해결시 제목에 (완료) 추가\",
+                  \"icon_url\": \"https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png\"
+                },
+                \"timestamp\": \"$CREATED_AT\"
+              }
+            ],
+            \"allowed_mentions\": {
+              \"parse\": [\"users\"]
+            }
+          }" \
+          "$DISCORD_WEBHOOK_URL"
