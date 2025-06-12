@@ -1,43 +1,224 @@
 spring:
+  application:
+    name: deveagles
   profiles:
-    active: local
+    active: ${SPRING_PROFILES_ACTIVE:dev} # 운영환경 prod, 개발 dev
 
-  # ?????? ??
+  # 데이터베이스 설정
   datasource:
     driver-class-name: org.mariadb.jdbc.Driver
-    url: ${DB_URL}
+    url: ${DB_URL:jdbc:mariadb://localhost:3306/deveagles}
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
+    hikari:
+      maximum-pool-size: ${DB_POOL_SIZE:20}
+      minimum-idle: ${DB_POOL_MIN_IDLE:5}
+      connection-timeout: ${DB_CONNECTION_TIMEOUT:30000}
+      idle-timeout: ${DB_IDLE_TIMEOUT:600000}
+      max-lifetime: ${DB_MAX_LIFETIME:1800000}
+      leak-detection-threshold: ${DB_LEAK_DETECTION:60000}
 
-  # JPA ??
+  # JPA 설정
   jpa:
-    database-platform: org.hibernate.dialect.H2Dialect
+    database-platform: org.hibernate.dialect.MariaDBDialect
     hibernate:
-      ddl-auto: none # ?? ??? ??
+      ddl-auto: ${DDL_AUTO:validate}
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.CamelCaseToUnderscoresNamingStrategy
     properties:
       hibernate:
         format_sql: true
-        show_sql: true
+        show_sql: false
+        jdbc:
+          batch_size: ${HIBERNATE_BATCH_SIZE:20}
+        order_inserts: true
+        order_updates: true
+        use_sql_comments: false
 
-  # JMX ????
+  # JMX 비활성화
   jmx:
     enabled: false
 
-  # data:
-
-  # Elasticsearch ??
+  # Elasticsearch 설정
   elasticsearch:
-    uris: http://localhost:9200
+    uris: ${ELASTICSEARCH_URL:http://localhost:9200}
+    connection-timeout: ${ES_CONNECTION_TIMEOUT:10s}
+    socket-timeout: ${ES_SOCKET_TIMEOUT:30s}
 
-# MyBatis ??
+# 서버 설정
+server:
+  port: ${SERVER_PORT:8080}
+  error:
+    whitelabel:
+      enabled: false
+    include-stacktrace: never
+    include-message: never
+
+# 액추에이터 설정 (운영 모니터링 : Cloudwatch 연결시 스프링 프로필 prod로 변경할 시 적용됨)
+management:
+  endpoints:
+    web:
+      exposure:
+        include: ${ACTUATOR_ENDPOINTS:health,info,metrics}
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: ${HEALTH_SHOW_DETAILS:when-authorized}
+  metrics:
+    export:
+      cloudwatch:
+        enabled: ${CLOUDWATCH_ENABLED:false}
+        namespace: ${CLOUDWATCH_NAMESPACE:DeveaglesApp}
+        step: ${CLOUDWATCH_STEP:1m}
+
+# 로그 설정
+logging:
+  config: classpath:logback-spring.xml
+  level:
+    root: ${LOG_LEVEL_ROOT:INFO}
+    com.deveagles: ${LOG_LEVEL_APP:DEBUG}
+    org.springframework.security: ${LOG_LEVEL_SECURITY:INFO}
+    org.hibernate.SQL: ${LOG_LEVEL_SQL:DEBUG}
+    org.hibernate.type.descriptor.sql.BasicBinder: ${LOG_LEVEL_SQL_PARAMS:TRACE}
+
+# MyBatis 설정
 mybatis:
   configuration:
     map-underscore-to-camel-case: true
+    default-statement-timeout: ${MYBATIS_TIMEOUT:30}
   mapper-locations: mappers/**/*.xml
 
-# API ?? ??
-spring-doc:
+# Swagger 설정
+springdoc:
   swagger-ui:
     tags-sorter: alpha
     operations-sorter: method
     doc-expansion: none
+    path: /swagger-ui.html
+    enabled: ${SWAGGER_ENABLED:true}
+  api-docs:
+    path: /api-docs
+    enabled: ${SWAGGER_ENABLED:true}
+
+---
+# 개발 환경 설정
+spring:
+  config:
+    activate:
+      on-profile: dev
+
+  # 개발용 데이터소스 설정 (기본값으로 로컬 DB 사용)
+  datasource:
+    hikari:
+      maximum-pool-size: 10 # 개발환경은 적은 커넥션으로
+      minimum-idle: 2
+      leak-detection-threshold: 30000 # 개발시 빠른 감지
+
+  jpa:
+    hibernate:
+      ddl-auto: none
+    properties:
+      hibernate:
+        show_sql: true
+        format_sql: true
+        use_sql_comments: true
+
+  # H2 콘솔 (개발시 DB 확인용)
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+# 개발환경 로그 레벨
+logging:
+  level:
+    root: INFO
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    com.deveagles: DEBUG
+    org.springframework.security: DEBUG
+
+# 개발환경 액추에이터 (모든 엔드포인트 노출)
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    export:
+      cloudwatch:
+        enabled: false # 개발환경에서는 비활성화
+
+# 개발환경 Swagger 활성화
+springdoc:
+  swagger-ui:
+    enabled: true
+  api-docs:
+    enabled: true
+
+---
+# 운영 환경 설정
+spring:
+  config:
+    activate:
+      on-profile: prod
+
+  # 운영환경 데이터소스 최적화
+  datasource:
+    hikari:
+      maximum-pool-size: 30
+      minimum-idle: 10
+      connection-timeout: 20000
+      idle-timeout: 300000
+      max-lifetime: 1200000
+      leak-detection-threshold: 60000
+
+  jpa:
+    hibernate:
+      ddl-auto: none
+    properties:
+      hibernate:
+        show_sql: false
+        format_sql: false
+        use_sql_comments: false
+        generate_statistics: false
+
+# 운영환경 보안 강화 로그
+logging:
+  level:
+    root: WARN
+    com.deveagles: INFO
+    org.hibernate.SQL: WARN
+    org.springframework.security: WARN
+    org.springframework.web: WARN
+
+# 운영환경 액추에이터 (최소한만 노출)
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: when-authorized
+  metrics:
+    export:
+      cloudwatch:
+        enabled: true # 운영환경에서는 CloudWatch 활성화
+
+# 운영환경 Swagger 완전 비활성화
+springdoc:
+  swagger-ui:
+    enabled: false
+  api-docs:
+    enabled: false
+
+# 운영환경 서버 보안 설정
+server:
+  error:
+    include-stacktrace: never
+    include-message: never
+    include-binding-errors: never

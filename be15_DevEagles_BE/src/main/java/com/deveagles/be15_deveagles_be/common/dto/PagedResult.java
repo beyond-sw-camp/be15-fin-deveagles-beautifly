@@ -1,9 +1,8 @@
 package com.deveagles.be15_deveagles_be.common.dto;
 
+import java.util.List;
 import lombok.Getter;
 import org.springframework.data.domain.Page;
-
-import java.util.List;
 
 @Getter
 public class PagedResult<T> {
