@@ -152,8 +152,346 @@ body {
   color: var(--color-neutral-white) !important;
 }
 
+/* 어두운 텍스트 */
+.text-dark {
+  color: var(--color-neutral-dark) !important;
+}
+
+/* Primary 색상 */
+.text-primary-main {
+  color: var(--color-primary-main) !important;
+}
+.text-primary-50 {
+  color: var(--color-primary-50) !important;
+}
+.text-primary-100 {
+  color: var(--color-primary-100) !important;
+}
+.text-primary-200 {
+  color: var(--color-primary-200) !important;
+}
+.text-primary-300 {
+  color: var(--color-primary-300) !important;
+}
+.text-primary-400 {
+  color: var(--color-primary-400) !important;
+}
+.text-primary-500 {
+  color: var(--color-primary-500) !important;
+}
+
+/* Secondary 색상 */
+.text-secondary-main {
+  color: var(--color-secondary-main) !important;
+}
+.text-secondary-50 {
+  color: var(--color-secondary-50) !important;
+}
+.text-secondary-100 {
+  color: var(--color-secondary-100) !important;
+}
+.text-secondary-200 {
+  color: var(--color-secondary-200) !important;
+}
+.text-secondary-300 {
+  color: var(--color-secondary-300) !important;
+}
+.text-secondary-400 {
+  color: var(--color-secondary-400) !important;
+}
+
+/* Gray 색상 */
+.text-gray-50 {
+  color: var(--color-gray-50) !important;
+}
+.text-gray-100 {
+  color: var(--color-gray-100) !important;
+}
+.text-gray-200 {
+  color: var(--color-gray-200) !important;
+}
+.text-gray-300 {
+  color: var(--color-gray-300) !important;
+}
+.text-gray-400 {
+  color: var(--color-gray-400) !important;
+}
+.text-gray-500 {
+  color: var(--color-gray-500) !important;
+}
+.text-gray-600 {
+  color: var(--color-gray-600) !important;
+}
+.text-gray-700 {
+  color: var(--color-gray-700) !important;
+}
+.text-gray-800 {
+  color: var(--color-gray-800) !important;
+}
+.text-gray-900 {
+  color: var(--color-gray-900) !important;
+}
+
+/* Error 색상 */
+.text-error-50 {
+  color: var(--color-error-50) !important;
+}
+.text-error-100 {
+  color: var(--color-error-100) !important;
+}
+.text-error-200 {
+  color: var(--color-error-200) !important;
+}
+.text-error-300 {
+  color: var(--color-error-300) !important;
+}
+.text-error-400 {
+  color: var(--color-error-400) !important;
+}
+.text-error-500 {
+  color: var(--color-error-500) !important;
+}
+.text-error-600 {
+  color: var(--color-error-600) !important;
+}
+
+/* Success 색상 */
+.text-success-50 {
+  color: var(--color-success-50) !important;
+}
+.text-success-100 {
+  color: var(--color-success-100) !important;
+}
+.text-success-200 {
+  color: var(--color-success-200) !important;
+}
+.text-success-300 {
+  color: var(--color-success-300) !important;
+}
+.text-success-400 {
+  color: var(--color-success-400) !important;
+}
+.text-success-500 {
+  color: var(--color-success-500) !important;
+}
+
+/* Warning 색상 */
+.text-warning-50 {
+  color: var(--color-warning-50) !important;
+}
+.text-warning-100 {
+  color: var(--color-warning-100) !important;
+}
+.text-warning-200 {
+  color: var(--color-warning-200) !important;
+}
+.text-warning-300 {
+  color: var(--color-warning-300) !important;
+}
+.text-warning-400 {
+  color: var(--color-warning-400) !important;
+}
+.text-warning-500 {
+  color: var(--color-warning-500) !important;
+}
+.text-warning-600 {
+  color: var(--color-warning-600) !important;
+}
+
+/* Info 색상 */
+.text-info-50 {
+  color: var(--color-info-50) !important;
+}
+.text-info-100 {
+  color: var(--color-info-100) !important;
+}
+.text-info-200 {
+  color: var(--color-info-200) !important;
+}
+.text-info-300 {
+  color: var(--color-info-300) !important;
+}
+.text-info-400 {
+  color: var(--color-info-400) !important;
+}
+.text-info-500 {
+  color: var(--color-info-500) !important;
+}
+
 /*───────────────────────────────────────────────────────────────────────────
-     4. Effects
+   4. Background Color Utilities
+────────────────────────────────────────────────────────────────────────────*/
+/* Primary 배경색 */
+.bg-primary-main {
+  background-color: var(--color-primary-main) !important;
+}
+.bg-primary-50 {
+  background-color: var(--color-primary-50) !important;
+}
+.bg-primary-100 {
+  background-color: var(--color-primary-100) !important;
+}
+.bg-primary-200 {
+  background-color: var(--color-primary-200) !important;
+}
+.bg-primary-300 {
+  background-color: var(--color-primary-300) !important;
+}
+.bg-primary-400 {
+  background-color: var(--color-primary-400) !important;
+}
+.bg-primary-500 {
+  background-color: var(--color-primary-500) !important;
+}
+
+/* Secondary 배경색 */
+.bg-secondary-main {
+  background-color: var(--color-secondary-main) !important;
+}
+.bg-secondary-50 {
+  background-color: var(--color-secondary-50) !important;
+}
+.bg-secondary-100 {
+  background-color: var(--color-secondary-100) !important;
+}
+.bg-secondary-200 {
+  background-color: var(--color-secondary-200) !important;
+}
+.bg-secondary-300 {
+  background-color: var(--color-secondary-300) !important;
+}
+.bg-secondary-400 {
+  background-color: var(--color-secondary-400) !important;
+}
+
+/* Gray 배경색 */
+.bg-gray-50 {
+  background-color: var(--color-gray-50) !important;
+}
+.bg-gray-100 {
+  background-color: var(--color-gray-100) !important;
+}
+.bg-gray-200 {
+  background-color: var(--color-gray-200) !important;
+}
+.bg-gray-300 {
+  background-color: var(--color-gray-300) !important;
+}
+.bg-gray-400 {
+  background-color: var(--color-gray-400) !important;
+}
+.bg-gray-500 {
+  background-color: var(--color-gray-500) !important;
+}
+.bg-gray-600 {
+  background-color: var(--color-gray-600) !important;
+}
+.bg-gray-700 {
+  background-color: var(--color-gray-700) !important;
+}
+.bg-gray-800 {
+  background-color: var(--color-gray-800) !important;
+}
+.bg-gray-900 {
+  background-color: var(--color-gray-900) !important;
+}
+
+/* Error 배경색 */
+.bg-error-50 {
+  background-color: var(--color-error-50) !important;
+}
+.bg-error-100 {
+  background-color: var(--color-error-100) !important;
+}
+.bg-error-200 {
+  background-color: var(--color-error-200) !important;
+}
+.bg-error-300 {
+  background-color: var(--color-error-300) !important;
+}
+.bg-error-400 {
+  background-color: var(--color-error-400) !important;
+}
+.bg-error-500 {
+  background-color: var(--color-error-500) !important;
+}
+.bg-error-600 {
+  background-color: var(--color-error-600) !important;
+}
+
+/* Success 배경색 */
+.bg-success-50 {
+  background-color: var(--color-success-50) !important;
+}
+.bg-success-100 {
+  background-color: var(--color-success-100) !important;
+}
+.bg-success-200 {
+  background-color: var(--color-success-200) !important;
+}
+.bg-success-300 {
+  background-color: var(--color-success-300) !important;
+}
+.bg-success-400 {
+  background-color: var(--color-success-400) !important;
+}
+.bg-success-500 {
+  background-color: var(--color-success-500) !important;
+}
+
+/* Warning 배경색 */
+.bg-warning-50 {
+  background-color: var(--color-warning-50) !important;
+}
+.bg-warning-100 {
+  background-color: var(--color-warning-100) !important;
+}
+.bg-warning-200 {
+  background-color: var(--color-warning-200) !important;
+}
+.bg-warning-300 {
+  background-color: var(--color-warning-300) !important;
+}
+.bg-warning-400 {
+  background-color: var(--color-warning-400) !important;
+}
+.bg-warning-500 {
+  background-color: var(--color-warning-500) !important;
+}
+.bg-warning-600 {
+  background-color: var(--color-warning-600) !important;
+}
+
+/* Info 배경색 */
+.bg-info-50 {
+  background-color: var(--color-info-50) !important;
+}
+.bg-info-100 {
+  background-color: var(--color-info-100) !important;
+}
+.bg-info-200 {
+  background-color: var(--color-info-200) !important;
+}
+.bg-info-300 {
+  background-color: var(--color-info-300) !important;
+}
+.bg-info-400 {
+  background-color: var(--color-info-400) !important;
+}
+.bg-info-500 {
+  background-color: var(--color-info-500) !important;
+}
+
+/* Neutral 배경색 */
+.bg-white {
+  background-color: var(--color-neutral-white) !important;
+}
+.bg-dark {
+  background-color: var(--color-neutral-dark) !important;
+}
+
+/*───────────────────────────────────────────────────────────────────────────
+     5. Effects
   ────────────────────────────────────────────────────────────────────────────*/
 /* Drop shadow utility */
 .shadow-drop {

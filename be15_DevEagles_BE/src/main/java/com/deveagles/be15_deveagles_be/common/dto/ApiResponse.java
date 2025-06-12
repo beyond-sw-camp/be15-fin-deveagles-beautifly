@@ -1,9 +1,8 @@
 package com.deveagles.be15_deveagles_be.common.dto;
 
+import java.time.LocalDateTime;
 import lombok.Builder;
 import lombok.Getter;
-
-import java.time.LocalDateTime;
 
 @Getter
 @Builder
