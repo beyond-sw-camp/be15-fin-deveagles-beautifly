@@ -8,7 +8,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "prepare": "cd .. && husky",
-    "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs --fix --ignore-path .gitignore",
+    "lint": "eslint . --fix",
     "format": "prettier --write \"src/**/*.{js,vue,css,scss,json}\"",
     "lint:fix": "npm run lint && npm run format"
   },
