@@ -1,0 +1,235 @@
+/* 전역 툴팁 스타일 */
+.tooltip-container {
+  position: relative;
+  display: inline-block;
+}
+
+.tooltip {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-bottom: 8px;
+  padding: 8px 12px;
+  background-color: var(--color-gray-800);
+  color: var(--color-neutral-white);
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 6px;
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 0.2s ease,
+    visibility 0.2s ease,
+    transform 0.2s ease;
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.tooltip::before {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: var(--color-gray-800);
+}
+
+.tooltip-container:hover .tooltip {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(-2px);
+}
+
+.tooltip-container:hover .tooltip-bottom {
+  transform: translateX(-50%) translateY(2px);
+}
+
+.tooltip-container:hover .tooltip-left {
+  transform: translateY(-50%) translateX(-2px);
+}
+
+.tooltip-container:hover .tooltip-right {
+  transform: translateY(-50%) translateX(2px);
+}
+
+/* 툴팁 위치 변형 */
+.tooltip-top {
+  bottom: 100%;
+  margin-bottom: 8px;
+}
+
+.tooltip-top::before {
+  top: 100%;
+  border-top-color: var(--color-gray-800);
+  border-bottom-color: transparent;
+}
+
+.tooltip-bottom {
+  top: 100%;
+  bottom: auto;
+  margin-top: 8px;
+  margin-bottom: 0;
+}
+
+.tooltip-bottom::before {
+  top: -10px;
+  border-top-color: transparent;
+  border-bottom-color: var(--color-gray-800);
+}
+
+.tooltip-left {
+  top: 50%;
+  left: auto;
+  right: 100%;
+  bottom: auto;
+  transform: translateY(-50%);
+  margin-right: 8px;
+  margin-bottom: 0;
+}
+
+.tooltip-left::before {
+  top: 50%;
+  left: 100%;
+  right: auto;
+  transform: translateY(-50%);
+  border-left-color: var(--color-gray-800);
+  border-top-color: transparent;
+}
+
+.tooltip-right {
+  top: 50%;
+  left: 100%;
+  bottom: auto;
+  transform: translateY(-50%);
+  margin-left: 8px;
+  margin-bottom: 0;
+}
+
+.tooltip-right::before {
+  top: 50%;
+  left: -10px;
+  right: auto;
+  transform: translateY(-50%);
+  border-right-color: var(--color-gray-800);
+  border-top-color: transparent;
+}
+
+/* 툴팁 색상 변형 */
+.tooltip-primary {
+  background-color: var(--color-primary-main);
+}
+
+.tooltip-primary::before {
+  border-top-color: var(--color-primary-main);
+}
+
+.tooltip-primary.tooltip-bottom::before {
+  border-top-color: transparent;
+  border-bottom-color: var(--color-primary-main);
+}
+
+.tooltip-primary.tooltip-left::before {
+  border-top-color: transparent;
+  border-left-color: var(--color-primary-main);
+}
+
+.tooltip-primary.tooltip-right::before {
+  border-top-color: transparent;
+  border-right-color: var(--color-primary-main);
+}
+
+.tooltip-secondary {
+  background-color: var(--color-secondary-main);
+}
+
+.tooltip-secondary::before {
+  border-top-color: var(--color-secondary-main);
+}
+
+.tooltip-secondary.tooltip-bottom::before {
+  border-top-color: transparent;
+  border-bottom-color: var(--color-secondary-main);
+}
+
+.tooltip-secondary.tooltip-left::before {
+  border-top-color: transparent;
+  border-left-color: var(--color-secondary-main);
+}
+
+.tooltip-secondary.tooltip-right::before {
+  border-top-color: transparent;
+  border-right-color: var(--color-secondary-main);
+}
+
+.tooltip-success {
+  background-color: var(--color-success-500);
+}
+
+.tooltip-success::before {
+  border-top-color: var(--color-success-500);
+}
+
+.tooltip-success.tooltip-bottom::before {
+  border-top-color: transparent;
+  border-bottom-color: var(--color-success-500);
+}
+
+.tooltip-success.tooltip-left::before {
+  border-top-color: transparent;
+  border-left-color: var(--color-success-500);
+}
+
+.tooltip-success.tooltip-right::before {
+  border-top-color: transparent;
+  border-right-color: var(--color-success-500);
+}
+
+.tooltip-warning {
+  background-color: var(--color-warning-300);
+  color: var(--color-neutral-dark);
+}
+
+.tooltip-warning::before {
+  border-top-color: var(--color-warning-300);
+}
+
+.tooltip-warning.tooltip-bottom::before {
+  border-top-color: transparent;
+  border-bottom-color: var(--color-warning-300);
+}
+
+.tooltip-warning.tooltip-left::before {
+  border-top-color: transparent;
+  border-left-color: var(--color-warning-300);
+}
+
+.tooltip-warning.tooltip-right::before {
+  border-top-color: transparent;
+  border-right-color: var(--color-warning-300);
+}
+
+.tooltip-error {
+  background-color: var(--color-error-300);
+}
+
+.tooltip-error::before {
+  border-top-color: var(--color-error-300);
+}
+
+.tooltip-error.tooltip-bottom::before {
+  border-top-color: transparent;
+  border-bottom-color: var(--color-error-300);
+}
+
+.tooltip-error.tooltip-left::before {
+  border-top-color: transparent;
+  border-left-color: var(--color-error-300);
+}
+
+.tooltip-error.tooltip-right::before {
+  border-top-color: transparent;
+  border-right-color: var(--color-error-300);
+}

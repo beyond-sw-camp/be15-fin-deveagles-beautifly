@@ -1,88 +1,111 @@
 <script setup>
-  // 기본 애플리케이션 설정
+  import { TheLayout } from './components/common';
 </script>
 
 <template>
-  <div class="app">
-    <header class="app-header">
-      <h1 class="font-screen-title text-primary-main">DevEagles</h1>
-      <p class="font-body text-gray-600">프로젝트 설정이 완료되었습니다.</p>
-    </header>
-
-    <main class="app-main">
-      <div class="container">
-        <section class="welcome-section">
-          <h2 class="font-section-title text-primary-500">환영합니다!</h2>
-          <p class="font-body text-gray-700">
-            DevEagles 프로젝트의 기본 설정이 완료되었습니다.<br />
-            스타일가이드와 폰트, CSS 설정이 모두 적용되어 있습니다.
-          </p>
-
-          <div class="demo-colors">
-            <div class="color-box bg-primary-main">Primary</div>
-            <div class="color-box bg-secondary-main">Secondary</div>
-            <div class="color-box bg-success-300">Success</div>
-            <div class="color-box bg-error-300">Error</div>
-          </div>
-        </section>
-      </div>
-    </main>
+  <div id="app">
+    <TheLayout />
   </div>
 </template>
 
-<style scoped>
-  .app {
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
+<style>
+  /* 스타일가이드와 컴포넌트 CSS import */
+  @import './assets/css/styleguide.css';
+  @import './assets/css/components.css';
+
+  /* 기본 앱 스타일 */
+  * {
+    box-sizing: border-box;
   }
 
-  .app-header {
-    padding: 2rem;
-    text-align: center;
+  html,
+  body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    font-family: 'Noto Sans KR', sans-serif;
     background-color: var(--color-gray-50);
   }
 
-  .app-main {
-    flex: 1;
-    padding: 2rem;
+  #app {
+    height: 100vh;
+    overflow: hidden;
   }
 
-  .container {
-    max-width: 1280px;
-    margin: 0 auto;
+  /* 스크롤바 스타일링 */
+  ::-webkit-scrollbar {
+    width: 6px;
   }
 
-  .welcome-section {
-    text-align: center;
-    padding: 2rem;
+  ::-webkit-scrollbar-track {
+    background: var(--color-gray-100);
   }
 
-  .welcome-section h2 {
-    margin-bottom: 1rem;
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-gray-400);
+    border-radius: 3px;
   }
 
-  .welcome-section p {
-    margin-bottom: 2rem;
-    max-width: 600px;
-    margin-left: auto;
-    margin-right: auto;
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-gray-500);
   }
 
-  .demo-colors {
-    display: flex;
-    gap: 1rem;
-    justify-content: center;
-    flex-wrap: wrap;
-    margin-top: 2rem;
+  /* 링크 기본 스타일 */
+  a {
+    color: var(--color-primary-main);
+    text-decoration: none;
   }
 
-  .color-box {
-    padding: 1rem 2rem;
-    border-radius: 8px;
-    color: white;
-    font-weight: 700;
-    min-width: 120px;
-    box-shadow: var(--shadow-drop, 0 8px 40px -10px rgba(0, 0, 0, 0.08));
+  a:hover {
+    text-decoration: underline;
+  }
+
+  /* 버튼 기본 스타일 리셋 */
+  button {
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-family: inherit;
+  }
+
+  /* 입력 요소 기본 스타일 */
+  input,
+  select,
+  textarea {
+    font-family: inherit;
+  }
+
+  /* 포커스 아웃라인 스타일 */
+  *:focus {
+    outline: 2px solid var(--color-primary-main);
+    outline-offset: 2px;
+  }
+
+  *:focus:not(:focus-visible) {
+    outline: none;
+  }
+
+  /* 애니메이션 효과 */
+  .fade-enter-active,
+  .fade-leave-active {
+    transition: opacity 0.3s ease;
+  }
+
+  .fade-enter-from,
+  .fade-leave-to {
+    opacity: 0;
+  }
+
+  .slide-enter-active,
+  .slide-leave-active {
+    transition: transform 0.3s ease;
+  }
+
+  .slide-enter-from {
+    transform: translateX(-100%);
+  }
+
+  .slide-leave-to {
+    transform: translateX(-100%);
   }
 </style>

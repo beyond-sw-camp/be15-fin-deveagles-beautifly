@@ -1,0 +1,638 @@
+<template>
+  <aside
+    class="sidebar"
+    :class="{
+      collapsed: isCollapsed,
+      'hover-expanded': isCollapsed && isHovered,
+    }"
+    @mouseenter="handleMouseEnter"
+    @mouseleave="handleMouseLeave"
+  >
+    <div class="sidebar-header">
+      <div class="logo">
+        <h1 v-if="!isCollapsed || isHovered" class="font-section-title text-white">ILOVEBEAU</h1>
+        <h1 v-else class="font-section-title text-white logo-collapsed">IL</h1>
+      </div>
+      <button class="collapse-btn" @click="toggleSidebar">
+        <ChevronRightIcon :size="16" :class="{ rotated: !isCollapsed }" />
+      </button>
+    </div>
+
+    <nav class="sidebar-nav">
+      <ul class="nav-list">
+        <li class="nav-item">
+          <router-link
+            to="/"
+            class="nav-link"
+            :class="{ active: isActiveRoute('/') }"
+            data-tooltip="홈"
+          >
+            <HomeIcon class="nav-icon" />
+            <span v-if="!isCollapsed || isHovered" class="nav-text">홈</span>
+          </router-link>
+        </li>
+
+        <li class="nav-item">
+          <div class="nav-group">
+            <button
+              class="nav-link nav-toggle"
+              :class="{ active: activeGroups.includes('reservation') }"
+              data-tooltip="예약"
+              @click="toggleGroup('reservation')"
+            >
+              <CalendarIcon class="nav-icon" />
+              <span v-if="!isCollapsed || isHovered" class="nav-text">예약</span>
+              <ChevronRightIcon
+                v-if="!isCollapsed || isHovered"
+                class="nav-arrow"
+                :class="{ expanded: activeGroups.includes('reservation') }"
+              />
+            </button>
+            <ul
+              v-if="!isCollapsed || isHovered"
+              v-show="activeGroups.includes('reservation')"
+              class="nav-sublist"
+            >
+              <li>
+                <router-link to="/reservation/calendar" class="nav-sublink">캘린더</router-link>
+              </li>
+              <li>
+                <router-link to="/reservation/list" class="nav-sublink">예약 목록</router-link>
+              </li>
+              <li>
+                <router-link to="/reservation/schedule" class="nav-sublink">일정 목록</router-link>
+              </li>
+              <li>
+                <router-link to="/reservation/holiday" class="nav-sublink">휴무 목록</router-link>
+              </li>
+              <li>
+                <router-link to="/reservation/requests" class="nav-sublink"
+                  >예약 신청 목록</router-link
+                >
+              </li>
+              <li>
+                <router-link to="/reservation/history" class="nav-sublink"
+                  >예약 변경 이력</router-link
+                >
+              </li>
+            </ul>
+          </div>
+        </li>
+
+        <li class="nav-item">
+          <div class="nav-group">
+            <button
+              class="nav-link nav-toggle"
+              :class="{ active: activeGroups.includes('customer') }"
+              data-tooltip="고객 관리"
+              @click="toggleGroup('customer')"
+            >
+              <UsersIcon class="nav-icon" />
+              <span v-if="!isCollapsed || isHovered" class="nav-text">고객 관리</span>
+              <ChevronRightIcon
+                v-if="!isCollapsed || isHovered"
+                class="nav-arrow"
+                :class="{ expanded: activeGroups.includes('customer') }"
+              />
+            </button>
+            <ul
+              v-if="!isCollapsed || isHovered"
+              v-show="activeGroups.includes('customer')"
+              class="nav-sublist"
+            >
+              <li><router-link to="/customer/list" class="nav-sublink">고객 목록</router-link></li>
+              <li>
+                <router-link to="/customer/prepaid" class="nav-sublink">선불고객 관리</router-link>
+              </li>
+            </ul>
+          </div>
+        </li>
+
+        <li class="nav-item">
+          <div class="nav-group">
+            <button
+              class="nav-link nav-toggle"
+              :class="{ active: activeGroups.includes('sales') }"
+              data-tooltip="매출 관리"
+              @click="toggleGroup('sales')"
+            >
+              <DollarIcon class="nav-icon" />
+              <span v-if="!isCollapsed || isHovered" class="nav-text">매출 관리</span>
+              <ChevronRightIcon
+                v-if="!isCollapsed || isHovered"
+                class="nav-arrow"
+                :class="{ expanded: activeGroups.includes('sales') }"
+              />
+            </button>
+            <ul
+              v-if="!isCollapsed || isHovered"
+              v-show="activeGroups.includes('sales')"
+              class="nav-sublist"
+            >
+              <li>
+                <router-link to="/sales/management" class="nav-sublink">매출 관리</router-link>
+              </li>
+              <li><router-link to="/sales/staff" class="nav-sublink">직원결산</router-link></li>
+            </ul>
+          </div>
+        </li>
+
+        <li class="nav-item">
+          <div class="nav-group">
+            <button
+              class="nav-link nav-toggle"
+              :class="{ active: activeGroups.includes('product') }"
+              data-tooltip="상품 관리"
+              @click="toggleGroup('product')"
+            >
+              <ShoppingBagIcon class="nav-icon" />
+              <span v-if="!isCollapsed || isHovered" class="nav-text">상품 관리</span>
+              <ChevronRightIcon
+                v-if="!isCollapsed || isHovered"
+                class="nav-arrow"
+                :class="{ expanded: activeGroups.includes('product') }"
+              />
+            </button>
+            <ul
+              v-if="!isCollapsed || isHovered"
+              v-show="activeGroups.includes('product')"
+              class="nav-sublist"
+            >
+              <li>
+                <router-link to="/product/service" class="nav-sublink">시술/상품 관리</router-link>
+              </li>
+              <li>
+                <router-link to="/product/membership" class="nav-sublink">회원권 관리</router-link>
+              </li>
+            </ul>
+          </div>
+        </li>
+
+        <li class="nav-item">
+          <div class="nav-group">
+            <button
+              class="nav-link nav-toggle"
+              :class="{ active: activeGroups.includes('analytics') }"
+              data-tooltip="데이터 분석"
+              @click="toggleGroup('analytics')"
+            >
+              <BarChartIcon class="nav-icon" />
+              <span v-if="!isCollapsed || isHovered" class="nav-text">데이터 분석</span>
+              <ChevronRightIcon
+                v-if="!isCollapsed || isHovered"
+                class="nav-arrow"
+                :class="{ expanded: activeGroups.includes('analytics') }"
+              />
+            </button>
+            <ul
+              v-if="!isCollapsed || isHovered"
+              v-show="activeGroups.includes('analytics')"
+              class="nav-sublist"
+            >
+              <li>
+                <router-link to="/analytics/usage" class="nav-sublink">이용률 분석</router-link>
+              </li>
+              <li>
+                <router-link to="/analytics/revenue" class="nav-sublink">상점 매출분석</router-link>
+              </li>
+            </ul>
+          </div>
+        </li>
+
+        <li class="nav-item">
+          <div class="nav-group">
+            <button
+              class="nav-link nav-toggle"
+              :class="{ active: activeGroups.includes('message') }"
+              data-tooltip="문자"
+              @click="toggleGroup('message')"
+            >
+              <MessageCircleIcon class="nav-icon" />
+              <span v-if="!isCollapsed || isHovered" class="nav-text">문자</span>
+              <ChevronRightIcon
+                v-if="!isCollapsed || isHovered"
+                class="nav-arrow"
+                :class="{ expanded: activeGroups.includes('message') }"
+              />
+            </button>
+            <ul
+              v-if="!isCollapsed || isHovered"
+              v-show="activeGroups.includes('message')"
+              class="nav-sublist"
+            >
+              <li>
+                <router-link to="/message/history" class="nav-sublink">문자 내역</router-link>
+              </li>
+              <li>
+                <router-link to="/message/templates" class="nav-sublink">문자 보관함</router-link>
+              </li>
+              <li>
+                <router-link to="/message/settings" class="nav-sublink">메시지 설정</router-link>
+              </li>
+              <li>
+                <router-link to="/message/ab-test" class="nav-sublink">A/B테스트</router-link>
+              </li>
+            </ul>
+          </div>
+        </li>
+
+        <li class="nav-item">
+          <router-link
+            to="/workflow"
+            class="nav-link"
+            :class="{ active: isActiveRoute('/workflow') }"
+            data-tooltip="워크플로우"
+          >
+            <SettingsIcon class="nav-icon" />
+            <span v-if="!isCollapsed || isHovered" class="nav-text">워크플로우</span>
+          </router-link>
+        </li>
+
+        <li class="nav-item">
+          <router-link
+            to="/campaign"
+            class="nav-link"
+            :class="{ active: isActiveRoute('/campaign') }"
+            data-tooltip="캠페인"
+          >
+            <MegaphoneIcon class="nav-icon" />
+            <span v-if="!isCollapsed || isHovered" class="nav-text">캠페인</span>
+          </router-link>
+        </li>
+
+        <li class="nav-item">
+          <router-link
+            to="/coupon"
+            class="nav-link"
+            :class="{ active: isActiveRoute('/coupon') }"
+            data-tooltip="쿠폰 관리"
+          >
+            <TagIcon class="nav-icon" />
+            <span v-if="!isCollapsed || isHovered" class="nav-text">쿠폰 관리</span>
+          </router-link>
+        </li>
+
+        <li class="nav-item">
+          <router-link
+            to="/profile-link"
+            class="nav-link"
+            :class="{ active: isActiveRoute('/profile-link') }"
+            data-tooltip="프로필 링크"
+          >
+            <LinkIcon class="nav-icon" />
+            <span v-if="!isCollapsed || isHovered" class="nav-text">프로필 링크</span>
+          </router-link>
+        </li>
+
+        <li class="nav-item">
+          <div class="nav-group">
+            <button
+              class="nav-link nav-toggle"
+              :class="{ active: activeGroups.includes('settings') }"
+              data-tooltip="매장 설정"
+              @click="toggleGroup('settings')"
+            >
+              <SettingsIcon class="nav-icon" />
+              <span v-if="!isCollapsed || isHovered" class="nav-text">매장 설정</span>
+              <ChevronRightIcon
+                v-if="!isCollapsed || isHovered"
+                class="nav-arrow"
+                :class="{ expanded: activeGroups.includes('settings') }"
+              />
+            </button>
+            <ul
+              v-if="!isCollapsed || isHovered"
+              v-show="activeGroups.includes('settings')"
+              class="nav-sublist"
+            >
+              <li>
+                <router-link to="/settings/store" class="nav-sublink">매장 기본 설정</router-link>
+              </li>
+              <li>
+                <router-link to="/settings/reservation" class="nav-sublink">예약 설정</router-link>
+              </li>
+              <li><router-link to="/settings/staff" class="nav-sublink">직원 관리</router-link></li>
+              <li>
+                <router-link to="/settings/customer-grade" class="nav-sublink"
+                  >고객 등급 등록</router-link
+                >
+              </li>
+              <li>
+                <router-link to="/settings/customer-tag" class="nav-sublink"
+                  >고객 태그 등록</router-link
+                >
+              </li>
+            </ul>
+          </div>
+        </li>
+      </ul>
+    </nav>
+  </aside>
+</template>
+
+<script setup>
+  import { ref, watch } from 'vue';
+  import { useRoute } from 'vue-router';
+  import {
+    HomeIcon,
+    CalendarIcon,
+    UsersIcon,
+    DollarIcon,
+    ShoppingBagIcon,
+    BarChartIcon,
+    MessageCircleIcon,
+    SettingsIcon,
+    MegaphoneIcon,
+    TagIcon,
+    LinkIcon,
+    ChevronRightIcon,
+  } from '../icons';
+
+  const route = useRoute();
+
+  // 사이드바 상태
+  const isCollapsed = ref(false);
+  const isHovered = ref(false);
+  const activeGroups = ref(['reservation']); // 기본적으로 예약 메뉴 열림
+
+  const toggleSidebar = () => {
+    isCollapsed.value = !isCollapsed.value;
+    // 사이드바가 접히면 모든 서브메뉴도 닫기
+    if (isCollapsed.value) {
+      activeGroups.value = [];
+    } else {
+      activeGroups.value = ['reservation']; // 다시 펼칠 때 기본 메뉴 열기
+    }
+  };
+
+  const handleMouseEnter = () => {
+    if (isCollapsed.value) {
+      isHovered.value = true;
+    }
+  };
+
+  const handleMouseLeave = () => {
+    isHovered.value = false;
+  };
+
+  const toggleGroup = groupName => {
+    if (isCollapsed.value && !isHovered.value) return; // 접힌 상태에서는 서브메뉴 토글 비활성화
+
+    const index = activeGroups.value.indexOf(groupName);
+    if (index > -1) {
+      activeGroups.value.splice(index, 1);
+    } else {
+      activeGroups.value.push(groupName);
+    }
+  };
+
+  const isActiveRoute = path => {
+    return route.path === path;
+  };
+
+  // 부모 컴포넌트에 사이드바 상태 전달
+  const emit = defineEmits(['sidebar-toggle']);
+
+  watch(isCollapsed, newValue => {
+    emit('sidebar-toggle', newValue);
+  });
+</script>
+
+<style scoped>
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: 240px;
+    background-color: var(--color-primary-main);
+    color: var(--color-neutral-white);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+    transition: width 300ms ease;
+    z-index: 1000;
+  }
+
+  .sidebar.collapsed {
+    width: 60px;
+  }
+
+  .sidebar.hover-expanded {
+    width: 240px;
+    box-shadow: 4px 0 12px rgba(0, 0, 0, 0.15);
+  }
+
+  .sidebar-header {
+    padding: 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .logo {
+    text-align: center;
+    flex: 1;
+  }
+
+  .logo h1 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 700;
+  }
+
+  .logo-collapsed {
+    font-size: 16px;
+  }
+
+  .collapse-btn {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.8);
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: 0.25rem;
+    transition: all 200ms ease;
+  }
+
+  .collapse-btn:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: var(--color-neutral-white);
+  }
+
+  .collapse-btn .rotated {
+    transform: rotate(180deg);
+  }
+
+  .sidebar-nav {
+    flex: 1;
+    padding: 0.5rem 0;
+  }
+
+  .nav-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .nav-item {
+    margin-bottom: 1px;
+  }
+
+  .nav-link {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    color: rgba(255, 255, 255, 0.8);
+    text-decoration: none;
+    transition: all 200ms ease;
+    cursor: pointer;
+    border: none;
+    background: none;
+    width: 100%;
+    text-align: left;
+    font-family: 'Noto Sans KR', sans-serif;
+    font-size: 14px;
+    position: relative;
+  }
+
+  .collapsed .nav-link {
+    justify-content: center;
+    padding: 0.75rem;
+  }
+
+  .hover-expanded .nav-link {
+    justify-content: flex-start;
+    padding: 0.75rem 1rem;
+  }
+
+  .nav-link:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: var(--color-neutral-white);
+  }
+
+  .nav-link.active {
+    background-color: rgba(255, 255, 255, 0.15);
+    color: var(--color-neutral-white);
+    border-right: 3px solid var(--color-secondary-main);
+  }
+
+  .nav-icon {
+    width: 20px;
+    height: 20px;
+    margin-right: 0.75rem;
+    color: currentColor;
+    flex-shrink: 0;
+  }
+
+  .collapsed .nav-icon {
+    margin-right: 0;
+  }
+
+  .hover-expanded .nav-icon {
+    margin-right: 0.75rem;
+  }
+
+  .nav-text {
+    flex: 1;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+
+  .nav-arrow {
+    width: 16px;
+    height: 16px;
+    transition: transform 200ms ease;
+    color: rgba(255, 255, 255, 0.6);
+    margin-left: auto;
+  }
+
+  .nav-arrow.expanded {
+    transform: rotate(90deg);
+  }
+
+  .nav-toggle {
+    justify-content: flex-start;
+  }
+
+  .collapsed .nav-toggle {
+    justify-content: center;
+  }
+
+  .hover-expanded .nav-toggle {
+    justify-content: flex-start;
+  }
+
+  .nav-sublist {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    background-color: rgba(0, 0, 0, 0.1);
+  }
+
+  .nav-sublink {
+    display: block;
+    padding: 0.5rem 1rem 0.5rem 3rem;
+    color: rgba(255, 255, 255, 0.7);
+    text-decoration: none;
+    font-size: 13px;
+    transition: all 200ms ease;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .nav-sublink:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+    color: var(--color-neutral-white);
+  }
+
+  .nav-sublink.router-link-active {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: var(--color-neutral-white);
+    border-right: 2px solid var(--color-secondary-main);
+  }
+
+  /* 스크롤바 스타일링 */
+  .sidebar::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  .sidebar::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  .sidebar::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 2px;
+  }
+
+  .sidebar::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.5);
+  }
+
+  /* 툴크 효과 (접힌 상태에서 hover 시 메뉴명 표시) */
+  .collapsed .nav-link {
+    position: relative;
+  }
+
+  .collapsed .nav-link:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    left: 100%;
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: var(--color-neutral-dark);
+    color: var(--color-neutral-white);
+    padding: 0.375rem 0.75rem;
+    border-radius: 0.25rem;
+    font-size: 12px;
+    white-space: nowrap;
+    z-index: 1000;
+    margin-left: 0.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  }
+</style>
