@@ -159,7 +159,6 @@
 
 <script setup>
   import { ref, computed, onMounted, onUnmounted } from 'vue';
-  import { useRoute } from 'vue-router';
   import {
     SearchIcon,
     BellIcon,
@@ -173,7 +172,6 @@
     BarChartIcon,
   } from '../icons';
 
-  const route = useRoute();
   const userMenuRef = ref(null);
   const searchInputRef = ref(null);
 

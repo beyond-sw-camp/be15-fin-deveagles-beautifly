@@ -9,8 +9,11 @@
     "preview": "vite preview",
     "prepare": "cd .. && husky",
     "lint": "eslint . --fix",
+    "lint:check": "eslint . --max-warnings 0",
     "format": "prettier --write \"src/**/*.{js,vue,css,scss,json}\"",
-    "lint:fix": "npm run lint && npm run format"
+    "format:check": "prettier --check \"src/**/*.{js,vue,css,scss,json}\"",
+    "lint:fix": "npm run lint && npm run format",
+    "code-quality": "npm run lint:check && npm run format:check"
   },
   "dependencies": {
     "@fullcalendar/core": "^6.1.17",
@@ -36,6 +39,7 @@
     "autoprefixer": "^10.4.21",
     "eslint": "^9.27.0",
     "eslint-config-prettier": "^10.1.5",
+    "eslint-plugin-unused-imports": "^4.1.4",
     "eslint-plugin-vue": "^9.33.0",
     "husky": "^9.1.7",
     "lint-staged": "^16.0.0",
@@ -45,5 +49,14 @@
     "vite": "^6.2.4",
     "vite-plugin-vue-devtools": "^7.7.2",
     "vue-eslint-parser": "^10.1.3"
+  },
+  "lint-staged": {
+    "*.{js,vue}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{css,scss,json,md}": [
+      "prettier --write"
+    ]
   }
 }

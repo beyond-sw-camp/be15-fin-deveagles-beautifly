@@ -139,13 +139,7 @@
 </template>
 
 <script setup>
-  import {
-    CalendarIcon,
-    DollarIcon,
-    UsersIcon,
-    UserIcon,
-    MessageCircleIcon,
-  } from '../components/icons';
+  import { CalendarIcon, DollarIcon, UsersIcon } from '../components/icons';
 </script>
 
 <style scoped>
