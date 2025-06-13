@@ -22,7 +22,7 @@
           <PinIcon v-else :size="16" />
         </button>
         <div class="tooltip tooltip-left">
-          {{ !isCollapsed ? '메뉴 접기' : '메뉴 고정' }}
+          {{ !isCollapsed ? '고정 해제' : '메뉴 고정' }}
         </div>
       </div>
     </div>
