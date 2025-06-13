@@ -259,52 +259,9 @@
     gap: 0.75rem;
   }
 
-  .quick-actions {
-    grid-column: 1 / -1;
-  }
-
-  .action-buttons {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 1rem;
-  }
-
-  .action-btn {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 1.5rem;
-    background-color: var(--color-gray-50);
-    border-radius: 0.5rem;
-    transition: all 200ms ease;
-    text-decoration: none;
-    color: var(--color-neutral-dark);
-  }
-
-  .action-btn:hover {
-    background-color: var(--color-primary-50);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    text-decoration: none;
-  }
-
-  .action-icon {
-    color: var(--color-primary-main);
-  }
-
-  .action-text {
-    font-size: 14px;
-    font-weight: 600;
-  }
-
   @media (max-width: 768px) {
     .stats-row {
       grid-template-columns: 1fr;
-    }
-
-    .action-buttons {
-      grid-template-columns: repeat(2, 1fr);
     }
   }
 </style>

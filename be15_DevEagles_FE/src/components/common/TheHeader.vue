@@ -9,35 +9,35 @@
               <CalendarIcon :size="16" />
               <span>예약</span>
             </button>
-            <div class="tooltip tooltip-bottom tooltip-primary">예약 등록</div>
+            <span class="tooltip tooltip-bottom tooltip-primary">예약 등록</span>
           </div>
           <div class="tooltip-container">
             <button class="quick-menu-item" @click="openCustomerModule">
               <UsersIcon :size="16" />
               <span>고객</span>
             </button>
-            <div class="tooltip tooltip-bottom tooltip-primary">고객 목록</div>
+            <span class="tooltip tooltip-bottom tooltip-primary">고객 목록</span>
           </div>
           <div class="tooltip-container">
             <button class="quick-menu-item" @click="openSalesModule">
               <DollarIcon :size="16" />
               <span>매출</span>
             </button>
-            <div class="tooltip tooltip-bottom tooltip-primary">매출 등록</div>
+            <span class="tooltip tooltip-bottom tooltip-primary">매출 등록</span>
           </div>
           <div class="tooltip-container">
             <button class="quick-menu-item" @click="openMessageModule">
               <MessageCircleIcon :size="16" />
               <span>문자</span>
             </button>
-            <div class="tooltip tooltip-bottom tooltip-primary">문자 발신</div>
+            <span class="tooltip tooltip-bottom tooltip-primary">문자 발신</span>
           </div>
           <div class="tooltip-container">
             <button class="quick-menu-item" @click="openAnalyticsModule">
               <BarChartIcon :size="16" />
               <span>분석</span>
             </button>
-            <div class="tooltip tooltip-bottom tooltip-primary">데이터 분석</div>
+            <span class="tooltip tooltip-bottom tooltip-primary">데이터 분석</span>
           </div>
         </nav>
       </div>
@@ -79,7 +79,7 @@
               <line x1="5" y1="12" x2="19" y2="12"></line>
             </svg>
           </button>
-          <div class="tooltip tooltip-bottom tooltip-primary">새 고객 등록</div>
+          <span class="tooltip tooltip-bottom tooltip-primary">새 고객 등록</span>
         </div>
 
         <!-- 알림 -->
@@ -90,7 +90,7 @@
               notificationCount > 99 ? '99+' : notificationCount
             }}</span>
           </button>
-          <div class="tooltip tooltip-bottom tooltip-primary">알림</div>
+          <span class="tooltip tooltip-bottom tooltip-primary">알림</span>
         </div>
 
         <!-- 사용자 메뉴 -->

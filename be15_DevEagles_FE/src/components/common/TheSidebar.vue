@@ -656,7 +656,7 @@
 
   /* 접힌 상태에서는 스크롤바 숨김 */
   .sidebar.collapsed .sidebar-nav::-webkit-scrollbar {
-    width: 0px;
+    width: 0;
   }
 
   .sidebar.collapsed .sidebar-nav {
