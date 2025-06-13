@@ -96,13 +96,13 @@
         <!-- 사용자 메뉴 -->
         <div ref="userMenuRef" class="user-menu">
           <button class="user-btn" @click="toggleUserMenu">
-            <div class="user-avatar">
+            <span class="user-avatar">
               <span class="avatar-text">{{ userInitial }}</span>
-            </div>
-            <div class="user-info">
+            </span>
+            <span class="user-info">
               <span class="user-name">{{ userName }}</span>
               <span class="user-role">{{ userRole }}</span>
-            </div>
+            </span>
             <ChevronDownIcon :size="12" class="dropdown-arrow" :class="{ rotated: showUserMenu }" />
           </button>
 
