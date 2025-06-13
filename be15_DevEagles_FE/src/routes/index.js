@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import Home from '../views/Home.vue';
+import ScheduleCalendarView from '@/features/schedule/views/ScheduleCalendarView.vue';
 
 const routes = [
   {
@@ -11,7 +12,7 @@ const routes = [
   {
     path: '/reservation/calendar',
     name: 'ReservationCalendar',
-    component: Home,
+    component: ScheduleCalendarView,
   },
   {
     path: '/reservation/list',
