@@ -10,12 +10,21 @@
   >
     <div class="sidebar-header">
       <div class="logo">
-        <h1 v-if="!isCollapsed || isHovered" class="font-section-title text-white">ILOVEBEAU</h1>
-        <h1 v-else class="font-section-title text-white logo-collapsed">IL</h1>
+        <div v-if="!isCollapsed || isHovered" class="logo-expanded">
+          <img src="@/images/logo_negative.png" alt="Logo" class="logo-image" />
+          <span class="logo-text">Beautifly</span>
+        </div>
+        <img v-else src="@/images/logo_negative.png" alt="Logo" class="logo-image logo-collapsed" />
       </div>
-      <button class="collapse-btn" @click="toggleSidebar">
-        <ChevronRightIcon :size="16" :class="{ rotated: !isCollapsed }" />
-      </button>
+      <div v-if="!isCollapsed || isHovered" class="tooltip-container">
+        <button class="collapse-btn" @click="toggleSidebar">
+          <PinOffIcon v-if="!isCollapsed" :size="16" />
+          <PinIcon v-else :size="16" />
+        </button>
+        <div class="tooltip tooltip-left">
+          {{ !isCollapsed ? '메뉴 접기' : '메뉴 고정' }}
+        </div>
+      </div>
     </div>
 
     <nav class="sidebar-nav">
@@ -243,7 +252,7 @@
             :class="{ active: isActiveRoute('/workflow') }"
             data-tooltip="워크플로우"
           >
-            <SettingsIcon class="nav-icon" />
+            <WorkflowIcon class="nav-icon" />
             <span v-if="!isCollapsed || isHovered" class="nav-text">워크플로우</span>
           </router-link>
         </li>
@@ -346,6 +355,9 @@
     TagIcon,
     LinkIcon,
     ChevronRightIcon,
+    PinIcon,
+    PinOffIcon,
+    WorkflowIcon,
   } from '../icons';
 
   const route = useRoute();
@@ -353,16 +365,15 @@
   // 사이드바 상태
   const isCollapsed = ref(false);
   const isHovered = ref(false);
-  const activeGroups = ref(['reservation']); // 기본적으로 예약 메뉴 열림
+  const activeGroups = ref([]); // 기본적으로 모든 하위 메뉴 닫힘
 
   const toggleSidebar = () => {
     isCollapsed.value = !isCollapsed.value;
     // 사이드바가 접히면 모든 서브메뉴도 닫기
     if (isCollapsed.value) {
       activeGroups.value = [];
-    } else {
-      activeGroups.value = ['reservation']; // 다시 펼칠 때 기본 메뉴 열기
     }
+    // 펼칠 때는 이전 상태 유지 (자동으로 메뉴 열지 않음)
   };
 
   const handleMouseEnter = () => {
@@ -404,47 +415,77 @@
     top: 0;
     left: 0;
     height: 100vh;
-    width: 240px;
+    width: 200px;
     background-color: var(--color-primary-main);
     color: var(--color-neutral-white);
     display: flex;
     flex-direction: column;
-    overflow-y: auto;
+    overflow: hidden;
     box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
     transition: width 300ms ease;
     z-index: 1000;
   }
 
   .sidebar.collapsed {
-    width: 60px;
+    width: 50px;
+  }
+
+  .sidebar.collapsed .sidebar-header {
+    justify-content: center;
+    padding: 1rem 0.5rem;
+  }
+
+  .sidebar.collapsed .logo {
+    justify-content: center;
   }
 
   .sidebar.hover-expanded {
-    width: 240px;
+    width: 200px;
     box-shadow: 4px 0 12px rgba(0, 0, 0, 0.15);
   }
 
   .sidebar-header {
     padding: 1rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    height: 80px;
     display: flex;
     align-items: center;
     justify-content: space-between;
+    overflow: visible;
   }
 
   .logo {
-    text-align: center;
     flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
   }
 
-  .logo h1 {
-    margin: 0;
-    font-size: 18px;
-    font-weight: 700;
+  .logo-expanded {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    height: 32px;
   }
 
-  .logo-collapsed {
+  .logo-image {
+    height: 24px;
+    width: auto;
+    object-fit: contain;
+    flex-shrink: 0;
+  }
+
+  .logo-text {
     font-size: 16px;
+    font-weight: 700;
+    color: var(--color-neutral-white);
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+  }
+
+  .logo-image.logo-collapsed {
+    height: 24px;
+    width: 24px;
+    object-fit: contain;
   }
 
   .collapse-btn {
@@ -462,13 +503,12 @@
     color: var(--color-neutral-white);
   }
 
-  .collapse-btn .rotated {
-    transform: rotate(180deg);
-  }
-
   .sidebar-nav {
     flex: 1;
     padding: 0.5rem 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    min-height: 0; /* flex 아이템이 축소될 수 있도록 */
   }
 
   .nav-list {
@@ -597,21 +637,31 @@
   }
 
   /* 스크롤바 스타일링 */
-  .sidebar::-webkit-scrollbar {
-    width: 4px;
+  .sidebar-nav::-webkit-scrollbar {
+    width: 6px;
   }
 
-  .sidebar::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.1);
+  .sidebar-nav::-webkit-scrollbar-track {
+    background: transparent;
   }
 
-  .sidebar::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.3);
-    border-radius: 2px;
+  .sidebar-nav::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
   }
 
-  .sidebar::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.5);
+  .sidebar-nav::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.4);
+  }
+
+  /* 접힌 상태에서는 스크롤바 숨김 */
+  .sidebar.collapsed .sidebar-nav::-webkit-scrollbar {
+    width: 0px;
+  }
+
+  .sidebar.collapsed .sidebar-nav {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
   }
 
   /* 툴크 효과 (접힌 상태에서 hover 시 메뉴명 표시) */

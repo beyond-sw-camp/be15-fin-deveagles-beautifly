@@ -14,3 +14,6 @@ export { default as BellIcon } from './BellIcon.vue';
 export { default as UserIcon } from './UserIcon.vue';
 export { default as ChevronDownIcon } from './ChevronDownIcon.vue';
 export { default as ChevronRightIcon } from './ChevronRightIcon.vue';
+export { default as PinIcon } from './PinIcon.vue';
+export { default as PinOffIcon } from './PinOffIcon.vue';
+export { default as WorkflowIcon } from './WorkflowIcon.vue';

@@ -4,26 +4,41 @@
       <div class="quick-menu-section">
         <span class="quick-menu-label">Quick Menu</span>
         <nav class="quick-menu">
-          <button class="quick-menu-item" title="예약 캘린더" @click="openReservationModule">
-            <CalendarIcon :size="16" />
-            <span>예약</span>
-          </button>
-          <button class="quick-menu-item" title="고객 목록" @click="openCustomerModule">
-            <UsersIcon :size="16" />
-            <span>고객</span>
-          </button>
-          <button class="quick-menu-item" title="매출 관리" @click="openSalesModule">
-            <DollarIcon :size="16" />
-            <span>매출</span>
-          </button>
-          <button class="quick-menu-item" title="문자 내역" @click="openMessageModule">
-            <MessageCircleIcon :size="16" />
-            <span>문자</span>
-          </button>
-          <button class="quick-menu-item" title="데이터 분석" @click="openAnalyticsModule">
-            <BarChartIcon :size="16" />
-            <span>분석</span>
-          </button>
+          <div class="tooltip-container">
+            <button class="quick-menu-item" @click="openReservationModule">
+              <CalendarIcon :size="16" />
+              <span>예약</span>
+            </button>
+            <div class="tooltip tooltip-bottom tooltip-primary">예약 등록</div>
+          </div>
+          <div class="tooltip-container">
+            <button class="quick-menu-item" @click="openCustomerModule">
+              <UsersIcon :size="16" />
+              <span>고객</span>
+            </button>
+            <div class="tooltip tooltip-bottom tooltip-primary">고객 목록</div>
+          </div>
+          <div class="tooltip-container">
+            <button class="quick-menu-item" @click="openSalesModule">
+              <DollarIcon :size="16" />
+              <span>매출</span>
+            </button>
+            <div class="tooltip tooltip-bottom tooltip-primary">매출 등록</div>
+          </div>
+          <div class="tooltip-container">
+            <button class="quick-menu-item" @click="openMessageModule">
+              <MessageCircleIcon :size="16" />
+              <span>문자</span>
+            </button>
+            <div class="tooltip tooltip-bottom tooltip-primary">문자 발신</div>
+          </div>
+          <div class="tooltip-container">
+            <button class="quick-menu-item" @click="openAnalyticsModule">
+              <BarChartIcon :size="16" />
+              <span>분석</span>
+            </button>
+            <div class="tooltip tooltip-bottom tooltip-primary">데이터 분석</div>
+          </div>
         </nav>
       </div>
     </div>
@@ -68,12 +83,15 @@
         </div>
 
         <!-- 알림 -->
-        <button class="notification-btn" title="알림" @click="toggleNotifications">
-          <BellIcon :size="18" />
-          <span v-if="notificationCount > 0" class="notification-badge">{{
-            notificationCount > 99 ? '99+' : notificationCount
-          }}</span>
-        </button>
+        <div class="tooltip-container">
+          <button class="notification-btn" @click="toggleNotifications">
+            <BellIcon :size="18" />
+            <span v-if="notificationCount > 0" class="notification-badge">{{
+              notificationCount > 99 ? '99+' : notificationCount
+            }}</span>
+          </button>
+          <div class="tooltip tooltip-bottom tooltip-primary">알림</div>
+        </div>
 
         <!-- 사용자 메뉴 -->
         <div ref="userMenuRef" class="user-menu">
