@@ -1,0 +1,171 @@
+import { createRouter, createWebHistory } from 'vue-router';
+import Home from '../views/Home.vue';
+
+const routes = [
+  {
+    path: '/',
+    name: 'Home',
+    component: Home,
+  },
+  // 예약 관련 라우트 - 임시로 모두 Home으로 라우팅
+  {
+    path: '/reservation/calendar',
+    name: 'ReservationCalendar',
+    component: Home,
+  },
+  {
+    path: '/reservation/list',
+    name: 'ReservationList',
+    component: Home,
+  },
+  {
+    path: '/reservation/schedule',
+    name: 'ReservationSchedule',
+    component: Home,
+  },
+  {
+    path: '/reservation/holiday',
+    name: 'ReservationHoliday',
+    component: Home,
+  },
+  {
+    path: '/reservation/requests',
+    name: 'ReservationRequests',
+    component: Home,
+  },
+  {
+    path: '/reservation/history',
+    name: 'ReservationHistory',
+    component: Home,
+  },
+  // 고객 관리 라우트 - 임시로 모두 Home으로 라우팅
+  {
+    path: '/customer/list',
+    name: 'CustomerList',
+    component: Home,
+  },
+  {
+    path: '/customer/prepaid',
+    name: 'CustomerPrepaid',
+    component: Home,
+  },
+  // 매출 관리 라우트 - 임시로 모두 Home으로 라우팅
+  {
+    path: '/sales/management',
+    name: 'SalesManagement',
+    component: Home,
+  },
+  {
+    path: '/sales/staff',
+    name: 'SalesStaff',
+    component: Home,
+  },
+  // 상품 관리 라우트 - 임시로 모두 Home으로 라우팅
+  {
+    path: '/product/service',
+    name: 'ProductService',
+    component: Home,
+  },
+  {
+    path: '/product/membership',
+    name: 'ProductMembership',
+    component: Home,
+  },
+  // 데이터 분석 라우트 - 임시로 모두 Home으로 라우팅
+  {
+    path: '/analytics/usage',
+    name: 'AnalyticsUsage',
+    component: Home,
+  },
+  {
+    path: '/analytics/revenue',
+    name: 'AnalyticsRevenue',
+    component: Home,
+  },
+  // 문자 관리 라우트 - 임시로 모두 Home으로 라우팅
+  {
+    path: '/message/history',
+    name: 'MessageHistory',
+    component: Home,
+  },
+  {
+    path: '/message/templates',
+    name: 'MessageTemplates',
+    component: Home,
+  },
+  {
+    path: '/message/settings',
+    name: 'MessageSettings',
+    component: Home,
+  },
+  {
+    path: '/message/ab-test',
+    name: 'MessageAbTest',
+    component: Home,
+  },
+  // 기타 라우트 - 임시로 모두 Home으로 라우팅
+  {
+    path: '/workflow',
+    name: 'Workflow',
+    component: Home,
+  },
+  {
+    path: '/campaign',
+    name: 'Campaign',
+    component: Home,
+  },
+  {
+    path: '/coupon',
+    name: 'Coupon',
+    component: Home,
+  },
+  {
+    path: '/profile-link',
+    name: 'ProfileLink',
+    component: Home,
+  },
+  // 매장 설정 라우트 - 임시로 모두 Home으로 라우팅
+  {
+    path: '/settings/store',
+    name: 'SettingsStore',
+    component: Home,
+  },
+  {
+    path: '/settings/reservation',
+    name: 'SettingsReservation',
+    component: Home,
+  },
+  {
+    path: '/settings/staff',
+    name: 'SettingsStaff',
+    component: Home,
+  },
+  {
+    path: '/settings/customer-grade',
+    name: 'SettingsCustomerGrade',
+    component: Home,
+  },
+  {
+    path: '/settings/customer-tag',
+    name: 'SettingsCustomerTag',
+    component: Home,
+  },
+  {
+    path: '/settings/account',
+    name: 'SettingsAccount',
+    component: Home,
+  },
+  // 프로필 라우트 - 임시로 Home으로 라우팅
+  {
+    path: '/profile',
+    name: 'Profile',
+    component: Home,
+  },
+];
+
+const router = createRouter({
+  history: createWebHistory(),
+  routes,
+});
+
+export default router;
