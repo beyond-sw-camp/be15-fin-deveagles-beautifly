@@ -252,9 +252,9 @@
 
         <li class="nav-item">
           <router-link
-            to="/workflow"
+            to="/workflows"
             class="nav-link"
-            :class="{ active: isActiveRoute('/workflow') }"
+            :class="{ active: isActiveRoute('/workflows') }"
             data-tooltip="워크플로우"
           >
             <WorkflowIcon class="nav-icon" />
