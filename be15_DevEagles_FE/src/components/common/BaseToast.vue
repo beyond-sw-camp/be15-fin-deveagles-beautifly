@@ -189,7 +189,7 @@
   .toast-info {
     background: var(--color-info-50);
     border-left: 4px solid var(--color-info-300);
-    color: var(--color-info-600);
+    color: var(--color-info-500);
   }
 
   .toast-icon {
