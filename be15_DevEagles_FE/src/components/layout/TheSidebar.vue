@@ -11,10 +11,15 @@
     <div class="sidebar-header">
       <div class="logo">
         <div v-if="!isCollapsed || isHovered" class="logo-expanded">
-          <img src="@/images/logo_negative.png" alt="Logo" class="logo-image" />
+          <img src="../../images/logo_negative.png" alt="Logo" class="logo-image" />
           <span class="logo-text">Beautifly</span>
         </div>
-        <img v-else src="@/images/logo_negative.png" alt="Logo" class="logo-image logo-collapsed" />
+        <img
+          v-else
+          src="../../images/logo_negative.png"
+          alt="Logo"
+          class="logo-image logo-collapsed"
+        />
       </div>
       <div v-if="!isCollapsed || isHovered" class="tooltip-container">
         <button class="collapse-btn" @click="toggleSidebar">
@@ -271,9 +276,9 @@
 
         <li class="nav-item">
           <router-link
-            to="/coupon"
+            to="/coupons"
             class="nav-link"
-            :class="{ active: isActiveRoute('/coupon') }"
+            :class="{ active: isActiveRoute('/coupons') }"
             data-tooltip="쿠폰 관리"
           >
             <TagIcon class="nav-icon" />
@@ -358,7 +363,7 @@
     PinIcon,
     PinOffIcon,
     WorkflowIcon,
-  } from '../icons';
+  } from '../icons/index.js';
 
   const route = useRoute();
 

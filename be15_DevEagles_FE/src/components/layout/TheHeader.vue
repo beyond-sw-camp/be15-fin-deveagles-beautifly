@@ -170,7 +170,7 @@
     DollarIcon,
     MessageCircleIcon,
     BarChartIcon,
-  } from '../icons';
+  } from '../icons/index.js';
 
   const userMenuRef = ref(null);
   const searchInputRef = ref(null);
