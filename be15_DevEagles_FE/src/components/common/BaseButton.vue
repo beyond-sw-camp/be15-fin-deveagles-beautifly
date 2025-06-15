@@ -23,7 +23,7 @@
         type: String,
         default: 'primary',
         validator: value =>
-          ['primary', 'secondary', 'success', 'error', 'warning', 'info'].includes(value),
+          ['primary', 'secondary', 'success', 'error', 'warning', 'info', 'ghost'].includes(value),
       },
       outline: {
         type: Boolean,
