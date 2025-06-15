@@ -16,9 +16,23 @@
           </div>
         </template>
 
-        <!-- Discount Rate Column -->
-        <template #cell-discountRate="{ item }">
-          <BaseBadge type="primary">{{ item.discountRate }}%</BaseBadge>
+        <!-- Product Column -->
+        <template #cell-product="{ item }">
+          <div class="coupon-product">
+            {{ item.product }}
+          </div>
+        </template>
+
+        <!-- Designer Column -->
+        <template #cell-designer="{ item }">
+          <div class="coupon-designer">
+            {{ item.designer }}
+          </div>
+        </template>
+
+        <!-- Discount Column -->
+        <template #cell-discount="{ item }">
+          <BaseBadge type="success"> {{ item.discount }}% </BaseBadge>
         </template>
 
         <!-- Active Status Column -->
@@ -97,7 +111,7 @@
   import BaseTable from '@/components/common/BaseTable.vue';
   import BaseBadge from '@/components/common/BaseBadge.vue';
   import BaseToast from '@/components/common/BaseToast.vue';
-  import CouponForm from './CouponForm.vue';
+  import CouponForm from '../components/CouponForm.vue';
 
   export default {
     name: 'CouponList',
@@ -121,7 +135,7 @@
             name: '열린 시즌 할인 쿠폰',
             product: '열린',
             designer: '이순신',
-            discountRate: 20,
+            discount: 20,
             isActive: true,
             category: '1차',
             secondaryProduct: '',
@@ -132,7 +146,7 @@
             name: '신규 고객 환영 쿠폰',
             product: '닫힌',
             designer: '김철수',
-            discountRate: 15,
+            discount: 15,
             isActive: true,
             category: '2차',
             secondaryProduct: '옵션1',
@@ -143,7 +157,7 @@
             name: '여름 시즌 특가 쿠폰',
             product: '반열린',
             designer: '박영희',
-            discountRate: 25,
+            discount: 25,
             isActive: false,
             category: '1차',
             secondaryProduct: '옵션2',
@@ -154,7 +168,7 @@
             name: 'VIP 고객 전용 쿠폰',
             product: '열린',
             designer: '최민수',
-            discountRate: 30,
+            discount: 30,
             isActive: true,
             category: '3차',
             secondaryProduct: '옵션3',
@@ -165,7 +179,7 @@
             name: '연말 감사 쿠폰',
             product: '닫힌',
             designer: '이순신',
-            discountRate: 10,
+            discount: 10,
             isActive: true,
             category: '2차',
             secondaryProduct: '',
@@ -179,10 +193,6 @@
         totalItems: 85,
         totalPages: 9,
 
-        // 선택 관련
-        selectedCoupons: [],
-        selectAll: false,
-
         // 모달 관련
         showModal: false,
         showDeleteConfirm: false,
@@ -194,11 +204,6 @@
 
         // 테이블 컬럼 정의
         tableColumns: [
-          {
-            key: 'checkbox',
-            title: '',
-            width: '50px',
-          },
           {
             key: 'name',
             title: '쿠폰명',
@@ -212,7 +217,7 @@
             title: '디자이너',
           },
           {
-            key: 'discountRate',
+            key: 'discount',
             title: '할인율',
           },
           {
@@ -228,11 +233,6 @@
       };
     },
 
-    watch: {
-      selectedCoupons() {
-        this.selectAll = this.selectedCoupons.length === this.coupons.length;
-      },
-    },
     methods: {
       // 모달 관련
       openCreateModal() {
@@ -283,15 +283,6 @@
         this.showToastMessage(`쿠폰이 ${status}되었습니다.`, 'success');
       },
 
-      // 선택 관련
-      toggleSelectAll() {
-        if (this.selectAll) {
-          this.selectedCoupons = this.coupons.map(c => c.id);
-        } else {
-          this.selectedCoupons = [];
-        }
-      },
-
       // 페이지네이션
       handlePageChange(page) {
         this.currentPage = page;
@@ -329,9 +320,15 @@
     color: var(--color-neutral-dark);
   }
 
+  .coupon-product,
+  .coupon-designer {
+    font-size: 14px;
+    color: var(--color-gray-600);
+  }
+
   .action-buttons {
     display: flex;
-    gap: 0.5rem;
+    gap: 8px;
   }
 
   .empty-state {
