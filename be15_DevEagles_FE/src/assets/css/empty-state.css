@@ -1,0 +1,33 @@
+/* 빈 상태 스타일 */
+
+/* 기본 빈 상태 */
+.empty-state {
+  text-align: center;
+  padding: 3rem;
+}
+
+.empty-state p {
+  margin-bottom: 1rem;
+}
+
+/* 향상된 빈 상태 (워크플로우용) */
+.empty-state.enhanced {
+  padding: 64px 32px;
+  background: var(--color-neutral-white);
+  border: 2px dashed var(--color-gray-200);
+  border-radius: 16px;
+}
+
+.empty-state.enhanced .empty-icon {
+  font-size: 48px;
+  color: var(--color-gray-300);
+  margin-bottom: 16px;
+}
+
+.empty-state.enhanced h3 {
+  margin: 0 0 8px 0;
+}
+
+.empty-state.enhanced p {
+  margin: 0 0 24px 0;
+}

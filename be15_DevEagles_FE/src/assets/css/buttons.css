@@ -1,0 +1,59 @@
+/* 아이콘 버튼 스타일 */
+
+/* 기본 아이콘 버튼 */
+.icon-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px !important;
+  min-width: 32px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: inherit;
+}
+
+.icon-button:hover {
+  background: var(--color-gray-100);
+}
+
+/* 아이콘 버튼 변형 */
+.icon-button.dark {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.icon-button.dark:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--color-neutral-white);
+}
+
+/* 아이콘 버튼 크기 */
+.icon-button.small {
+  padding: 4px !important;
+  min-width: 24px;
+}
+
+.icon-button.large {
+  padding: 12px !important;
+  min-width: 40px;
+}
+
+/* 액션 버튼 그룹 */
+.action-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+  .action-buttons {
+    flex-direction: column;
+  }
+
+  .icon-button {
+    padding: 6px !important;
+    min-width: 28px;
+  }
+}
