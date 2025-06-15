@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import Home from '../views/Home.vue';
+import { userRoutes } from '@/features/users/route.js';
 
 const routes = [
   {
@@ -161,6 +162,7 @@ const routes = [
     name: 'Profile',
     component: Home,
   },
+  ...userRoutes, // 추후에 밖으로 빼기
 ];
 
 const router = createRouter({
