@@ -86,7 +86,7 @@ const routes = [
   {
     path: '/message/history',
     name: 'MessageHistory',
-    component: Home,
+    component: () => import('@/features/messages/views/MessagesListView.vue'),
   },
   {
     path: '/message/templates',
