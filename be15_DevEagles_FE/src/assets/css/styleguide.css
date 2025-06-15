@@ -7,6 +7,7 @@
   --color-neutral-white: #ffffff;
 
   /* Gray */
+  --color-gray-25: #fcfcfd;
   --color-gray-50: #f9fafb;
   --color-gray-100: #f3f4f6;
   --color-gray-200: #e5e7eb;
@@ -34,6 +35,7 @@
   --color-info-300: #f3f3f3;
   --color-info-400: #efefef;
   --color-info-500: #f5f5f5;
+  --color-info-600: #e5e5e5;
 
   /* Warning */
   --color-warning-50: #fffbeb;
@@ -51,6 +53,7 @@
   --color-success-300: #57dce3;
   --color-success-400: #29d2db;
   --color-success-500: #3fc1c9;
+  --color-success-600: #2ba8b0;
 
   /* Primary */
   --color-primary-50: #e8ecf1;
@@ -59,6 +62,7 @@
   --color-primary-300: #7e8caa;
   --color-primary-400: #5e6f91;
   --color-primary-500: #364f6b;
+  --color-primary-600: #2d4157;
   --color-primary-main: #364f6b;
 
   /* Secondary */
@@ -67,6 +71,7 @@
   --color-secondary-200: #ff8eaa;
   --color-secondary-300: #ff6b91;
   --color-secondary-400: #ff4778;
+  --color-secondary-500: #e8466f;
   --color-secondary-main: #fc5185;
 }
 
@@ -199,6 +204,9 @@ body {
 .text-secondary-400 {
   color: var(--color-secondary-400) !important;
 }
+.text-secondary-500 {
+  color: var(--color-secondary-500) !important;
+}
 
 /* Gray 색상 */
 .text-gray-50 {
@@ -317,6 +325,9 @@ body {
 .text-info-500 {
   color: var(--color-info-500) !important;
 }
+.text-info-600 {
+  color: var(--color-info-600) !important;
+}
 
 /*───────────────────────────────────────────────────────────────────────────
    4. Background Color Utilities
@@ -362,6 +373,9 @@ body {
 }
 .bg-secondary-400 {
   background-color: var(--color-secondary-400) !important;
+}
+.bg-secondary-500 {
+  background-color: var(--color-secondary-500) !important;
 }
 
 /* Gray 배경색 */
@@ -480,6 +494,9 @@ body {
 }
 .bg-info-500 {
   background-color: var(--color-info-500) !important;
+}
+.bg-info-600 {
+  background-color: var(--color-info-600) !important;
 }
 
 /* Neutral 배경색 */

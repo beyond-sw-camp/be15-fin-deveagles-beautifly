@@ -87,12 +87,12 @@ const routes = [
   {
     path: '/message/history',
     name: 'MessageHistory',
-    component: Home,
+    component: () => import('@/features/messages/views/MessagesListView.vue'),
   },
   {
     path: '/message/templates',
     name: 'MessageTemplates',
-    component: Home,
+    component: () => import('@/features/messages/views/TemplateListView.vue'),
   },
   {
     path: '/message/settings',
@@ -111,14 +111,14 @@ const routes = [
     component: Home,
   },
   {
-    path: '/campaign',
-    name: 'Campaign',
-    component: Home,
+    path: '/campaigns',
+    name: 'CampaignList',
+    component: () => import('@/features/campaigns/views/CampaignList.vue'),
   },
   {
-    path: '/coupon',
-    name: 'Coupon',
-    component: Home,
+    path: '/coupons',
+    name: 'CouponList',
+    component: () => import('@/features/coupons/views/CouponList.vue'),
   },
   {
     path: '/profile-link',

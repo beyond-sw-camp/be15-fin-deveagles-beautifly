@@ -33,22 +33,22 @@
     flex: 1;
     display: flex;
     flex-direction: column;
-    margin-left: 240px;
+    margin-left: 200px;
     transition: margin-left 300ms ease;
     min-width: 0;
-    width: calc(100% - 240px);
+    width: calc(100% - 200px);
   }
 
   .main-container.sidebar-collapsed {
-    margin-left: 60px;
-    width: calc(100% - 60px);
+    margin-left: 50px;
+    width: calc(100% - 50px);
   }
 
   .content {
     flex: 1;
     padding: 1.5rem;
     overflow-y: auto;
-    background-color: var(--color-neutral-bg);
+    background-color: var(--color-gray-50);
   }
 
   @media (max-width: 768px) {

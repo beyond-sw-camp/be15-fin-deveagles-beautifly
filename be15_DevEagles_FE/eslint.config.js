@@ -1,8 +1,10 @@
 import js from '@eslint/js';
 import eslintPluginVue from 'eslint-plugin-vue';
 import eslintConfigPrettier from 'eslint-config-prettier'; // Prettier와의 충돌 방지
+import unusedImports from 'eslint-plugin-unused-imports';
+import tseslint from '@typescript-eslint/eslint-plugin';
 
-const isProd = process.env.NODE_ENV === 'production';
+const isProd = process.env.VITE_DEV_MODE === false;
 
 export default [
   // 1. 기본적인 JavaScript 린팅 규칙
@@ -15,6 +17,10 @@ export default [
   // 3. 전역 커스텀 규칙 및 언어 옵션
   // (기존 설정에서 .js와 .vue 파일 모두에 적용되던 공통 규칙 및 옵션)
   {
+    plugins: {
+      'unused-imports': unusedImports,
+      '@typescript-eslint': tseslint,
+    },
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: 'module',
@@ -25,7 +31,17 @@ export default [
     rules: {
       'no-console': isProd ? 'warn' : 'off',
       'no-debugger': isProd ? 'warn' : 'off',
-      'no-unused-vars': 'warn',
+      'no-unused-vars': 'off', // unused-imports/no-unused-vars로 대체
+      'unused-imports/no-unused-imports': 'warn',
+      'unused-imports/no-unused-vars': [
+        'warn',
+        {
+          vars: 'all',
+          varsIgnorePattern: '^_',
+          args: 'after-used',
+          argsIgnorePattern: '^_',
+        },
+      ],
       semi: ['warn', 'always'],
       quotes: ['warn', 'single'],
     },
@@ -49,6 +65,9 @@ export default [
           multiline: 1,
         },
       ],
+      // Vue에서 사용하지 않는 임포트 감지
+      'vue/no-unused-vars': 'warn',
+      'vue/no-unused-components': 'warn',
       // 기타 필요한 Vue 규칙 추가
     },
   },
