@@ -115,9 +115,9 @@ const routes = [
     component: Home,
   },
   {
-    path: '/coupon',
-    name: 'Coupon',
-    component: Home,
+    path: '/coupons',
+    name: 'CouponList',
+    component: () => import('@/features/coupons/CouponList.vue'),
   },
   {
     path: '/profile-link',
