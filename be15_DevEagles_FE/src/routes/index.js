@@ -91,7 +91,7 @@ const routes = [
   {
     path: '/message/templates',
     name: 'MessageTemplates',
-    component: Home,
+    component: () => import('@/features/messages/views/TemplateListView.vue'),
   },
   {
     path: '/message/settings',
