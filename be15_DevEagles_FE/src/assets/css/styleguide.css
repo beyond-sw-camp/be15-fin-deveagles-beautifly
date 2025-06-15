@@ -71,6 +71,7 @@
   --color-secondary-200: #ff8eaa;
   --color-secondary-300: #ff6b91;
   --color-secondary-400: #ff4778;
+  --color-secondary-500: #e8466f;
   --color-secondary-main: #fc5185;
 }
 
@@ -202,6 +203,9 @@ body {
 }
 .text-secondary-400 {
   color: var(--color-secondary-400) !important;
+}
+.text-secondary-500 {
+  color: var(--color-secondary-500) !important;
 }
 
 /* Gray 색상 */
@@ -369,6 +373,9 @@ body {
 }
 .bg-secondary-400 {
   background-color: var(--color-secondary-400) !important;
+}
+.bg-secondary-500 {
+  background-color: var(--color-secondary-500) !important;
 }
 
 /* Gray 배경색 */
