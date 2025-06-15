@@ -1,11 +1,41 @@
 export const MESSAGES = {
+  // 한국어 받침 확인 함수
+  _hasConsonant: word => {
+    const lastChar = word.slice(-1);
+    const code = lastChar.charCodeAt(0);
+
+    // 한글이 아닌 경우 (영어, 숫자 등)
+    if (code < 0xac00 || code > 0xd7a3) {
+      // 영어 자음으로 끝나는 경우
+      return /[bcdfghjklmnpqrstvwxzBCDFGHJKLMNPQRSTVWXZ]/.test(lastChar);
+    }
+
+    // 한글인 경우: 받침이 있으면 true, 없으면 false
+    return (code - 0xac00) % 28 !== 0;
+  },
+
   // 공통 메시지
   COMMON: {
-    CREATED: item => `${item}이 생성되었습니다.`,
-    UPDATED: item => `${item}이 수정되었습니다.`,
-    DELETED: item => `${item}이 삭제되었습니다.`,
-    ACTIVATED: item => `${item}이 활성화되었습니다.`,
-    DEACTIVATED: item => `${item}이 비활성화되었습니다.`,
+    CREATED: item => {
+      const hasConsonant = MESSAGES._hasConsonant(item);
+      return hasConsonant ? `${item}이 생성되었습니다.` : `${item}가 생성되었습니다.`;
+    },
+    UPDATED: item => {
+      const hasConsonant = MESSAGES._hasConsonant(item);
+      return hasConsonant ? `${item}이 수정되었습니다.` : `${item}가 수정되었습니다.`;
+    },
+    DELETED: item => {
+      const hasConsonant = MESSAGES._hasConsonant(item);
+      return hasConsonant ? `${item}이 삭제되었습니다.` : `${item}가 삭제되었습니다.`;
+    },
+    ACTIVATED: item => {
+      const hasConsonant = MESSAGES._hasConsonant(item);
+      return hasConsonant ? `${item}이 활성화되었습니다.` : `${item}가 활성화되었습니다.`;
+    },
+    DEACTIVATED: item => {
+      const hasConsonant = MESSAGES._hasConsonant(item);
+      return hasConsonant ? `${item}이 비활성화되었습니다.` : `${item}가 비활성화되었습니다.`;
+    },
     NOT_IMPLEMENTED: feature => `${feature} 기능은 준비 중입니다.`,
   },
 

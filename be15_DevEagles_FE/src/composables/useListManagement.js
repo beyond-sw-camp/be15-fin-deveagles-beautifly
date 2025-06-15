@@ -1,5 +1,6 @@
 import { ref, computed } from 'vue';
 import { useToast } from './useToast';
+import { MESSAGES } from '@/constants/messages';
 
 export function useListManagement(options = {}) {
   const { itemName = '항목', initialItems = [], itemsPerPage: initialItemsPerPage = 10 } = options;
@@ -27,8 +28,10 @@ export function useListManagement(options = {}) {
 
   // Methods
   const toggleItemStatus = (item, statusField = 'isActive') => {
-    const status = item[statusField] ? '활성화' : '비활성화';
-    showSuccess(`${itemName}이 ${status}되었습니다.`);
+    const message = item[statusField]
+      ? MESSAGES.COMMON.ACTIVATED(itemName)
+      : MESSAGES.COMMON.DEACTIVATED(itemName);
+    showSuccess(message);
   };
 
   const deleteItem = (item, event) => {
@@ -42,7 +45,7 @@ export function useListManagement(options = {}) {
       const index = items.value.findIndex(item => item.id === selectedItem.value.id);
       if (index !== -1) {
         items.value.splice(index, 1);
-        showSuccess(`${itemName}이 삭제되었습니다.`);
+        showSuccess(MESSAGES.COMMON.DELETED(itemName));
       }
     }
     cancelDelete();
@@ -68,7 +71,7 @@ export function useListManagement(options = {}) {
       ...newItem,
       id: Date.now(), // 실제로는 서버에서 받아올 ID
     });
-    showSuccess(`${itemName}이 생성되었습니다.`);
+    showSuccess(MESSAGES.COMMON.CREATED(itemName));
   };
 
   const showNotImplemented = feature => {
