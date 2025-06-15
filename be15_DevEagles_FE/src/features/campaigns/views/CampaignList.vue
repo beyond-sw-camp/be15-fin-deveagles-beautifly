@@ -1,30 +1,39 @@
 <template>
-  <div class="coupon-list-container">
+  <div class="campaign-list-container">
     <!-- Header -->
     <div class="page-header">
-      <h1 class="font-screen-title">쿠폰 목록</h1>
-      <BaseButton type="primary" @click="openCreateModal"> + 새 쿠폰 생성 </BaseButton>
+      <h1 class="font-screen-title">캠페인 목록</h1>
+      <BaseButton type="primary" @click="openCreateModal"> + 새 캠페인 생성 </BaseButton>
     </div>
 
-    <!-- Coupon Table -->
+    <!-- Campaign Table -->
     <BaseCard>
-      <BaseTable :columns="tableColumns" :data="coupons" :loading="loading" hover>
-        <!-- Coupon Name Column -->
+      <BaseTable :columns="tableColumns" :data="campaigns" :loading="loading" hover>
+        <!-- Campaign Name Column -->
         <template #cell-name="{ item }">
-          <div class="coupon-name">
+          <div class="campaign-name">
             {{ item.name }}
           </div>
         </template>
 
-        <!-- Discount Rate Column -->
-        <template #cell-discountRate="{ item }">
-          <BaseBadge type="primary">{{ item.discountRate }}%</BaseBadge>
+        <!-- Period Column -->
+        <template #cell-period="{ item }">
+          <div class="campaign-period">
+            {{ formatPeriod(item.startDate, item.endDate) }}
+          </div>
+        </template>
+
+        <!-- Status Column -->
+        <template #cell-status="{ item }">
+          <BaseBadge :type="getStatusBadgeType(item.status)">
+            {{ getStatusText(item.status) }}
+          </BaseBadge>
         </template>
 
         <!-- Active Status Column -->
         <template #cell-isActive="{ item }">
           <label class="toggle-switch">
-            <input v-model="item.isActive" type="checkbox" @change="toggleCouponStatus(item)" />
+            <input v-model="item.isActive" type="checkbox" @change="toggleCampaignStatus(item)" />
             <span class="slider"></span>
           </label>
         </template>
@@ -36,7 +45,7 @@
               :ref="`deleteBtn-${item.id}`"
               type="error"
               size="sm"
-              @click="deleteCoupon(item, $event)"
+              @click="deleteCampaign(item, $event)"
             >
               삭제
             </BaseButton>
@@ -46,8 +55,10 @@
         <!-- Empty State -->
         <template #empty>
           <div class="empty-state">
-            <p class="text-gray-500">등록된 쿠폰이 없습니다.</p>
-            <BaseButton type="primary" @click="openCreateModal"> 첫 번째 쿠폰 생성하기 </BaseButton>
+            <p class="text-gray-500">등록된 캠페인이 없습니다.</p>
+            <BaseButton type="primary" @click="openCreateModal">
+              첫 번째 캠페인 생성하기
+            </BaseButton>
           </div>
         </template>
       </BaseTable>
@@ -64,15 +75,15 @@
     />
 
     <!-- Create Modal -->
-    <BaseModal v-model="showModal" title="쿠폰 생성">
-      <CouponForm @save="handleSaveCoupon" @cancel="closeModal" />
+    <BaseModal v-model="showModal" title="캠페인 생성">
+      <CampaignForm @save="handleSaveCampaign" @cancel="closeModal" />
     </BaseModal>
 
     <!-- Delete Confirm Popover -->
     <BasePopover
       v-model="showDeleteConfirm"
-      title="쿠폰 삭제"
-      :message="`'${selectedCouponForDelete?.name}' 쿠폰을 정말 삭제하시겠습니까?`"
+      title="캠페인 삭제"
+      :message="`'${selectedCampaignForDelete?.name}' 캠페인을 정말 삭제하시겠습니까?`"
       confirm-text="삭제"
       cancel-text="취소"
       confirm-type="error"
@@ -97,10 +108,10 @@
   import BaseTable from '@/components/common/BaseTable.vue';
   import BaseBadge from '@/components/common/BaseBadge.vue';
   import BaseToast from '@/components/common/BaseToast.vue';
-  import CouponForm from './CouponForm.vue';
+  import CampaignForm from '../components/CampaignForm.vue';
 
   export default {
-    name: 'CouponList',
+    name: 'CampaignList',
     components: {
       BaseButton,
       BaseModal,
@@ -110,66 +121,61 @@
       BaseTable,
       BaseBadge,
       BaseToast,
-      CouponForm,
+      CampaignForm,
     },
     data() {
       return {
-        // 쿠폰 데이터 (목업 데이터)
-        coupons: [
+        // 캠페인 데이터 (목업 데이터)
+        campaigns: [
           {
             id: 1,
-            name: '열린 시즌 할인 쿠폰',
-            product: '열린',
-            designer: '이순신',
-            discountRate: 20,
+            name: '여름 시즌 프로모션',
+            startDate: '2025-06-01',
+            endDate: '2025-08-31',
+            status: 'scheduled',
             isActive: true,
-            category: '1차',
-            secondaryProduct: '',
-            expiryDate: '2024-12-31',
+            description: '여름 시즌 특별 할인 캠페인',
+            targetAudience: 'all',
           },
           {
             id: 2,
-            name: '신규 고객 환영 쿠폰',
-            product: '닫힌',
-            designer: '김철수',
-            discountRate: 15,
+            name: '신규 고객 환영 캠페인',
+            startDate: '2025-01-01',
+            endDate: '2025-12-31',
+            status: 'active',
             isActive: true,
-            category: '2차',
-            secondaryProduct: '옵션1',
-            expiryDate: '2024-11-30',
+            description: '신규 가입 고객 대상 웰컴 캠페인',
+            targetAudience: 'new',
           },
           {
             id: 3,
-            name: '여름 시즌 특가 쿠폰',
-            product: '반열린',
-            designer: '박영희',
-            discountRate: 25,
+            name: '연말 감사 이벤트',
+            startDate: '2024-12-01',
+            endDate: '2024-12-31',
+            status: 'completed',
             isActive: false,
-            category: '1차',
-            secondaryProduct: '옵션2',
-            expiryDate: '2024-08-31',
+            description: '연말 고객 감사 이벤트',
+            targetAudience: 'vip',
           },
           {
             id: 4,
-            name: 'VIP 고객 전용 쿠폰',
-            product: '열린',
-            designer: '최민수',
-            discountRate: 30,
+            name: 'VIP 고객 전용 캠페인',
+            startDate: '2025-03-01',
+            endDate: '2025-05-31',
+            status: 'scheduled',
             isActive: true,
-            category: '3차',
-            secondaryProduct: '옵션3',
-            expiryDate: '2024-12-15',
+            description: 'VIP 등급 고객 대상 특별 혜택',
+            targetAudience: 'vip',
           },
           {
             id: 5,
-            name: '연말 감사 쿠폰',
-            product: '닫힌',
-            designer: '이순신',
-            discountRate: 10,
-            isActive: true,
-            category: '2차',
-            secondaryProduct: '',
-            expiryDate: '2024-12-31',
+            name: '봄맞이 리뉴얼 캠페인',
+            startDate: '2025-03-15',
+            endDate: '2025-04-30',
+            status: 'draft',
+            isActive: false,
+            description: '봄 시즌 메뉴 리뉴얼 홍보',
+            targetAudience: 'all',
           },
         ],
 
@@ -179,14 +185,10 @@
         totalItems: 85,
         totalPages: 9,
 
-        // 선택 관련
-        selectedCoupons: [],
-        selectAll: false,
-
         // 모달 관련
         showModal: false,
         showDeleteConfirm: false,
-        selectedCouponForDelete: null,
+        selectedCampaignForDelete: null,
         triggerElement: null,
 
         // 로딩 상태
@@ -195,25 +197,16 @@
         // 테이블 컬럼 정의
         tableColumns: [
           {
-            key: 'checkbox',
-            title: '',
-            width: '50px',
-          },
-          {
             key: 'name',
-            title: '쿠폰명',
+            title: '캠페인명',
           },
           {
-            key: 'product',
-            title: '상품',
+            key: 'period',
+            title: '기간',
           },
           {
-            key: 'designer',
-            title: '디자이너',
-          },
-          {
-            key: 'discountRate',
-            title: '할인율',
+            key: 'status',
+            title: '상태',
           },
           {
             key: 'isActive',
@@ -228,11 +221,6 @@
       };
     },
 
-    watch: {
-      selectedCoupons() {
-        this.selectAll = this.selectedCoupons.length === this.coupons.length;
-      },
-    },
     methods: {
       // 모달 관련
       openCreateModal() {
@@ -243,53 +231,44 @@
         this.showModal = false;
       },
 
-      // 쿠폰 관리
-      handleSaveCoupon(couponData) {
+      // 캠페인 관리
+      handleSaveCampaign(campaignData) {
         // 새로 생성
-        const newCoupon = {
-          ...couponData,
+        const newCampaign = {
+          ...campaignData,
           id: Date.now(), // 실제로는 서버에서 받아올 ID
         };
-        this.coupons.unshift(newCoupon);
-        this.showToastMessage('쿠폰이 생성되었습니다.', 'success');
+        this.campaigns.unshift(newCampaign);
+        this.showToastMessage('캠페인이 생성되었습니다.', 'success');
         this.closeModal();
       },
 
-      deleteCoupon(coupon, event) {
-        this.selectedCouponForDelete = coupon;
+      deleteCampaign(campaign, event) {
+        this.selectedCampaignForDelete = campaign;
         this.triggerElement = event.target.closest('button');
         this.showDeleteConfirm = true;
       },
 
       confirmDelete() {
-        if (this.selectedCouponForDelete) {
-          const index = this.coupons.findIndex(c => c.id === this.selectedCouponForDelete.id);
+        if (this.selectedCampaignForDelete) {
+          const index = this.campaigns.findIndex(c => c.id === this.selectedCampaignForDelete.id);
           if (index !== -1) {
-            this.coupons.splice(index, 1);
-            this.showToastMessage('쿠폰이 삭제되었습니다.', 'success');
+            this.campaigns.splice(index, 1);
+            this.showToastMessage('캠페인이 삭제되었습니다.', 'success');
           }
         }
         this.cancelDelete();
       },
 
       cancelDelete() {
-        this.selectedCouponForDelete = null;
+        this.selectedCampaignForDelete = null;
         this.triggerElement = null;
         this.showDeleteConfirm = false;
       },
 
-      toggleCouponStatus(coupon) {
-        const status = coupon.isActive ? '활성화' : '비활성화';
-        this.showToastMessage(`쿠폰이 ${status}되었습니다.`, 'success');
-      },
-
-      // 선택 관련
-      toggleSelectAll() {
-        if (this.selectAll) {
-          this.selectedCoupons = this.coupons.map(c => c.id);
-        } else {
-          this.selectedCoupons = [];
-        }
+      toggleCampaignStatus(campaign) {
+        const status = campaign.isActive ? '활성화' : '비활성화';
+        this.showToastMessage(`캠페인이 ${status}되었습니다.`, 'success');
       },
 
       // 페이지네이션
@@ -304,6 +283,35 @@
         // 실제로는 API 호출
       },
 
+      // 유틸리티 메서드
+      formatPeriod(startDate, endDate) {
+        const start = new Date(startDate).toLocaleDateString('ko-KR');
+        const end = new Date(endDate).toLocaleDateString('ko-KR');
+        return `${start} ~ ${end}`;
+      },
+
+      getStatusText(status) {
+        const statusMap = {
+          draft: '임시저장',
+          scheduled: '예정',
+          active: '진행중',
+          completed: '완료',
+          cancelled: '취소',
+        };
+        return statusMap[status] || status;
+      },
+
+      getStatusBadgeType(status) {
+        const typeMap = {
+          draft: 'neutral',
+          scheduled: 'warning',
+          active: 'success',
+          completed: 'info',
+          cancelled: 'error',
+        };
+        return typeMap[status] || 'neutral';
+      },
+
       // 토스트 알림
       showToastMessage(message, type = 'success') {
         this.$refs.toast[type](message);
@@ -313,7 +321,7 @@
 </script>
 
 <style scoped>
-  .coupon-list-container {
+  .campaign-list-container {
     padding: 2rem;
   }
 
@@ -324,14 +332,19 @@
     margin-bottom: 2rem;
   }
 
-  .coupon-name {
+  .campaign-name {
     font-weight: 600;
     color: var(--color-neutral-dark);
   }
 
+  .campaign-period {
+    font-size: 13px;
+    color: var(--color-gray-600);
+  }
+
   .action-buttons {
     display: flex;
-    gap: 0.5rem;
+    gap: 8px;
   }
 
   .empty-state {
@@ -389,40 +402,8 @@
     transform: translateX(20px);
   }
 
-  /* Toast Notification */
-  .toast-notification {
-    position: fixed;
-    bottom: 2rem;
-    right: 2rem;
-    padding: 1rem 1.5rem;
-    border-radius: 0.5rem;
-    color: white;
-    font-weight: 600;
-    z-index: 1000;
-    animation: slideIn 0.3s ease;
-  }
-
-  .toast-notification.success {
-    background-color: var(--color-success-500);
-  }
-
-  .toast-notification.error {
-    background-color: var(--color-error-300);
-  }
-
-  @keyframes slideIn {
-    from {
-      transform: translateX(100%);
-      opacity: 0;
-    }
-    to {
-      transform: translateX(0);
-      opacity: 1;
-    }
-  }
-
   @media (max-width: 768px) {
-    .coupon-list-container {
+    .campaign-list-container {
       padding: 1rem;
     }
 

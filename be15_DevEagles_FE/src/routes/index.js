@@ -110,14 +110,14 @@ const routes = [
     component: Home,
   },
   {
-    path: '/campaign',
-    name: 'Campaign',
-    component: Home,
+    path: '/campaigns',
+    name: 'CampaignList',
+    component: () => import('@/features/campaigns/views/CampaignList.vue'),
   },
   {
     path: '/coupons',
     name: 'CouponList',
-    component: () => import('@/features/coupons/CouponList.vue'),
+    component: () => import('@/features/coupons/views/CouponList.vue'),
   },
   {
     path: '/profile-link',

@@ -12,6 +12,8 @@ export { default as BaseLoading } from './BaseLoading.vue';
 export { default as BaseToast } from './BaseToast.vue';
 export { default as BaseDrawer } from './BaseDrawer.vue';
 export { default as BasePagination } from './Pagaination.vue';
+export { default as BaseCalendar } from './BaseCalendar.vue';
+export { default as VCalendarWrapper } from './VCalendarWrapper.vue';
 
 // Common Components
 export * from '../layout/index.js';
