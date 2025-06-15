@@ -1,5 +1,5 @@
 <script setup>
-  import { TheLayout } from './components/common';
+  import { TheLayout } from './components/layout/index.js';
 </script>
 
 <template>
