@@ -294,7 +294,7 @@
 
   .calendar-day.today {
     background-color: var(--color-primary-50);
-    color: var(--color-primary-700);
+    color: var(--color-primary-600);
   }
 
   .calendar-day.selected {
