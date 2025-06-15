@@ -264,9 +264,9 @@
 
         <li class="nav-item">
           <router-link
-            to="/campaign"
+            to="/campaigns"
             class="nav-link"
-            :class="{ active: isActiveRoute('/campaign') }"
+            :class="{ active: isActiveRoute('/campaigns') }"
             data-tooltip="캠페인"
           >
             <MegaphoneIcon class="nav-icon" />
