@@ -10,6 +10,9 @@
 
 <template>
   <div class="container">
+    <div class="page-header">
+      <h1 class="font-screen-title">예약 캘린더</h1>
+    </div>
     <!-- 🔍 필터 영역 -->
     <div class="filter-bar">
       <input
@@ -51,18 +54,26 @@
   .container {
     padding: 24px;
   }
+
+  .page-header {
+    margin-bottom: 32px; /* h1 아래 여백 */
+  }
+
   .filter-bar {
     display: flex;
     align-items: center;
     gap: 16px;
-    margin-bottom: 24px;
+    margin-bottom: 32px; /* 필터 아래 여백 */
   }
+
   .input-search {
     width: 240px;
   }
+
   .input-select {
     width: 160px;
   }
+
   .schedule-btn {
     margin-left: auto;
   }
