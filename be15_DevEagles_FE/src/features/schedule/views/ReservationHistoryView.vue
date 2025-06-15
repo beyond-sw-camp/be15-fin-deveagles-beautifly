@@ -4,12 +4,23 @@
       <h1 class="font-screen-title">예약 변경 이력</h1>
     </div>
 
-    <BaseTable :columns="columns" :data="historyData" row-key="id" :striped="true" :hover="true" />
+    <BaseTable :columns="columns" :data="pagedData" row-key="id" :striped="true" :hover="true" />
+
+    <BasePagination
+      :current-page="currentPage"
+      :total-pages="totalPages"
+      :total-items="historyData.length"
+      :items-per-page="itemsPerPage"
+      @page-change="handlePageChange"
+      @items-per-page-change="handleItemsPerPageChange"
+    />
   </div>
 </template>
 
 <script setup>
+  import { ref, computed } from 'vue';
   import BaseTable from '@/components/common/BaseTable.vue';
+  import BasePagination from '@/components/common/Pagaination.vue';
 
   const columns = [
     { key: 'name', title: '고객 이름', width: '120px' },
@@ -93,25 +104,111 @@
       change: '삭제',
       changedAt: '2025.06.08 11:08',
     },
+    {
+      id: 9,
+      name: '김미글',
+      service: '염펌',
+      employee: '박미글',
+      date: '2025.06.08 14시',
+      change: '삭제',
+      changedAt: '2025.06.08 11:08',
+    },
+    {
+      id: 10,
+      name: '김미글',
+      service: '염펌',
+      employee: '박미글',
+      date: '2025.06.08 14시',
+      change: '수정',
+      changedAt: '2025.06.08 11:08',
+    },
+    {
+      id: 11,
+      name: '김미글',
+      service: '염펌',
+      employee: '박미글',
+      date: '2025.06.08 14시',
+      change: '수정',
+      changedAt: '2025.06.08 11:08',
+    },
+    {
+      id: 12,
+      name: '김미글',
+      service: '염펌',
+      employee: '박미글',
+      date: '2025.06.08 14시',
+      change: '삭제',
+      changedAt: '2025.06.08 11:08',
+    },
+    {
+      id: 13,
+      name: '김미글',
+      service: '염펌',
+      employee: '박미글',
+      date: '2025.06.08 14시',
+      change: '수정',
+      changedAt: '2025.06.08 11:08',
+    },
+    {
+      id: 14,
+      name: '김미글',
+      service: '염펌',
+      employee: '박미글',
+      date: '2025.06.08 14시',
+      change: '수정',
+      changedAt: '2025.06.08 11:08',
+    },
+    {
+      id: 15,
+      name: '김미글',
+      service: '염펌',
+      employee: '박미글',
+      date: '2025.06.08 14시',
+      change: '삭제',
+      changedAt: '2025.06.08 11:08',
+    },
+    {
+      id: 16,
+      name: '김미글',
+      service: '염펌',
+      employee: '박미글',
+      date: '2025.06.08 14시',
+      change: '삭제',
+      changedAt: '2025.06.08 11:08',
+    },
   ];
+
+  const currentPage = ref(1);
+  const itemsPerPage = ref(10);
+
+  const totalPages = computed(() => Math.ceil(historyData.length / itemsPerPage.value));
+
+  const pagedData = computed(() => {
+    const start = (currentPage.value - 1) * itemsPerPage.value;
+    return historyData.slice(start, start + itemsPerPage.value);
+  });
+
+  function handlePageChange(page) {
+    currentPage.value = page;
+  }
+
+  function handleItemsPerPageChange(count) {
+    itemsPerPage.value = count;
+    currentPage.value = 1;
+  }
 </script>
 
 <style scoped>
-  .page-header {
-    margin-bottom: 24px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
   .history-wrapper {
     padding: 24px;
     max-width: 1000px;
     margin: 0 auto;
   }
 
-  .title {
-    font-size: 24px;
-    font-weight: bold;
-    margin-bottom: 16px;
+  .page-header {
+    margin-bottom: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
   }
 </style>
