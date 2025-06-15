@@ -103,11 +103,11 @@ const routes = [
     name: 'MessageAbTest',
     component: Home,
   },
-  // 기타 라우트 - 임시로 모두 Home으로 라우팅
+  // 워크플로우 라우트
   {
-    path: '/workflow',
-    name: 'Workflow',
-    component: Home,
+    path: '/workflows',
+    name: 'WorkflowList',
+    component: () => import('@/features/workflows/views/WorkflowList.vue'),
   },
   {
     path: '/campaigns',
