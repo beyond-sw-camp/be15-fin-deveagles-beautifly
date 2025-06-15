@@ -102,16 +102,7 @@
       BaseForm,
       BaseButton,
     },
-    props: {
-      coupon: {
-        type: Object,
-        default: null,
-      },
-      isEditing: {
-        type: Boolean,
-        default: false,
-      },
-    },
+    props: {},
     emits: ['save', 'cancel'],
     data() {
       return {
@@ -151,28 +142,7 @@
         ],
       };
     },
-    watch: {
-      coupon: {
-        immediate: true,
-        handler(newCoupon) {
-          if (newCoupon && this.isEditing) {
-            this.formData = {
-              id: newCoupon.id,
-              name: newCoupon.name || '',
-              category: newCoupon.category || '',
-              designer: newCoupon.designer || '',
-              primaryProduct: newCoupon.product || '',
-              secondaryProduct: newCoupon.secondaryProduct || '',
-              discountRate: newCoupon.discountRate || 10,
-              expiryDate: newCoupon.expiryDate || '',
-              isActive: newCoupon.isActive !== undefined ? newCoupon.isActive : true,
-            };
-          } else {
-            this.resetForm();
-          }
-        },
-      },
-    },
+
     methods: {
       validateForm() {
         this.errors = {};

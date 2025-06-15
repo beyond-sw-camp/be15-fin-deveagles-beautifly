@@ -3,25 +3,12 @@
     <!-- Header -->
     <div class="page-header">
       <h1 class="font-screen-title">쿠폰 목록</h1>
-      <div class="header-actions">
-        <BaseButton type="secondary" outline @click="openDrawer"> 필터 & 정렬 </BaseButton>
-        <BaseButton type="primary" @click="openCreateModal"> + 새 쿠폰 생성 </BaseButton>
-      </div>
+      <BaseButton type="primary" @click="openCreateModal"> + 새 쿠폰 생성 </BaseButton>
     </div>
 
     <!-- Coupon Table -->
     <BaseCard>
       <BaseTable :columns="tableColumns" :data="coupons" :loading="loading" hover>
-        <!-- Checkbox Header -->
-        <template #header-checkbox>
-          <input v-model="selectAll" type="checkbox" @change="toggleSelectAll" />
-        </template>
-
-        <!-- Checkbox Column -->
-        <template #cell-checkbox="{ item }">
-          <input v-model="selectedCoupons" type="checkbox" :value="item.id" />
-        </template>
-
         <!-- Coupon Name Column -->
         <template #cell-name="{ item }">
           <div class="coupon-name">
@@ -45,8 +32,14 @@
         <!-- Actions Column -->
         <template #cell-actions="{ item }">
           <div class="action-buttons">
-            <BaseButton type="info" size="sm" @click="editCoupon(item)"> 수정 </BaseButton>
-            <BaseButton type="error" size="sm" @click="deleteCoupon(item)"> 삭제 </BaseButton>
+            <BaseButton
+              :ref="`deleteBtn-${item.id}`"
+              type="error"
+              size="sm"
+              @click="deleteCoupon(item, $event)"
+            >
+              삭제
+            </BaseButton>
           </div>
         </template>
 
@@ -70,70 +63,25 @@
       @items-per-page-change="handleItemsPerPageChange"
     />
 
-    <!-- Create/Edit Modal -->
-    <BaseModal v-model="showModal" :title="isEditing ? '쿠폰 수정' : '쿠폰 생성'">
-      <CouponForm
-        :coupon="selectedCoupon"
-        :is-editing="isEditing"
-        @save="handleSaveCoupon"
-        @cancel="closeModal"
-      />
+    <!-- Create Modal -->
+    <BaseModal v-model="showModal" title="쿠폰 생성">
+      <CouponForm @save="handleSaveCoupon" @cancel="closeModal" />
     </BaseModal>
 
-    <!-- Filter Drawer -->
-    <BaseDrawer v-model="showDrawer" title="필터 & 정렬" position="right" size="md">
-      <div class="filter-content">
-        <!-- 상태 필터 -->
-        <div class="filter-section">
-          <h4 class="filter-title">상태</h4>
-          <BaseForm v-model="filters.status" type="radio" :options="statusOptions" name="status" />
-        </div>
-
-        <!-- 디자이너 필터 -->
-        <div class="filter-section">
-          <h4 class="filter-title">디자이너</h4>
-          <BaseForm v-model="filters.designers" type="checkbox" :options="designerFilterOptions" />
-        </div>
-
-        <!-- 할인율 범위 -->
-        <div class="filter-section">
-          <h4 class="filter-title">할인율 범위</h4>
-          <div class="discount-range">
-            <BaseForm
-              v-model="filters.minDiscount"
-              type="number"
-              placeholder="최소 %"
-              style="width: 100px"
-            />
-            <span>~</span>
-            <BaseForm
-              v-model="filters.maxDiscount"
-              type="number"
-              placeholder="최대 %"
-              style="width: 100px"
-            />
-          </div>
-        </div>
-
-        <!-- 정렬 옵션 -->
-        <div class="filter-section">
-          <h4 class="filter-title">정렬</h4>
-          <BaseForm
-            v-model="filters.sortBy"
-            type="select"
-            :options="sortOptions"
-            placeholder="정렬 기준 선택"
-          />
-        </div>
-      </div>
-
-      <template #footer>
-        <div class="drawer-actions">
-          <BaseButton type="secondary" outline @click="resetFilters"> 초기화 </BaseButton>
-          <BaseButton type="primary" @click="applyFilters"> 적용 </BaseButton>
-        </div>
-      </template>
-    </BaseDrawer>
+    <!-- Delete Confirm Popover -->
+    <BasePopover
+      v-model="showDeleteConfirm"
+      title="쿠폰 삭제"
+      :message="`'${selectedCouponForDelete?.name}' 쿠폰을 정말 삭제하시겠습니까?`"
+      confirm-text="삭제"
+      cancel-text="취소"
+      confirm-type="error"
+      placement="top"
+      size="sm"
+      :trigger-element="triggerElement"
+      @confirm="confirmDelete"
+      @cancel="cancelDelete"
+    />
 
     <!-- Toast Notification -->
     <BaseToast ref="toast" />
@@ -143,12 +91,12 @@
 <script>
   import BaseButton from '@/components/common/BaseButton.vue';
   import BaseModal from '@/components/common/BaseModal.vue';
+  import BasePopover from '@/components/common/BasePopover.vue';
   import BasePagination from '@/components/common/Pagaination.vue';
   import BaseCard from '@/components/common/BaseCard.vue';
   import BaseTable from '@/components/common/BaseTable.vue';
   import BaseBadge from '@/components/common/BaseBadge.vue';
   import BaseToast from '@/components/common/BaseToast.vue';
-  import BaseDrawer from '@/components/common/BaseDrawer.vue';
   import CouponForm from './CouponForm.vue';
 
   export default {
@@ -156,12 +104,12 @@
     components: {
       BaseButton,
       BaseModal,
+      BasePopover,
       BasePagination,
       BaseCard,
       BaseTable,
       BaseBadge,
       BaseToast,
-      BaseDrawer,
       CouponForm,
     },
     data() {
@@ -237,20 +185,9 @@
 
         // 모달 관련
         showModal: false,
-        isEditing: false,
-        selectedCoupon: null,
-
-        // 드로어 관련
-        showDrawer: false,
-
-        // 필터 관련
-        filters: {
-          status: 'all',
-          designers: [],
-          minDiscount: '',
-          maxDiscount: '',
-          sortBy: '',
-        },
+        showDeleteConfirm: false,
+        selectedCouponForDelete: null,
+        triggerElement: null,
 
         // 로딩 상태
         loading: false,
@@ -285,29 +222,8 @@
           {
             key: 'actions',
             title: 'Actions',
-            width: '120px',
+            width: '80px',
           },
-        ],
-
-        // 필터 옵션들
-        statusOptions: [
-          { value: 'all', text: '전체' },
-          { value: 'active', text: '활성화' },
-          { value: 'inactive', text: '비활성화' },
-        ],
-        designerFilterOptions: [
-          { value: '이순신', text: '이순신' },
-          { value: '김철수', text: '김철수' },
-          { value: '박영희', text: '박영희' },
-          { value: '최민수', text: '최민수' },
-        ],
-        sortOptions: [
-          { value: 'name_asc', text: '이름 오름차순' },
-          { value: 'name_desc', text: '이름 내림차순' },
-          { value: 'discount_asc', text: '할인율 낮은순' },
-          { value: 'discount_desc', text: '할인율 높은순' },
-          { value: 'created_desc', text: '최신순' },
-          { value: 'created_asc', text: '오래된순' },
         ],
       };
     },
@@ -320,52 +236,46 @@
     methods: {
       // 모달 관련
       openCreateModal() {
-        this.isEditing = false;
-        this.selectedCoupon = null;
-        this.showModal = true;
-      },
-
-      editCoupon(coupon) {
-        this.isEditing = true;
-        this.selectedCoupon = { ...coupon };
         this.showModal = true;
       },
 
       closeModal() {
         this.showModal = false;
-        this.selectedCoupon = null;
-        this.isEditing = false;
       },
 
       // 쿠폰 관리
       handleSaveCoupon(couponData) {
-        if (this.isEditing) {
-          // 수정
-          const index = this.coupons.findIndex(c => c.id === couponData.id);
-          if (index !== -1) {
-            this.coupons[index] = { ...couponData };
-            this.showToastMessage('쿠폰이 수정되었습니다.', 'success');
-          }
-        } else {
-          // 새로 생성
-          const newCoupon = {
-            ...couponData,
-            id: Date.now(), // 실제로는 서버에서 받아올 ID
-          };
-          this.coupons.unshift(newCoupon);
-          this.showToastMessage('쿠폰이 생성되었습니다.', 'success');
-        }
+        // 새로 생성
+        const newCoupon = {
+          ...couponData,
+          id: Date.now(), // 실제로는 서버에서 받아올 ID
+        };
+        this.coupons.unshift(newCoupon);
+        this.showToastMessage('쿠폰이 생성되었습니다.', 'success');
         this.closeModal();
       },
 
-      deleteCoupon(coupon) {
-        if (confirm('정말 이 쿠폰을 삭제하시겠습니까?')) {
-          const index = this.coupons.findIndex(c => c.id === coupon.id);
+      deleteCoupon(coupon, event) {
+        this.selectedCouponForDelete = coupon;
+        this.triggerElement = event.target.closest('button');
+        this.showDeleteConfirm = true;
+      },
+
+      confirmDelete() {
+        if (this.selectedCouponForDelete) {
+          const index = this.coupons.findIndex(c => c.id === this.selectedCouponForDelete.id);
           if (index !== -1) {
             this.coupons.splice(index, 1);
             this.showToastMessage('쿠폰이 삭제되었습니다.', 'success');
           }
         }
+        this.cancelDelete();
+      },
+
+      cancelDelete() {
+        this.selectedCouponForDelete = null;
+        this.triggerElement = null;
+        this.showDeleteConfirm = false;
       },
 
       toggleCouponStatus(coupon) {
@@ -394,28 +304,6 @@
         // 실제로는 API 호출
       },
 
-      // 드로어 관련
-      openDrawer() {
-        this.showDrawer = true;
-      },
-
-      resetFilters() {
-        this.filters = {
-          status: 'all',
-          designers: [],
-          minDiscount: '',
-          maxDiscount: '',
-          sortBy: '',
-        };
-      },
-
-      applyFilters() {
-        // 실제로는 API 호출하여 필터링된 데이터 가져오기
-        console.log('Applying filters:', this.filters);
-        this.showToastMessage('필터가 적용되었습니다.', 'success');
-        this.showDrawer = false;
-      },
-
       // 토스트 알림
       showToastMessage(message, type = 'success') {
         this.$refs.toast[type](message);
@@ -434,12 +322,6 @@
     justify-content: space-between;
     align-items: center;
     margin-bottom: 2rem;
-  }
-
-  .header-actions {
-    display: flex;
-    gap: 1rem;
-    align-items: center;
   }
 
   .coupon-name {
@@ -550,54 +432,12 @@
       align-items: stretch;
     }
 
-    .header-actions {
-      justify-content: center;
-    }
-
     .action-buttons {
       flex-direction: column;
     }
 
     .table {
       font-size: 12px;
-    }
-  }
-
-  /* Drawer Content Styles */
-  .filter-content {
-    display: flex;
-    flex-direction: column;
-    gap: 2rem;
-  }
-
-  .filter-section {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-  }
-
-  .filter-title {
-    font-size: 16px;
-    font-weight: 700;
-    color: var(--color-neutral-dark);
-    margin: 0;
-  }
-
-  .discount-range {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-
-  .drawer-actions {
-    display: flex;
-    gap: 1rem;
-    justify-content: flex-end;
-  }
-
-  @media (max-width: 768px) {
-    .drawer-actions {
-      flex-direction: column;
     }
   }
 </style>

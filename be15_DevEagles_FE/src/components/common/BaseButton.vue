@@ -4,11 +4,12 @@
       'btn',
       `btn-${type}`,
       { 'btn-outline': outline },
+      { 'btn-xs': size === 'xs' },
       { 'btn-sm': size === 'sm' },
       { 'btn-lg': size === 'lg' },
     ]"
     :disabled="disabled"
-    @click="$emit('click')"
+    @click="$emit('click', $event)"
   >
     <slot></slot>
   </button>
@@ -31,7 +32,7 @@
       size: {
         type: String,
         default: '',
-        validator: value => ['', 'sm', 'lg'].includes(value),
+        validator: value => ['', 'xs', 'sm', 'lg'].includes(value),
       },
       disabled: {
         type: Boolean,
