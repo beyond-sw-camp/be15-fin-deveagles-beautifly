@@ -32,7 +32,7 @@
 
         <!-- Active Status Column -->
         <template #cell-isActive="{ item }">
-          <label class="toggle-switch">
+          <label class="toggle-switch enhanced">
             <input v-model="item.isActive" type="checkbox" @change="toggleCampaignStatus(item)" />
             <span class="slider"></span>
           </label>
@@ -236,5 +236,5 @@
 </script>
 
 <style scoped>
-  @import '@/styles/list-components.css';
+  @import '@/assets/css/list-components.css';
 </style>

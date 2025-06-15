@@ -97,7 +97,7 @@
 
         <!-- Active Status Column -->
         <template #cell-isActive="{ item }">
-          <label class="toggle-switch workflow">
+          <label class="toggle-switch enhanced">
             <input v-model="item.isActive" type="checkbox" @change="toggleWorkflowStatus(item)" />
             <span class="slider"></span>
           </label>
@@ -129,7 +129,7 @@
 
         <!-- Empty State -->
         <template #empty>
-          <div class="empty-state workflow">
+          <div class="empty-state enhanced">
             <div class="empty-icon">🔄</div>
             <h3 class="font-section-title text-gray-700">워크플로우가 없습니다</h3>
             <p class="font-body text-gray-500">첫 번째 마케팅 자동화 워크플로우를 생성해보세요</p>
@@ -389,7 +389,7 @@
 </script>
 
 <style scoped>
-  @import '@/styles/list-components.css';
+  @import '@/assets/css/list-components.css';
 
   /* 워크플로우 전용 스타일 */
   .workflow-list-container {

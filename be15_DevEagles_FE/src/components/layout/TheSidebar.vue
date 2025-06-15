@@ -22,7 +22,7 @@
         />
       </div>
       <div v-if="!isCollapsed || isHovered" class="tooltip-container">
-        <button class="collapse-btn" @click="toggleSidebar">
+        <button class="icon-button dark" @click="toggleSidebar">
           <PinOffIcon v-if="!isCollapsed" :size="16" />
           <PinIcon v-else :size="16" />
         </button>
@@ -415,6 +415,8 @@
 </script>
 
 <style scoped>
+  @import '@/assets/css/buttons.css';
+  @import '@/assets/css/tooltip.css';
   .sidebar {
     position: fixed;
     top: 0;
@@ -491,21 +493,6 @@
     height: 24px;
     width: 24px;
     object-fit: contain;
-  }
-
-  .collapse-btn {
-    background: none;
-    border: none;
-    color: rgba(255, 255, 255, 0.8);
-    cursor: pointer;
-    padding: 0.25rem;
-    border-radius: 0.25rem;
-    transition: all 200ms ease;
-  }
-
-  .collapse-btn:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-    color: var(--color-neutral-white);
   }
 
   .sidebar-nav {
