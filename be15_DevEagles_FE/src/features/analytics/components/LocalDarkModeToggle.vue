@@ -1,6 +1,6 @@
 <template>
-  <div class="dark-mode-toggle-wrapper">
-    <div class="dark-mode-switch">
+  <div class="local-dark-mode-toggle-wrapper">
+    <div class="local-dark-mode-switch">
       <label class="switch">
         <input type="checkbox" :checked="isDarkMode" @change="toggleDarkMode" />
         <span class="slider">
@@ -15,10 +15,10 @@
 </template>
 
 <script>
-  import { useDarkMode } from '@/composables/useDarkMode.js';
+  import { useLocalDarkMode } from '../composables/useLocalDarkMode.js';
 
   export default {
-    name: 'DarkModeToggle',
+    name: 'LocalDarkModeToggle',
     props: {
       showLabel: {
         type: Boolean,
@@ -35,7 +35,7 @@
       },
     },
     setup() {
-      const { isDarkMode, toggleDarkMode } = useDarkMode();
+      const { isDarkMode, toggleDarkMode } = useLocalDarkMode();
 
       return {
         isDarkMode,
@@ -46,11 +46,11 @@
 </script>
 
 <style scoped>
-  .dark-mode-toggle-wrapper {
+  .local-dark-mode-toggle-wrapper {
     @apply inline-block;
   }
 
-  .dark-mode-switch {
+  .local-dark-mode-switch {
     @apply flex items-center gap-3;
   }
 
@@ -58,16 +58,6 @@
     @apply relative inline-block cursor-pointer;
     width: 56px;
     height: 32px;
-  }
-
-  .switch.small {
-    width: 44px;
-    height: 24px;
-  }
-
-  .switch.large {
-    width: 68px;
-    height: 40px;
   }
 
   .switch input {
@@ -99,20 +89,6 @@
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
   }
 
-  .switch.small .slider:before {
-    height: 16px;
-    width: 16px;
-    left: 4px;
-    bottom: 4px;
-  }
-
-  .switch.large .slider:before {
-    height: 32px;
-    width: 32px;
-    left: 4px;
-    bottom: 4px;
-  }
-
   .switch input:checked + .slider {
     background-color: var(--color-primary-main);
   }
@@ -121,49 +97,17 @@
     transform: translateX(24px);
   }
 
-  .switch.small input:checked + .slider:before {
-    transform: translateX(20px);
-  }
-
-  .switch.large input:checked + .slider:before {
-    transform: translateX(28px);
-  }
-
   .slider-icon {
     @apply absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 transition-all duration-300 pointer-events-none;
     font-size: 14px;
-  }
-
-  .switch.small .slider-icon {
-    font-size: 10px;
-  }
-
-  .switch.large .slider-icon {
-    font-size: 18px;
   }
 
   .switch input:checked + .slider .slider-icon {
     transform: translateX(-12px) translateY(-50%);
   }
 
-  .switch.small input:checked + .slider .slider-icon {
-    transform: translateX(-10px) translateY(-50%);
-  }
-
-  .switch.large input:checked + .slider .slider-icon {
-    transform: translateX(-14px) translateY(-50%);
-  }
-
   .switch input:not(:checked) + .slider .slider-icon {
     transform: translateX(12px) translateY(-50%);
-  }
-
-  .switch.small input:not(:checked) + .slider .slider-icon {
-    transform: translateX(10px) translateY(-50%);
-  }
-
-  .switch.large input:not(:checked) + .slider .slider-icon {
-    transform: translateX(14px) translateY(-50%);
   }
 
   .switch-label {
@@ -173,15 +117,17 @@
     transition: color 0.2s ease-in-out;
   }
 
-  .dark .switch-label {
+  /* 다크모드에서 라벨 색상 변경 */
+  .analytics-page.dark .switch-label {
     color: var(--color-gray-300);
   }
 
-  .dark .slider {
+  /* 다크모드에서 슬라이더 배경 변경 */
+  .analytics-page.dark .slider {
     background-color: var(--color-gray-600);
   }
 
-  .dark .switch input:checked + .slider {
+  .analytics-page.dark .switch input:checked + .slider {
     background-color: var(--color-primary-400);
   }
 

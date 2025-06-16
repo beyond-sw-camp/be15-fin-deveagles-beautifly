@@ -1,8 +1,30 @@
 /* Analytics 페이지 공통 스타일 */
 
+/* ===== 다크모드 전환 효과 ===== */
+.analytics-page,
+.analytics-page *,
+.analytics-stat-card,
+.analytics-stat-icon,
+.analytics-stat-label,
+.analytics-stat-value,
+.analytics-stat-trend,
+.analytics-filter-select,
+.analytics-loading-spinner,
+.chart-container,
+.chart-title,
+.chart-subtitle {
+  transition:
+    background-color 0.3s ease-in-out,
+    color 0.3s ease-in-out,
+    border-color 0.3s ease-in-out,
+    box-shadow 0.3s ease-in-out;
+}
+
 /* ===== 페이지 레이아웃 ===== */
 .analytics-page {
-  @apply p-6 space-y-6 transition-colors duration-200 min-h-screen bg-gray-50 text-gray-900;
+  @apply p-6 space-y-6 min-h-screen bg-gray-50 text-gray-900;
+  border-radius: 16px;
+  margin: 8px;
 }
 
 .analytics-page.dark {
@@ -19,7 +41,7 @@
 }
 
 .analytics-page-title {
-  @apply text-3xl font-bold text-gray-900 mb-2 transition-colors duration-200;
+  @apply text-3xl font-bold text-gray-900 mb-2;
 }
 
 .dark .analytics-page-title {
@@ -27,7 +49,7 @@
 }
 
 .analytics-page-subtitle {
-  @apply text-lg text-gray-600 transition-colors duration-200;
+  @apply text-lg text-gray-600;
 }
 
 .dark .analytics-page-subtitle {
@@ -51,7 +73,6 @@
   font-weight: 500;
   background-color: var(--color-neutral-white);
   box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  transition: all 0.2s ease-in-out;
 }
 
 .analytics-filter-select:hover {
@@ -60,8 +81,7 @@
 
 .analytics-filter-select:focus {
   outline: none;
-  ring: 2px;
-  ring-color: var(--color-primary-main);
+  box-shadow: 0 0 0 2px var(--color-primary-main);
   border-color: var(--color-primary-main);
 }
 
@@ -135,7 +155,7 @@
 }
 
 .analytics-stat-icon {
-  @apply text-2xl p-2 bg-white rounded-lg shadow-sm transition-colors duration-200;
+  @apply text-2xl p-2 bg-white rounded-lg shadow-sm;
 }
 
 .dark .analytics-stat-icon {
@@ -181,7 +201,7 @@
 }
 
 .analytics-stat-label {
-  @apply text-sm font-medium text-gray-600 transition-colors duration-200;
+  @apply text-sm font-medium text-gray-600;
 }
 
 .dark .analytics-stat-label {
@@ -189,7 +209,7 @@
 }
 
 .analytics-stat-value {
-  @apply text-2xl font-bold text-gray-900 transition-colors duration-200;
+  @apply text-2xl font-bold text-gray-900;
 }
 
 .dark .analytics-stat-value {
@@ -209,7 +229,6 @@
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-right: 12px;
-  transition: border-color 0.2s ease-in-out;
 }
 
 .dark .analytics-loading-spinner {

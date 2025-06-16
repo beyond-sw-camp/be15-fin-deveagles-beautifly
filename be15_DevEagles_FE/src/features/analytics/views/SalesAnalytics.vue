@@ -44,7 +44,7 @@
 
           <!-- 다크모드 토글 스위치 -->
           <div class="analytics-filter-group">
-            <DarkModeToggle />
+            <LocalDarkModeToggle />
           </div>
         </div>
       </div>
@@ -160,20 +160,20 @@
   import { onMounted } from 'vue';
   import BaseChart from '../components/charts/BaseChart.vue';
   import StatCard from '../components/StatCard.vue';
-  import DarkModeToggle from '@/components/common/DarkModeToggle.vue';
+  import LocalDarkModeToggle from '../components/LocalDarkModeToggle.vue';
   import { useSalesAnalytics } from '../composables/useSalesAnalytics.js';
-  import { useDarkMode } from '@/composables/useDarkMode.js';
+  import { useLocalDarkMode } from '../composables/useLocalDarkMode.js';
 
   export default {
     name: 'SalesAnalytics',
     components: {
       BaseChart,
       StatCard,
-      DarkModeToggle,
+      LocalDarkModeToggle,
     },
     setup() {
-      // 다크모드 상태 관리
-      const { isDarkMode, isTransitioning } = useDarkMode();
+      // 로컬 다크모드 상태 관리
+      const { isDarkMode, isTransitioning, initializeLocalDarkMode } = useLocalDarkMode();
 
       // 매출 분석 컴포저블 사용
       const {
@@ -196,9 +196,10 @@
         // 차트 클릭 시 상세 정보 표시 로직 추가
       };
 
-      // 컴포넌트 마운트 시 데이터 로드
+      // 컴포넌트 마운트 시 데이터 로드 및 로컬 다크모드 초기화
       onMounted(() => {
         loadSalesData();
+        initializeLocalDarkMode();
       });
 
       // 템플릿에서 사용할 모든 변수와 함수 반환
