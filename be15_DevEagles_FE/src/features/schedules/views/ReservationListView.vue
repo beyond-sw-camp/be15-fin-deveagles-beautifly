@@ -187,7 +187,7 @@
       const matchText =
         !searchText.value ||
         r.name.includes(searchText.value) ||
-        (r.phone && r.phone.includes(searchText.value)); // 연락처 검색 확장 (옵션)
+        (r.phone && r.phone.includes(searchText.value));
 
       const matchEmployee = !selectedEmployee.value || r.employee.includes(selectedEmployee.value);
 
@@ -204,11 +204,11 @@
         matchDate = today === resDate;
       } else if (selectedDate.value === 'thisWeek') {
         const startOfWeek = new Date(now);
-        startOfWeek.setDate(now.getDate() - now.getDay()); // 이번 주 일요일
+        startOfWeek.setDate(now.getDate() - now.getDay());
         startOfWeek.setHours(0, 0, 0, 0);
 
         const endOfWeek = new Date(startOfWeek);
-        endOfWeek.setDate(startOfWeek.getDate() + 6); // 이번 주 토요일
+        endOfWeek.setDate(startOfWeek.getDate() + 6);
         endOfWeek.setHours(23, 59, 59, 999);
 
         matchDate = reservationDate >= startOfWeek && reservationDate <= endOfWeek;
