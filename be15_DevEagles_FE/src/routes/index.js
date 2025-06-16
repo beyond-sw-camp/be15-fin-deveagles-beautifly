@@ -63,13 +63,13 @@ const routes = [
   },
   // 상품 관리 라우트 - 임시로 모두 Home으로 라우팅
   {
-    path: '/product/service',
-    name: 'ProductService',
-    component: Home,
+    path: '/item/service',
+    name: 'ItemService',
+    component: () => import('@/features/item/view/ItemView.vue'),
   },
   {
-    path: '/product/membership',
-    name: 'ProductMembership',
+    path: '/item/membership',
+    name: 'ItemMembership',
     component: Home,
   },
   // 데이터 분석 라우트 - 임시로 모두 Home으로 라우팅
