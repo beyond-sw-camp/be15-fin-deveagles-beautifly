@@ -1,71 +1,107 @@
 <script setup>
-  import { ref } from 'vue';
+  import { ref, watch } from 'vue';
+  import BaseModal from '@/components/common/BaseModal.vue';
+  import BaseButton from '@/components/common/BaseButton.vue';
 
-  const emit = defineEmits(['close', 'confirm']);
+  const props = defineProps({
+    modelValue: {
+      type: Boolean,
+      required: true,
+    },
+  });
+
+  const emit = defineEmits(['confirm', 'update:modelValue']);
+
   const number = ref('');
+  const errorMessage = ref('');
+
+  const visible = ref(props.modelValue);
+
+  watch(
+    () => props.modelValue,
+    val => {
+      visible.value = val;
+    }
+  );
+  watch(visible, val => {
+    emit('update:modelValue', val);
+  });
+
+  function validatePhone(phone) {
+    return /^\d{11}$/.test(phone);
+  }
 
   function submit() {
-    if (!number.value.trim()) {
-      alert('발신 번호를 입력해주세요.');
+    const trimmed = number.value.trim();
+
+    if (!trimmed) {
+      errorMessage.value = '발신 번호를 입력해주세요.';
       return;
     }
-    emit('confirm', number.value);
+
+    if (!validatePhone(trimmed)) {
+      errorMessage.value = '올바르지 않은 번호 형식입니다.';
+      return;
+    }
+
+    errorMessage.value = '';
+    emit('confirm', trimmed);
+    visible.value = false;
   }
 </script>
 
 <template>
-  <div class="modal-backdrop">
-    <div class="modal">
-      <h3 class="modal-title">발신 정보 등록</h3>
-      <div class="modal-body">
-        <label class="label">발신 번호</label>
-        <input v-model="number" type="text" class="input" placeholder="예: 01000000000" />
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn--primary btn--sm" @click="submit">등록</button>
-        <button class="btn btn--gray btn--sm" @click="$emit('close')">취소</button>
+  <BaseModal v-model="visible" title="발신 정보 등록">
+    <div class="modal-body pt-2 pb-6">
+      <div class="form-item">
+        <p class="form-description mb-2">문자 서비스를 이용하기 위해서 발신 번호를 입력해주세요.</p>
+        <label for="sender-number" class="form-label">발신 번호</label>
+        <input
+          id="sender-number"
+          v-model="number"
+          type="text"
+          class="modern-input mt-2"
+          placeholder="예: 01012345678"
+        />
+        <p v-if="errorMessage" class="text-error text-sm mt-1">{{ errorMessage }}</p>
       </div>
     </div>
-  </div>
+
+    <div class="modal-footer mt-6 flex justify-end gap-2">
+      <BaseButton type="gray" @click="visible = false">취소</BaseButton>
+      <BaseButton type="primary" @click="submit">등록</BaseButton>
+    </div>
+  </BaseModal>
 </template>
 
 <style scoped>
-  .modal-backdrop {
-    position: fixed;
-    inset: 0;
-    background-color: rgba(0, 0, 0, 0.4);
-    backdrop-filter: blur(4px);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
+  .modern-input {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid var(--color-gray-300);
+    border-radius: 8px;
+    background-color: #fff;
+    font-size: 14px;
+    color: var(--color-gray-900);
+    transition:
+      border-color 0.2s,
+      box-shadow 0.2s;
   }
 
-  .modal {
-    background-color: white;
-    width: 360px;
-    border-radius: 0.5rem;
-    padding: 1.5rem;
-    display: flex;
-    flex-direction: column;
-    gap: 1.25rem;
+  .modern-input::placeholder {
+    color: var(--color-gray-400);
   }
 
-  .modal-title {
-    font-size: 1.125rem;
-    font-weight: 600;
-    color: var(--color-neutral-dark);
+  .modern-input:focus {
+    outline: none;
+    border-color: var(--color-primary-main);
+    box-shadow: 0 0 0 3px rgba(78, 117, 255, 0.1);
   }
 
-  .modal-body {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-
-  .modal-footer {
-    display: flex;
-    justify-content: flex-end;
-    gap: 0.5rem;
+  .form-description {
+    font-size: 13px;
+    color: var(--color-gray-500);
+    line-height: 1.5;
+    margin-bottom: 0.5rem;
   }
 </style>

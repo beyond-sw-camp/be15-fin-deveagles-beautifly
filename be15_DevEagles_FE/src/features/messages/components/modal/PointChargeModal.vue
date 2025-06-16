@@ -1,8 +1,28 @@
 <script setup>
-  import { ref } from 'vue';
+  import { ref, watch } from 'vue';
+  import BaseModal from '@/components/common/BaseModal.vue';
+  import BaseButton from '@/components/common/BaseButton.vue';
 
-  const emit = defineEmits(['confirm', 'close']);
-  const amount = ref(0);
+  const props = defineProps({
+    modelValue: {
+      type: Boolean,
+      required: true,
+    },
+  });
+  const emit = defineEmits(['confirm', 'update:modelValue']);
+
+  const visible = ref(props.modelValue);
+  const amount = ref('');
+
+  watch(
+    () => props.modelValue,
+    val => {
+      visible.value = val;
+    }
+  );
+  watch(visible, val => {
+    emit('update:modelValue', val);
+  });
 
   function confirmCharge() {
     const parsed = parseInt(amount.value, 10);
@@ -11,68 +31,51 @@
       return;
     }
     emit('confirm', parsed);
+    visible.value = false;
   }
 </script>
 
 <template>
-  <div class="modal-backdrop">
-    <div class="modal">
-      <!-- ✅ 헤더 -->
-      <div class="modal-header">
-        <h3 class="modal-title">포인트 충전</h3>
-      </div>
-
-      <!-- ✅ 본문 -->
-      <div class="modal-body">
-        <label class="label text--sm">충전할 포인트</label>
-        <input v-model="amount" type="number" class="input" placeholder="숫자를 입력하세요" />
-      </div>
-
-      <!-- ✅ 푸터 -->
-      <div class="modal-footer">
-        <button class="btn btn--primary btn--sm" @click="confirmCharge">충전</button>
-        <button class="btn btn--gray btn--sm" @click="$emit('close')">취소</button>
-      </div>
+  <BaseModal v-model="visible" title="포인트 충전">
+    <div class="modal-body pt-2 pb-6">
+      <label for="charge-input" class="form-label">충전할 포인트</label>
+      <input
+        id="charge-input"
+        v-model="amount"
+        type="number"
+        class="modern-input mt-2"
+        placeholder="숫자를 입력하세요"
+      />
     </div>
-  </div>
+
+    <div class="modal-footer mt-6 flex justify-end gap-2">
+      <BaseButton type="gray" @click="visible = false">취소</BaseButton>
+      <BaseButton type="primary" @click="confirmCharge">충전</BaseButton>
+    </div>
+  </BaseModal>
 </template>
 
 <style scoped>
-  .modal-backdrop {
-    position: fixed;
-    inset: 0;
-    background-color: rgba(0, 0, 0, 0.4);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
+  .modern-input {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid var(--color-gray-300);
+    border-radius: 8px;
+    background-color: #fff;
+    font-size: 14px;
+    color: var(--color-gray-900);
+    transition:
+      border-color 0.2s,
+      box-shadow 0.2s;
   }
 
-  .modal {
-    background-color: white;
-    width: 360px;
-    border-radius: 0.5rem;
-    padding: 1.5rem;
-    display: flex;
-    flex-direction: column;
-    gap: 1.25rem;
+  .modern-input::placeholder {
+    color: var(--color-gray-400);
   }
 
-  .modal-title {
-    font-size: 1.125rem;
-    font-weight: 600;
-    color: var(--color-neutral-dark);
-  }
-
-  .modal-body {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-
-  .modal-footer {
-    display: flex;
-    justify-content: flex-end;
-    gap: 0.5rem;
+  .modern-input:focus {
+    outline: none;
+    border-color: var(--color-primary-main);
+    box-shadow: 0 0 0 3px rgba(78, 117, 255, 0.1);
   }
 </style>

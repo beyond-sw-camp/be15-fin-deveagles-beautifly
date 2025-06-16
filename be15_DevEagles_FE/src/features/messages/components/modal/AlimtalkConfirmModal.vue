@@ -1,64 +1,49 @@
 <script setup>
-  const emit = defineEmits(['confirm', 'close']);
+  import { ref, watch } from 'vue';
+  import BaseModal from '@/components/common/BaseModal.vue';
+  import BaseButton from '@/components/common/BaseButton.vue';
+
+  const props = defineProps({
+    modelValue: {
+      type: Boolean,
+      required: true,
+    },
+  });
+  const emit = defineEmits(['confirm', 'update:modelValue']);
+
+  const visible = ref(props.modelValue);
+
+  watch(
+    () => props.modelValue,
+    val => {
+      visible.value = val;
+    }
+  );
+  watch(visible, val => {
+    emit('update:modelValue', val);
+  });
 </script>
 
 <template>
-  <div class="modal-backdrop">
-    <div class="modal">
-      <div class="modal-header">
-        <h3 class="modal-title">알림톡 신청</h3>
-      </div>
-      <div class="modal-body">
-        <p class="text-sm">
-          카카오 연동 없이 신청 여부만 저장합니다.<br />
-          신청하시겠습니까?
-        </p>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn--primary btn--sm" @click="$emit('confirm')">신청</button>
-        <button class="btn btn--gray btn--sm" @click="$emit('close')">취소</button>
-      </div>
+  <BaseModal v-model="visible" title="알림톡 신청">
+    <div class="modal-body pt-2 pb-6 text-center">
+      <p class="form-description">
+        카카오 연동 없이 신청 여부만 저장됩니다.<br />
+        신청하시겠습니까?
+      </p>
     </div>
-  </div>
+
+    <div class="modal-footer mt-6 flex justify-end gap-2">
+      <BaseButton type="gray" @click="visible = false">취소</BaseButton>
+      <BaseButton type="primary" @click="$emit('confirm')">신청</BaseButton>
+    </div>
+  </BaseModal>
 </template>
 
 <style scoped>
-  .modal-backdrop {
-    position: fixed;
-    inset: 0;
-    background-color: rgba(0, 0, 0, 0.3);
-    backdrop-filter: blur(2px); /* ✅ 블러 처리 */
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-  }
-
-  .modal {
-    background-color: white;
-    width: 360px;
-    border-radius: 0.5rem;
-    padding: 1.5rem;
-    display: flex;
-    flex-direction: column;
-    gap: 1.25rem;
-  }
-
-  .modal-title {
-    font-size: 1.125rem;
-    font-weight: 600;
-    color: var(--color-neutral-dark);
-  }
-
-  .modal-body {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-  }
-
-  .modal-footer {
-    display: flex;
-    justify-content: flex-end;
-    gap: 0.5rem;
+  .form-description {
+    font-size: 13px;
+    color: var(--color-gray-500);
+    line-height: 1.5;
   }
 </style>
