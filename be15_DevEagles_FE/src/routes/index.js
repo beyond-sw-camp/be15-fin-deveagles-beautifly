@@ -165,7 +165,7 @@ const routes = [
   {
     path: '/profile',
     name: 'Profile',
-    component: Home,
+    component: () => import('@/features/users/views/ProfileSettingView.vue'),
   },
   ...userRoutes, // 추후에 밖으로 빼기
 ];
