@@ -21,9 +21,9 @@
       />
 
       <div class="login-links">
-        <a href="#" @click.prevent="goToFindId">아이디 찾기</a>
+        <a href="#" @click.prevent="showFindIdModal = true">아이디 찾기</a>
         <span>|</span>
-        <a href="#" @click.prevent="goToFindPwd">비밀번호 찾기</a>
+        <!--        <a href="#" @click.prevent="showFindPwdModal">비밀번호 찾기</a>-->
       </div>
 
       <div class="login-buttons">
@@ -46,6 +46,9 @@
       </div>
     </template>
   </BaseModal>
+
+  <FindIdModal v-model="showFindIdModal" @submit="onFindIdSubmit" />
+  <FindIdResModal v-model:show="showFindIdResModal" :found-user-id="foundUserId" />
 </template>
 <script setup lang="ts">
   import BaseForm from '@/components/common/BaseForm.vue';
@@ -54,6 +57,8 @@
   import BaseButton from '@/components/common/BaseButton.vue';
   import Logo from '@/images/logo_name_navy.png';
   import BaseModal from '@/components/common/BaseModal.vue';
+  import FindIdModal from '@/features/users/components/FindIdModal.vue';
+  import FindIdResModal from '@/features/users/components/FindIdResModal.vue';
 
   const router = useRouter();
   //const authStore = useAuthStore();
@@ -65,6 +70,16 @@
   const errorMessage = ref('');
   const shake = ref(false);
   const showVerifyModal = ref(false);
+  const showFindIdModal = ref(false);
+  const showFindIdResModal = ref(false);
+  const foundUserId = ref();
+
+  const onFindIdSubmit = ({ userName, phoneNumber }) => {
+    //todo findUserId api 연결
+    showFindIdModal.value = false;
+    foundUserId.value = 'user01';
+    showFindIdResModal.value = true;
+  };
 
   const fetchUser = () => {
     // login api 호출
@@ -76,16 +91,8 @@
     // 회원 이메일 인증 api 호출
   };
 
-  const goToFindId = () => {
-    router.push('/find-id');
-  };
-
-  const goToFindPwd = () => {
-    router.push('/find-pwd');
-  };
-
   const goToSignup = () => {
-    router.push('/signup');
+    router.push('/sign-up');
   };
 </script>
 <style scoped>
