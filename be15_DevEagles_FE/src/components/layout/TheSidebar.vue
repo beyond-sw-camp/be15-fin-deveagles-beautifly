@@ -204,10 +204,10 @@
               class="nav-sublist"
             >
               <li>
-                <router-link to="/analytics/usage" class="nav-sublink">이용률 분석</router-link>
+                <router-link to="/analytics/usage" class="nav-sublink">예약율 통계</router-link>
               </li>
               <li>
-                <router-link to="/analytics/sales" class="nav-sublink">상점 매출분석</router-link>
+                <router-link to="/analytics/sales" class="nav-sublink">매출 통계</router-link>
               </li>
             </ul>
           </div>
