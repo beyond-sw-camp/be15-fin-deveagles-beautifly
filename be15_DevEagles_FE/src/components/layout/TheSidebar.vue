@@ -207,7 +207,7 @@
                 <router-link to="/analytics/usage" class="nav-sublink">이용률 분석</router-link>
               </li>
               <li>
-                <router-link to="/analytics/revenue" class="nav-sublink">상점 매출분석</router-link>
+                <router-link to="/analytics/sales" class="nav-sublink">상점 매출분석</router-link>
               </li>
             </ul>
           </div>

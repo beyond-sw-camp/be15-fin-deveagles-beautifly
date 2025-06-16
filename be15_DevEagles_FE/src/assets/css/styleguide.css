@@ -84,6 +84,45 @@ body {
   color: var(--color-neutral-dark);
 }
 
+/*───────────────────────────────────────────────────────────────────────────
+   1.1 Dark Mode Synchronized Transitions
+────────────────────────────────────────────────────────────────────────────*/
+/* Global dark mode transition settings */
+html.dark-mode-transitioning * {
+  transition:
+    background-color 0.3s ease-in-out,
+    color 0.3s ease-in-out,
+    border-color 0.3s ease-in-out,
+    box-shadow 0.3s ease-in-out !important;
+}
+
+/* Specific elements that need synchronized transitions */
+.dark-mode-transitioning .sales-analytics,
+.dark-mode-transitioning .stat-card,
+.dark-mode-transitioning .chart-container,
+.dark-mode-transitioning .page-title,
+.dark-mode-transitioning .page-subtitle,
+.dark-mode-transitioning .filter-select-compact,
+.dark-mode-transitioning .base-chart {
+  transition:
+    background-color 0.3s ease-in-out,
+    color 0.3s ease-in-out,
+    border-color 0.3s ease-in-out,
+    box-shadow 0.3s ease-in-out;
+}
+
+/* Layout components */
+.dark-mode-transitioning .layout,
+.dark-mode-transitioning .main-container,
+.dark-mode-transitioning .content,
+.dark-mode-transitioning .sidebar,
+.dark-mode-transitioning .header {
+  transition:
+    background-color 0.3s ease-in-out,
+    color 0.3s ease-in-out,
+    border-color 0.3s ease-in-out;
+}
+
 /* Screen Title */
 .font-screen-title {
   font-size: 36px;

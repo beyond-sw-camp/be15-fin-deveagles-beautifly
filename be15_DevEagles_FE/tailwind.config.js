@@ -1,6 +1,7 @@
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ['./index.html', './src/**/*.{vue,js,ts,jsx,tsx}'],
+  darkMode: 'class', // 다크모드 활성화
   theme: {
     extend: {
       // styleguide.css의 변수를 tailwind에서 사용할 수 있도록 설정
@@ -81,13 +82,13 @@ export default {
         'screen-title': ['36px', '46.8px'],
         'section-title': ['24px', '31.2px'],
         'section-inner': ['16px', '20.8px'],
-        'body': ['14px', '21px'],
+        body: ['14px', '21px'],
         'one-liner': ['14px', '16px'],
-        'small': ['12px', '15.6px'],
-        'xs': ['10px', '10px'],
+        small: ['12px', '15.6px'],
+        xs: ['10px', '10px'],
       },
       boxShadow: {
-        'drop': '0 8px 40px -10px rgba(0, 0, 0, 0.08)',
+        drop: '0 8px 40px -10px rgba(0, 0, 0, 0.08)',
       },
       width: {
         layout: '1280px',

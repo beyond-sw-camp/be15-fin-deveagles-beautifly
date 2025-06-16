@@ -119,7 +119,6 @@
   import BaseTable from '@/components/common/BaseTable.vue';
   import BaseBadge from '@/components/common/BaseBadge.vue';
   import BaseToast from '@/components/common/BaseToast.vue';
-
   import TrashIcon from '@/components/icons/TrashIcon.vue';
   import CouponForm from '../components/CouponForm.vue';
 
