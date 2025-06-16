@@ -11,12 +11,12 @@ const routes = [
   {
     path: '/reservation/calendar',
     name: 'ReservationCalendar',
-    component: Home,
+    component: () => import('@/features/schedule/views/ScheduleCalendarView.vue'),
   },
   {
     path: '/reservation/list',
     name: 'ReservationList',
-    component: Home,
+    component: () => import('@/features/schedule/views/ReservationListView.vue'),
   },
   {
     path: '/reservation/schedule',
@@ -31,12 +31,12 @@ const routes = [
   {
     path: '/reservation/requests',
     name: 'ReservationRequests',
-    component: Home,
+    component: () => import('@/features/schedule/views/ReservationRequestsView.vue'),
   },
   {
     path: '/reservation/history',
     name: 'ReservationHistory',
-    component: Home,
+    component: () => import('@/features/schedule/views/ReservationHistoryView.vue'),
   },
   // 고객 관리 라우트 - 임시로 모두 Home으로 라우팅
   {

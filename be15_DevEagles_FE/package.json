@@ -20,6 +20,7 @@
     "@fullcalendar/daygrid": "^6.1.17",
     "@fullcalendar/interaction": "^6.1.17",
     "@fullcalendar/timegrid": "^6.1.17",
+    "@fullcalendar/vue3": "^6.1.17",
     "@popperjs/core": "^2.11.8",
     "@stomp/stompjs": "^7.1.1",
     "axios": "^1.5.0",
