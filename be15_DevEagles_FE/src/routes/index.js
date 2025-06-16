@@ -102,7 +102,7 @@ const routes = [
   {
     path: '/message/settings',
     name: 'MessageSettings',
-    component: Home,
+    component: () => import('@/features/messages/views/SettingsView.vue'),
   },
   {
     path: '/message/ab-test',
