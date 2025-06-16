@@ -71,7 +71,12 @@ const routes = [
     name: 'ProductMembership',
     component: Home,
   },
-  // 데이터 분석 라우트 - 임시로 모두 Home으로 라우팅
+  // 데이터 분석 라우트
+  {
+    path: '/analytics/sales',
+    name: 'SalesAnalytics',
+    component: () => import('@/features/analytics/views/SalesAnalytics.vue'),
+  },
   {
     path: '/analytics/usage',
     name: 'AnalyticsUsage',
