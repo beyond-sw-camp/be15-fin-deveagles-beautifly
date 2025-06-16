@@ -1,7 +1,7 @@
 <template>
   <div class="login-container input-reset-scope">
     <form :class="['login-vbox', { shake }]" @submit.prevent="fetchUser">
-      <!--      <img :src="Logo" alt="로고" class="logo"/>-->
+      <img :src="Logo" alt="로고" class="logo" />
 
       <BaseForm
         v-model="params.username"
@@ -52,6 +52,8 @@
   import { useRouter } from 'vue-router';
   import { ref } from 'vue';
   import BaseButton from '@/components/common/BaseButton.vue';
+  import Logo from '@/images/logo_name_navy.png';
+  import BaseModal from '@/components/common/BaseModal.vue';
 
   const router = useRouter();
   //const authStore = useAuthStore();
@@ -108,7 +110,7 @@
   .logo {
     display: block;
     margin: 0 auto 24px;
-    height: 64px;
+    height: 300px;
   }
 
   .login-links {
