@@ -155,28 +155,28 @@
           <div class="nav-group">
             <button
               class="nav-link nav-toggle"
-              :class="{ active: activeGroups.includes('product') }"
+              :class="{ active: activeGroups.includes('item') }"
               data-tooltip="상품 관리"
-              @click="toggleGroup('product')"
+              @click="toggleGroup('item')"
             >
               <ShoppingBagIcon class="nav-icon" />
               <span v-if="!isCollapsed || isHovered" class="nav-text">상품 관리</span>
               <ChevronRightIcon
                 v-if="!isCollapsed || isHovered"
                 class="nav-arrow"
-                :class="{ expanded: activeGroups.includes('product') }"
+                :class="{ expanded: activeGroups.includes('item') }"
               />
             </button>
             <ul
               v-if="!isCollapsed || isHovered"
-              v-show="activeGroups.includes('product')"
+              v-show="activeGroups.includes('item')"
               class="nav-sublist"
             >
               <li>
-                <router-link to="/product/service" class="nav-sublink">시술/상품 관리</router-link>
+                <router-link to="/item/service" class="nav-sublink">시술/상품 관리</router-link>
               </li>
               <li>
-                <router-link to="/product/membership" class="nav-sublink">회원권 관리</router-link>
+                <router-link to="/item/membership" class="nav-sublink">회원권 관리</router-link>
               </li>
             </ul>
           </div>
