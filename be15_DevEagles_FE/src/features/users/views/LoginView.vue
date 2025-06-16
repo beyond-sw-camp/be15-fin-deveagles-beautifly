@@ -21,9 +21,9 @@
       />
 
       <div class="login-links">
-        <a href="#" @click.prevent="goToFindId">아이디 찾기</a>
+        <a href="#" @click.prevent="showFindIdModal = true">아이디 찾기</a>
         <span>|</span>
-        <a href="#" @click.prevent="goToFindPwd">비밀번호 찾기</a>
+        <a href="#" @click.prevent="showFindPwdModal = true">비밀번호 찾기</a>
       </div>
 
       <div class="login-buttons">
@@ -46,14 +46,26 @@
       </div>
     </template>
   </BaseModal>
+
+  <!-- 아이디 찾기 -->
+  <FindIdModal v-model="showFindIdModal" @submit="onFindIdSubmit" />
+  <FindIdResModal v-model:show="showFindIdResModal" :found-user-id="foundUserId" />
+
+  <!-- 비밀번호 찾기 -->
+  <FindPwdModal v-model="showFindPwdModal" @submit="onFindPwdSubmit" />
+  <FindPwdResModal v-model:show="showFindPwdResModal" :found-user-pwd="foundUserPwd" />
 </template>
 <script setup lang="ts">
-  import BaseForm from '@/components/common/BaseForm.vue';
   import { useRouter } from 'vue-router';
   import { ref } from 'vue';
+  import BaseForm from '@/components/common/BaseForm.vue';
   import BaseButton from '@/components/common/BaseButton.vue';
-  import Logo from '@/images/logo_name_navy.png';
   import BaseModal from '@/components/common/BaseModal.vue';
+  import Logo from '@/images/logo_name_navy.png';
+  import FindIdModal from '@/features/users/components/FindIdModal.vue';
+  import FindIdResModal from '@/features/users/components/FindIdResModal.vue';
+  import FindPwdModal from '@/features/users/components/FindPwdModal.vue';
+  import FindPwdResModal from '@/features/users/components/FindPwdResModal.vue';
 
   const router = useRouter();
   //const authStore = useAuthStore();
@@ -65,6 +77,25 @@
   const errorMessage = ref('');
   const shake = ref(false);
   const showVerifyModal = ref(false);
+  const showFindIdModal = ref(false);
+  const showFindIdResModal = ref(false);
+  const foundUserId = ref();
+  const showFindPwdModal = ref(false);
+  const showFindPwdResModal = ref(false);
+  const foundUserPwd = ref();
+
+  const onFindIdSubmit = ({ userName, phoneNumber }) => {
+    //todo findUserId api 연결
+    showFindIdModal.value = false;
+    foundUserId.value = 'user01';
+    showFindIdResModal.value = true;
+  };
+
+  const onFindPwdSubmit = ({ userName, email }) => {
+    showFindPwdModal.value = false;
+    foundUserPwd.value = true;
+    showFindPwdResModal.value = true;
+  };
 
   const fetchUser = () => {
     // login api 호출
@@ -76,16 +107,8 @@
     // 회원 이메일 인증 api 호출
   };
 
-  const goToFindId = () => {
-    router.push('/find-id');
-  };
-
-  const goToFindPwd = () => {
-    router.push('/find-pwd');
-  };
-
   const goToSignup = () => {
-    router.push('/signup');
+    router.push('/sign-up');
   };
 </script>
 <style scoped>

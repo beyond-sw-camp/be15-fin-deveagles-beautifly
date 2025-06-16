@@ -27,6 +27,7 @@
     display: flex;
     height: 100vh;
     overflow: hidden;
+    background-color: var(--color-gray-50);
   }
 
   .main-container {
@@ -37,6 +38,7 @@
     transition: margin-left 300ms ease;
     min-width: 0;
     width: calc(100% - 200px);
+    background-color: var(--color-gray-50);
   }
 
   .main-container.sidebar-collapsed {
