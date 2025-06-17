@@ -159,9 +159,8 @@ const routes = [
   {
     path: '/settings/account',
     name: 'SettingsAccount',
-    component: Home,
+    component: () => import('@/features/users/views/AccountSettingView.vue'),
   },
-  // 프로필 라우트 - 임시로 Home으로 라우팅
   {
     path: '/profile',
     name: 'Profile',
