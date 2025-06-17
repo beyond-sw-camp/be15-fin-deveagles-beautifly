@@ -1,10 +1,19 @@
 <script setup>
-  import { ref } from 'vue';
+  import { defineProps, watch, ref } from 'vue';
   import FullCalendar from '@fullcalendar/vue3';
   import dayGridPlugin from '@fullcalendar/daygrid';
   import timeGridPlugin from '@fullcalendar/timegrid';
   import interactionPlugin from '@fullcalendar/interaction';
   import koLocale from '@fullcalendar/core/locales/ko';
+
+  const props = defineProps({
+    schedules: {
+      type: Array,
+      default: () => [],
+    },
+  });
+
+  const emit = defineEmits(['clickSchedule']);
 
   const calendarOptions = ref({
     plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
@@ -16,16 +25,22 @@
       center: 'title',
       right: 'dayGridMonth,timeGridWeek,timeGridDay',
     },
-    events: [
-      {
-        id: '1',
-        title: '13:00 이채은 고객',
-        start: '2025-06-12T13:00:00',
-        end: '2025-06-12T13:30:00',
-        backgroundColor: '#f87171',
-        textColor: '#111', // ✅ 글자색 개별 지정
-      },
-    ],
+    events: props.schedules,
+    eventContent({ event }) {
+      const dotColor = event.backgroundColor || '#999';
+      const title = event.title;
+      return {
+        html: `
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <span style="display:inline-block;width:10px;height:10px;background:${dotColor};border-radius:2px;"></span>
+          <span style="color:#111;font-size:13px;font-weight:500;">${title}</span>
+        </div>
+      `,
+      };
+    },
+    eventClick(info) {
+      emit('clickSchedule', info.event.id);
+    },
     eventDrop(info) {
       console.log('이벤트 이동됨:', {
         id: info.event.id,
@@ -34,6 +49,14 @@
       });
     },
   });
+
+  watch(
+    () => props.schedules,
+    newVal => {
+      calendarOptions.value.events = newVal;
+    },
+    { immediate: true, deep: true }
+  );
 </script>
 
 <template>
