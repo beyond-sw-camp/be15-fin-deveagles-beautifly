@@ -1,11 +1,10 @@
-/// TemplateListView.vue
 <script setup>
   import { ref, computed } from 'vue';
-  import TemplateFilter from '@/features/messages/components/TemplateFilter.vue';
+  import BaseButton from '@/components/common/BaseButton.vue';
+  import BaseTable from '@/components/common/BaseTable.vue';
+  import BasePagination from '@/components/common/Pagaination.vue';
   import TemplateItem from '@/features/messages/components/TemplateItem.vue';
-
-  const filter = ref({ keyword: '' });
-  const showRegisterModal = ref(false);
+  import { PlusIcon } from 'lucide-vue-next';
 
   const allTemplates = ref([
     { id: 1, name: '예약 안내', content: '고객님 예약이 확정되었습니다.', createdAt: '2024-06-10' },
@@ -23,126 +22,83 @@
     },
   ]);
 
-  const filteredTemplates = computed(() => {
-    const keyword = filter.value.keyword.trim();
-    if (!keyword) return allTemplates.value;
-    return allTemplates.value.filter(t => t.name.includes(keyword) || t.content.includes(keyword));
+  const currentPage = ref(1);
+  const itemsPerPage = 10;
+  const showCreateModal = ref(false);
+
+  const totalPages = computed(() => Math.ceil(allTemplates.value.length / itemsPerPage));
+
+  const paginatedTemplates = computed(() => {
+    const start = (currentPage.value - 1) * itemsPerPage;
+    return allTemplates.value.slice(start, start + itemsPerPage);
   });
 
-  function onFilterSubmit(payload) {
-    filter.value = payload;
+  const columns = [
+    { key: 'name', title: '템플릿명', width: '20%', headerClass: 'text-center' },
+    { key: 'content', title: '내용', width: '50%', headerClass: 'text-center' },
+    { key: 'createdAt', title: '등록일자', width: '20%', headerClass: 'text-center' },
+    { key: 'actions', title: '관리', width: '10%', headerClass: 'text-center' },
+  ];
+
+  function onPageChange(page) {
+    currentPage.value = page;
+  }
+
+  function handleCreate(newTemplate) {
+    allTemplates.value.unshift(newTemplate);
+    showCreateModal.value = false;
   }
 </script>
 
 <template>
-  <section class="template-list-view">
-    <!-- ✅ 제목 + 등록 버튼 -->
-    <div class="header-row">
-      <h2 class="page-title">문자 템플릿 목록</h2>
+  <div class="template-list-view">
+    <div class="template-list-header">
+      <h2 class="font-section-title text-dark">문자 템플릿 목록</h2>
+      <BaseButton type="primary" size="sm" @click="showCreateModal = true">
+        <PlusIcon class="icon" /> 템플릿 등록
+      </BaseButton>
     </div>
 
-    <!-- ✅ 필터 + 버튼 가로 정렬 -->
-    <div class="filter-input-row">
-      <TemplateFilter @submit-filter="onFilterSubmit" />
+    <BaseTable :columns="columns" :data="paginatedTemplates">
+      <template #body>
+        <TemplateItem
+          v-for="template in paginatedTemplates"
+          :key="template.id"
+          :template="template"
+        />
+      </template>
+    </BaseTable>
 
-      <button class="btn btn--primary btn--sm icon-btn" @click="showRegisterModal = true">
-        + 템플릿 등록
-      </button>
-    </div>
-
-    <!-- ✅ 테이블 영역 -->
-    <div class="table-wrapper">
-      <table class="table">
-        <thead>
-          <tr>
-            <th class="text-center">템플릿명</th>
-            <th class="text-center">내용</th>
-            <th class="text-center">등록일</th>
-            <th class="text-center">관리</th>
-          </tr>
-        </thead>
-        <tbody>
-          <template v-if="filteredTemplates.length > 0">
-            <TemplateItem v-for="item in filteredTemplates" :key="item.id" :item="item" />
-          </template>
-          <tr v-else>
-            <td colspan="4" class="text--gray text-center">템플릿이 없습니다</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </section>
+    <BasePagination
+      v-if="totalPages > 1"
+      :current-page="currentPage"
+      :total-pages="totalPages"
+      :total-items="allTemplates.length"
+      :items-per-page="itemsPerPage"
+      @page-change="onPageChange"
+    />
+  </div>
 </template>
 
 <style scoped>
   .template-list-view {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-    padding: 1.5rem;
-    background-color: var(--color-gray-50);
+    padding: 24px;
+    max-width: 1200px;
+    margin: 0 auto;
   }
-
-  .page-title {
-    font-size: 18px;
-    font-weight: 700;
-    color: var(--color-neutral-dark);
-    margin: 0;
-  }
-
-  .header-row {
+  .template-list-header {
     display: flex;
+    align-items: center;
     justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1rem;
+    margin-bottom: 1.5rem;
   }
-
-  .filter-input-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 1rem;
+  th {
+    text-align: center !important;
   }
+</style>
 
-  .table-wrapper {
-    overflow-x: auto;
-    background: white;
-    border-radius: 0.5rem;
-  }
-
-  .table {
-    width: 100%;
-    border-collapse: collapse;
-  }
-
-  .table th,
-  .table td {
-    padding: 0.75rem;
-    text-align: center;
-    border-bottom: 1px solid var(--color-gray-200);
-  }
-
-  .table th {
-    background-color: var(--color-gray-100);
-    font-weight: 600;
-    font-size: 0.875rem;
-    color: var(--color-gray-800);
-  }
-
-  .icon-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0.5rem 1rem;
-    border-radius: 0.375rem;
-    background-color: var(--color-primary-400);
-    color: white;
-    font-weight: 500;
-    font-size: 0.875rem;
-    white-space: nowrap;
-  }
-
+<style>
   .text-center {
-    text-align: center;
+    text-align: center !important;
   }
 </style>

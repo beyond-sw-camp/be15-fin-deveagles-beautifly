@@ -61,7 +61,7 @@
 
     <template #footer>
       <div class="footer-buttons">
-        <BaseButton type="primary" @click="submit">예약 확정</BaseButton>
+        <BaseButton type="primary" @click="submit">예약 발송</BaseButton>
         <BaseButton type="ghost" @click="close">취소</BaseButton>
       </div>
     </template>
