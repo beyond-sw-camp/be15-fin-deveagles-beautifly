@@ -57,8 +57,10 @@
     },
     store: {
       storeName: '',
-      address: '',
-      detailAddress: '',
+      address: {
+        base: '',
+        detail: '',
+      },
       category: '',
       storePhone: '',
       bizNumber: '',

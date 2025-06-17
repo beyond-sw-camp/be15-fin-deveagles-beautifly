@@ -134,7 +134,7 @@ const routes = [
   {
     path: '/settings/store',
     name: 'SettingsStore',
-    component: Home,
+    component: () => import('@/features/users/views/StoreSettingView.vue'),
   },
   {
     path: '/settings/reservation',

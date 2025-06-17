@@ -16,15 +16,7 @@
       @focus="clearError('storeName')"
     />
 
-    <div class="label-row">
-      <label for="address"> 매장 주소 </label>
-    </div>
-    <div class="address-row">
-      <BaseForm v-model="form.address" class="address-input" placeholder="주소 검색" readonly />
-      <BaseButton class="search-button" @click="openAddressSearch">주소 검색</BaseButton>
-    </div>
-
-    <BaseForm v-model="form.detailAddress" placeholder="상세 주소를 입력해주세요." />
+    <AddressSearch v-model="form.address" />
 
     <div class="label-row">
       <label for="category">
@@ -69,8 +61,8 @@
 
 <script setup>
   import BaseForm from '@/components/common/BaseForm.vue';
-  import BaseButton from '@/components/common/BaseButton.vue';
   import { computed, ref } from 'vue';
+  import AddressSearch from '@/features/users/components/AddressSearch.vue';
 
   const props = defineProps({
     modelValue: Object,
@@ -124,37 +116,11 @@
   };
 
   defineExpose({ validate });
-
-  // 주소 검색 API 팝업 열기
-  const openAddressSearch = () => {
-    new window.daum.Postcode({
-      oncomplete: data => {
-        form.value.address = data.roadAddress || data.jibunAddress || '';
-      },
-    }).open();
-  };
 </script>
 <style scoped>
   .signup-title {
     text-align: center;
     margin-bottom: 24px;
-  }
-  .address-row {
-    display: flex;
-    gap: 8px;
-    width: 100%;
-  }
-  .address-row .address-input {
-    flex: 1;
-  }
-  .address-row .search-button {
-    width: 120px;
-    height: 40px;
-    font-size: 14px;
-    border-radius: 6px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
   }
   .label-row {
     display: flex;
