@@ -15,7 +15,7 @@
 <script setup>
   import { use } from 'echarts/core';
   import { CanvasRenderer } from 'echarts/renderers';
-  import { BarChart, LineChart, PieChart } from 'echarts/charts';
+  import { BarChart, LineChart, PieChart, HeatmapChart } from 'echarts/charts';
   import {
     TitleComponent,
     TooltipComponent,
@@ -23,6 +23,7 @@
     GridComponent,
     DatasetComponent,
     TransformComponent,
+    VisualMapComponent,
   } from 'echarts/components';
   import VChart from 'vue-echarts';
   import { ref, computed, watch, nextTick } from 'vue';
@@ -33,12 +34,14 @@
     BarChart,
     LineChart,
     PieChart,
+    HeatmapChart,
     TitleComponent,
     TooltipComponent,
     LegendComponent,
     GridComponent,
     DatasetComponent,
     TransformComponent,
+    VisualMapComponent,
   ]);
 
   const props = defineProps({
@@ -111,37 +114,69 @@
         };
       }
 
-      // Y축 처리
+      // Y축 처리 (배열과 단일 객체 모두 지원)
       if (baseOption.yAxis) {
-        baseOption.yAxis = {
-          ...baseOption.yAxis,
-          axisLabel: {
-            ...baseOption.yAxis.axisLabel,
-            color: '#D1D5DB',
-          },
-          axisLine: {
-            ...baseOption.yAxis.axisLine,
-            lineStyle: {
-              ...baseOption.yAxis.axisLine?.lineStyle,
-              color: '#4B5563',
+        if (Array.isArray(baseOption.yAxis)) {
+          baseOption.yAxis = baseOption.yAxis.map(axis => ({
+            ...axis,
+            axisLabel: {
+              ...axis.axisLabel,
+              color: '#D1D5DB',
             },
-          },
-          axisTick: {
-            ...baseOption.yAxis.axisTick,
-            lineStyle: {
-              ...baseOption.yAxis.axisTick?.lineStyle,
-              color: '#4B5563',
+            axisLine: {
+              ...axis.axisLine,
+              lineStyle: {
+                ...axis.axisLine?.lineStyle,
+                color: '#4B5563',
+              },
             },
-          },
-          splitLine: {
-            ...baseOption.yAxis.splitLine,
-            lineStyle: {
-              ...baseOption.yAxis.splitLine?.lineStyle,
-              color: '#374151',
-              type: 'dashed',
+            axisTick: {
+              ...axis.axisTick,
+              lineStyle: {
+                ...axis.axisTick?.lineStyle,
+                color: '#4B5563',
+              },
             },
-          },
-        };
+            splitLine: {
+              ...axis.splitLine,
+              lineStyle: {
+                ...axis.splitLine?.lineStyle,
+                color: '#374151',
+                type: 'dashed',
+              },
+            },
+          }));
+        } else {
+          baseOption.yAxis = {
+            ...baseOption.yAxis,
+            axisLabel: {
+              ...baseOption.yAxis.axisLabel,
+              color: '#D1D5DB',
+            },
+            axisLine: {
+              ...baseOption.yAxis.axisLine,
+              lineStyle: {
+                ...baseOption.yAxis.axisLine?.lineStyle,
+                color: '#4B5563',
+              },
+            },
+            axisTick: {
+              ...baseOption.yAxis.axisTick,
+              lineStyle: {
+                ...baseOption.yAxis.axisTick?.lineStyle,
+                color: '#4B5563',
+              },
+            },
+            splitLine: {
+              ...baseOption.yAxis.splitLine,
+              lineStyle: {
+                ...baseOption.yAxis.splitLine?.lineStyle,
+                color: '#374151',
+                type: 'dashed',
+              },
+            },
+          };
+        }
       }
 
       // 범례 처리
@@ -218,13 +253,23 @@
       }
 
       if (baseOption.yAxis) {
-        baseOption.yAxis = {
-          ...baseOption.yAxis,
-          axisLabel: {
-            ...baseOption.yAxis.axisLabel,
-            color: '#6B7280',
-          },
-        };
+        if (Array.isArray(baseOption.yAxis)) {
+          baseOption.yAxis = baseOption.yAxis.map(axis => ({
+            ...axis,
+            axisLabel: {
+              ...axis.axisLabel,
+              color: '#6B7280',
+            },
+          }));
+        } else {
+          baseOption.yAxis = {
+            ...baseOption.yAxis,
+            axisLabel: {
+              ...baseOption.yAxis.axisLabel,
+              color: '#6B7280',
+            },
+          };
+        }
       }
 
       if (baseOption.legend) {

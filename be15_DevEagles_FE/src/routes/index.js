@@ -81,7 +81,7 @@ const routes = [
   {
     path: '/analytics/usage',
     name: 'AnalyticsUsage',
-    component: Home,
+    component: () => import('@/features/analytics/views/UsageAnalytics.vue'),
   },
   {
     path: '/analytics/revenue',
