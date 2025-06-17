@@ -159,10 +159,10 @@
   .section-title {
     font-size: 15px;
     font-weight: 600;
-    color: var(--color-text-primary);
+    color: var(--color-gray-900, #111827);
     margin-bottom: 10px;
     padding-bottom: 6px;
-    border-bottom: 1px solid var(--color-primary-100);
+    border-bottom: 1px solid var(--color-primary-100, #c2cbd9);
   }
 
   .detail-grid {
@@ -180,13 +180,13 @@
   .detail-label {
     font-size: 12px;
     font-weight: 500;
-    color: var(--color-text-secondary);
+    color: var(--color-gray-600, #4b5563);
   }
 
   .detail-value {
     font-size: 13px;
     font-weight: 400;
-    color: var(--color-text-primary);
+    color: var(--color-gray-900, #111827);
     min-height: 18px;
     display: flex;
     align-items: center;
