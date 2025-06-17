@@ -1,86 +1,57 @@
 <script setup>
-  import { computed } from 'vue';
-
   const props = defineProps({
     message: {
       type: Object,
       required: true,
     },
   });
-
-  const statusLabel = computed(() => {
-    switch (props.message.status) {
-      case 'sent':
-        return '발송 완료';
-      case 'reserved':
-        return '예약 문자';
-      default:
-        return '상태 미정';
-    }
-  });
 </script>
 
 <template>
-  <li class="message-item">
-    <div class="item-header">
-      <div class="sender">{{ message.sender }}</div>
-      <div class="timestamp">{{ message.createdAt }}</div>
+  <div class="message-list-row">
+    <div class="message-list-col message-title">
+      {{ message.title }}
     </div>
-    <div class="item-body">
-      <p class="content">{{ message.content }}</p>
+    <div class="message-list-col message-content">
+      {{ message.content }}
     </div>
-    <div class="item-footer">
-      <span class="badge" :class="message.status === 'sent' ? 'badge-primary' : 'badge-secondary'">
-        {{ statusLabel }}
-      </span>
+    <div class="message-list-col message-status">
+      {{ message.status === 'sent' ? '발송 완료' : '예약 문자' }}
     </div>
-  </li>
+    <div class="message-list-col message-date">
+      {{ message.date }}
+    </div>
+    <div class="message-list-col message-actions">
+      <slot name="actions" />
+    </div>
+  </div>
 </template>
 
 <style scoped>
-  .message-item {
-    border: 1px solid var(--color-gray-200);
-    border-radius: 0.75rem;
-    padding: 1rem;
-    background-color: var(--color-neutral-white);
+  .message-list-row {
     display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-  }
-
-  .item-header {
-    display: flex;
-    justify-content: space-between;
-    font-size: 0.875rem;
-    color: var(--color-gray-600);
-  }
-
-  .item-body .content {
-    font-size: 1rem;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--color-gray-100);
+    font-size: 14px;
     color: var(--color-gray-900);
-    word-break: break-word;
   }
-
-  .item-footer {
+  .message-list-col {
+    flex: 1;
+    padding: 4px 8px;
     display: flex;
-    justify-content: flex-end;
+    align-items: center;
+    justify-content: center; /* 이 줄 추가하면 전체 가운데 정렬됨 */
   }
-
-  .badge {
-    font-size: 0.75rem;
-    padding: 0.25rem 0.625rem;
-    border-radius: 9999px;
-    font-weight: 500;
-    line-height: 1;
+  .message-title {
+    flex: 1.5;
   }
-
-  .badge-primary {
-    background-color: var(--color-primary-main);
-    color: var(--color-neutral-white);
+  .message-content {
+    flex: 3;
   }
-
-  .badge-secondary {
-    background-color: var(--color-gray-400);
-    color: var(--color-neutral-white);
+  .message-status,
+  .message-date,
+  .message-actions {
+    flex: 1;
+    justify-content: center;
   }
 </style>
