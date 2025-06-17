@@ -3,6 +3,7 @@
   import MessageItem from '../components/MessageItem.vue';
   import MessageSendModal from '../components/modal/MessageSendModal.vue';
   import SendConfirmModal from '../components/modal/SendConfirmModal.vue';
+  import ReservationSendModal from '../components/modal/ReservationSendModal.vue';
   import BaseButton from '@/components/common/BaseButton.vue';
   import BasePopover from '@/components/common/BasePopover.vue';
   import BaseToast from '@/components/common/BaseToast.vue';
@@ -45,6 +46,8 @@
   const triggerElement = ref(null);
   const showSendModal = ref(false);
   const showSendConfirm = ref(false);
+  const showReserveModal = ref(false);
+
   const messageToSend = ref('');
   const toast = ref(null);
 
@@ -70,26 +73,26 @@
 
   const totalPages = computed(() => Math.ceil(filteredMessages.value.length / itemsPerPage));
 
-  function onSearchChange(value) {
-    searchKeyword.value = value;
-    currentPage.value = 1;
-  }
   function onStatusChange(value) {
     statusFilter.value = value;
     currentPage.value = 1;
   }
+
   function handleDelete(msg, event) {
     selectedMessage.value = msg;
     triggerElement.value = event.currentTarget;
     showDeleteConfirm.value = true;
   }
+
   function confirmDelete() {
     messages.value = messages.value.filter(m => m.id !== selectedMessage.value.id);
     showDeleteConfirm.value = false;
   }
+
   function cancelDelete() {
     showDeleteConfirm.value = false;
   }
+
   function handleSendRequest(content) {
     messageToSend.value = content;
     showSendModal.value = false;
@@ -97,12 +100,31 @@
       showSendConfirm.value = true;
     });
   }
+
+  function handleReserveRequest(content) {
+    messageToSend.value = content;
+    showSendModal.value = false;
+    nextTick(() => {
+      showReserveModal.value = true;
+    });
+  }
+
   function handleSendConfirm() {
     showSendConfirm.value = false;
     nextTick(() => {
-      toast.value?.success('메시지를 보냈습니다.');
+      toast.value.success('메시지를 보냈습니다.');
     });
     messageToSend.value = '';
+  }
+
+  function handleReserveConfirm({ content, date }) {
+    // 실제로는 백엔드에 저장 후 목록에 반영되어야 함
+    // 지금은 테스트 단계이므로 목록에는 추가하지 않음
+
+    showReserveModal.value = false;
+    messageToSend.value = '';
+
+    toast.value.success('예약 요청이 완료되었습니다. (※ 실제 저장은 백엔드 연동 후 처리됩니다)');
   }
 </script>
 
@@ -211,6 +233,14 @@
       :model-value="showSendModal"
       @update:model-value="val => (showSendModal = val)"
       @request-send="handleSendRequest"
+      @request-reserve="handleReserveRequest"
+    />
+
+    <ReservationSendModal
+      :model-value="showReserveModal"
+      :message-content="messageToSend"
+      @update:model-value="val => (showReserveModal = val)"
+      @confirm="handleReserveConfirm"
     />
 
     <SendConfirmModal
