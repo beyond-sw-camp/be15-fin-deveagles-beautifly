@@ -1,0 +1,350 @@
+/*───────────────────────────────────────────────────────────────────────────
+   PrimeVue Theme Customization
+   프로젝트 색상 팔레트에 맞는 PrimeVue 컴포넌트 테마 설정
+────────────────────────────────────────────────────────────────────────────*/
+
+:root {
+  /* 프로젝트 Primary 색상으로 PrimeVue Primary 덮어쓰기 */
+  --p-primary-50: #e8ecf1 !important;
+  --p-primary-100: #c2cbd9 !important;
+  --p-primary-200: #a1adc6 !important;
+  --p-primary-300: #7e8caa !important;
+  --p-primary-400: #5e6f91 !important;
+  --p-primary-500: #364f6b !important;
+  --p-primary-600: #2d4157 !important;
+  --p-primary-700: #243347 !important;
+  --p-primary-800: #1b2638 !important;
+  --p-primary-900: #131a28 !important;
+  --p-primary-950: #0b0f18 !important;
+
+  /* Primary color override */
+  --p-primary-color: #364f6b !important;
+  --p-primary-contrast-color: #ffffff !important;
+  --p-primary-hover-color: #2d4157 !important;
+  --p-primary-active-color: #243347 !important;
+
+  /* Success 색상을 악센트로 사용 */
+  --p-secondary-50: #e1fafb !important;
+  --p-secondary-100: #b5f0f3 !important;
+  --p-secondary-200: #86e6eb !important;
+  --p-secondary-300: #57dce3 !important;
+  --p-secondary-400: #29d2db !important;
+  --p-secondary-500: #3fc1c9 !important;
+  --p-secondary-600: #2ba8b0 !important;
+
+  /* Accent color as success color */
+  --p-accent-color: #3fc1c9 !important;
+  --p-accent-contrast-color: #ffffff !important;
+  --p-accent-hover-color: #2ba8b0 !important;
+  --p-accent-active-color: #1f8a92 !important;
+
+  /* DatePicker 특정 변수들 강제 적용 - 색상 교체 */
+  --p-datepicker-date-selected-background: #3fc1c9 !important;
+  --p-datepicker-date-selected-color: #ffffff !important;
+  --p-datepicker-date-hover-background: #e8ecf1 !important;
+  --p-datepicker-date-hover-color: #364f6b !important;
+  --p-datepicker-today-background: #364f6b !important;
+  --p-datepicker-today-color: #ffffff !important;
+
+  /* Highlight 색상 변경 */
+  --p-highlight-background: #e8ecf1 !important;
+  --p-highlight-focus-background: #c2cbd9 !important;
+  --p-highlight-color: #2d4157 !important;
+  --p-highlight-focus-color: #243347 !important;
+
+  /* Form Field 색상 조정 */
+  --p-form-field-focus-border-color: #364f6b !important;
+  --p-form-field-float-label-focus-color: #364f6b !important;
+
+  /* Button 색상 조정 */
+  --p-button-primary-background: #364f6b !important;
+  --p-button-primary-border-color: #364f6b !important;
+  --p-button-primary-color: #ffffff !important;
+  --p-button-primary-hover-background: #2d4157 !important;
+  --p-button-primary-hover-border-color: #2d4157 !important;
+  --p-button-primary-active-background: #243347 !important;
+  --p-button-primary-active-border-color: #243347 !important;
+
+  /* Secondary Button (Success 색상 사용) */
+  --p-button-secondary-background: #3fc1c9 !important;
+  --p-button-secondary-border-color: #3fc1c9 !important;
+  --p-button-secondary-color: #ffffff !important;
+  --p-button-secondary-hover-background: #2ba8b0 !important;
+  --p-button-secondary-hover-border-color: #2ba8b0 !important;
+  --p-button-secondary-active-background: #1f8a92 !important;
+  --p-button-secondary-active-border-color: #1f8a92 !important;
+
+  /* Focus Ring 색상 */
+  --p-focus-ring-color: #364f6b !important;
+
+  /* Select/Dropdown 색상 */
+  --p-select-focus-border-color: #364f6b !important;
+  --p-select-option-selected-background: #e8ecf1 !important;
+  --p-select-option-selected-color: #2d4157 !important;
+
+  /* Checkbox/Radio 색상 */
+  --p-checkbox-checked-background: #364f6b !important;
+  --p-checkbox-checked-border-color: #364f6b !important;
+  --p-radio-checked-background: #364f6b !important;
+  --p-radio-checked-border-color: #364f6b !important;
+}
+
+/*───────────────────────────────────────────────────────────────────────────
+   DatePicker 전체 스타일링
+────────────────────────────────────────────────────────────────────────────*/
+
+/* 기본 DatePicker 스타일링 */
+.prime-datepicker .p-datepicker-input {
+  width: 100% !important;
+  padding: 0.75rem !important;
+  border: 1px solid var(--color-gray-300, #d1d5db) !important;
+  border-radius: 6px !important;
+  font-size: 14px !important;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease !important;
+  background-color: white !important;
+  outline: none !important;
+}
+
+.prime-datepicker .p-datepicker-input:focus {
+  border-color: var(--color-primary-main, #364f6b) !important;
+  box-shadow: 0 0 0 2px rgba(54, 79, 107, 0.1) !important;
+}
+
+.prime-datepicker .p-datepicker-input.p-invalid {
+  border-color: var(--color-error-300, #dc2626) !important;
+}
+
+.prime-datepicker .p-datepicker-input:disabled {
+  background-color: var(--color-gray-100, #f3f4f6) !important;
+  color: var(--color-gray-500, #6b7280) !important;
+  cursor: not-allowed !important;
+}
+
+/* DatePicker 팝업 스타일링 */
+.prime-datepicker .p-datepicker {
+  border: 1px solid var(--color-gray-300, #d1d5db) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* 헤더 스타일링 */
+.prime-datepicker .p-datepicker-header {
+  background: var(--color-primary-50, #e8ecf1) !important;
+  border-bottom: 1px solid var(--color-gray-200, #e5e7eb) !important;
+  padding: 0.75rem !important;
+}
+
+.prime-datepicker .p-datepicker-prev,
+.prime-datepicker .p-datepicker-next {
+  color: var(--color-primary-main, #364f6b) !important;
+  width: 2rem !important;
+  height: 2rem !important;
+}
+
+.prime-datepicker .p-datepicker-prev:hover,
+.prime-datepicker .p-datepicker-next:hover {
+  background-color: var(--color-primary-100, #c2cbd9) !important;
+  color: var(--color-primary-600, #2d4157) !important;
+}
+
+.prime-datepicker .p-datepicker-title {
+  color: var(--color-primary-main, #364f6b) !important;
+  font-weight: 600 !important;
+}
+
+/* 날짜 셀 스타일링 */
+.prime-datepicker .p-datepicker-calendar td span {
+  width: 2.5rem !important;
+  height: 2.5rem !important;
+  border-radius: 6px !important;
+  transition: all 0.2s ease !important;
+}
+
+/* 호버 효과 */
+.prime-datepicker .p-datepicker-dates-cell:not(.p-disabled):hover span,
+.prime-datepicker .p-datepicker-dates-cell:not(.p-disabled):hover .p-datepicker-day {
+  background-color: #e8ecf1 !important;
+  color: #364f6b !important;
+}
+
+/* 범위 선택 스타일링 */
+.prime-datepicker .p-datepicker-dates-cell.p-datepicker-range-start span,
+.prime-datepicker .p-datepicker-dates-cell.p-datepicker-range-end span {
+  background-color: var(--color-primary-main, #364f6b) !important;
+  color: var(--color-neutral-white, #ffffff) !important;
+  font-weight: 600 !important;
+}
+
+.prime-datepicker .p-datepicker-dates-cell.p-datepicker-range span {
+  background-color: var(--color-primary-100, #c2cbd9) !important;
+  color: var(--color-primary-main, #364f6b) !important;
+}
+
+/* 버튼바 스타일링 */
+.prime-datepicker .p-datepicker-buttonbar {
+  border-top: 1px solid var(--color-gray-200, #e5e7eb) !important;
+  padding: 0.75rem !important;
+  gap: 0.5rem !important;
+}
+
+.prime-datepicker .p-datepicker-buttonbar .p-button {
+  padding: 0.5rem 1rem !important;
+  border-radius: 6px !important;
+  font-size: 14px !important;
+  border: 1px solid var(--color-primary-main, #364f6b) !important;
+  color: var(--color-primary-main, #364f6b) !important;
+  background: transparent !important;
+  transition: all 0.2s ease !important;
+}
+
+.prime-datepicker .p-datepicker-buttonbar .p-button:hover {
+  background-color: var(--color-primary-main, #364f6b) !important;
+  color: var(--color-neutral-white, #ffffff) !important;
+}
+
+/* 비활성화된 날짜 */
+.prime-datepicker .p-datepicker-dates-cell.p-disabled span {
+  color: var(--color-gray-400, #9ca3af) !important;
+  background: transparent !important;
+  cursor: not-allowed !important;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+  .prime-datepicker .p-datepicker-input {
+    font-size: 16px !important; /* iOS 줌 방지 */
+  }
+
+  .prime-datepicker .p-datepicker {
+    width: 100% !important;
+  }
+
+  .prime-datepicker .p-datepicker-calendar td span {
+    width: 2rem !important;
+    height: 2rem !important;
+  }
+}
+
+/*───────────────────────────────────────────────────────────────────────────
+   DatePicker 시간 입력 편의성 개선
+────────────────────────────────────────────────────────────────────────────*/
+
+/* 시간 입력 필드 스타일링 - 직접 타이핑 가능하게 */
+.p-datepicker .p-datepicker-time-picker .p-hour-input,
+.p-datepicker .p-datepicker-time-picker .p-minute-input,
+.p-datepicker .p-datepicker-time-picker .p-second-input {
+  width: 60px !important;
+  text-align: center !important;
+  background: white !important;
+  border: 1px solid #d1d5db !important;
+  border-radius: 4px !important;
+  padding: 4px 8px !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+}
+
+.p-datepicker .p-datepicker-time-picker .p-hour-input:focus,
+.p-datepicker .p-datepicker-time-picker .p-minute-input:focus,
+.p-datepicker .p-datepicker-time-picker .p-second-input:focus {
+  border-color: #364f6b !important;
+  box-shadow: 0 0 0 2px rgba(54, 79, 107, 0.1) !important;
+  outline: none !important;
+}
+
+/* 시간 선택기 전체 레이아웃 개선 */
+.p-datepicker .p-datepicker-time-picker {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 12px !important;
+  padding: 16px !important;
+  background: #f9fafb !important;
+  border-top: 1px solid #e5e7eb !important;
+}
+
+.p-datepicker .p-datepicker-time-picker .p-separator {
+  font-size: 16px !important;
+  font-weight: bold !important;
+  color: #364f6b !important;
+  margin: 0 4px !important;
+}
+
+/* 시간 증감 버튼 개선 */
+.p-datepicker .p-datepicker-time-picker .p-button {
+  width: 28px !important;
+  height: 28px !important;
+  min-width: 28px !important;
+  padding: 0 !important;
+  margin: 2px !important;
+  border: 1px solid #d1d5db !important;
+  background: white !important;
+  color: #364f6b !important;
+  border-radius: 4px !important;
+  font-size: 12px !important;
+  font-weight: bold !important;
+  transition: all 0.2s ease !important;
+}
+
+.p-datepicker .p-datepicker-time-picker .p-button:hover {
+  background: #e8ecf1 !important;
+  border-color: #364f6b !important;
+  color: #2d4157 !important;
+}
+
+.p-datepicker .p-datepicker-time-picker .p-button:active {
+  background: #c2cbd9 !important;
+  transform: scale(0.95) !important;
+}
+
+/* 시간 컨테이너 그룹핑 */
+.p-datepicker .p-datepicker-time-picker .p-time-picker-group {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 4px !important;
+}
+
+/* AM/PM 토글 개선 */
+.p-datepicker .p-datepicker-time-picker .p-ampm-picker {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 4px !important;
+}
+
+.p-datepicker .p-datepicker-time-picker .p-ampm-picker .p-button {
+  width: 40px !important;
+  height: 24px !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+}
+
+/* 월/년도 선택 모드 개선 */
+.p-datepicker.p-datepicker-month .p-datepicker-panel,
+.p-datepicker.p-datepicker-year .p-datepicker-panel {
+  min-width: 280px !important;
+}
+
+.p-datepicker.p-datepicker-month .p-datepicker-month-view .p-button,
+.p-datepicker.p-datepicker-year .p-datepicker-year-view .p-button {
+  width: 60px !important;
+  height: 40px !important;
+  margin: 2px !important;
+  border-radius: 6px !important;
+  font-weight: 500 !important;
+  transition: all 0.2s ease !important;
+}
+
+.p-datepicker.p-datepicker-month .p-datepicker-month-view .p-button:hover,
+.p-datepicker.p-datepicker-year .p-datepicker-year-view .p-button:hover {
+  background: #e8ecf1 !important;
+  color: #364f6b !important;
+}
+
+.p-datepicker.p-datepicker-month .p-datepicker-month-view .p-button.p-selected,
+.p-datepicker.p-datepicker-year .p-datepicker-year-view .p-button.p-selected {
+  background: #364f6b !important;
+  color: white !important;
+  font-weight: 600 !important;
+}

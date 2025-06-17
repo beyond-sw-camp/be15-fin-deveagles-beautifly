@@ -22,14 +22,13 @@
     />
 
     <!-- 캠페인 기간 -->
-    <VCalendarWrapper
+    <PrimeDatePicker
       v-model="campaignDateRange"
-      mode="range"
+      selection-mode="range"
       label="캠페인 기간*"
-      start-placeholder="시작일"
-      end-placeholder="종료일"
-      :error="errors.dateRange"
+      placeholder="캠페인 기간을 선택하세요"
       :min-date="new Date()"
+      :error="errors.dateRange"
       clearable
     />
 
@@ -79,14 +78,14 @@
 <script>
   import BaseForm from '@/components/common/BaseForm.vue';
   import BaseButton from '@/components/common/BaseButton.vue';
-  import VCalendarWrapper from '@/components/common/VCalendarWrapper.vue';
+  import PrimeDatePicker from '@/components/common/PrimeDatePicker.vue';
 
   export default {
     name: 'CampaignForm',
     components: {
       BaseForm,
       BaseButton,
-      VCalendarWrapper,
+      PrimeDatePicker,
     },
     props: {},
     emits: ['save', 'cancel'],
@@ -131,8 +130,15 @@
         },
         set(value) {
           if (value && Array.isArray(value) && value.length === 2) {
-            this.formData.startDate = value[0].toISOString().split('T')[0];
-            this.formData.endDate = value[1].toISOString().split('T')[0];
+            // 각 날짜가 null이 아닌지 확인
+            if (value[0] && value[1]) {
+              this.formData.startDate = value[0].toISOString().split('T')[0];
+              this.formData.endDate = value[1].toISOString().split('T')[0];
+            } else if (value[0]) {
+              // 첫 번째 날짜만 선택된 경우
+              this.formData.startDate = value[0].toISOString().split('T')[0];
+              this.formData.endDate = '';
+            }
           } else {
             this.formData.startDate = '';
             this.formData.endDate = '';

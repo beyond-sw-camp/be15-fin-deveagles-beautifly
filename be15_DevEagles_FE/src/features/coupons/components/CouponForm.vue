@@ -80,13 +80,15 @@
     </div>
 
     <!-- 만료일 -->
-    <VCalendarWrapper
+    <PrimeDatePicker
       v-model="formData.expiryDate"
-      mode="datetime"
       label="만료일*"
-      placeholder="만료일을 선택하세요"
-      :error="errors.expiryDate"
+      placeholder="날짜와 시간을 선택하세요"
+      show-time
+      default-time="00:00:00"
+      :show-button-bar="true"
       :min-date="new Date()"
+      :error="errors.expiryDate"
       clearable
     />
 
@@ -114,14 +116,14 @@
 <script>
   import BaseForm from '@/components/common/BaseForm.vue';
   import BaseButton from '@/components/common/BaseButton.vue';
-  import VCalendarWrapper from '@/components/common/VCalendarWrapper.vue';
+  import PrimeDatePicker from '@/components/common/PrimeDatePicker.vue';
 
   export default {
     name: 'CouponForm',
     components: {
       BaseForm,
       BaseButton,
-      VCalendarWrapper,
+      PrimeDatePicker,
     },
     props: {
       couponData: {
