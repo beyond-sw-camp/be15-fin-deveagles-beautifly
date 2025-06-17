@@ -1,0 +1,220 @@
+version: "3.8"
+
+services:
+  # Analytics API Service
+  analytics-api:
+    build:
+      context: .
+      target: development
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+      - analytics-data:/app/data
+      - analytics-models:/app/models
+      - analytics-logs:/app/logs
+    environment:
+      - ANALYTICS_DEBUG=true
+      - ANALYTICS_RELOAD=true
+      - ANALYTICS_LOG_LEVEL=DEBUG
+      - ANALYTICS_CRM_DATABASE_URL=mysql+pymysql://readonly_user:password@crm-db:3306/crm
+      - ANALYTICS_ANALYTICS_DB_PATH=data/analytics.db
+    depends_on:
+      - crm-db
+    networks:
+      - analytics-network
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import requests; requests.get('http://localhost:8000/health')",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Scheduler Service
+  analytics-scheduler:
+    build:
+      context: .
+      target: development
+    volumes:
+      - .:/app
+      - analytics-data:/app/data
+      - analytics-models:/app/models
+      - analytics-logs:/app/logs
+    environment:
+      - ANALYTICS_CRM_DATABASE_URL=mysql+pymysql://readonly_user:password@crm-db:3306/crm
+      - ANALYTICS_ANALYTICS_DB_PATH=data/analytics.db
+      - ANALYTICS_LOG_LEVEL=INFO
+    command: ["python", "-m", "analytics.scheduler"]
+    depends_on:
+      - analytics-api
+      - crm-db
+    networks:
+      - analytics-network
+    restart: unless-stopped
+
+  # Mock CRM Database (for development)
+  crm-db:
+    image: mariadb:11.0
+    environment:
+      MARIADB_ROOT_PASSWORD: rootpassword
+      MARIADB_DATABASE: crm
+      MARIADB_USER: readonly_user
+      MARIADB_PASSWORD: password
+    ports:
+      - "3306:3306"
+    volumes:
+      - crm-data:/var/lib/mysql
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - analytics-network
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mariadb-admin",
+          "ping",
+          "-h",
+          "localhost",
+          "-u",
+          "readonly_user",
+          "-ppassword",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # Monitoring - Prometheus
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.console.libraries=/etc/prometheus/console_libraries"
+      - "--web.console.templates=/etc/prometheus/consoles"
+      - "--storage.tsdb.retention.time=200h"
+      - "--web.enable-lifecycle"
+    networks:
+      - analytics-network
+    restart: unless-stopped
+
+  # Monitoring - Grafana
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources
+    networks:
+      - analytics-network
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+
+  # Jupyter Lab (for data exploration)
+  jupyter:
+    build:
+      context: .
+      target: development
+    ports:
+      - "8888:8888"
+    volumes:
+      - .:/app
+      - analytics-data:/app/data
+      - analytics-models:/app/models
+      - ./notebooks:/app/notebooks
+    environment:
+      - JUPYTER_ENABLE_LAB=yes
+      - JUPYTER_TOKEN=deveagles
+    command:
+      [
+        "jupyter",
+        "lab",
+        "--ip=0.0.0.0",
+        "--port=8888",
+        "--no-browser",
+        "--allow-root",
+        "--notebook-dir=/app",
+      ]
+    networks:
+      - analytics-network
+    restart: unless-stopped
+
+volumes:
+  analytics-data:
+    driver: local
+  analytics-models:
+    driver: local
+  analytics-logs:
+    driver: local
+  crm-data:
+    driver: local
+  prometheus-data:
+    driver: local
+  grafana-data:
+    driver: local
+
+networks:
+  analytics-network:
+    driver: bridge
+
+---
+# Production override file: docker-compose.prod.yml
+version: "3.8"
+
+services:
+  analytics-api:
+    build:
+      context: .
+      target: production
+    environment:
+      - ANALYTICS_DEBUG=false
+      - ANALYTICS_RELOAD=false
+      - ANALYTICS_LOG_LEVEL=INFO
+      - ANALYTICS_WORKERS=4
+    volumes:
+      - analytics-data:/app/data
+      - analytics-models:/app/models
+      - analytics-logs:/app/logs
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          memory: 2G
+          cpus: "1.0"
+        reservations:
+          memory: 1G
+          cpus: "0.5"
+
+  analytics-scheduler:
+    build:
+      context: .
+      target: production
+    environment:
+      - ANALYTICS_LOG_LEVEL=INFO
+    volumes:
+      - analytics-data:/app/data
+      - analytics-models:/app/models
+      - analytics-logs:/app/logs
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          memory: 1G
+          cpus: "0.5"
