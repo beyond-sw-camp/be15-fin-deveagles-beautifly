@@ -9,7 +9,7 @@
       required: true,
     },
   });
-  const emit = defineEmits(['update:modelValue', 'request-send']);
+  const emit = defineEmits(['update:modelValue', 'request-send', 'request-reserve']);
 
   const messageContent = ref('');
 
@@ -22,6 +22,12 @@
     emit('request-send', messageContent.value);
     close();
     messageContent.value = '';
+  }
+
+  function reserveSend() {
+    if (!messageContent.value.trim()) return;
+    emit('request-reserve', messageContent.value);
+    close();
   }
 </script>
 
@@ -49,7 +55,7 @@
       <div class="footer-buttons">
         <div class="left-buttons">
           <BaseButton type="primary" @click="confirmSend">보내기</BaseButton>
-          <BaseButton type="secondary">예약 보내기</BaseButton>
+          <BaseButton type="secondary" @click="reserveSend">예약 보내기</BaseButton>
         </div>
         <BaseButton type="ghost" @click="close">취소</BaseButton>
       </div>
