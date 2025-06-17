@@ -43,7 +43,7 @@
       </template>
     </BaseTable>
 
-    <BasePagination
+    <Pagination
       :current-page="currentPage"
       :total-pages="totalPages"
       :total-items="dummyData.length"
@@ -83,7 +83,7 @@
 
 <script setup>
   import { ref, computed } from 'vue';
-  import BasePagination from '@/components/common/Pagaination.vue';
+  import Pagination from '@/components/common/Pagination.vue';
   import BaseButton from '@/components/common/BaseButton.vue';
   import BaseConfirm from '@/components/common/BaseConfirm.vue';
   import BaseModal from '@/components/common/BaseModal.vue';

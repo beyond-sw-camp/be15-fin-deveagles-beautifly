@@ -2,7 +2,7 @@
   import { ref, computed } from 'vue';
   import BaseButton from '@/components/common/BaseButton.vue';
   import BaseTable from '@/components/common/BaseTable.vue';
-  import BasePagination from '@/components/common/Pagaination.vue';
+  import Pagination from '@/components/common/Pagination.vue';
   import TemplateItem from '@/features/messages/components/TemplateItem.vue';
   import { PlusIcon } from 'lucide-vue-next';
 
@@ -69,7 +69,7 @@
       </template>
     </BaseTable>
 
-    <BasePagination
+    <Pagination
       v-if="totalPages > 1"
       :current-page="currentPage"
       :total-pages="totalPages"

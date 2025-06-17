@@ -37,7 +37,7 @@
     </BaseTable>
 
     <!-- 페이지네이션 -->
-    <Pagaination
+    <Pagination
       :current-page="page"
       :total-pages="totalPages"
       :total-items="totalCount"
@@ -52,7 +52,7 @@
   import { useRouter } from 'vue-router';
   import BaseTable from '@/components/common/BaseTable.vue';
   import BaseButton from '@/components/common/BaseButton.vue';
-  import Pagaination from '@/components/common/Pagaination.vue';
+  import Pagination from '@/components/common/Pagination.vue';
 
   const router = useRouter();
   const staffList = ref([]);

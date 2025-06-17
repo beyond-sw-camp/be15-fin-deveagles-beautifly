@@ -9,7 +9,7 @@
   import BasePopover from '@/components/common/BasePopover.vue';
   import BaseToast from '@/components/common/BaseToast.vue';
   import BaseTable from '@/components/common/BaseTable.vue';
-  import BasePagination from '@/components/common/Pagaination.vue';
+  import Pagination from '@/components/common/Pagination.vue';
   import { SendHorizonalIcon } from 'lucide-vue-next';
 
   const messages = ref([
@@ -168,7 +168,7 @@
       </template>
     </BaseTable>
 
-    <BasePagination
+    <Pagination
       v-if="totalPages > 1"
       :current-page="currentPage"
       :total-pages="totalPages"
