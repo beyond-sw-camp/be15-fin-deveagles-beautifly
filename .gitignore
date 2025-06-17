@@ -124,6 +124,12 @@ be15_DevEagles_DA/logs/
 *.pt
 *.onnx
 
+# Analytics environment configuration
+be15_DevEagles_DA/.env
+be15_DevEagles_DA/config/local.yaml
+be15_DevEagles_DA/config/production.yaml  # 프로덕션 설정은 별도 관리
+be15_DevEagles_DA/config/*.local.yaml
+
 # ======================
 # ⚙️ Gradle (Spring Boot)
 # ======================

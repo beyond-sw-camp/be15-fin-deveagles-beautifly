@@ -22,26 +22,44 @@ logger = get_logger("cli")
 
 @app.command()
 def serve(
-    host: str = typer.Option(default=settings.host, help="Server host"),
-    port: int = typer.Option(default=settings.port, help="Server port"),
-    workers: int = typer.Option(default=settings.workers, help="Number of workers"),
-    reload: bool = typer.Option(default=settings.reload, help="Enable auto-reload"),
-    log_level: str = typer.Option(default=settings.log_level.lower(), help="Log level"),
+    host: str = typer.Option(default=None, help="Server host"),
+    port: int = typer.Option(default=None, help="Server port"),
+    workers: int = typer.Option(default=None, help="Number of workers"),
+    reload: bool = typer.Option(default=None, help="Enable auto-reload"),
+    log_level: str = typer.Option(default=None, help="Log level"),
+    env: str = typer.Option(default=None, help="Environment (development/staging/production)"),
 ) -> None:
     """Start the FastAPI server."""
-    console.print(f"🚀 Starting {settings.app_name} v{settings.app_version}")
-    console.print(f"📍 Server will be available at http://{host}:{port}")
+    # Override environment if specified
+    if env:
+        import os
+        os.environ["ANALYTICS_ENVIRONMENT"] = env
+        # Reload settings to pick up new environment
+        from analytics.core.config import get_settings
+        get_settings.cache_clear()
+        settings = get_settings()
     
-    if reload:
+    # Use CLI args or fall back to settings
+    actual_host = host or settings.host
+    actual_port = port or settings.port
+    actual_workers = workers or settings.workers
+    actual_reload = reload if reload is not None else settings.reload
+    actual_log_level = (log_level or settings.log_level).lower()
+    
+    console.print(f"🚀 Starting {settings.app_name} v{settings.app_version}")
+    console.print(f"🌍 Environment: {settings.environment}")
+    console.print(f"📍 Server will be available at http://{actual_host}:{actual_port}")
+    
+    if actual_reload:
         console.print("🔄 Auto-reload enabled (development mode)")
     
     uvicorn.run(
         "analytics.api.main:app",
-        host=host,
-        port=port,
-        workers=workers if not reload else 1,
-        reload=reload,
-        log_level=log_level,
+        host=actual_host,
+        port=actual_port,
+        workers=actual_workers if not actual_reload else 1,
+        reload=actual_reload,
+        log_level=actual_log_level,
         access_log=True,
     )
 
@@ -181,28 +199,60 @@ def status() -> None:
 
 
 @app.command()
-def config() -> None:
+def config(
+    env: str = typer.Option(default=None, help="Environment (development/staging/production)"),
+) -> None:
     """Show current configuration."""
-    console.print(f"⚙️ {settings.app_name} Configuration")
+    # Override environment if specified
+    if env:
+        import os
+        os.environ["ANALYTICS_ENVIRONMENT"] = env
+        # Reload settings to pick up new environment
+        from analytics.core.config import get_settings
+        get_settings.cache_clear()
+        current_settings = get_settings()
+    else:
+        current_settings = settings
+    
+    console.print(f"⚙️ {current_settings.app_name} Configuration")
     
     table = Table()
     table.add_column("Setting", style="cyan")
     table.add_column("Value", style="green")
     
+    # Environment
+    table.add_row("Environment", current_settings.environment)
+    
     # Core settings
-    table.add_row("App Name", settings.app_name)
-    table.add_row("Version", settings.app_version)
-    table.add_row("Debug Mode", str(settings.debug))
-    table.add_row("Log Level", settings.log_level)
+    table.add_row("App Name", current_settings.app_name)
+    table.add_row("Version", current_settings.app_version)
+    table.add_row("Debug Mode", str(current_settings.debug))
+    table.add_row("Log Level", current_settings.log_level)
     
     # Server settings
-    table.add_row("Host", settings.host)
-    table.add_row("Port", str(settings.port))
-    table.add_row("Workers", str(settings.workers))
+    table.add_row("Host", current_settings.host)
+    table.add_row("Port", str(current_settings.port))
+    table.add_row("Workers", str(current_settings.workers))
+    table.add_row("Reload", str(current_settings.reload))
     
     # Database settings
-    table.add_row("Analytics DB", settings.analytics_db_path)
-    table.add_row("Model Storage", settings.model_storage_path)
+    table.add_row("Analytics DB", current_settings.analytics_db_path)
+    table.add_row("CRM DB URL", current_settings.crm_database_url.replace("password", "***"))  # 비밀번호 마스킹
+    
+    # ML settings
+    table.add_row("Model Storage", current_settings.ml.model_storage_path)
+    table.add_row("Retrain Threshold", str(current_settings.ml.retrain_threshold))
+    
+    # ETL settings
+    table.add_row("ETL Batch Size", str(current_settings.etl.batch_size))
+    table.add_row("ETL Incremental", str(current_settings.etl.incremental))
+    
+    # API settings
+    table.add_row("API Prefix", current_settings.api_prefix)
+    table.add_row("Docs URL", str(current_settings.docs_url))
+    
+    # Monitoring
+    table.add_row("Metrics Enabled", str(current_settings.enable_metrics))
     
     console.print(table)
 
