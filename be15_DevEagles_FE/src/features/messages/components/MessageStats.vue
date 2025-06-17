@@ -42,11 +42,10 @@
   .message-stats-card {
     display: flex;
     gap: 24px;
-    background-color: var(--color-white);
+    background-color: var(--color-neutral-white);
     border: 1px solid var(--color-gray-200);
     border-radius: 8px;
     padding: 12px 20px;
-    box-shadow: var(--shadow-xs);
   }
   .stats-item {
     display: flex;
@@ -79,7 +78,7 @@
     font-size: 14px;
     border: 1px solid var(--color-gray-300);
     border-radius: 4px;
-    background-color: var(--color-white);
+    background-color: var(--color-neutral-white);
     min-width: 120px;
   }
 </style>
