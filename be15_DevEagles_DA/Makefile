@@ -95,7 +95,7 @@ logs: ## Show Docker logs
 db-setup: ## Setup development database
 	$(DOCKER_COMPOSE) up -d crm-db
 	sleep 10
-	mysql -h 127.0.0.1 -u readonly_user -ppassword crm < scripts/sample_data.sql
+	mariadb -h 127.0.0.1 -u readonly_user -ppassword crm < scripts/sample_data.sql
 
 db-reset: ## Reset development database
 	$(DOCKER_COMPOSE) down -v

@@ -31,7 +31,7 @@ class Settings(BaseSettings):
 
     # Database - CRM (Source)
     crm_database_url: str = Field(
-        default="mysql://readonly_user:password@localhost:3306/crm",
+        default="mysql+pymysql://readonly_user:password@localhost:3306/crm",
         description="CRM database connection URL",
     )
     crm_pool_size: int = Field(default=5, description="CRM DB connection pool size")

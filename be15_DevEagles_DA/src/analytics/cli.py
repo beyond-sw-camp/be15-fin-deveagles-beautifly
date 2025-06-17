@@ -164,7 +164,7 @@ def status() -> None:
         engine = get_crm_db()
         with engine.connect() as conn:
             conn.execute("SELECT 1")
-        table.add_row("CRM DB", "✅ Connected", "MySQL connection OK")
+        table.add_row("CRM DB", "✅ Connected", "MariaDB connection OK")
     except Exception as e:
         table.add_row("CRM DB", "❌ Error", str(e))
     

@@ -17,7 +17,7 @@ services:
       - ANALYTICS_DEBUG=true
       - ANALYTICS_RELOAD=true
       - ANALYTICS_LOG_LEVEL=DEBUG
-      - ANALYTICS_CRM_DATABASE_URL=mysql://readonly_user:password@crm-db:3306/crm
+      - ANALYTICS_CRM_DATABASE_URL=mysql+pymysql://readonly_user:password@crm-db:3306/crm
       - ANALYTICS_ANALYTICS_DB_PATH=data/analytics.db
     depends_on:
       - crm-db
@@ -47,7 +47,7 @@ services:
       - analytics-models:/app/models
       - analytics-logs:/app/logs
     environment:
-      - ANALYTICS_CRM_DATABASE_URL=mysql://readonly_user:password@crm-db:3306/crm
+      - ANALYTICS_CRM_DATABASE_URL=mysql+pymysql://readonly_user:password@crm-db:3306/crm
       - ANALYTICS_ANALYTICS_DB_PATH=data/analytics.db
       - ANALYTICS_LOG_LEVEL=INFO
     command: ["python", "-m", "analytics.scheduler"]
@@ -60,12 +60,12 @@ services:
 
   # Mock CRM Database (for development)
   crm-db:
-    image: mysql:8.0
+    image: mariadb:11.0
     environment:
-      MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: crm
-      MYSQL_USER: readonly_user
-      MYSQL_PASSWORD: password
+      MARIADB_ROOT_PASSWORD: rootpassword
+      MARIADB_DATABASE: crm
+      MARIADB_USER: readonly_user
+      MARIADB_PASSWORD: password
     ports:
       - "3306:3306"
     volumes:
@@ -78,7 +78,7 @@ services:
       test:
         [
           "CMD",
-          "mysqladmin",
+          "mariadb-admin",
           "ping",
           "-h",
           "localhost",

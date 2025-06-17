@@ -269,7 +269,7 @@ make test-coverage
 
 ## 🗄️ 데이터베이스 구조
 
-### CRM Database (MySQL - 읽기 전용)
+### CRM Database (MariaDB - 읽기 전용)
 
 - `customers`: 고객 정보
 - `reservations`: 예약/방문 기록
@@ -291,7 +291,7 @@ ANALYTICS_DEBUG=false
 ANALYTICS_LOG_LEVEL=INFO
 
 # Database
-ANALYTICS_CRM_DATABASE_URL=mysql://user:pass@host:3306/crm
+ANALYTICS_CRM_DATABASE_URL=mysql+pymysql://user:pass@host:3306/crm
 ANALYTICS_ANALYTICS_DB_PATH=data/analytics.db
 
 # ML
