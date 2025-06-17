@@ -86,7 +86,7 @@
       </template>
     </BaseTable>
 
-    <BasePagination
+    <Pagination
       :current-page="1"
       :total-pages="3"
       :total-items="30"
@@ -132,7 +132,7 @@
   import BaseModal from '@/components/common/BaseModal.vue';
   import BaseToast from '@/components/common/BaseToast.vue';
   import BaseButton from '@/components/common/BaseButton.vue';
-  import BasePagination from '@/components/common/Pagaination.vue';
+  import Pagination from '@/components/common/Pagination.vue';
 
   const searchText = ref('');
   const selectedDate = ref('');
