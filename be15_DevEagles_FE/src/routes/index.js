@@ -12,12 +12,12 @@ const routes = [
   {
     path: '/reservation/calendar',
     name: 'ReservationCalendar',
-    component: () => import('@/features/schedule/views/ScheduleCalendarView.vue'),
+    component: () => import('@/features/schedules/views/ScheduleCalendarView.vue'),
   },
   {
     path: '/reservation/list',
     name: 'ReservationList',
-    component: () => import('@/features/schedule/views/ReservationListView.vue'),
+    component: () => import('@/features/schedules/views/ReservationListView.vue'),
   },
   {
     path: '/reservation/schedule',
@@ -32,12 +32,12 @@ const routes = [
   {
     path: '/reservation/requests',
     name: 'ReservationRequests',
-    component: () => import('@/features/schedule/views/ReservationRequestsView.vue'),
+    component: () => import('@/features/schedules/views/ReservationRequestsView.vue'),
   },
   {
     path: '/reservation/history',
     name: 'ReservationHistory',
-    component: () => import('@/features/schedule/views/ReservationHistoryView.vue'),
+    component: () => import('@/features/schedules/views/ReservationHistoryView.vue'),
   },
   // 고객 관리 라우트 - 임시로 모두 Home으로 라우팅
   {
@@ -159,13 +159,12 @@ const routes = [
   {
     path: '/settings/account',
     name: 'SettingsAccount',
-    component: Home,
+    component: () => import('@/features/users/views/AccountSettingView.vue'),
   },
-  // 프로필 라우트 - 임시로 Home으로 라우팅
   {
     path: '/profile',
     name: 'Profile',
-    component: Home,
+    component: () => import('@/features/users/views/ProfileSettingView.vue'),
   },
   ...userRoutes, // 추후에 밖으로 빼기
 ];
