@@ -1,5 +1,6 @@
 <template>
   <div class="template-list-view">
+    <!-- 상단 헤더 -->
     <div class="template-list-header">
       <h2 class="font-section-title text-dark">문자 보관함</h2>
       <BaseButton type="primary" size="sm" @click="openCreateModal">
@@ -7,6 +8,7 @@
       </BaseButton>
     </div>
 
+    <!-- 템플릿 테이블 -->
     <BaseTable :columns="columns" :data="paginatedTemplates">
       <template #body>
         <TemplateItem
@@ -15,10 +17,12 @@
           :template="template"
           :column-widths="columnWidths"
           @edit="openEditModal"
+          @delete="openDeleteModal"
         />
       </template>
     </BaseTable>
 
+    <!-- 페이지네이션 -->
     <Pagination
       v-if="totalPages > 1"
       :current-page="currentPage"
@@ -28,9 +32,12 @@
       @page-change="onPageChange"
     />
 
+    <!-- 모달들 -->
     <TemplateCreateModal v-model="showCreateModal" @submit="handleCreate" />
     <TemplateEditModal v-model="showEditModal" :template="editTarget" @submit="handleEdit" />
+    <TemplateDeleteModal v-model="showDeleteModal" @confirm="confirmDelete" />
 
+    <!-- 토스트 -->
     <BaseToast ref="toast" />
   </div>
 </template>
@@ -38,10 +45,12 @@
 <script setup>
   import { ref, computed } from 'vue';
   import { defineAsyncComponent } from 'vue';
+
   import BaseButton from '@/components/common/BaseButton.vue';
   import BaseTable from '@/components/common/BaseTable.vue';
   import Pagination from '@/components/common/Pagination.vue';
   import BaseToast from '@/components/common/BaseToast.vue';
+
   import TemplateItem from '@/features/messages/components/TemplateItem.vue';
   import { PlusIcon } from 'lucide-vue-next';
 
@@ -50,6 +59,9 @@
   );
   const TemplateEditModal = defineAsyncComponent(
     () => import('@/features/messages/components/modal/TemplateEditModal.vue')
+  );
+  const TemplateDeleteModal = defineAsyncComponent(
+    () => import('@/features/messages/components/modal/TemplateDeleteModal.vue')
   );
 
   const allTemplates = ref([
@@ -70,12 +82,18 @@
 
   const currentPage = ref(1);
   const itemsPerPage = 10;
+
   const showCreateModal = ref(false);
   const showEditModal = ref(false);
+  const showDeleteModal = ref(false);
+
   const editTarget = ref({ id: null, name: '', content: '', createdAt: '' });
+  const deleteTarget = ref(null);
+
   const toast = ref(null);
 
   const totalPages = computed(() => Math.ceil(allTemplates.value.length / itemsPerPage));
+
   const paginatedTemplates = computed(() => {
     const start = (currentPage.value - 1) * itemsPerPage;
     return allTemplates.value.slice(start, start + itemsPerPage);
@@ -100,6 +118,7 @@
   }
 
   function handleCreate(newTemplate) {
+    allTemplates.value.unshift(newTemplate);
     toast.value?.success('템플릿이 등록되었습니다.', { type: 'success' });
     showCreateModal.value = false;
   }
@@ -113,14 +132,24 @@
     showEditModal.value = false;
   }
 
+  function confirmDelete() {
+    if (!deleteTarget.value) return;
+    toast.value?.success('템플릿이 삭제되었습니다.', { type: 'success' });
+    showDeleteModal.value = false;
+  }
+
   function openCreateModal() {
     showCreateModal.value = true;
   }
 
   function openEditModal(template) {
     editTarget.value = { ...template };
-    console.log(template);
     showEditModal.value = true;
+  }
+
+  function openDeleteModal(template) {
+    deleteTarget.value = template;
+    showDeleteModal.value = true;
   }
 </script>
 
@@ -137,4 +166,3 @@
     margin-bottom: 1.5rem;
   }
 </style>
-v
