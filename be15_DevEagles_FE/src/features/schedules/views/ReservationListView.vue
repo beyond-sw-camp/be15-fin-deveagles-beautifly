@@ -19,7 +19,7 @@
         <option value="thisMonth">이번 달</option>
       </select>
 
-      <select v-model="selectedEmployee" class="input input-select">
+      <select v-model="selectedStaff" class="input input-select">
         <option value="">담당자</option>
         <option value="박미글">박미글</option>
         <option value="이팀장">이팀장</option>
@@ -136,14 +136,14 @@
 
   const searchText = ref('');
   const selectedDate = ref('');
-  const selectedEmployee = ref('');
+  const selectedStaff = ref('');
   const selectedService = ref('');
   const selectedStatus = ref('');
 
   const columns = [
     { key: 'name', title: '고객 이름', width: '120px' },
     { key: 'service', title: '시술', width: '100px' },
-    { key: 'employee', title: '담당자', width: '100px' },
+    { key: 'staff', title: '담당자', width: '100px' },
     { key: 'date', title: '예약 날짜', width: '160px' },
     { key: 'status', title: '예약 상태', width: '140px' },
     { key: 'prepaidUsed', title: '선불권 사용 여부', width: '140px' },
@@ -155,7 +155,7 @@
       id: 1,
       name: '김미글',
       service: '염색',
-      employee: '박미글',
+      staff: '박미글',
       date: '2025-06-08T14:00:00',
       status: '예약 대기',
       prepaidUsed: true,
@@ -164,7 +164,7 @@
       id: 2,
       name: '이예정',
       service: '커트',
-      employee: '이팀장',
+      staff: '이팀장',
       date: '2025-06-09T11:00:00',
       status: '예약 확정',
       prepaidUsed: false,
@@ -173,7 +173,7 @@
       id: 3,
       name: '장현수',
       service: '펌',
-      employee: '박미글',
+      staff: '박미글',
       date: '2025-06-10T15:00:00',
       status: '노쇼',
       prepaidUsed: false,
@@ -189,7 +189,7 @@
         r.name.includes(searchText.value) ||
         (r.phone && r.phone.includes(searchText.value));
 
-      const matchEmployee = !selectedEmployee.value || r.employee.includes(selectedEmployee.value);
+      const matchStaff = !selectedStaff.value || r.staff.includes(selectedStaff.value);
 
       const matchService = !selectedService.value || r.service.includes(selectedService.value);
 
@@ -218,7 +218,7 @@
           reservationDate.getMonth() === now.getMonth();
       }
 
-      return matchText && matchEmployee && matchService && matchStatus && matchDate;
+      return matchText && matchStaff && matchService && matchStatus && matchDate;
     });
   });
 
