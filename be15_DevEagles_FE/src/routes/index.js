@@ -144,7 +144,7 @@ const routes = [
   {
     path: '/settings/staff',
     name: 'SettingsStaff',
-    component: Home,
+    component: () => import('@/features/staffs/views/StaffListView.vue'),
   },
   {
     path: '/settings/customer-grade',

@@ -6,7 +6,7 @@
 
     <BaseTable :columns="columns" :data="pagedData" row-key="id" :striped="true" :hover="true" />
 
-    <BasePagination
+    <Pagination
       :current-page="currentPage"
       :total-pages="totalPages"
       :total-items="historyData.length"
@@ -20,7 +20,7 @@
 <script setup>
   import { ref, computed } from 'vue';
   import BaseTable from '@/components/common/BaseTable.vue';
-  import BasePagination from '@/components/common/Pagaination.vue';
+  import Pagination from '@/components/common/Pagination.vue';
 
   const columns = [
     { key: 'name', title: '고객 이름', width: '120px' },

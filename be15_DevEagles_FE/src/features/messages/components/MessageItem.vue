@@ -1,57 +1,50 @@
 <script setup>
+  import BaseButton from '@/components/common/BaseButton.vue';
+  import { TrashIcon, EditIcon } from 'lucide-vue-next';
+
   const props = defineProps({
     message: {
       type: Object,
       required: true,
     },
   });
+
+  const emit = defineEmits(['delete']);
 </script>
 
 <template>
-  <div class="message-list-row">
-    <div class="message-list-col message-title">
-      {{ message.title }}
-    </div>
-    <div class="message-list-col message-content">
-      {{ message.content }}
-    </div>
-    <div class="message-list-col message-status">
-      {{ message.status === 'sent' ? '발송 완료' : '예약 문자' }}
-    </div>
-    <div class="message-list-col message-date">
-      {{ message.date }}
-    </div>
-    <div class="message-list-col message-actions">
-      <slot name="actions" />
-    </div>
-  </div>
+  <tr>
+    <td class="text-center">{{ props.message.title }}</td>
+    <td class="text-center">{{ props.message.content }}</td>
+    <td class="text-center">
+      {{ props.message.status === 'sent' ? '발송 완료' : '예약 문자' }}
+    </td>
+    <td class="text-center">{{ props.message.date }}</td>
+    <td class="text-center">
+      <div v-if="props.message.status === 'reserved'" class="action-buttons">
+        <BaseButton type="ghost" size="sm" class="icon-button">
+          <EditIcon :size="16" />
+        </BaseButton>
+        <BaseButton
+          type="ghost"
+          size="sm"
+          class="icon-button"
+          @click="emit('delete', props.message, $event)"
+        >
+          <TrashIcon :size="16" color="var(--color-error-600)" />
+        </BaseButton>
+      </div>
+    </td>
+  </tr>
 </template>
 
 <style scoped>
-  .message-list-row {
+  .text-center {
+    text-align: center;
+  }
+  .action-buttons {
     display: flex;
-    padding: 12px 16px;
-    border-bottom: 1px solid var(--color-gray-100);
-    font-size: 14px;
-    color: var(--color-gray-900);
-  }
-  .message-list-col {
-    flex: 1;
-    padding: 4px 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center; /* 이 줄 추가하면 전체 가운데 정렬됨 */
-  }
-  .message-title {
-    flex: 1.5;
-  }
-  .message-content {
-    flex: 3;
-  }
-  .message-status,
-  .message-date,
-  .message-actions {
-    flex: 1;
+    gap: 8px;
     justify-content: center;
   }
 </style>

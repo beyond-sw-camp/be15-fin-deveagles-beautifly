@@ -1,15 +1,16 @@
 <script setup>
   import { ref, computed, nextTick } from 'vue';
   import MessageItem from '../components/MessageItem.vue';
+  import MessageStats from '../components/MessageStats.vue';
   import MessageSendModal from '../components/modal/MessageSendModal.vue';
   import SendConfirmModal from '../components/modal/SendConfirmModal.vue';
+  import ReservationSendModal from '../components/modal/ReservationSendModal.vue';
   import BaseButton from '@/components/common/BaseButton.vue';
   import BasePopover from '@/components/common/BasePopover.vue';
   import BaseToast from '@/components/common/BaseToast.vue';
-  import Pagination from '@/components/common/Pagaination.vue';
-  import TrashIcon from '@/components/icons/TrashIcon.vue';
-  import EditIcon from '@/components/icons/EditIcon.vue';
-  import { SendHorizonalIcon, ClockIcon, MessageCircleIcon } from 'lucide-vue-next';
+  import BaseTable from '@/components/common/BaseTable.vue';
+  import Pagination from '@/components/common/Pagination.vue';
+  import { SendHorizonalIcon } from 'lucide-vue-next';
 
   const messages = ref([
     {
@@ -39,12 +40,12 @@
   const statusFilter = ref('all');
   const currentPage = ref(1);
   const itemsPerPage = 10;
-
   const showDeleteConfirm = ref(false);
   const selectedMessage = ref(null);
   const triggerElement = ref(null);
   const showSendModal = ref(false);
   const showSendConfirm = ref(false);
+  const showReserveModal = ref(false);
   const messageToSend = ref('');
   const toast = ref(null);
 
@@ -70,26 +71,26 @@
 
   const totalPages = computed(() => Math.ceil(filteredMessages.value.length / itemsPerPage));
 
-  function onSearchChange(value) {
-    searchKeyword.value = value;
-    currentPage.value = 1;
-  }
   function onStatusChange(value) {
     statusFilter.value = value;
     currentPage.value = 1;
   }
+
   function handleDelete(msg, event) {
     selectedMessage.value = msg;
     triggerElement.value = event.currentTarget;
     showDeleteConfirm.value = true;
   }
+
   function confirmDelete() {
     messages.value = messages.value.filter(m => m.id !== selectedMessage.value.id);
     showDeleteConfirm.value = false;
   }
+
   function cancelDelete() {
     showDeleteConfirm.value = false;
   }
+
   function handleSendRequest(content) {
     messageToSend.value = content;
     showSendModal.value = false;
@@ -97,13 +98,36 @@
       showSendConfirm.value = true;
     });
   }
+
+  function handleReserveRequest(content) {
+    messageToSend.value = content;
+    showSendModal.value = false;
+    nextTick(() => {
+      showReserveModal.value = true;
+    });
+  }
+
   function handleSendConfirm() {
     showSendConfirm.value = false;
     nextTick(() => {
-      toast.value?.success('메시지를 보냈습니다.');
+      toast.value.success('메시지를 보냈습니다.');
     });
     messageToSend.value = '';
   }
+
+  function handleReserveConfirm({ content, date }) {
+    showReserveModal.value = false;
+    messageToSend.value = '';
+    toast.value.success('예약 요청이 완료되었습니다.');
+  }
+
+  const columns = [
+    { key: 'title', title: '제목', width: '20%', headerClass: 'text-center' },
+    { key: 'content', title: '내용', width: '40%', headerClass: 'text-center' },
+    { key: 'status', title: '상태', width: '10%', headerClass: 'text-center' },
+    { key: 'date', title: '날짜', width: '15%', headerClass: 'text-center' },
+    { key: 'actions', title: '관리', width: '15%', headerClass: 'text-center' },
+  ];
 </script>
 
 <template>
@@ -112,30 +136,7 @@
       <h2 class="font-section-title text-dark">메시지 목록</h2>
     </div>
 
-    <!-- 상단 통계 -->
-    <div class="message-stats-bar">
-      <div class="stat-card">
-        <SendHorizonalIcon class="stat-icon icon-blue" />
-        <div class="stat-info">
-          <div class="stat-value">{{ messages.filter(m => m.status === 'sent').length }}</div>
-          <div class="stat-label">발송 완료</div>
-        </div>
-      </div>
-      <div class="stat-card">
-        <ClockIcon class="stat-icon icon-gray" />
-        <div class="stat-info">
-          <div class="stat-value">{{ messages.filter(m => m.status === 'reserved').length }}</div>
-          <div class="stat-label">예약 문자</div>
-        </div>
-      </div>
-      <div class="stat-card">
-        <MessageCircleIcon class="stat-icon icon-brown" />
-        <div class="stat-info">
-          <div class="stat-value">{{ messages.length }}</div>
-          <div class="stat-label">전체 메시지</div>
-        </div>
-      </div>
-    </div>
+    <MessageStats :messages="messages" />
 
     <div class="message-filter-row with-button">
       <div class="filter-control">
@@ -156,35 +157,16 @@
       </BaseButton>
     </div>
 
-    <div class="message-list-table">
-      <div class="message-list-header-row">
-        <span class="message-list-col message-title">제목</span>
-        <span class="message-list-col message-content">내용</span>
-        <span class="message-list-col message-status">상태</span>
-        <span class="message-list-col message-date">날짜</span>
-        <span class="message-list-col message-actions">관리</span>
-      </div>
-      <MessageItem v-for="msg in paginatedMessages" :key="msg.id" :message="msg">
-        <template #actions>
-          <div
-            v-if="msg.status === 'reserved'"
-            style="display: flex; gap: 8px; justify-content: center"
-          >
-            <BaseButton type="ghost" size="sm" class="icon-button">
-              <EditIcon :size="16" />
-            </BaseButton>
-            <BaseButton
-              type="ghost"
-              size="sm"
-              class="icon-button"
-              @click="event => handleDelete(msg, event)"
-            >
-              <TrashIcon :size="16" color="var(--color-error-600)" />
-            </BaseButton>
-          </div>
-        </template>
-      </MessageItem>
-    </div>
+    <BaseTable :columns="columns" :data="paginatedMessages">
+      <template #body>
+        <MessageItem
+          v-for="msg in paginatedMessages"
+          :key="msg.id"
+          :message="msg"
+          @delete="handleDelete"
+        />
+      </template>
+    </BaseTable>
 
     <Pagination
       v-if="totalPages > 1"
@@ -211,6 +193,14 @@
       :model-value="showSendModal"
       @update:model-value="val => (showSendModal = val)"
       @request-send="handleSendRequest"
+      @request-reserve="handleReserveRequest"
+    />
+
+    <ReservationSendModal
+      :model-value="showReserveModal"
+      :message-content="messageToSend"
+      @update:model-value="val => (showReserveModal = val)"
+      @confirm="handleReserveConfirm"
     />
 
     <SendConfirmModal
@@ -224,80 +214,10 @@
 </template>
 
 <style scoped>
-  @import '@/assets/base.css';
-  @import '@/assets/css/components.css';
-  @import '@/assets/css/styleguide.css';
-  @import '@/assets/css/tooltip.css';
-
   .message-list-view {
     padding: 24px;
     max-width: 1200px;
     margin: 0 auto;
-  }
-  .message-list-view h2 {
-    margin-bottom: 24px;
-    text-align: left;
-  }
-  .message-stats-bar {
-    display: flex;
-    justify-content: center;
-    flex-wrap: wrap;
-    gap: 12px;
-    align-items: center;
-    margin-bottom: 16px;
-  }
-  .stat-card {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    background-color: var(--color-neutral-white);
-    border: 1px solid var(--color-gray-200);
-    border-radius: 8px;
-    padding: 16px 24px;
-    min-width: 200px;
-    flex: none;
-  }
-  .stat-icon {
-    width: 32px;
-    height: 32px;
-    flex-shrink: 0;
-  }
-  .icon-blue {
-    color: var(--color-primary-main);
-  }
-  .icon-gray {
-    color: var(--color-gray-500);
-  }
-  .icon-brown {
-    color: var(--color-gray-800);
-  }
-  .stat-info {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-  .stat-value {
-    font-size: 20px;
-    font-weight: 700;
-    color: var(--color-gray-900);
-  }
-  .stat-label {
-    font-size: 14px;
-    color: var(--color-gray-700);
-  }
-  .filter-label {
-    font-size: 14px;
-    font-weight: 500;
-    color: var(--color-gray-600);
-    white-space: nowrap;
-  }
-  .filter-select {
-    padding: 6px 10px;
-    font-size: 14px;
-    border: 1px solid var(--color-gray-300);
-    border-radius: 6px;
-    background-color: var(--color-neutral-white);
-    max-width: 100px;
   }
   .message-list-header {
     display: flex;
@@ -317,52 +237,27 @@
     align-items: center;
     gap: 12px;
   }
-  .message-list-table {
-    width: 100%;
-    border-top: 1px solid var(--color-gray-200);
-    background-color: var(--color-neutral-white);
-    border-radius: 8px;
-    overflow: hidden;
-  }
-  .message-list-header-row,
-  .message-list-row {
-    display: flex;
+  .filter-label {
     font-size: 14px;
-    color: var(--color-gray-700);
-    border-bottom: 1px solid var(--color-gray-200);
-    padding: 12px 16px;
+    font-weight: 500;
+    color: var(--color-gray-600);
+    white-space: nowrap;
   }
-  .message-list-header-row {
-    background-color: var(--color-gray-50);
-    font-weight: 600;
+  .filter-select {
+    padding: 6px 10px;
+    font-size: 14px;
+    border: 1px solid var(--color-gray-300);
+    border-radius: 6px;
+    background-color: var(--color-neutral-white);
+    max-width: 100px;
   }
-  .message-list-col {
-    flex: 1;
-    padding: 0 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
+  th {
+    text-align: center !important;
   }
-  .message-title {
-    flex: 1.5;
-    justify-content: center;
-    text-align: center;
-  }
-  .message-content {
-    flex: 3;
-    justify-content: center;
-    text-align: center;
-  }
-  .message-status {
-    flex: 1;
-    justify-content: flex-start;
-    text-align: left;
-  }
-  .message-date {
-    flex: 1;
-  }
-  .message-actions {
-    flex: 1;
+</style>
+
+<style>
+  .text-center {
+    text-align: center !important;
   }
 </style>

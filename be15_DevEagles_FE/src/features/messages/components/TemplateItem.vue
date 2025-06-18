@@ -1,41 +1,38 @@
 <script setup>
-  const props = defineProps({ item: Object });
+  import BaseButton from '@/components/common/BaseButton.vue';
+  import { TrashIcon } from 'lucide-vue-next';
 
-  function edit() {
-    alert(`수정: ${props.item.name}`);
-  }
+  const props = defineProps({
+    template: {
+      type: Object,
+      required: true,
+    },
+  });
 
-  function remove() {
-    if (confirm(`'${props.item.name}' 템플릿을 삭제할까요?`)) {
-      alert('삭제 처리');
-    }
-  }
+  const emit = defineEmits(['delete']);
 </script>
 
 <template>
   <tr>
-    <td class="cell">{{ item.name }}</td>
-    <td class="cell">{{ item.content }}</td>
-    <td class="cell">{{ item.createdAt }}</td>
-    <td class="cell actions">
-      <button class="btn btn--gray btn--xs" @click="edit">수정</button>
-      <button class="btn btn--danger btn--xs" @click="remove">삭제</button>
+    <td class="text-center">{{ props.template.name }}</td>
+    <td class="text-center truncate">{{ props.template.content }}</td>
+    <td class="text-center">{{ props.template.createdAt }}</td>
+    <td class="text-center">
+      <BaseButton size="xs" icon @click="emit('delete', props.template)">
+        <TrashIcon class="icon" />
+      </BaseButton>
     </td>
   </tr>
 </template>
 
 <style scoped>
-  .cell {
-    text-align: center;
-    vertical-align: middle;
-    padding: 0.75rem;
-    font-size: 0.875rem;
-    color: var(--color-neutral-dark);
+  .truncate {
+    max-width: 400px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
-
-  .actions {
-    display: flex;
-    justify-content: center;
-    gap: 0.5rem;
+  .text-center {
+    text-align: center;
   }
 </style>
