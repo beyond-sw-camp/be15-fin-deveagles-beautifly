@@ -1,11 +1,12 @@
 """CRM database models using SQLAlchemy."""
 
 from datetime import datetime
+from decimal import Decimal
 from typing import List, Optional
 
 from sqlalchemy import (
-    Column, Integer, String, DateTime, Decimal, Text, Boolean,
-    ForeignKey, Index
+    Column, Integer, String, DateTime, Text, Boolean,
+    ForeignKey, Index, Numeric
 )
 from sqlalchemy.orm import relationship
 
@@ -69,7 +70,7 @@ class Service(Base, TimestampMixin):
     id = Column(Integer, primary_key=True)
     name = Column(String(200), nullable=False)
     category = Column(String(100), nullable=True)
-    price = Column(Decimal(10, 2), nullable=False)
+    price = Column(Numeric(10, 2), nullable=False)
     duration_minutes = Column(Integer, nullable=True)
     description = Column(Text, nullable=True)
     is_active = Column(Boolean, default=True, nullable=False)
@@ -92,9 +93,9 @@ class Visit(Base, TimestampMixin):
     customer_id = Column(Integer, ForeignKey("customers.id"), nullable=False)
     employee_id = Column(Integer, ForeignKey("employees.id"), nullable=True)
     visit_date = Column(DateTime, nullable=False)
-    total_amount = Column(Decimal(10, 2), nullable=False, default=0)
-    discount_amount = Column(Decimal(10, 2), nullable=False, default=0)
-    final_amount = Column(Decimal(10, 2), nullable=False, default=0)
+    total_amount = Column(Numeric(10, 2), nullable=False, default=0)
+    discount_amount = Column(Numeric(10, 2), nullable=False, default=0)
+    final_amount = Column(Numeric(10, 2), nullable=False, default=0)
     payment_method = Column(String(50), nullable=True)
     memo = Column(Text, nullable=True)
     status = Column(String(20), default="completed", nullable=False)
@@ -123,10 +124,10 @@ class VisitService(Base, TimestampMixin):
     service_id = Column(Integer, ForeignKey("services.id"), nullable=False)
     employee_id = Column(Integer, ForeignKey("employees.id"), nullable=True)
     quantity = Column(Integer, default=1, nullable=False)
-    unit_price = Column(Decimal(10, 2), nullable=False)
-    total_price = Column(Decimal(10, 2), nullable=False)
-    discount_amount = Column(Decimal(10, 2), nullable=False, default=0)
-    final_price = Column(Decimal(10, 2), nullable=False)
+    unit_price = Column(Numeric(10, 2), nullable=False)
+    total_price = Column(Numeric(10, 2), nullable=False)
+    discount_amount = Column(Numeric(10, 2), nullable=False, default=0)
+    final_price = Column(Numeric(10, 2), nullable=False)
     memo = Column(Text, nullable=True)
     
     # 관계 설정
