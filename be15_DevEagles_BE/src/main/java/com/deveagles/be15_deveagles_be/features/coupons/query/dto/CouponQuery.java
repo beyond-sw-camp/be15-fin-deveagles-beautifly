@@ -12,15 +12,15 @@ import lombok.NoArgsConstructor;
 @Builder
 public class CouponQuery {
 
-  private Long id;
   private String couponCode;
   private String couponTitle;
+  private Long shopId;
   private Long staffId;
   private Long primaryItemId;
-  private Long secondaryItemId;
-  private Integer discountRate;
-  private LocalDate expirationDate;
   private Boolean isActive;
+  private LocalDate expirationDateFrom;
+  private LocalDate expirationDateTo;
+
   private Integer page;
   private Integer size;
   private String sortBy;
