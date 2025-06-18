@@ -10,6 +10,7 @@ from rich.table import Table
 
 from analytics.core.config import settings
 from analytics.core.logging import get_logger
+from analytics.core.database import get_analytics_db, get_crm_db
 
 app = typer.Typer(
     name="analytics",
@@ -67,31 +68,78 @@ def serve(
 @app.command()
 def etl(
     full: bool = typer.Option(default=False, help="Run full ETL (not incremental)"),
+    spark: bool = typer.Option(default=False, help="Use Spark for large data processing"),
     dry_run: bool = typer.Option(default=False, help="Dry run mode"),
 ) -> None:
     """Run ETL pipeline."""
-    from analytics.etl.pipeline import ETLPipeline
+    from analytics.etl.pipeline import create_pipeline
+    from analytics.etl.config import DEVELOPMENT_ETL_CONFIG, DEFAULT_ETL_CONFIG
+    from datetime import datetime
     
     console.print("🔄 Starting ETL pipeline...")
+    console.print(f"Mode: {'Full' if full else 'Incremental'}")
+    console.print(f"Engine: {'Spark' if spark else 'Pandas'}")
+    console.print(f"Dry Run: {dry_run}")
     
     try:
-        pipeline = ETLPipeline()
-        
         if dry_run:
-            console.print("🧪 Running in dry-run mode")
-            # Add dry-run logic
-            
-        result = asyncio.run(pipeline.run(incremental=not full))
+            console.print("🧪 Running in dry-run mode - validation only")
+            # 파이프라인 생성 테스트만 수행
+            pipeline = create_pipeline(use_spark=spark, config=DEVELOPMENT_ETL_CONFIG)
+            console.print("✅ ETL pipeline validation completed")
+            return
         
+        # 개발 환경에서는 작은 배치 크기 사용
+        config = DEVELOPMENT_ETL_CONFIG if not spark else DEFAULT_ETL_CONFIG
+        pipeline = create_pipeline(use_spark=spark, config=config)
+        
+        start_time = datetime.now()
+        results = asyncio.run(pipeline.run(incremental=not full))
+        end_time = datetime.now()
+        
+        # 결과 테이블 생성
         table = Table(title="ETL Results")
-        table.add_column("Metric", style="cyan")
-        table.add_column("Value", style="green")
+        table.add_column("Step", style="cyan")
+        table.add_column("Status", style="green")
+        table.add_column("Processed", style="yellow")
+        table.add_column("Time (s)", style="magenta")
         
-        table.add_row("Duration", f"{result.get('duration', 0):.2f}s")
-        table.add_row("Records Processed", str(result.get('records_processed', 0)))
-        table.add_row("Status", result.get('status', 'Unknown'))
+        total_processed = 0
+        failed_steps = []
+        
+        for step, result in results.items():
+            if result.success:
+                status = "✅ Success"
+                total_processed += result.records_processed
+            else:
+                status = "❌ Failed"
+                failed_steps.append(step)
+            
+            table.add_row(
+                step,
+                status,
+                str(result.records_processed),
+                f"{result.processing_time_seconds:.2f}"
+            )
         
         console.print(table)
+        
+        # 요약 정보
+        summary_table = Table(title="Summary")
+        summary_table.add_column("Metric", style="cyan")
+        summary_table.add_column("Value", style="green")
+        
+        summary_table.add_row("Total Duration", f"{(end_time - start_time).total_seconds():.2f}s")
+        summary_table.add_row("Total Records", str(total_processed))
+        summary_table.add_row("Failed Steps", str(len(failed_steps)))
+        
+        console.print(summary_table)
+        
+        if failed_steps:
+            console.print(f"❌ Failed steps: {', '.join(failed_steps)}", style="red")
+            raise typer.Exit(1)
+        else:
+            console.print("✅ All ETL steps completed successfully!", style="green")
         
     except Exception as e:
         console.print(f"❌ ETL failed: {e}", style="red")

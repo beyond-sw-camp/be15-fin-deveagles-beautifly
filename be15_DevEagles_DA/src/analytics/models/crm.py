@@ -44,14 +44,22 @@ class Employee(Base, TimestampMixin):
     id = Column(Integer, primary_key=True)
     name = Column(String(100), nullable=False)
     phone = Column(String(20), nullable=True)
-    email = Column(String(100), nullable=True)
-    position = Column(String(50), nullable=True)
+    email = Column(String(255), nullable=True)
+    position = Column(String(100), nullable=True)  # 직급
+    department = Column(String(100), nullable=True)  # 부서
     hire_date = Column(DateTime, nullable=True)
     is_active = Column(Boolean, default=True, nullable=False)
+    specialties = Column(Text, nullable=True)  # 전문 분야 (JSON 형태)
     
     # 관계 설정
     visits = relationship("Visit", back_populates="employee", lazy="dynamic")
     visit_services = relationship("VisitService", back_populates="employee", lazy="dynamic")
+    
+    # 인덱스
+    __table_args__ = (
+        Index("idx_employee_name", "name"),
+        Index("idx_employee_active", "is_active"),
+    )
 
 
 class Service(Base, TimestampMixin):
