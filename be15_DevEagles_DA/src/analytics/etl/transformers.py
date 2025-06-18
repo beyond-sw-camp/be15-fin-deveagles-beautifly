@@ -76,6 +76,9 @@ class VisitAnalyticsTransformer(BaseTransformer):
         
         result = data.copy()
         
+        # employee_id 처리 (None을 NULL로 변환)
+        result['employee_id'] = data['employee_id'].fillna(None)
+        
         # 서비스 목록 파싱
         result['service_categories'] = self._parse_service_list(data['service_categories'])
         result['service_names'] = self._parse_service_list(data['service_names'])
