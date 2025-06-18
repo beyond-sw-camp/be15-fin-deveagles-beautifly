@@ -28,6 +28,9 @@ public class Coupon {
   @Column(name = "coupon_title", nullable = false, length = 50)
   private String couponTitle;
 
+  @Column(name = "shop_id", nullable = false)
+  private Long shopId;
+
   @Column(name = "staff_id")
   private Long staffId;
 
