@@ -1197,5 +1197,168 @@ def preference(
         raise typer.Exit(1)
 
 
+@app.command()
+def risk_tagging(
+    customer_id: Optional[int] = typer.Option(None, "--customer-id", help="특정 고객 ID"),
+    tag_all: bool = typer.Option(False, "--tag-all", help="모든 고객 태깅"),
+    dry_run: bool = typer.Option(False, "--dry-run", help="실제 적용 없이 시뮬레이션"),
+    show_distribution: bool = typer.Option(False, "--show-distribution", help="위험 분포 표시"),
+    high_risk: bool = typer.Option(False, "--high-risk", help="고위험 고객 목록"),
+    show_trends: bool = typer.Option(False, "--show-trends", help="위험 트렌드 표시"),
+    days: int = typer.Option(30, "--days", help="트렌드 분석 기간 (일)"),
+    limit: int = typer.Option(50, "--limit", help="결과 제한 수")
+):
+    """고객 이탈위험 태깅 시스템."""
+    console.print("[bold blue]고객 이탈위험 태깅 시스템[/bold blue]")
+    
+    try:
+        from analytics.services.risk_tagging import CustomerRiskTaggingService
+        service = CustomerRiskTaggingService()
+        
+        if customer_id:
+            # 특정 고객 위험 분석
+            risk_analysis = service.analyze_customer_risk(customer_id)
+            
+            if 'error' in risk_analysis:
+                console.print(f"[red]Error: {risk_analysis['error']}[/red]")
+                return
+            
+            console.print(f"\n[bold green]고객 {customer_id} 위험 분석:[/bold green]")
+            console.print(f"• 위험 점수: {risk_analysis['risk_score']:.1f}/100")
+            console.print(f"• 위험 수준: {risk_analysis['risk_level']}")
+            
+            # 위험 요인
+            console.print(f"\n[bold]위험 요인:[/bold]")
+            risk_factors = risk_analysis['risk_factors']
+            
+            visit_pattern = risk_factors.get('visit_pattern', {})
+            console.print(f"• 마지막 방문: {visit_pattern.get('days_since_last_visit', 0)}일 전")
+            console.print(f"• 총 방문 횟수: {visit_pattern.get('total_visits', 0)}회")
+            if visit_pattern.get('is_overdue'):
+                console.print("  [red]⚠️ 방문 지연[/red]")
+            
+            segment_risk = risk_factors.get('segment_risk', {})
+            console.print(f"• 고객 세그먼트: {segment_risk.get('segment', 'unknown')}")
+            if segment_risk.get('is_new_customer_at_risk'):
+                console.print("  [yellow]⚠️ 신규 고객 위험[/yellow]")
+            if segment_risk.get('is_loyal_customer_at_risk'):
+                console.print("  [red]⚠️ 충성 고객 위험[/red]")
+            
+            # 추천 태그
+            console.print(f"\n[bold]추천 태그:[/bold]")
+            for tag in risk_analysis['recommended_tags']:
+                console.print(f"• {tag}")
+            
+            # 추천 액션
+            console.print(f"\n[bold]추천 액션:[/bold]")
+            for action in risk_analysis['recommended_actions']:
+                console.print(f"• {action}")
+            
+            # 고객 태그 조회
+            customer_tags = service.get_customer_risk_tags(customer_id)
+            if customer_tags:
+                console.print(f"\n[bold]현재 적용된 위험 태그:[/bold]")
+                for tag in customer_tags:
+                    console.print(f"• {tag['tag_type']}: {tag['tag_value']} "
+                                f"(우선순위: {tag['priority']})")
+        
+        elif tag_all:
+            # 모든 고객 태깅
+            console.print(f"\n[bold yellow]모든 고객 태깅 {'(시뮬레이션)' if dry_run else '(실제 적용)'}...[/bold yellow]")
+            
+            results = service.tag_all_customers(dry_run=dry_run)
+            
+            if 'error' in results:
+                console.print(f"[red]Error: {results['error']}[/red]")
+                return
+            
+            console.print(f"\n[bold green]태깅 결과:[/bold green]")
+            console.print(f"• 총 고객 수: {results['total_customers']}")
+            console.print(f"• 태깅 완료: {results['tagged_customers']}")
+            console.print(f"• 고위험 고객: {results['high_risk_customers']}")
+            console.print(f"• 중위험 고객: {results['medium_risk_customers']}")
+            console.print(f"• 저위험 고객: {results['low_risk_customers']}")
+            
+            if not dry_run:
+                console.print(f"• 생성된 태그: {results['tags_created']}")
+            
+            if results['errors']:
+                console.print(f"\n[bold red]오류 발생:[/bold red]")
+                for error in results['errors'][:5]:  # 최대 5개만 표시
+                    console.print(f"• {error}")
+                if len(results['errors']) > 5:
+                    console.print(f"• ... 외 {len(results['errors']) - 5}개")
+        
+        elif show_distribution:
+            # 위험 분포 표시
+            distribution = service.get_risk_distribution()
+            
+            if not distribution:
+                console.print("[yellow]위험 분포 데이터가 없습니다.[/yellow]")
+                return
+            
+            console.print(f"\n[bold green]위험 수준별 고객 분포:[/bold green]")
+            console.print(f"총 고객 수: {distribution['total_customers']}")
+            
+            for risk_level, data in distribution['distribution'].items():
+                console.print(f"\n• {risk_level.upper()} 위험:")
+                console.print(f"  고객 수: {data['customer_count']}명 ({data['percentage']:.1f}%)")
+                console.print(f"  평균 위험 점수: {data['avg_risk_score']:.1f}")
+                console.print(f"  평균 방문 횟수: {data['avg_visits']:.1f}회")
+                console.print(f"  평균 총 금액: {data['avg_amount']:,.0f}원")
+                console.print(f"  평균 미방문 일수: {data['avg_days_since_visit']:.0f}일")
+        
+        elif high_risk:
+            # 고위험 고객 목록
+            high_risk_customers = service.get_high_risk_customers(limit)
+            
+            if not high_risk_customers:
+                console.print("[yellow]고위험 고객이 없습니다.[/yellow]")
+                return
+            
+            console.print(f"\n[bold red]고위험 고객 목록 (상위 {len(high_risk_customers)}명):[/bold red]")
+            
+            for customer in high_risk_customers:
+                console.print(f"\n• 고객 {customer['customer_id']}: {customer['name']}")
+                console.print(f"  연락처: {customer['phone']}")
+                console.print(f"  위험 점수: {customer['churn_risk_score']:.1f}/100 ({customer['churn_risk_level']})")
+                console.print(f"  긴급도: {customer['urgency_score']:.1f}")
+                console.print(f"  미방문: {customer['days_since_last_visit']}일")
+                console.print(f"  총 방문: {customer['total_visits']}회")
+                console.print(f"  총 금액: {customer['total_amount']:,.0f}원")
+                console.print(f"  세그먼트: {customer['segment']}")
+        
+        elif show_trends:
+            # 위험 트렌드 표시
+            trends = service.get_risk_trends(days)
+            
+            if not trends or not trends.get('trends'):
+                console.print(f"[yellow]최근 {days}일간 위험 트렌드 데이터가 없습니다.[/yellow]")
+                return
+            
+            console.print(f"\n[bold green]최근 {days}일간 위험 트렌드:[/bold green]")
+            
+            for date, risk_data in sorted(trends['trends'].items(), reverse=True)[:10]:
+                console.print(f"\n• {date}:")
+                for risk_level, data in risk_data.items():
+                    console.print(f"  {risk_level}: {data['customer_count']}명 "
+                                f"(평균 점수: {data['avg_risk_score']:.1f})")
+        
+        else:
+            # 전체 통계 및 도움말
+            console.print("\n[bold green]위험 태깅 시스템 옵션:[/bold green]")
+            console.print("• --customer-id <ID>: 특정 고객 위험 분석")
+            console.print("• --tag-all: 모든 고객 태깅")
+            console.print("• --tag-all --dry-run: 태깅 시뮬레이션")
+            console.print("• --show-distribution: 위험 분포 표시")
+            console.print("• --high-risk: 고위험 고객 목록")
+            console.print("• --show-trends: 위험 트렌드 분석")
+            console.print("• --days <N>: 트렌드 분석 기간 설정")
+    
+    except Exception as e:
+        console.print(f"[red]Error: {e}[/red]")
+        raise typer.Exit(1)
+
+
 if __name__ == "__main__":
     app() 
