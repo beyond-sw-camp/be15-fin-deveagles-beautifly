@@ -90,7 +90,7 @@
 
   .icon-yellow {
     background-color: var(--color-gray-100);
-    color: var(--color-warning-main);
+    color: var(--color-warning-500);
   }
 
   .stats-content {

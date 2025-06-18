@@ -133,7 +133,7 @@
 <template>
   <div class="message-list-view">
     <div class="message-list-header">
-      <h2 class="font-section-title text-dark">메시지 목록</h2>
+      <h2 class="font-section-title text-dark">문자 내역</h2>
     </div>
 
     <MessageStats :messages="messages" />

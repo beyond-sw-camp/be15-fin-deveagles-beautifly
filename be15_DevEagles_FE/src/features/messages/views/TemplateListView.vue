@@ -53,7 +53,7 @@
 <template>
   <div class="template-list-view">
     <div class="template-list-header">
-      <h2 class="font-section-title text-dark">문자 템플릿 목록</h2>
+      <h2 class="font-section-title text-dark">문자 보관함</h2>
       <BaseButton type="primary" size="sm" @click="showCreateModal = true">
         <PlusIcon class="icon" /> 템플릿 등록
       </BaseButton>

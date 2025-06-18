@@ -1,0 +1,84 @@
+# Development Environment Configuration
+app:
+  name: "DevEagles Analytics - Development"
+  version: "0.1.0"
+  debug: true
+  log_level: "DEBUG"
+
+server:
+  host: "0.0.0.0"
+  port: 8000
+  workers: 1
+  reload: true
+
+database:
+  crm:
+    url: "${CRM_DATABASE_URL:-mysql+pymysql://dev:dev@localhost:3306/test}"
+    pool_size: 5
+    max_overflow: 10
+  analytics:
+    url: "data/analytics_dev.duckdb" # DuckDB는 url 필드 사용
+    pool_size: 4 # threads로 사용
+    max_overflow: 0
+
+etl:
+  batch_size: 1000
+  incremental: true
+  timestamp_file: "data/last_etl_dev.txt"
+
+ml:
+  model_storage_path: "models/dev"
+  retrain_threshold: 0.1
+  feature_columns:
+    - "age"
+    - "frequency"
+    - "avg_monetary"
+    - "lifecycle_days"
+    - "service_variety"
+    - "employee_variety"
+    - "visits_3m"
+
+scheduling:
+  jobstore_url: "sqlite:///data/scheduler_dev.db"
+  etl_schedule_hour: 2
+  tagging_schedule_hour: 3
+  training_schedule_day: "sun"
+  training_schedule_hour: 4
+
+customer_segmentation:
+  new_customer_visit_threshold: 3
+  growing_customer_visit_threshold: 10
+  vip_customer_amount_threshold: 100000
+
+risk_assessment:
+  new_customer_followup_days: 7
+  new_customer_risk_days: 20
+  reactivation_needed_days: 30
+  growing_customer_delay_multiplier: 1.5
+  loyal_customer_delay_multiplier: 2.0
+
+api:
+  prefix: "/api/v1"
+  docs_url: "/docs"
+  redoc_url: "/redoc"
+  openapi_url: "/openapi.json"
+
+security:
+  secret_key: "${SECRET_KEY}"
+  access_token_expire_minutes: 60
+  algorithm: "HS256"
+
+monitoring:
+  enable_metrics: true
+  metrics_path: "/metrics"
+  enable_tracing: true
+
+external_services:
+  workflow_service_url: "${WORKFLOW_SERVICE_URL}"
+  notification_webhook_url: "${NOTIFICATION_WEBHOOK_URL}"
+
+local_dev:
+  auto_reload_templates: true
+  enable_debug_toolbar: true
+  mock_external_apis: true
+  sample_data_size: 1000
