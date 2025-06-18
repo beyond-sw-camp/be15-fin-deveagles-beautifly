@@ -2,7 +2,7 @@
   <div class="profile-upload">
     <div class="profile-preview-wrapper">
       <div class="profile-preview" @click="triggerFileInput">
-        <img :src="previewImage || defaultImg" alt="프로필 이미지" class="profile-img" />
+        <img :src="previewImage || props.defaultImage" alt="프로필 이미지" class="profile-img" />
         <div class="upload-overlay">{{ label }}</div>
       </div>
       <button
@@ -19,6 +19,7 @@
 
 <script setup>
   import { ref, watch, defineProps, defineEmits } from 'vue';
+  import profileDefault from '@/images/profile-default.png';
 
   const props = defineProps({
     modelValue: String,
@@ -28,7 +29,7 @@
     },
     defaultImage: {
       type: String,
-      default: 'src/images/profile-default.png',
+      default: profileDefault,
     },
   });
 
@@ -36,7 +37,6 @@
 
   const fileInput = ref(null);
   const previewImage = ref(props.modelValue);
-  const defaultImg = props.defaultImage;
 
   watch(
     () => props.modelValue,
