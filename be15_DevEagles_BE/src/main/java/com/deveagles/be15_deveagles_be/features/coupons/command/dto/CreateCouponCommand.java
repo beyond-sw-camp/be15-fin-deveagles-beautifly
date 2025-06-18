@@ -13,13 +13,11 @@ import lombok.NoArgsConstructor;
 @Builder
 public class CreateCouponCommand {
 
-  @NotBlank(message = "쿠폰 코드는 필수입니다")
-  @Size(max = 50, message = "쿠폰 코드는 50자 이하여야 합니다")
-  private String couponCode;
-
   @NotBlank(message = "쿠폰명은 필수입니다")
   @Size(max = 50, message = "쿠폰명은 50자 이하여야 합니다")
   private String couponTitle;
+
+  @NotNull(message = "매장 ID는 필수입니다") private Long shopId;
 
   private Long staffId;
 
