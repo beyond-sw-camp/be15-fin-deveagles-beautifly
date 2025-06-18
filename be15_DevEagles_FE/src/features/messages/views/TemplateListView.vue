@@ -1,3 +1,40 @@
+<template>
+  <div class="template-list-view">
+    <div class="template-list-header">
+      <h2 class="font-section-title text-dark">문자 보관함</h2>
+      <BaseButton type="primary" size="sm" @click="openCreateModal">
+        <PlusIcon class="icon" /> 템플릿 등록
+      </BaseButton>
+    </div>
+
+    <BaseTable :columns="columns" :data="paginatedTemplates">
+      <template #body>
+        <TemplateItem
+          v-for="template in paginatedTemplates"
+          :key="template.id"
+          :template="template"
+          :column-widths="columnWidths"
+          @edit="openEditModal"
+        />
+      </template>
+    </BaseTable>
+
+    <Pagination
+      v-if="totalPages > 1"
+      :current-page="currentPage"
+      :total-pages="totalPages"
+      :total-items="allTemplates.length"
+      :items-per-page="itemsPerPage"
+      @page-change="onPageChange"
+    />
+
+    <TemplateCreateModal v-model="showCreateModal" @submit="handleCreate" />
+    <TemplateEditModal v-model="showEditModal" :template="editTarget" @submit="handleEdit" />
+
+    <BaseToast ref="toast" />
+  </div>
+</template>
+
 <script setup>
   import { ref, computed } from 'vue';
   import { defineAsyncComponent } from 'vue';
@@ -10,6 +47,9 @@
 
   const TemplateCreateModal = defineAsyncComponent(
     () => import('@/features/messages/components/modal/TemplateCreateModal.vue')
+  );
+  const TemplateEditModal = defineAsyncComponent(
+    () => import('@/features/messages/components/modal/TemplateEditModal.vue')
   );
 
   const allTemplates = ref([
@@ -31,6 +71,8 @@
   const currentPage = ref(1);
   const itemsPerPage = 10;
   const showCreateModal = ref(false);
+  const showEditModal = ref(false);
+  const editTarget = ref({ id: null, name: '', content: '', createdAt: '' });
   const toast = ref(null);
 
   const totalPages = computed(() => Math.ceil(allTemplates.value.length / itemsPerPage));
@@ -40,11 +82,18 @@
   });
 
   const columns = [
-    { key: 'name', title: '템플릿명', width: '20%', headerClass: 'text-center' },
-    { key: 'content', title: '내용', width: '50%', headerClass: 'text-center' },
+    { key: 'name', title: '템플릿명', width: '25%', headerClass: 'text-center' },
+    { key: 'content', title: '내용', width: '45%', headerClass: 'text-center' },
     { key: 'createdAt', title: '등록일자', width: '20%', headerClass: 'text-center' },
     { key: 'actions', title: '관리', width: '10%', headerClass: 'text-center' },
   ];
+
+  const columnWidths = {
+    name: '25%',
+    content: '45%',
+    createdAt: '20%',
+    actions: '10%',
+  };
 
   function onPageChange(page) {
     currentPage.value = page;
@@ -55,44 +104,25 @@
     showCreateModal.value = false;
   }
 
+  function handleEdit(updatedTemplate) {
+    const index = allTemplates.value.findIndex(t => t.id === updatedTemplate.id);
+    if (index !== -1) {
+      allTemplates.value[index] = { ...updatedTemplate };
+      toast.value?.success('템플릿이 수정되었습니다.', { type: 'success' });
+    }
+    showEditModal.value = false;
+  }
+
   function openCreateModal() {
     showCreateModal.value = true;
   }
+
+  function openEditModal(template) {
+    editTarget.value = { ...template };
+    console.log(template);
+    showEditModal.value = true;
+  }
 </script>
-
-<template>
-  <div class="template-list-view">
-    <div class="template-list-header">
-      <h2 class="font-section-title text-dark">문자 보관함</h2>
-      <BaseButton type="primary" size="sm" @click="openCreateModal">
-        <PlusIcon class="icon" /> 템플릿 등록
-      </BaseButton>
-    </div>
-
-    <BaseTable :columns="columns" :data="paginatedTemplates">
-      <template #body>
-        <TemplateItem
-          v-for="template in paginatedTemplates"
-          :key="template.id"
-          :template="template"
-        />
-      </template>
-    </BaseTable>
-
-    <Pagination
-      v-if="totalPages > 1"
-      :current-page="currentPage"
-      :total-pages="totalPages"
-      :total-items="allTemplates.length"
-      :items-per-page="itemsPerPage"
-      @page-change="onPageChange"
-    />
-
-    <TemplateCreateModal v-if="showCreateModal" v-model="showCreateModal" @submit="handleCreate" />
-
-    <BaseToast ref="toast" />
-  </div>
-</template>
 
 <style scoped>
   .template-list-view {
@@ -106,7 +136,5 @@
     justify-content: space-between;
     margin-bottom: 1.5rem;
   }
-  th {
-    text-align: center !important;
-  }
 </style>
+v
