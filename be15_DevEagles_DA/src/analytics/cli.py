@@ -206,6 +206,112 @@ def tag(
 
 
 @app.command()
+def segment(
+    customer_id: Optional[int] = typer.Option(default=None, help="Segment specific customer"),
+    show_distribution: bool = typer.Option(default=False, help="Show segment distribution"),
+    show_insights: Optional[str] = typer.Option(default=None, help="Show insights for specific segment"),
+    show_trends: bool = typer.Option(default=False, help="Show segment trends"),
+) -> None:
+    """Run customer segmentation."""
+    from analytics.services.segmentation import CustomerSegmentationService
+    
+    console.print("🎯 Customer Segmentation")
+    
+    try:
+        service = CustomerSegmentationService()
+        
+        if customer_id:
+            # 특정 고객 세그멘테이션
+            segment = service.segment_customer(customer_id)
+            console.print(f"✅ Customer {customer_id} segmented as: [bold]{segment}[/bold]")
+            
+        elif show_distribution:
+            # 세그먼트 분포 보기
+            distribution = service.get_segment_distribution()
+            
+            table = Table(title="Customer Segment Distribution")
+            table.add_column("Segment", style="cyan")
+            table.add_column("Count", style="green")
+            table.add_column("Avg Visits", style="yellow")
+            table.add_column("Avg Amount", style="magenta")
+            table.add_column("Avg Days Since Visit", style="blue")
+            
+            for segment, stats in distribution.items():
+                table.add_row(
+                    segment.upper(),
+                    str(stats['count']),
+                    str(stats['avg_visits']),
+                    f"{stats['avg_amount']:,.0f}",
+                    str(stats['avg_days_since_visit'])
+                )
+            
+            console.print(table)
+            
+        elif show_insights:
+            # 특정 세그먼트 인사이트
+            insights = service.get_segment_insights(show_insights)
+            
+            if "error" in insights:
+                console.print(f"❌ {insights['error']}", style="red")
+                return
+            
+            console.print(f"\n📊 [bold]{show_insights.upper()}[/bold] Segment Insights")
+            console.print(f"Total Customers: {insights['total_customers']}")
+            console.print(f"Average Visits: {insights['avg_visits']}")
+            console.print(f"Average Amount: {insights['avg_amount']:,.0f}")
+            console.print(f"Average Days Since Visit: {insights['avg_days_since_visit']}")
+            console.print(f"Amount Range: {insights['amount_range']['min']:,.0f} - {insights['amount_range']['max']:,.0f}")
+            
+            console.print("\n🎯 [bold]Recommended Actions:[/bold]")
+            for i, action in enumerate(insights['recommended_actions'], 1):
+                console.print(f"  {i}. {action}")
+                
+        elif show_trends:
+            # 세그먼트 트렌드 분석
+            trends = service.analyze_segment_trends()
+            
+            console.print("\n📈 [bold]Segment Trends (Last 30 days)[/bold]")
+            console.print(f"Total Customers: {trends['total_customers']}")
+            
+            if trends['recent_changes']:
+                console.print("\n🔄 Recent Segment Changes:")
+                for segment, count in trends['recent_changes'].items():
+                    console.print(f"  {segment}: {count} customers")
+            else:
+                console.print("\n🔄 No recent segment changes")
+                
+        else:
+            # 전체 고객 세그멘테이션
+            console.print("🔄 Running segmentation for all customers...")
+            results = service.segment_all_customers()
+            
+            if not results:
+                console.print("⚠️ No customers found for segmentation")
+                return
+            
+            table = Table(title="Segmentation Results")
+            table.add_column("Segment", style="cyan")
+            table.add_column("Customer Count", style="green")
+            
+            total_customers = sum(results.values())
+            
+            for segment, count in results.items():
+                percentage = (count / total_customers * 100) if total_customers > 0 else 0
+                table.add_row(
+                    segment.upper(),
+                    f"{count} ({percentage:.1f}%)"
+                )
+            
+            console.print(table)
+            console.print(f"\n✅ Segmentation completed for {total_customers} customers")
+    
+    except Exception as e:
+        console.print(f"❌ Segmentation failed: {e}", style="red")
+        logger.error(f"Segmentation failed: {e}")
+        raise typer.Exit(1)
+
+
+@app.command()
 def status() -> None:
     """Show service status and health."""
     console.print(f"📊 {settings.app_name} Status")
@@ -882,6 +988,212 @@ def create_sample_preferences():
         
     except Exception as e:
         console.print(f"[red]선호 시술 샘플 데이터 생성 실패: {e}[/red]")
+        raise typer.Exit(1)
+
+
+@app.command()
+def preference(
+    customer_id: Optional[int] = typer.Option(default=None, help="특정 고객 선호도 분석"),
+    show_ranking: bool = typer.Option(default=False, help="서비스 인기도 순위 표시"),
+    show_categories: bool = typer.Option(default=False, help="카테고리별 분포 표시"),
+    show_trends: bool = typer.Option(default=False, help="서비스 트렌드 분석"),
+    recommendations: bool = typer.Option(default=False, help="고객 추천 서비스"),
+    similar_customers: bool = typer.Option(default=False, help="유사한 고객 찾기"),
+    journey: bool = typer.Option(default=False, help="고객 서비스 여정 분석"),
+) -> None:
+    """고객 선호 시술 분석."""
+    from analytics.services.preference import CustomerServicePreferenceService
+    
+    console.print("🎨 고객 선호 시술 분석")
+    
+    try:
+        service = CustomerServicePreferenceService()
+        
+        if customer_id:
+            # 특정 고객 분석
+            console.print(f"\n📊 고객 {customer_id} 선호 시술 분석")
+            
+            # 선호 시술 목록
+            preferences = service.get_customer_preferences(customer_id)
+            if preferences:
+                table = Table(title=f"고객 {customer_id} 선호 시술")
+                table.add_column("순위", style="cyan")
+                table.add_column("서비스명", style="green")
+                table.add_column("카테고리", style="yellow")
+                table.add_column("방문횟수", style="magenta")
+                table.add_column("총금액", style="red")
+                table.add_column("평균금액", style="blue")
+                table.add_column("방문비율", style="cyan")
+                
+                for pref in preferences:
+                    table.add_row(
+                        str(pref['preference_rank']),
+                        pref['service_name'],
+                        pref['service_category'],
+                        str(pref['total_visits']),
+                        f"{pref['total_amount']:,.0f}원",
+                        f"{pref['avg_amount']:,.0f}원",
+                        f"{pref['visit_ratio']:.1%}"
+                    )
+                
+                console.print(table)
+            
+            # 서비스 태그
+            tags = service.get_customer_service_tags(customer_id)
+            if tags:
+                console.print(f"\n🏷️ 고객 {customer_id} 서비스 태그")
+                console.print(f"• 선호 서비스: {tags['top_service_1']}, {tags['top_service_2']}, {tags['top_service_3']}")
+                console.print(f"• 선호 카테고리: {', '.join(tags['preferred_categories'])}")
+                console.print(f"• 다양성 점수: {tags['service_variety_score']:.2f}")
+                console.print(f"• 평균 가격대: {tags['avg_service_price']:,.0f}원 ({tags['preferred_price_range']})")
+                console.print(f"• 모든 태그: {', '.join(tags['all_preference_tags'])}")
+            
+            # 추천 서비스
+            if recommendations:
+                recs = service.get_service_recommendations(customer_id)
+                if recs:
+                    console.print(f"\n💡 고객 {customer_id} 추천 서비스")
+                    rec_table = Table()
+                    rec_table.add_column("서비스명", style="green")
+                    rec_table.add_column("카테고리", style="yellow")
+                    rec_table.add_column("추천점수", style="red")
+                    rec_table.add_column("이유", style="cyan")
+                    
+                    for rec in recs:
+                        rec_table.add_row(
+                            rec['service_name'],
+                            rec['service_category'],
+                            f"{rec['recommendation_score']:.2f}",
+                            rec['reason']
+                        )
+                    
+                    console.print(rec_table)
+            
+            # 유사한 고객
+            if similar_customers:
+                similar = service.find_similar_customers(customer_id)
+                if similar:
+                    console.print(f"\n👥 고객 {customer_id}와 유사한 고객")
+                    sim_table = Table()
+                    sim_table.add_column("고객ID", style="cyan")
+                    sim_table.add_column("공통서비스수", style="green")
+                    sim_table.add_column("유사도점수", style="red")
+                    sim_table.add_column("공통서비스", style="yellow")
+                    
+                    for sim in similar:
+                        sim_table.add_row(
+                            str(sim['customer_id']),
+                            str(sim['common_services_count']),
+                            f"{sim['similarity_score']:.2f}",
+                            ', '.join(sim['common_services'][:3])  # 상위 3개만
+                        )
+                    
+                    console.print(sim_table)
+            
+            # 고객 여정 분석
+            if journey:
+                journey_data = service.get_customer_journey_analysis(customer_id)
+                if journey_data:
+                    console.print(f"\n🛣️ 고객 {customer_id} 서비스 여정")
+                    console.print(f"• 총 시도한 서비스: {journey_data['total_services_tried']}개")
+                    console.print(f"• 선호도 진화: {journey_data['preference_evolution']['description']}")
+                    console.print(f"• 충성도 패턴: {journey_data['loyalty_pattern']['description']} (점수: {journey_data['loyalty_pattern']['score']:.2f})")
+                    console.print(f"• 지출 패턴: {journey_data['spending_pattern']['description']}")
+        
+        elif show_ranking:
+            # 서비스 인기도 순위
+            rankings = service.get_service_popularity_ranking()
+            if rankings:
+                console.print("\n🏆 서비스 인기도 순위")
+                rank_table = Table()
+                rank_table.add_column("순위", style="cyan")
+                rank_table.add_column("서비스명", style="green")
+                rank_table.add_column("카테고리", style="yellow")
+                rank_table.add_column("고객수", style="magenta")
+                rank_table.add_column("총방문", style="red")
+                rank_table.add_column("총매출", style="blue")
+                rank_table.add_column("인기점수", style="cyan")
+                
+                for rank in rankings:
+                    rank_table.add_row(
+                        str(rank['rank']),
+                        rank['service_name'],
+                        rank['service_category'],
+                        str(rank['customer_count']),
+                        str(rank['total_visits']),
+                        f"{rank['total_revenue']:,.0f}원",
+                        f"{rank['popularity_score']:.1f}"
+                    )
+                
+                console.print(rank_table)
+        
+        elif show_categories:
+            # 카테고리별 분포
+            distribution = service.get_category_preferences_distribution()
+            if distribution['categories']:
+                console.print("\n📊 카테고리별 선호도 분포")
+                cat_table = Table()
+                cat_table.add_column("카테고리", style="green")
+                cat_table.add_column("고객수", style="cyan")
+                cat_table.add_column("고객비율", style="yellow")
+                cat_table.add_column("총방문", style="magenta")
+                cat_table.add_column("총매출", style="red")
+                cat_table.add_column("매출비율", style="blue")
+                
+                for category, data in distribution['categories'].items():
+                    cat_table.add_row(
+                        category,
+                        str(data['customer_count']),
+                        f"{data['customer_ratio']:.1%}",
+                        str(data['total_visits']),
+                        f"{data['total_revenue']:,.0f}원",
+                        f"{data['revenue_ratio']:.1%}"
+                    )
+                
+                console.print(cat_table)
+                console.print(f"\n📈 총 고객: {distribution['total_customers']}명, 총 매출: {distribution['total_revenue']:,.0f}원")
+        
+        elif show_trends:
+            # 서비스 트렌드
+            trends = service.analyze_service_trends()
+            if trends['trends']:
+                console.print(f"\n📈 서비스 트렌드 (최근 {trends['analysis_period_days']}일)")
+                trend_table = Table()
+                trend_table.add_column("서비스명", style="green")
+                trend_table.add_column("카테고리", style="yellow")
+                trend_table.add_column("현재고객", style="cyan")
+                trend_table.add_column("최근방문", style="magenta")
+                trend_table.add_column("활성고객", style="red")
+                trend_table.add_column("활성률", style="blue")
+                trend_table.add_column("트렌드점수", style="cyan")
+                
+                for trend in trends['trends']:
+                    trend_table.add_row(
+                        trend['service_name'],
+                        trend['service_category'],
+                        str(trend['current_customers']),
+                        f"{trend['avg_recent_visits']:.1f}",
+                        str(trend['active_customers']),
+                        f"{trend['activity_rate']:.1%}",
+                        f"{trend['trend_score']:.2f}"
+                    )
+                
+                console.print(trend_table)
+        
+        else:
+            # 전체 요약
+            console.print("\n📋 선호 시술 분석 요약")
+            console.print("사용 가능한 옵션:")
+            console.print("• --customer-id <ID> : 특정 고객 분석")
+            console.print("• --show-ranking : 서비스 인기도 순위")
+            console.print("• --show-categories : 카테고리별 분포")
+            console.print("• --show-trends : 서비스 트렌드")
+            console.print("• --recommendations : 고객 추천 서비스 (--customer-id와 함께)")
+            console.print("• --similar-customers : 유사한 고객 (--customer-id와 함께)")
+            console.print("• --journey : 고객 여정 분석 (--customer-id와 함께)")
+    
+    except Exception as e:
+        console.print(f"[red]선호 시술 분석 실패: {e}[/red]")
         raise typer.Exit(1)
 
 

@@ -2,6 +2,7 @@
 
 from datetime import datetime
 from typing import Optional
+from enum import Enum
 
 from pydantic import BaseModel, Field
 from sqlalchemy import Column, DateTime, Integer
@@ -28,7 +29,7 @@ class BaseSchema(BaseModel):
         }
 
 
-class CustomerSegment(BaseModel):
+class CustomerSegment(str, Enum):
     """Customer segment enumeration."""
     NEW = "new"
     GROWING = "growing" 
@@ -37,7 +38,7 @@ class CustomerSegment(BaseModel):
     INACTIVE = "inactive"
 
 
-class RiskTag(BaseModel):
+class RiskTag(str, Enum):
     """Risk assessment tags."""
     FIRST_VISIT_FOLLOW_UP = "first_visit_follow_up"
     PATTERN_BREAK_DETECTED = "pattern_break_detected"
