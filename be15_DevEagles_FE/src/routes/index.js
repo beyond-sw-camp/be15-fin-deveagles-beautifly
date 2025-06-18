@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import Home from '../views/Home.vue';
 import { userRoutes } from '@/features/users/route.js';
+import { staffRoutes } from '@/features/staffs/route.js';
 
 const routes = [
   {
@@ -12,12 +13,12 @@ const routes = [
   {
     path: '/reservation/calendar',
     name: 'ReservationCalendar',
-    component: () => import('@/features/schedule/views/ScheduleCalendarView.vue'),
+    component: () => import('@/features/schedules/views/ScheduleCalendarView.vue'),
   },
   {
     path: '/reservation/list',
     name: 'ReservationList',
-    component: () => import('@/features/schedule/views/ReservationListView.vue'),
+    component: () => import('@/features/schedules/views/ReservationListView.vue'),
   },
   {
     path: '/reservation/schedule',
@@ -32,12 +33,12 @@ const routes = [
   {
     path: '/reservation/requests',
     name: 'ReservationRequests',
-    component: () => import('@/features/schedule/views/ReservationRequestsView.vue'),
+    component: () => import('@/features/schedules/views/ReservationRequestsView.vue'),
   },
   {
     path: '/reservation/history',
     name: 'ReservationHistory',
-    component: () => import('@/features/schedule/views/ReservationHistoryView.vue'),
+    component: () => import('@/features/schedules/views/ReservationHistoryView.vue'),
   },
   // 고객 관리 라우트 - 임시로 모두 Home으로 라우팅
   {
@@ -72,11 +73,16 @@ const routes = [
     name: 'ItemMembership',
     component: Home,
   },
-  // 데이터 분석 라우트 - 임시로 모두 Home으로 라우팅
+  // 데이터 분석 라우트
+  {
+    path: '/analytics/sales',
+    name: 'SalesAnalytics',
+    component: () => import('@/features/analytics/views/SalesAnalytics.vue'),
+  },
   {
     path: '/analytics/usage',
     name: 'AnalyticsUsage',
-    component: Home,
+    component: () => import('@/features/analytics/views/UsageAnalytics.vue'),
   },
   {
     path: '/analytics/revenue',
@@ -97,7 +103,7 @@ const routes = [
   {
     path: '/message/settings',
     name: 'MessageSettings',
-    component: Home,
+    component: () => import('@/features/messages/views/SettingsView.vue'),
   },
   {
     path: '/message/ab-test',
@@ -129,7 +135,7 @@ const routes = [
   {
     path: '/settings/store',
     name: 'SettingsStore',
-    component: Home,
+    component: () => import('@/features/users/views/StoreSettingView.vue'),
   },
   {
     path: '/settings/reservation',
@@ -139,7 +145,7 @@ const routes = [
   {
     path: '/settings/staff',
     name: 'SettingsStaff',
-    component: Home,
+    component: () => import('@/features/staffs/views/StaffListView.vue'),
   },
   {
     path: '/settings/customer-grade',
@@ -154,15 +160,15 @@ const routes = [
   {
     path: '/settings/account',
     name: 'SettingsAccount',
-    component: Home,
+    component: () => import('@/features/users/views/AccountSettingView.vue'),
   },
-  // 프로필 라우트 - 임시로 Home으로 라우팅
   {
     path: '/profile',
     name: 'Profile',
-    component: Home,
+    component: () => import('@/features/users/views/ProfileSettingView.vue'),
   },
   ...userRoutes, // 추후에 밖으로 빼기
+  ...staffRoutes,
 ];
 
 const router = createRouter({

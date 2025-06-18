@@ -1,156 +1,263 @@
 <script setup>
-  import { ref, computed } from 'vue';
-  import MessageFilter from '../components/MessageFilter.vue';
+  import { ref, computed, nextTick } from 'vue';
   import MessageItem from '../components/MessageItem.vue';
-  import { MessageCircleIcon } from '@/components/icons/index.js';
+  import MessageStats from '../components/MessageStats.vue';
+  import MessageSendModal from '../components/modal/MessageSendModal.vue';
+  import SendConfirmModal from '../components/modal/SendConfirmModal.vue';
+  import ReservationSendModal from '../components/modal/ReservationSendModal.vue';
+  import BaseButton from '@/components/common/BaseButton.vue';
+  import BasePopover from '@/components/common/BasePopover.vue';
+  import BaseToast from '@/components/common/BaseToast.vue';
+  import BaseTable from '@/components/common/BaseTable.vue';
+  import Pagination from '@/components/common/Pagination.vue';
+  import { SendHorizonalIcon } from 'lucide-vue-next';
 
-  // 원본 메시지 (불변)
-  const allMessages = ref([
-    { id: 1, type: 'SMS', content: '예약이 완료되었습니다.', status: 'sent', date: '2024-06-10' },
+  const messages = ref([
+    {
+      id: 1,
+      title: '예약 안내',
+      content: '고객님 예약이 완료되었습니다.',
+      status: 'sent',
+      date: '2024-06-10',
+    },
     {
       id: 2,
-      type: '알림톡',
-      content: '시술 전 확인 사항을 꼭 읽어주세요.',
+      title: '시술 전 안내',
+      content: '시술 전 주의사항 안내드립니다.',
       status: 'reserved',
       date: '2024-06-12',
     },
     {
       id: 3,
-      type: 'SMS',
-      content: '고객님, 소중한 리뷰를 남겨주세요.',
+      title: '리뷰 요청',
+      content: '리뷰를 남겨주시면 감사하겠습니다.',
       status: 'sent',
       date: '2024-06-09',
     },
-    {
-      id: 4,
-      type: '알림톡',
-      content: '금일 이벤트 안내드립니다.',
-      status: 'reserved',
-      date: '2024-06-11',
-    },
-    {
-      id: 5,
-      type: 'SMS',
-      content: '시술 완료되었습니다. 감사합니다!',
-      status: 'sent',
-      date: '2024-06-10',
-    },
   ]);
 
-  // 필터 조건 (성능 위해 ref 사용)
-  const filter = ref({ status: 'all' });
+  const searchKeyword = ref('');
+  const statusFilter = ref('all');
+  const currentPage = ref(1);
+  const itemsPerPage = 10;
+  const showDeleteConfirm = ref(false);
+  const selectedMessage = ref(null);
+  const triggerElement = ref(null);
+  const showSendModal = ref(false);
+  const showSendConfirm = ref(false);
+  const showReserveModal = ref(false);
+  const messageToSend = ref('');
+  const toast = ref(null);
 
-  // 페이지 상태
-  const page = ref(1);
-  const pageSize = 20;
-
-  // 필터링된 메시지 목록 (슬라이싱 X)
-  const filtered = computed(() => {
-    if (filter.value.status === 'all') return allMessages.value;
-    return allMessages.value.filter(msg => msg.status === filter.value.status);
+  const filteredMessages = computed(() => {
+    let result = [...messages.value];
+    const keyword = searchKeyword.value.trim().toLowerCase();
+    if (keyword) {
+      result = result.filter(
+        msg =>
+          msg.title.toLowerCase().includes(keyword) || msg.content.toLowerCase().includes(keyword)
+      );
+    }
+    if (statusFilter.value !== 'all') {
+      result = result.filter(msg => msg.status === statusFilter.value);
+    }
+    return result;
   });
 
-  // 실제 렌더링 대상 메시지
-  const pagedMessages = computed(() => {
-    const start = (page.value - 1) * pageSize;
-    return filtered.value.slice(start, start + pageSize);
+  const paginatedMessages = computed(() => {
+    const start = (currentPage.value - 1) * itemsPerPage;
+    return filteredMessages.value.slice(start, start + itemsPerPage);
   });
 
-  const totalPages = computed(() => Math.ceil(filtered.value.length / pageSize));
+  const totalPages = computed(() => Math.ceil(filteredMessages.value.length / itemsPerPage));
 
-  function onFilter(newFilter) {
-    // 내부 프로퍼티만 갱신해야 반응성 유지됨
-    filter.value.status = newFilter.status;
-    page.value = 1;
+  function onStatusChange(value) {
+    statusFilter.value = value;
+    currentPage.value = 1;
   }
 
-  function prevPage() {
-    if (page.value > 1) page.value--;
+  function handleDelete(msg, event) {
+    selectedMessage.value = msg;
+    triggerElement.value = event.currentTarget;
+    showDeleteConfirm.value = true;
   }
 
-  function nextPage() {
-    if (page.value < totalPages.value) page.value++;
+  function confirmDelete() {
+    messages.value = messages.value.filter(m => m.id !== selectedMessage.value.id);
+    showDeleteConfirm.value = false;
   }
+
+  function cancelDelete() {
+    showDeleteConfirm.value = false;
+  }
+
+  function handleSendRequest(content) {
+    messageToSend.value = content;
+    showSendModal.value = false;
+    nextTick(() => {
+      showSendConfirm.value = true;
+    });
+  }
+
+  function handleReserveRequest(content) {
+    messageToSend.value = content;
+    showSendModal.value = false;
+    nextTick(() => {
+      showReserveModal.value = true;
+    });
+  }
+
+  function handleSendConfirm() {
+    showSendConfirm.value = false;
+    nextTick(() => {
+      toast.value.success('메시지를 보냈습니다.');
+    });
+    messageToSend.value = '';
+  }
+
+  function handleReserveConfirm({ content, date }) {
+    showReserveModal.value = false;
+    messageToSend.value = '';
+    toast.value.success('예약 요청이 완료되었습니다.');
+  }
+
+  const columns = [
+    { key: 'title', title: '제목', width: '20%', headerClass: 'text-center' },
+    { key: 'content', title: '내용', width: '40%', headerClass: 'text-center' },
+    { key: 'status', title: '상태', width: '10%', headerClass: 'text-center' },
+    { key: 'date', title: '날짜', width: '15%', headerClass: 'text-center' },
+    { key: 'actions', title: '관리', width: '15%', headerClass: 'text-center' },
+  ];
 </script>
 
 <template>
-  <section class="message-list-view">
-    <!-- ✅ 페이지 제목 -->
-    <h2 class="page-title">문자 내역</h2>
-
-    <!-- 필터 영역 -->
-    <div class="filter-row-wrapper">
-      <MessageFilter @update:filter="onFilter" />
-      <button class="btn btn-primary btn-sm icon-btn" title="문자 보내기">
-        <MessageCircleIcon :size="16" />
-      </button>
+  <div class="message-list-view">
+    <div class="message-list-header">
+      <h2 class="font-section-title text-dark">문자 내역</h2>
     </div>
 
-    <!-- 메시지 목록 -->
-    <div class="message-list">
-      <MessageItem v-for="message in pagedMessages" :key="message.id" :message="message" />
+    <MessageStats :messages="messages" />
+
+    <div class="message-filter-row with-button">
+      <div class="filter-control">
+        <label class="filter-label" for="message-status">메시지 상태</label>
+        <select
+          id="message-status"
+          v-model="statusFilter"
+          class="filter-select short"
+          @change="onStatusChange($event.target.value)"
+        >
+          <option value="all">전체</option>
+          <option value="sent">발송 완료</option>
+          <option value="reserved">예약 문자</option>
+        </select>
+      </div>
+      <BaseButton class="icon-button" type="primary" size="sm" @click="showSendModal = true">
+        <SendHorizonalIcon :size="16" />
+      </BaseButton>
     </div>
 
-    <!-- 페이지네이션 -->
-    <div class="pagination-area">
-      <button class="pagination-btn" :disabled="page === 1" @click="prevPage">이전</button>
-      <span class="page-indicator">{{ page }} / {{ totalPages }}</span>
-      <button class="pagination-btn" :disabled="page === totalPages" @click="nextPage">다음</button>
-    </div>
-  </section>
+    <BaseTable :columns="columns" :data="paginatedMessages">
+      <template #body>
+        <MessageItem
+          v-for="msg in paginatedMessages"
+          :key="msg.id"
+          :message="msg"
+          @delete="handleDelete"
+        />
+      </template>
+    </BaseTable>
+
+    <Pagination
+      v-if="totalPages > 1"
+      :current-page="currentPage"
+      :total-pages="totalPages"
+      :total-items="filteredMessages.length"
+      :items-per-page="itemsPerPage"
+      @page-change="page => (currentPage.value = page)"
+    />
+
+    <BasePopover
+      v-model="showDeleteConfirm"
+      title="메시지 삭제"
+      message="정말 삭제하시겠습니까?"
+      confirm-text="삭제"
+      cancel-text="취소"
+      confirm-type="error"
+      :trigger-element="triggerElement"
+      @confirm="confirmDelete"
+      @cancel="cancelDelete"
+    />
+
+    <MessageSendModal
+      :model-value="showSendModal"
+      @update:model-value="val => (showSendModal = val)"
+      @request-send="handleSendRequest"
+      @request-reserve="handleReserveRequest"
+    />
+
+    <ReservationSendModal
+      :model-value="showReserveModal"
+      :message-content="messageToSend"
+      @update:model-value="val => (showReserveModal = val)"
+      @confirm="handleReserveConfirm"
+    />
+
+    <SendConfirmModal
+      :model-value="showSendConfirm"
+      @update:model-value="val => (showSendConfirm = val)"
+      @confirm="handleSendConfirm"
+    />
+
+    <BaseToast ref="toast" />
+  </div>
 </template>
 
 <style scoped>
-  .filter-row-wrapper {
+  .message-list-view {
+    padding: 24px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  .message-list-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 1rem;
-    margin-bottom: 1rem;
+    margin-bottom: 1.5rem;
   }
-
-  .message-list-view {
+  .message-filter-row.with-button {
     display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-    padding: 1.5rem;
-    background-color: var(--color-gray-50);
-  }
-
-  /* ✅ 페이지 제목 스타일 */
-  .page-title {
-    font-size: 18px;
-    font-weight: 700;
-    line-height: 23.4px;
-    color: var(--color-neutral-dark);
-    margin-bottom: 1rem;
-  }
-
-  .message-list {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-  }
-
-  .pagination-area {
-    display: flex;
-    justify-content: center;
     align-items: center;
-    gap: 1rem;
-    margin-top: 1rem;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 16px;
   }
-
-  .pagination-btn {
-    padding: 0.5rem 1rem;
-    background-color: var(--color-primary-400);
-    color: white;
-    border-radius: 0.5rem;
+  .filter-control {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .filter-label {
+    font-size: 14px;
     font-weight: 500;
-    font-size: 0.875rem;
+    color: var(--color-gray-600);
+    white-space: nowrap;
   }
+  .filter-select {
+    padding: 6px 10px;
+    font-size: 14px;
+    border: 1px solid var(--color-gray-300);
+    border-radius: 6px;
+    background-color: var(--color-neutral-white);
+    max-width: 100px;
+  }
+  th {
+    text-align: center !important;
+  }
+</style>
 
-  .page-indicator {
-    font-size: 0.875rem;
-    color: var(--color-gray-700);
+<style>
+  .text-center {
+    text-align: center !important;
   }
 </style>

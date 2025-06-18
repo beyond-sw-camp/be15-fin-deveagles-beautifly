@@ -11,7 +11,7 @@
       <BaseTable :columns="tableColumns" :data="paginatedCoupons" :loading="loading" hover>
         <!-- Coupon Name Column -->
         <template #cell-name="{ item }">
-          <div class="item-name">
+          <div class="item-name clickable" @click="openDetailModal(item)">
             {{ item.name }}
           </div>
         </template>
@@ -86,6 +86,9 @@
       <CouponForm @save="handleSaveCoupon" @cancel="closeModal" />
     </BaseModal>
 
+    <!-- Detail Modal -->
+    <CouponDetailModal v-model="showDetailModal" :coupon-data="selectedCouponForDetail" />
+
     <!-- Delete Confirm Popover -->
     <BasePopover
       v-model="showDeleteConfirm"
@@ -114,14 +117,14 @@
   import BaseButton from '@/components/common/BaseButton.vue';
   import BaseModal from '@/components/common/BaseModal.vue';
   import BasePopover from '@/components/common/BasePopover.vue';
-  import BasePagination from '@/components/common/Pagaination.vue';
+  import Pagination from '@/components/common/Pagination.vue';
   import BaseCard from '@/components/common/BaseCard.vue';
   import BaseTable from '@/components/common/BaseTable.vue';
   import BaseBadge from '@/components/common/BaseBadge.vue';
   import BaseToast from '@/components/common/BaseToast.vue';
-
   import TrashIcon from '@/components/icons/TrashIcon.vue';
   import CouponForm from '../components/CouponForm.vue';
+  import CouponDetailModal from '../components/CouponDetailModal.vue';
 
   export default {
     name: 'CouponList',
@@ -129,7 +132,7 @@
       BaseButton,
       BaseModal,
       BasePopover,
-      BasePagination,
+      BasePagination: Pagination,
       BaseCard,
       BaseTable,
       BaseBadge,
@@ -137,6 +140,7 @@
 
       TrashIcon,
       CouponForm,
+      CouponDetailModal,
     },
     setup() {
       // List management composable
@@ -166,6 +170,8 @@
 
       // Local state
       const showModal = ref(false);
+      const showDetailModal = ref(false);
+      const selectedCouponForDetail = ref(null);
 
       // Table columns
       const tableColumns = [
@@ -201,12 +207,20 @@
       const deleteCoupon = (coupon, event) => deleteItem(coupon, event);
       const toggleCouponStatus = coupon => toggleItemStatus(coupon);
 
+      // Detail modal methods
+      const openDetailModal = coupon => {
+        selectedCouponForDetail.value = coupon;
+        showDetailModal.value = true;
+      };
+
       return {
         // State
         paginatedCoupons,
         currentPage,
         loading,
         showModal,
+        showDetailModal,
+        selectedCouponForDetail,
         showDeleteConfirm,
         selectedCouponForDelete,
         triggerElement,
@@ -230,6 +244,7 @@
         toggleCouponStatus,
         handlePageChange,
         handleItemsPerPageChange,
+        openDetailModal,
       };
     },
   };
@@ -237,4 +252,16 @@
 
 <style scoped>
   @import '@/assets/css/list-components.css';
+
+  .clickable {
+    cursor: pointer;
+    color: var(--color-primary-500);
+    font-weight: 500;
+    transition: all 0.2s ease;
+  }
+
+  .clickable:hover {
+    color: var(--color-primary-600);
+    text-decoration: underline;
+  }
 </style>
