@@ -1,10 +1,16 @@
 <script setup>
   import { ref, computed } from 'vue';
+  import { defineAsyncComponent } from 'vue';
   import BaseButton from '@/components/common/BaseButton.vue';
   import BaseTable from '@/components/common/BaseTable.vue';
   import Pagination from '@/components/common/Pagination.vue';
+  import BaseToast from '@/components/common/BaseToast.vue';
   import TemplateItem from '@/features/messages/components/TemplateItem.vue';
   import { PlusIcon } from 'lucide-vue-next';
+
+  const TemplateCreateModal = defineAsyncComponent(
+    () => import('@/features/messages/components/modal/TemplateCreateModal.vue')
+  );
 
   const allTemplates = ref([
     { id: 1, name: '예약 안내', content: '고객님 예약이 확정되었습니다.', createdAt: '2024-06-10' },
@@ -25,9 +31,9 @@
   const currentPage = ref(1);
   const itemsPerPage = 10;
   const showCreateModal = ref(false);
+  const toast = ref(null);
 
   const totalPages = computed(() => Math.ceil(allTemplates.value.length / itemsPerPage));
-
   const paginatedTemplates = computed(() => {
     const start = (currentPage.value - 1) * itemsPerPage;
     return allTemplates.value.slice(start, start + itemsPerPage);
@@ -45,8 +51,12 @@
   }
 
   function handleCreate(newTemplate) {
-    allTemplates.value.unshift(newTemplate);
+    toast.value?.success('템플릿이 등록되었습니다.', { type: 'success' });
     showCreateModal.value = false;
+  }
+
+  function openCreateModal() {
+    showCreateModal.value = true;
   }
 </script>
 
@@ -54,7 +64,7 @@
   <div class="template-list-view">
     <div class="template-list-header">
       <h2 class="font-section-title text-dark">문자 보관함</h2>
-      <BaseButton type="primary" size="sm" @click="showCreateModal = true">
+      <BaseButton type="primary" size="sm" @click="openCreateModal">
         <PlusIcon class="icon" /> 템플릿 등록
       </BaseButton>
     </div>
@@ -77,6 +87,10 @@
       :items-per-page="itemsPerPage"
       @page-change="onPageChange"
     />
+
+    <TemplateCreateModal v-if="showCreateModal" v-model="showCreateModal" @submit="handleCreate" />
+
+    <BaseToast ref="toast" />
   </div>
 </template>
 
@@ -93,12 +107,6 @@
     margin-bottom: 1.5rem;
   }
   th {
-    text-align: center !important;
-  }
-</style>
-
-<style>
-  .text-center {
     text-align: center !important;
   }
 </style>
