@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import Home from '../views/Home.vue';
 import { userRoutes } from '@/features/users/route.js';
+import { staffRoutes } from '@/features/staffs/route.js';
 
 const routes = [
   {
@@ -144,7 +145,7 @@ const routes = [
   {
     path: '/settings/staff',
     name: 'SettingsStaff',
-    component: Home,
+    component: () => import('@/features/staffs/views/StaffListView.vue'),
   },
   {
     path: '/settings/customer-grade',
@@ -167,6 +168,7 @@ const routes = [
     component: () => import('@/features/users/views/ProfileSettingView.vue'),
   },
   ...userRoutes, // 추후에 밖으로 빼기
+  ...staffRoutes,
 ];
 
 const router = createRouter({

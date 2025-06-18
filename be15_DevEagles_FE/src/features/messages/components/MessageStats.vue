@@ -1,5 +1,8 @@
 <script setup>
   import { computed } from 'vue';
+  import PlayIcon from '@/components/icons/MessageCircleIcon.vue';
+  import CalendarIcon from '@/components/icons/CalendarIcon.vue';
+  import BellIcon from '@/components/icons/BellIcon.vue';
 
   const props = defineProps({
     messages: {
@@ -10,75 +13,101 @@
 
   const sentCount = computed(() => props.messages.filter(m => m.status === 'sent').length);
   const reservedCount = computed(() => props.messages.filter(m => m.status === 'reserved').length);
+  const totalCount = computed(() => props.messages.length);
 </script>
 
 <template>
-  <div class="message-stats-bar">
-    <div class="message-stats-card">
-      <div class="stats-item">
-        <span class="stats-label">발송 완료</span>
-        <span class="stats-value">{{ sentCount }}건</span>
+  <div class="stats-wrapper">
+    <div class="stats-card">
+      <div class="stats-icon-wrapper icon-blue">
+        <PlayIcon :size="20" />
       </div>
-      <div class="stats-item">
-        <span class="stats-label">예약 문자</span>
-        <span class="stats-value">{{ reservedCount }}건</span>
+      <div class="stats-content">
+        <div class="stats-value">{{ sentCount }}</div>
+        <div class="stats-label">발송 완료</div>
       </div>
-      <div class="stats-item">
-        <span class="stats-label">전체</span>
-        <span class="stats-value">{{ props.messages.length }}건</span>
+    </div>
+
+    <div class="stats-card">
+      <div class="stats-icon-wrapper icon-gray">
+        <CalendarIcon :size="20" />
+      </div>
+      <div class="stats-content">
+        <div class="stats-value">{{ reservedCount }}</div>
+        <div class="stats-label">예약 문자</div>
+      </div>
+    </div>
+
+    <div class="stats-card">
+      <div class="stats-icon-wrapper icon-yellow">
+        <BellIcon :size="20" />
+      </div>
+      <div class="stats-content">
+        <div class="stats-value">{{ totalCount }}</div>
+        <div class="stats-label">전체 메시지</div>
       </div>
     </div>
   </div>
 </template>
 
 <style scoped>
-  .message-stats-bar {
+  .stats-wrapper {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 16px;
-    gap: 24px;
+    gap: 20px;
+    margin-bottom: 24px;
   }
-  .message-stats-card {
+
+  .stats-card {
+    flex: 1;
     display: flex;
-    gap: 24px;
-    background-color: var(--color-neutral-white);
+    align-items: center;
+    padding: 16px 20px;
     border: 1px solid var(--color-gray-200);
-    border-radius: 8px;
-    padding: 12px 20px;
+    border-radius: 16px;
+    background-color: var(--color-neutral-white);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
   }
-  .stats-item {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-  }
-  .stats-label {
-    font-size: 12px;
-    color: var(--color-gray-500);
-  }
-  .stats-value {
-    font-size: 16px;
-    font-weight: 600;
-    color: var(--color-gray-900);
-    margin-top: 2px;
-  }
-  .message-filter-group {
+
+  .stats-icon-wrapper {
     display: flex;
     align-items: center;
-    gap: 8px;
-    white-space: nowrap;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    margin-right: 12px;
   }
-  .filter-label {
-    font-size: 14px;
-    font-weight: 500;
+
+  .icon-blue {
+    background-color: var(--color-gray-100);
+    color: var(--color-primary-main);
+  }
+
+  .icon-gray {
+    background-color: var(--color-gray-100);
     color: var(--color-gray-700);
   }
-  .filter-select {
-    padding: 4px 8px;
+
+  .icon-yellow {
+    background-color: var(--color-gray-100);
+    color: var(--color-warning-500);
+  }
+
+  .stats-content {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .stats-value {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--color-gray-900);
+  }
+
+  .stats-label {
     font-size: 14px;
-    border: 1px solid var(--color-gray-300);
-    border-radius: 4px;
-    background-color: var(--color-neutral-white);
-    min-width: 120px;
+    font-weight: 500;
+    color: var(--color-gray-500);
   }
 </style>

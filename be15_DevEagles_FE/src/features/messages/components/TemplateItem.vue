@@ -1,41 +1,50 @@
 <script setup>
-  const props = defineProps({ item: Object });
+  import BaseButton from '@/components/common/BaseButton.vue';
+  import TrashIcon from '@/components/icons/TrashIcon.vue';
+  import EditIcon from '@/components/icons/EditIcon.vue';
 
-  function edit() {
-    alert(`수정: ${props.item.name}`);
+  const props = defineProps({
+    template: {
+      type: Object,
+      required: true,
+    },
+  });
+
+  const emit = defineEmits(['edit', 'delete']);
+
+  function handleEdit() {
+    emit('edit', props.template);
   }
 
-  function remove() {
-    if (confirm(`'${props.item.name}' 템플릿을 삭제할까요?`)) {
-      alert('삭제 처리');
-    }
+  function handleDelete() {
+    emit('delete', props.template);
   }
 </script>
 
 <template>
   <tr>
-    <td class="cell">{{ item.name }}</td>
-    <td class="cell">{{ item.content }}</td>
-    <td class="cell">{{ item.createdAt }}</td>
-    <td class="cell actions">
-      <button class="btn btn--gray btn--xs" @click="edit">수정</button>
-      <button class="btn btn--danger btn--xs" @click="remove">삭제</button>
+    <td class="text-center">{{ template.name }}</td>
+    <td class="text-center truncate">{{ template.content }}</td>
+    <td class="text-center">{{ template.createdAt }}</td>
+    <td class="text-center d-flex justify-content-center gap-2">
+      <BaseButton size="xs" icon aria-label="수정" @click="handleEdit">
+        <EditIcon class="icon" />
+      </BaseButton>
+      <BaseButton size="xs" icon aria-label="삭제" @click="handleDelete">
+        <TrashIcon class="icon" />
+      </BaseButton>
     </td>
   </tr>
 </template>
 
 <style scoped>
-  .cell {
-    text-align: center;
-    vertical-align: middle;
-    padding: 0.75rem;
-    font-size: 0.875rem;
-    color: var(--color-neutral-dark);
+  .truncate {
+    max-width: 400px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
-
-  .actions {
-    display: flex;
-    justify-content: center;
-    gap: 0.5rem;
+  .text-center {
+    text-align: center;
   }
 </style>

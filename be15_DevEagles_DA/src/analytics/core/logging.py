@@ -25,13 +25,14 @@ def setup_logging() -> None:
                 ),
                 "datefmt": "%Y-%m-%d %H:%M:%S",
             },
-            "json": {
-                "class": "pythonjsonlogger.jsonlogger.JsonFormatter",
-                "format": (
-                    "%(asctime)s %(name)s %(levelname)s %(lineno)d %(funcName)s "
-                    "%(message)s"
-                ),
-            },
+            # JSON formatter는 pythonjsonlogger 패키지 필요 시 활성화
+            # "json": {
+            #     "class": "pythonjsonlogger.jsonlogger.JsonFormatter",
+            #     "format": (
+            #         "%(asctime)s %(name)s %(levelname)s %(lineno)d %(funcName)s "
+            #         "%(message)s"
+            #     ),
+            # },
         },
         "handlers": {
             "console": {

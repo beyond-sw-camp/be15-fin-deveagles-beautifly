@@ -180,7 +180,7 @@
   import BaseBadge from '@/components/common/BaseBadge.vue';
   import BaseModal from '@/components/common/BaseModal.vue';
   import BasePopover from '@/components/common/BasePopover.vue';
-  import BasePagination from '@/components/common/Pagaination.vue';
+  import Pagination from '@/components/common/Pagination.vue';
   import BaseToast from '@/components/common/BaseToast.vue';
   import BaseCard from '@/components/common/BaseCard.vue';
   import BaseTable from '@/components/common/BaseTable.vue';
@@ -195,7 +195,7 @@
       BaseBadge,
       BaseModal,
       BasePopover,
-      BasePagination,
+      BasePagination: Pagination,
       BaseToast,
       BaseCard,
       BaseTable,

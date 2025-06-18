@@ -112,7 +112,7 @@
   import BaseButton from '@/components/common/BaseButton.vue';
   import BaseModal from '@/components/common/BaseModal.vue';
   import BasePopover from '@/components/common/BasePopover.vue';
-  import BasePagination from '@/components/common/Pagaination.vue';
+  import Pagination from '@/components/common/Pagination.vue';
   import BaseCard from '@/components/common/BaseCard.vue';
   import BaseTable from '@/components/common/BaseTable.vue';
   import BaseBadge from '@/components/common/BaseBadge.vue';
@@ -127,7 +127,7 @@
       BaseButton,
       BaseModal,
       BasePopover,
-      BasePagination,
+      BasePagination: Pagination,
       BaseCard,
       BaseTable,
       BaseBadge,
