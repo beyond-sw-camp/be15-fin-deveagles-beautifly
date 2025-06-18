@@ -17,6 +17,7 @@ public class CouponResponse {
   private Long id;
   private String couponCode;
   private String couponTitle;
+  private Long shopId;
   private Long staffId;
   private Long primaryItemId;
   private Long secondaryItemId;
@@ -32,6 +33,7 @@ public class CouponResponse {
         .id(coupon.getId())
         .couponCode(coupon.getCouponCode())
         .couponTitle(coupon.getCouponTitle())
+        .shopId(coupon.getShopId())
         .staffId(coupon.getStaffId())
         .primaryItemId(coupon.getPrimaryItemId())
         .secondaryItemId(coupon.getSecondaryItemId())
