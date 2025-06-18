@@ -272,7 +272,7 @@
   };
 
   const goToCreate = () => {
-    router.push({ name: 'StaffCreate' });
+    router.push({ name: 'StaffRegist' });
   };
 
   const goToDetail = staff => {
