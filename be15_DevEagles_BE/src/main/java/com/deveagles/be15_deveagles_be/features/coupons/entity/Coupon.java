@@ -3,6 +3,7 @@ package com.deveagles.be15_deveagles_be.features.coupons.entity;
 import jakarta.persistence.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -12,7 +13,7 @@ import org.hibernate.annotations.CreationTimestamp;
 @Entity
 @Table(name = "coupon")
 @Getter
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
 public class Coupon {
