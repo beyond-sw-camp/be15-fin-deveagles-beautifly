@@ -10,6 +10,7 @@ from rich.table import Table
 
 from analytics.core.config import settings
 from analytics.core.logging import get_logger
+from analytics.core.database import get_analytics_db, get_crm_db
 
 app = typer.Typer(
     name="analytics",
