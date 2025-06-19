@@ -1,4 +1,4 @@
-package com.deveagles.be15_deveagles_be.features.coupons.service;
+package com.deveagles.be15_deveagles_be.features.coupons.application.validation;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -7,8 +7,6 @@ import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.times;
 
 import com.deveagles.be15_deveagles_be.common.exception.BusinessException;
-import com.deveagles.be15_deveagles_be.features.coupons.application.validation.CouponApplicationService;
-import com.deveagles.be15_deveagles_be.features.coupons.application.validation.CouponValidationService;
 import com.deveagles.be15_deveagles_be.features.coupons.common.CouponResponseFactory;
 import com.deveagles.be15_deveagles_be.features.coupons.domain.entity.Coupon;
 import com.deveagles.be15_deveagles_be.features.coupons.domain.vo.DiscountResult;

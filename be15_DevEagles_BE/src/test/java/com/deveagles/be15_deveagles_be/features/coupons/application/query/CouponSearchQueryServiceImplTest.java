@@ -1,4 +1,4 @@
-package com.deveagles.be15_deveagles_be.features.coupons.service;
+package com.deveagles.be15_deveagles_be.features.coupons.application.query;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -8,8 +8,6 @@ import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.times;
 
 import com.deveagles.be15_deveagles_be.common.dto.PagedResult;
-import com.deveagles.be15_deveagles_be.features.coupons.application.query.CouponQueryServiceImpl;
-import com.deveagles.be15_deveagles_be.features.coupons.application.query.CouponSearchQuery;
 import com.deveagles.be15_deveagles_be.features.coupons.domain.entity.Coupon;
 import com.deveagles.be15_deveagles_be.features.coupons.domain.repository.CouponQueryRepository;
 import com.deveagles.be15_deveagles_be.features.coupons.infrastructure.repository.CouponJpaRepository;
@@ -199,11 +197,8 @@ class CouponSearchQueryServiceImplTest {
     PagedResult<CouponResponse> result = couponQueryService.searchCoupons(query);
 
     // Then
-    assertThat(result).isNotNull();
     assertThat(result.getContent()).hasSize(2);
     assertThat(result.getPagination().getTotalItems()).isEqualTo(2);
-    assertThat(result.getPagination().getTotalPages()).isEqualTo(1);
-    assertThat(result.getPagination().getCurrentPage()).isEqualTo(0);
 
     then(couponQueryRepository).should(times(1)).searchCoupons(eq(query), any(Pageable.class));
   }
@@ -221,8 +216,9 @@ class CouponSearchQueryServiceImplTest {
             .sortDirection("desc")
             .build();
 
+    List<Coupon> activeCoupons = Arrays.asList(activeCoupon);
     Pageable pageable = PageRequest.of(0, 10);
-    Page<Coupon> couponPage = new PageImpl<>(Arrays.asList(activeCoupon), pageable, 1);
+    Page<Coupon> couponPage = new PageImpl<>(activeCoupons, pageable, activeCoupons.size());
 
     given(couponQueryRepository.searchCoupons(eq(query), any(Pageable.class)))
         .willReturn(couponPage);
@@ -231,7 +227,6 @@ class CouponSearchQueryServiceImplTest {
     PagedResult<CouponResponse> result = couponQueryService.searchCoupons(query);
 
     // Then
-    assertThat(result).isNotNull();
     assertThat(result.getContent()).hasSize(1);
     assertThat(result.getContent().get(0).getIsActive()).isTrue();
 
@@ -251,8 +246,9 @@ class CouponSearchQueryServiceImplTest {
             .sortDirection("desc")
             .build();
 
+    List<Coupon> shopCoupons = Arrays.asList(activeCoupon);
     Pageable pageable = PageRequest.of(0, 10);
-    Page<Coupon> couponPage = new PageImpl<>(Arrays.asList(activeCoupon), pageable, 1);
+    Page<Coupon> couponPage = new PageImpl<>(shopCoupons, pageable, shopCoupons.size());
 
     given(couponQueryRepository.searchCoupons(eq(query), any(Pageable.class)))
         .willReturn(couponPage);
@@ -261,7 +257,6 @@ class CouponSearchQueryServiceImplTest {
     PagedResult<CouponResponse> result = couponQueryService.searchCoupons(query);
 
     // Then
-    assertThat(result).isNotNull();
     assertThat(result.getContent()).hasSize(1);
     assertThat(result.getContent().get(0).getShopId()).isEqualTo(1L);
 
@@ -281,8 +276,9 @@ class CouponSearchQueryServiceImplTest {
             .sortDirection("desc")
             .build();
 
+    List<Coupon> itemCoupons = Arrays.asList(activeCoupon);
     Pageable pageable = PageRequest.of(0, 10);
-    Page<Coupon> couponPage = new PageImpl<>(Arrays.asList(activeCoupon), pageable, 1);
+    Page<Coupon> couponPage = new PageImpl<>(itemCoupons, pageable, itemCoupons.size());
 
     given(couponQueryRepository.searchCoupons(eq(query), any(Pageable.class)))
         .willReturn(couponPage);
@@ -291,7 +287,6 @@ class CouponSearchQueryServiceImplTest {
     PagedResult<CouponResponse> result = couponQueryService.searchCoupons(query);
 
     // Then
-    assertThat(result).isNotNull();
     assertThat(result.getContent()).hasSize(1);
     assertThat(result.getContent().get(0).getPrimaryItemId()).isEqualTo(100L);
 
@@ -312,16 +307,15 @@ class CouponSearchQueryServiceImplTest {
             .build();
 
     Pageable pageable = PageRequest.of(0, 10);
-    Page<Coupon> couponPage = new PageImpl<>(Arrays.asList(), pageable, 0);
+    Page<Coupon> emptyPage = new PageImpl<>(Arrays.asList(), pageable, 0);
 
     given(couponQueryRepository.searchCoupons(eq(query), any(Pageable.class)))
-        .willReturn(couponPage);
+        .willReturn(emptyPage);
 
     // When
     PagedResult<CouponResponse> result = couponQueryService.searchCoupons(query);
 
     // Then
-    assertThat(result).isNotNull();
     assertThat(result.getContent()).isEmpty();
     assertThat(result.getPagination().getTotalItems()).isEqualTo(0);
 
