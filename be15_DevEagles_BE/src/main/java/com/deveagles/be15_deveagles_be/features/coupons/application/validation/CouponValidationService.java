@@ -2,7 +2,7 @@ package com.deveagles.be15_deveagles_be.features.coupons.application.validation;
 
 import com.deveagles.be15_deveagles_be.features.coupons.common.CouponResponseFactory;
 import com.deveagles.be15_deveagles_be.features.coupons.domain.entity.Coupon;
-import com.deveagles.be15_deveagles_be.features.coupons.infrastructure.repository.CouponRepository;
+import com.deveagles.be15_deveagles_be.features.coupons.infrastructure.repository.CouponJpaRepository;
 import com.deveagles.be15_deveagles_be.features.coupons.presentation.dto.request.CouponApplicationRequest;
 import com.deveagles.be15_deveagles_be.features.coupons.presentation.dto.response.CouponValidationResponse;
 import java.util.Optional;
@@ -17,14 +17,14 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 public class CouponValidationService {
 
-  private final CouponRepository couponRepository;
+  private final CouponJpaRepository couponJpaRepository;
   private final CouponResponseFactory couponResponseFactory;
 
   public CouponValidationResponse validateForSale(CouponApplicationRequest request) {
     log.info("쿠폰 검증 시작 - 코드: {}, 매장ID: {}", request.getCouponCode(), request.getShopId());
 
     Optional<Coupon> couponOpt =
-        couponRepository.findByCouponCodeAndDeletedAtIsNull(request.getCouponCode());
+        couponJpaRepository.findByCouponCodeAndDeletedAtIsNull(request.getCouponCode());
 
     if (couponOpt.isEmpty()) {
       return couponResponseFactory.createInvalidResponse("쿠폰을 찾을 수 없습니다");
