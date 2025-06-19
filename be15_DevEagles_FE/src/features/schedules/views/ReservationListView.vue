@@ -1,7 +1,7 @@
 <template>
   <div style="padding: 24px">
     <div class="page-header">
-      <h1 class="font-screen-title">예약 목록 전체 조회</h1>
+      <h1 class="font-screen-title">예약 목록</h1>
     </div>
 
     <!-- 필터 영역 -->
@@ -43,49 +43,50 @@
     </div>
 
     <!-- 테이블 -->
-    <BaseTable
-      :columns="columns"
-      :data="filteredReservations"
-      :striped="true"
-      :hover="true"
-      row-key="id"
-    >
-      <template #cell-date="{ value }">
-        <div class="text-center">{{ formatDate(value) }}</div>
-      </template>
+    <div class="base-table-wrapper">
+      <BaseTable
+        :columns="columns"
+        :data="filteredReservations"
+        :striped="true"
+        :hover="true"
+        row-key="id"
+      >
+        <template #cell-date="{ value }">
+          <div class="text-center">{{ formatDate(value) }}</div>
+        </template>
 
-      <template #cell-status="{ value }">
-        <span
-          class="badge"
-          :class="{
-            'badge-success': value === '예약 확정',
-            'badge-warning': value === '예약 대기',
-            'badge-error': value.includes('취소') || value === '노쇼',
-          }"
-        >
-          {{ value }}
-        </span>
-      </template>
-
-      <template #cell-prepaidUsed="{ value }">
-        <div class="text-center">{{ value ? '○' : '×' }}</div>
-      </template>
-
-      <template #cell-actions="{ item }">
-        <div
-          v-if="item.status === '예약 대기' || item.status === '예약 확정'"
-          class="action-buttons"
-        >
-          <BaseButton outline type="primary" size="sm" @click="openModal(item, 'confirm')"
-            >예약 확정</BaseButton
+        <template #cell-status="{ value }">
+          <span
+            class="badge"
+            :class="{
+              'badge-success': value === '예약 확정',
+              'badge-warning': value === '예약 대기',
+              'badge-error': value.includes('취소') || value === '노쇼',
+            }"
           >
-          <BaseButton outline type="error" size="sm" @click="openModal(item, 'cancel')"
-            >예약 취소</BaseButton
-          >
-        </div>
-      </template>
-    </BaseTable>
+            {{ value }}
+          </span>
+        </template>
 
+        <template #cell-prepaidUsed="{ value }">
+          <div class="text-center">{{ value ? '○' : '×' }}</div>
+        </template>
+
+        <template #cell-actions="{ item }">
+          <div
+            v-if="item.status === '예약 대기' || item.status === '예약 확정'"
+            class="action-buttons"
+          >
+            <BaseButton outline type="primary" size="sm" @click="openModal(item, 'confirm')"
+              >예약 확정
+            </BaseButton>
+            <BaseButton outline type="error" size="sm" @click="openModal(item, 'cancel')"
+              >예약 취소
+            </BaseButton>
+          </div>
+        </template>
+      </BaseTable>
+    </div>
     <Pagination
       :current-page="1"
       :total-pages="3"
@@ -106,15 +107,15 @@
       <template #footer>
         <div style="display: flex; gap: 12px; justify-content: flex-end; flex-wrap: wrap">
           <BaseButton v-if="modalType === 'confirm'" type="primary" @click="onConfirm"
-            >예</BaseButton
-          >
+            >예
+          </BaseButton>
           <template v-else>
             <BaseButton type="error" @click="confirmCancel('가게에 의한 예약 취소')"
-              >가게에 의한 예약 취소</BaseButton
-            >
+              >가게에 의한 예약 취소
+            </BaseButton>
             <BaseButton type="error" @click="confirmCancel('고객에 의한 예약 취소')"
-              >고객에 의한 예약 취소</BaseButton
-            >
+              >고객에 의한 예약 취소
+            </BaseButton>
           </template>
           <BaseButton outline @click="onCancel">닫기</BaseButton>
         </div>
@@ -264,6 +265,14 @@
 </script>
 
 <style scoped>
+  .base-table-wrapper {
+    background-color: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    padding: 24px;
+    box-sizing: border-box;
+  }
+
   .page-header {
     margin-bottom: 24px;
     display: flex;
@@ -302,14 +311,17 @@
     white-space: nowrap;
     line-height: 1.2;
   }
+
   .badge-success {
     background-color: #e6f9ed;
     color: #1a7f37;
   }
+
   .badge-warning {
     background-color: #fff8e1;
     color: #c38e00;
   }
+
   .badge-error {
     background-color: #fdecea;
     color: #d93025;

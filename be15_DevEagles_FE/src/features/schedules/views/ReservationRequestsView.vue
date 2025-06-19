@@ -7,41 +7,43 @@
     <div class="top-bar">
       <BaseButton
         type="primary"
-        size="sm"
         @click="openConfirm('선택된 예약을 모두 확정하시겠습니까?', confirmSelected)"
       >
         전체 예약 확정
       </BaseButton>
     </div>
+    <div class="base-table-wrapper">
+      <BaseTable :columns="columns" :data="pagedData" row-key="id" :striped="true" :hover="true">
+        <template #header-checkbox>
+          <input v-model="selectAll" type="checkbox" />
+        </template>
 
-    <BaseTable :columns="columns" :data="pagedData" row-key="id" :striped="true" :hover="true">
-      <template #header-checkbox>
-        <input v-model="selectAll" type="checkbox" />
-      </template>
+        <template #cell-checkbox="{ item }">
+          <input v-model="selectedIds" type="checkbox" :value="item.id" />
+        </template>
 
-      <template #cell-checkbox="{ item }">
-        <input v-model="selectedIds" type="checkbox" :value="item.id" />
-      </template>
-
-      <template #cell-actions="{ item }">
-        <div class="actions">
-          <BaseButton
-            outline
-            type="primary"
-            size="sm"
-            @click="
-              () =>
-                openConfirm(`예약 ID ${item.id}를 확정하시겠습니까?`, () => confirmSingle(item.id))
-            "
-          >
-            예약 확정
-          </BaseButton>
-          <BaseButton outline type="error" size="sm" @click="() => openModal(item, 'cancel')">
-            예약 취소
-          </BaseButton>
-        </div>
-      </template>
-    </BaseTable>
+        <template #cell-actions="{ item }">
+          <div class="actions">
+            <BaseButton
+              outline
+              type="primary"
+              size="sm"
+              @click="
+                () =>
+                  openConfirm(`예약 ID ${item.id}를 확정하시겠습니까?`, () =>
+                    confirmSingle(item.id)
+                  )
+              "
+            >
+              예약 확정
+            </BaseButton>
+            <BaseButton outline type="error" size="sm" @click="() => openModal(item, 'cancel')">
+              예약 취소
+            </BaseButton>
+          </div>
+        </template>
+      </BaseTable>
+    </div>
 
     <Pagination
       :current-page="currentPage"
@@ -203,22 +205,36 @@
 </script>
 
 <style scoped>
+  .base-table-wrapper {
+    background-color: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    padding: 24px;
+    box-sizing: border-box;
+  }
+
   .page-header {
     margin-bottom: 24px;
     display: flex;
     justify-content: space-between;
     align-items: center;
   }
+
   .reservation-wrapper {
-    padding: 24px;
-    max-width: 1000px;
-    margin: 0 auto;
+    padding: 30px;
   }
 
   .title {
     font-size: 24px;
     font-weight: bold;
     margin-bottom: 24px;
+  }
+
+  .page-header {
+    margin-bottom: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
   }
 
   .top-bar {
