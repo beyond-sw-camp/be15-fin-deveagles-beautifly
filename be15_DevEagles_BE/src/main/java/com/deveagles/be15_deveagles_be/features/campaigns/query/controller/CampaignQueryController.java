@@ -16,7 +16,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 @Tag(name = "캠페인 조회", description = "캠페인 조회 API")
 @RestController
@@ -53,5 +57,28 @@ public class CampaignQueryController {
     PagedResponse<CampaignQueryResponse> response = PagedResponse.from(pagedResult);
 
     return ResponseEntity.ok(ApiResponse.success(response));
+  }
+
+  @Operation(summary = "캠페인 상세 조회", description = "캠페인 ID로 특정 캠페인의 상세 정보를 조회합니다.")
+  @ApiResponses({
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+        responseCode = "200",
+        description = "캠페인 조회 성공",
+        content = @Content(schema = @Schema(implementation = CampaignQueryResponse.class))),
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+        responseCode = "404",
+        description = "캠페인을 찾을 수 없음")
+  })
+  @GetMapping("/{id}")
+  public ResponseEntity<ApiResponse<CampaignQueryResponse>> getCampaignById(
+      @Parameter(description = "캠페인 ID", required = true, example = "1") @PathVariable Long id) {
+    log.info("캠페인 상세 조회 요청 - ID: {}", id);
+
+    CampaignQueryResponse campaign =
+        campaignQueryService
+            .getCampaignById(id)
+            .orElseThrow(() -> new RuntimeException("캠페인을 찾을 수 없습니다."));
+
+    return ResponseEntity.ok(ApiResponse.success(campaign));
   }
 }
