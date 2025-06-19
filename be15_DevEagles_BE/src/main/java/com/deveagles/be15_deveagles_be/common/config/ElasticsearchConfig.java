@@ -8,13 +8,15 @@ import org.springframework.data.elasticsearch.client.elc.ElasticsearchConfigurat
 @Configuration
 public class ElasticsearchConfig extends ElasticsearchConfiguration {
 
-  @Value("${spring.elasticsearch.uris:localhost:9200}")
+  @Value("${spring.elasticsearch.uris:http://localhost:9200}")
   private String elasticsearchHost;
 
   @Override
   public ClientConfiguration clientConfiguration() {
+    String hostAndPort = elasticsearchHost.replace("http://", "").replace("https://", "");
+
     return ClientConfiguration.builder()
-        .connectedTo(elasticsearchHost)
+        .connectedTo(hostAndPort)
         .withConnectTimeout(60000)
         .withSocketTimeout(60000)
         .build();
