@@ -23,6 +23,7 @@
           <tr
             v-for="(item, index) in data"
             :key="getRowKey(item, index)"
+            :class="getRowClass(item, index)"
             @click="$emit('row-click', item, $event)"
           >
             <td v-for="column in columns" :key="column.key" :class="column.cellClass">
@@ -85,6 +86,10 @@
         type: [String, Function],
         default: 'id',
       },
+      rowClass: {
+        type: [Function, String],
+        default: '',
+      },
     },
     emits: ['row-click'],
     methods: {
@@ -96,6 +101,12 @@
       },
       getNestedValue(obj, path) {
         return path.split('.').reduce((current, key) => current?.[key], obj);
+      },
+      getRowClass(item, index) {
+        if (typeof this.rowClass === 'function') {
+          return this.rowClass(item, index);
+        }
+        return this.rowClass;
       },
     },
   };
