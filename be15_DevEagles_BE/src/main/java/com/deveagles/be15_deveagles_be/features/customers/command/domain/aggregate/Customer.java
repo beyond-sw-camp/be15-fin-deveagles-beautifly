@@ -1,0 +1,155 @@
+package com.deveagles.be15_deveagles_be.features.customers.command.domain.aggregate;
+
+import jakarta.persistence.*;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+
+@Entity
+@Table(name = "customer")
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
+@Builder
+public class Customer {
+
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  @Column(name = "customer_id")
+  private Long id;
+
+  @Column(name = "customer_grade_id", nullable = false)
+  private Long customerGradeId;
+
+  @Column(name = "shop_id", nullable = false)
+  private Long shopId;
+
+  @Column(name = "staff_id", nullable = false)
+  private Long staffId;
+
+  @Column(name = "customer_name", nullable = false, length = 100)
+  private String customerName;
+
+  @Column(name = "phone_number", nullable = false, length = 11)
+  private String phoneNumber;
+
+  @Column(name = "memo", length = 255)
+  private String memo;
+
+  @Builder.Default
+  @ColumnDefault("0")
+  @Column(name = "visit_count", nullable = false)
+  private Integer visitCount = 0;
+
+  @Builder.Default
+  @ColumnDefault("0")
+  @Column(name = "total_revenue", nullable = false)
+  private Integer totalRevenue = 0;
+
+  @Builder.Default
+  @ColumnDefault("CURRENT_TIMESTAMP")
+  @Column(name = "recent_visit_date", nullable = false)
+  private LocalDate recentVisitDate = LocalDate.now();
+
+  @Column(name = "birthdate", nullable = false)
+  private LocalDate birthdate;
+
+  @Column(name = "registered_at", nullable = false)
+  private LocalDateTime registeredAt;
+
+  @Builder.Default
+  @ColumnDefault("0")
+  @Column(name = "noshow_count", nullable = false)
+  private Integer noshowCount = 0;
+
+  @Enumerated(EnumType.STRING)
+  @Column(name = "gender", length = 1)
+  private Gender gender;
+
+  @Builder.Default
+  @ColumnDefault("0")
+  @Column(name = "marketing_consent", nullable = false)
+  private Boolean marketingConsent = false;
+
+  @Column(name = "marketing_consented_at")
+  private LocalDateTime marketingConsentedAt;
+
+  @Builder.Default
+  @ColumnDefault("0")
+  @Column(name = "notification_consent", nullable = false)
+  private Boolean notificationConsent = false;
+
+  @Column(name = "last_message_sent_at")
+  private LocalDateTime lastMessageSentAt;
+
+  @Column(name = "acquisition_channel", length = 20)
+  private String acquisitionChannel;
+
+  @CreationTimestamp
+  @Column(name = "created_at", nullable = false, updatable = false)
+  private LocalDateTime createdAt;
+
+  @UpdateTimestamp
+  @Column(name = "modified_at", nullable = false)
+  private LocalDateTime modifiedAt;
+
+  @Column(name = "deleted_at")
+  private LocalDateTime deletedAt;
+
+  // Business methods
+  public void updateCustomerInfo(
+      String customerName,
+      String phoneNumber,
+      String memo,
+      Gender gender,
+      String acquisitionChannel) {
+    this.customerName = customerName;
+    this.phoneNumber = phoneNumber;
+    this.memo = memo;
+    this.gender = gender;
+    this.acquisitionChannel = acquisitionChannel;
+  }
+
+  public void updateMarketingConsent(Boolean marketingConsent) {
+    this.marketingConsent = marketingConsent;
+    this.marketingConsentedAt = marketingConsent ? LocalDateTime.now() : null;
+  }
+
+  public void updateNotificationConsent(Boolean notificationConsent) {
+    this.notificationConsent = notificationConsent;
+  }
+
+  public void addVisit(Integer revenue) {
+    this.visitCount++;
+    this.totalRevenue += revenue;
+    this.recentVisitDate = LocalDate.now();
+  }
+
+  public void addNoshow() {
+    this.noshowCount++;
+  }
+
+  public void updateLastMessageSentAt() {
+    this.lastMessageSentAt = LocalDateTime.now();
+  }
+
+  public void softDelete() {
+    this.deletedAt = LocalDateTime.now();
+  }
+
+  public boolean isDeleted() {
+    return this.deletedAt != null;
+  }
+
+  public enum Gender {
+    M,
+    F
+  }
+}
