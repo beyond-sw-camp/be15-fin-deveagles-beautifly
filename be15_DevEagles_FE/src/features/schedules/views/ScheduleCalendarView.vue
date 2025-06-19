@@ -1,17 +1,19 @@
 <script setup>
   import { ref, computed } from 'vue';
   import ScheduleCalendar from '@/features/schedules/components/ScheduleCalendar.vue';
-  import ScheduleDetailModal from '@/features/schedules/components/ScheduleDetailModal.vue';
+  import LeaveDetailModal from '@/features/schedules/components/LeaveDetailModal.vue';
+  import PlanDetailModal from '@/features/schedules/components/PlanDetailModal.vue';
+  import ReservationDetailModal from '@/features/schedules/components/ReservationDetailModal.vue';
 
-  const employeeColors = {
-    최민수: '#34d399',
-    이채은: '#60a5fa',
-    김민지: '#fbbf24',
+  const staffColors = {
+    최민수: 'var(--color-primary-main)',
+    이채은: '#60bafa',
+    김민지: '#f4e0ab',
   };
 
   const searchText = ref('');
   const selectedService = ref('');
-  const selectedEmployee = ref('');
+  const selectedStaff = ref('');
   const selectedType = ref('');
 
   const schedules = ref([
@@ -22,7 +24,7 @@
       end: '2025-06-17T11:00:00',
       type: 'reservation',
       service: '커트',
-      employee: '최민수',
+      staff: '최민수',
       customer: '김민지',
       phone: '010-1234-5678',
       status: '예약 확정',
@@ -32,11 +34,11 @@
     {
       id: 2,
       title: '워크샵',
-      start: '2025-06-18T13:00:00',
+      start: '2025-06-18T10:00:00',
       end: '2025-06-18T16:00:00',
       type: 'event',
-      employee: '이채은',
-      date: '2025-06-18',
+      staff: '이채은',
+      date: '2025-06-17',
       timeRange: '오후 01:00 - 오후 04:00',
       duration: '03:00',
       memo: '외부 미팅 장소',
@@ -46,12 +48,12 @@
       id: 3,
       title: '개인 사유로 휴무',
       start: '2025-06-19',
-      end: '2025-06-19',
-      type: 'holiday',
-      employee: '이채은',
-      date: '2025-06-19',
-      timeRange: '00:00 - 15:00',
-      duration: '15:00',
+      end: '2025-06-20',
+      type: 'leave',
+      staff: '김민지',
+      service: '',
+      customer: '',
+      status: '',
       memo: '사전 공지 완료',
       repeat: 'none',
     },
@@ -59,28 +61,43 @@
 
   const selectedReservation = ref(null);
   const isModalOpen = ref(false);
+  const modalType = ref('');
 
   const handleClickSchedule = id => {
     const target = schedules.value.find(item => String(item.id) === String(id));
     if (target) {
       selectedReservation.value = target;
       isModalOpen.value = true;
+
+      if (target.type === 'reservation') modalType.value = 'reservation';
+      else if (['leave', 'regular_leave'].includes(target.type)) modalType.value = 'leave';
+      else if (['event', 'regular_event'].includes(target.type)) modalType.value = 'plan';
     }
   };
 
   const calendarEvents = computed(() =>
     schedules.value.map(item => {
-      const isHoliday = item.type === 'holiday';
-      const defaultStart = isHoliday ? item.start + 'T00:00:00' : item.start;
-      const defaultEnd = isHoliday ? item.end + 'T23:59:00' : item.end;
+      const isLeave = item.type === 'leave';
+      const isAllDay = isLeave;
 
       return {
         id: item.id,
         title: item.title,
-        start: defaultStart,
-        end: defaultEnd,
-        backgroundColor: employeeColors[item.employee] || '#d1d5db',
+        start: item.start,
+        end: item.end,
+        allDay: isAllDay,
+
+        // 색상 및 스타일 관련
+        backgroundColor: staffColors[item.staff] || '#d1d5db',
         textColor: '#111',
+
+        // eventDidMount에서 쓸 수 있도록 추가
+        type: item.type,
+        status: item.status,
+        staff: item.staff,
+        customer: item.customer,
+        service: item.service,
+        memo: item.memo,
       };
     })
   );
@@ -105,7 +122,7 @@
         <option value="염색">염색</option>
         <option value="펌">펌</option>
       </select>
-      <select v-model="selectedEmployee" class="input input-select">
+      <select v-model="selectedStaff" class="input input-select">
         <option value="">담당자</option>
         <option value="최민수">최민수</option>
         <option value="이채은">이채은</option>
@@ -113,7 +130,7 @@
       <select v-model="selectedType" class="input input-select">
         <option value="">스케줄</option>
         <option value="reservation">예약</option>
-        <option value="holiday">휴무</option>
+        <option value="leave">휴무</option>
         <option value="event">일정</option>
       </select>
       <button class="btn btn-primary schedule-btn">스케줄 등록</button>
@@ -121,7 +138,21 @@
 
     <ScheduleCalendar :schedules="calendarEvents" @click-schedule="handleClickSchedule" />
 
-    <ScheduleDetailModal v-model="isModalOpen" :reservation="selectedReservation" />
+    <ReservationDetailModal
+      v-if="modalType === 'reservation'"
+      v-model="isModalOpen"
+      :reservation="selectedReservation"
+    />
+    <LeaveDetailModal
+      v-if="modalType === 'leave'"
+      v-model="isModalOpen"
+      :reservation="selectedReservation"
+    />
+    <PlanDetailModal
+      v-if="modalType === 'plan'"
+      v-model="isModalOpen"
+      :reservation="selectedReservation"
+    />
   </div>
 </template>
 

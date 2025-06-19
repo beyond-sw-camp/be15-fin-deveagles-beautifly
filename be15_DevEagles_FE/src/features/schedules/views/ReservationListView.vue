@@ -1,7 +1,7 @@
 <template>
   <div style="padding: 24px">
     <div class="page-header">
-      <h1 class="font-screen-title">예약 목록 전체 조회</h1>
+      <h1 class="font-screen-title">예약 목록</h1>
     </div>
 
     <!-- 필터 영역 -->
@@ -19,7 +19,7 @@
         <option value="thisMonth">이번 달</option>
       </select>
 
-      <select v-model="selectedEmployee" class="input input-select">
+      <select v-model="selectedStaff" class="input input-select">
         <option value="">담당자</option>
         <option value="박미글">박미글</option>
         <option value="이팀장">이팀장</option>
@@ -43,49 +43,50 @@
     </div>
 
     <!-- 테이블 -->
-    <BaseTable
-      :columns="columns"
-      :data="filteredReservations"
-      :striped="true"
-      :hover="true"
-      row-key="id"
-    >
-      <template #cell-date="{ value }">
-        <div class="text-center">{{ formatDate(value) }}</div>
-      </template>
+    <div class="base-table-wrapper">
+      <BaseTable
+        :columns="columns"
+        :data="filteredReservations"
+        :striped="true"
+        :hover="true"
+        row-key="id"
+      >
+        <template #cell-date="{ value }">
+          <div class="text-center">{{ formatDate(value) }}</div>
+        </template>
 
-      <template #cell-status="{ value }">
-        <span
-          class="badge"
-          :class="{
-            'badge-success': value === '예약 확정',
-            'badge-warning': value === '예약 대기',
-            'badge-error': value.includes('취소') || value === '노쇼',
-          }"
-        >
-          {{ value }}
-        </span>
-      </template>
-
-      <template #cell-prepaidUsed="{ value }">
-        <div class="text-center">{{ value ? '○' : '×' }}</div>
-      </template>
-
-      <template #cell-actions="{ item }">
-        <div
-          v-if="item.status === '예약 대기' || item.status === '예약 확정'"
-          class="action-buttons"
-        >
-          <BaseButton outline type="primary" size="sm" @click="openModal(item, 'confirm')"
-            >예약 확정</BaseButton
+        <template #cell-status="{ value }">
+          <span
+            class="badge"
+            :class="{
+              'badge-success': value === '예약 확정',
+              'badge-warning': value === '예약 대기',
+              'badge-error': value.includes('취소') || value === '노쇼',
+            }"
           >
-          <BaseButton outline type="error" size="sm" @click="openModal(item, 'cancel')"
-            >예약 취소</BaseButton
-          >
-        </div>
-      </template>
-    </BaseTable>
+            {{ value }}
+          </span>
+        </template>
 
+        <template #cell-prepaidUsed="{ value }">
+          <div class="text-center">{{ value ? '○' : '×' }}</div>
+        </template>
+
+        <template #cell-actions="{ item }">
+          <div
+            v-if="item.status === '예약 대기' || item.status === '예약 확정'"
+            class="action-buttons"
+          >
+            <BaseButton outline type="primary" size="sm" @click="openModal(item, 'confirm')"
+              >예약 확정
+            </BaseButton>
+            <BaseButton outline type="error" size="sm" @click="openModal(item, 'cancel')"
+              >예약 취소
+            </BaseButton>
+          </div>
+        </template>
+      </BaseTable>
+    </div>
     <Pagination
       :current-page="1"
       :total-pages="3"
@@ -106,15 +107,15 @@
       <template #footer>
         <div style="display: flex; gap: 12px; justify-content: flex-end; flex-wrap: wrap">
           <BaseButton v-if="modalType === 'confirm'" type="primary" @click="onConfirm"
-            >예</BaseButton
-          >
+            >예
+          </BaseButton>
           <template v-else>
             <BaseButton type="error" @click="confirmCancel('가게에 의한 예약 취소')"
-              >가게에 의한 예약 취소</BaseButton
-            >
+              >가게에 의한 예약 취소
+            </BaseButton>
             <BaseButton type="error" @click="confirmCancel('고객에 의한 예약 취소')"
-              >고객에 의한 예약 취소</BaseButton
-            >
+              >고객에 의한 예약 취소
+            </BaseButton>
           </template>
           <BaseButton outline @click="onCancel">닫기</BaseButton>
         </div>
@@ -136,14 +137,14 @@
 
   const searchText = ref('');
   const selectedDate = ref('');
-  const selectedEmployee = ref('');
+  const selectedStaff = ref('');
   const selectedService = ref('');
   const selectedStatus = ref('');
 
   const columns = [
     { key: 'name', title: '고객 이름', width: '120px' },
     { key: 'service', title: '시술', width: '100px' },
-    { key: 'employee', title: '담당자', width: '100px' },
+    { key: 'staff', title: '담당자', width: '100px' },
     { key: 'date', title: '예약 날짜', width: '160px' },
     { key: 'status', title: '예약 상태', width: '140px' },
     { key: 'prepaidUsed', title: '선불권 사용 여부', width: '140px' },
@@ -155,7 +156,7 @@
       id: 1,
       name: '김미글',
       service: '염색',
-      employee: '박미글',
+      staff: '박미글',
       date: '2025-06-08T14:00:00',
       status: '예약 대기',
       prepaidUsed: true,
@@ -164,7 +165,7 @@
       id: 2,
       name: '이예정',
       service: '커트',
-      employee: '이팀장',
+      staff: '이팀장',
       date: '2025-06-09T11:00:00',
       status: '예약 확정',
       prepaidUsed: false,
@@ -173,7 +174,7 @@
       id: 3,
       name: '장현수',
       service: '펌',
-      employee: '박미글',
+      staff: '박미글',
       date: '2025-06-10T15:00:00',
       status: '노쇼',
       prepaidUsed: false,
@@ -189,7 +190,7 @@
         r.name.includes(searchText.value) ||
         (r.phone && r.phone.includes(searchText.value));
 
-      const matchEmployee = !selectedEmployee.value || r.employee.includes(selectedEmployee.value);
+      const matchStaff = !selectedStaff.value || r.staff.includes(selectedStaff.value);
 
       const matchService = !selectedService.value || r.service.includes(selectedService.value);
 
@@ -218,7 +219,7 @@
           reservationDate.getMonth() === now.getMonth();
       }
 
-      return matchText && matchEmployee && matchService && matchStatus && matchDate;
+      return matchText && matchStaff && matchService && matchStatus && matchDate;
     });
   });
 
@@ -264,6 +265,14 @@
 </script>
 
 <style scoped>
+  .base-table-wrapper {
+    background-color: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    padding: 24px;
+    box-sizing: border-box;
+  }
+
   .page-header {
     margin-bottom: 24px;
     display: flex;
@@ -302,14 +311,17 @@
     white-space: nowrap;
     line-height: 1.2;
   }
+
   .badge-success {
     background-color: #e6f9ed;
     color: #1a7f37;
   }
+
   .badge-warning {
     background-color: #fff8e1;
     color: #c38e00;
   }
+
   .badge-error {
     background-color: #fdecea;
     color: #d93025;

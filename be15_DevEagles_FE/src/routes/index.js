@@ -11,8 +11,8 @@ const routes = [
   },
   // 예약 관련 라우트 - 임시로 모두 Home으로 라우팅
   {
-    path: '/reservation/calendar',
-    name: 'ReservationCalendar',
+    path: '/schedule/calendar',
+    name: 'ScheduleCalendar',
     component: () => import('@/features/schedules/views/ScheduleCalendarView.vue'),
   },
   {
@@ -21,14 +21,14 @@ const routes = [
     component: () => import('@/features/schedules/views/ReservationListView.vue'),
   },
   {
-    path: '/reservation/schedule',
+    path: '/schedule/plan',
     name: 'ReservationSchedule',
-    component: Home,
+    component: () => import('@/features/schedules/views/SchedulePlanView.vue'),
   },
   {
-    path: '/reservation/holiday',
-    name: 'ReservationHoliday',
-    component: Home,
+    path: '/schedule/leave',
+    name: 'ScheduleLeave',
+    component: () => import('@/features/schedules/views/ScheduleLeaveView.vue'),
   },
   {
     path: '/reservation/requests',
@@ -44,7 +44,7 @@ const routes = [
   {
     path: '/customer/list',
     name: 'CustomerList',
-    component: Home,
+    component: () => import('@/features/customer/views/CustomerListView.vue'),
   },
   {
     path: '/customer/prepaid',
@@ -71,7 +71,7 @@ const routes = [
   {
     path: '/item/membership',
     name: 'ItemMembership',
-    component: Home,
+    component: () => import('@/features/membership/view/MembershipView.vue'),
   },
   // 데이터 분석 라우트
   {
