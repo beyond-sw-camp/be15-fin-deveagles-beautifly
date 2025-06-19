@@ -1,4 +1,4 @@
-package com.deveagles.be15_deveagles_be.features.coupons.query.service;
+package com.deveagles.be15_deveagles_be.features.coupons.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -8,10 +8,11 @@ import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.times;
 
 import com.deveagles.be15_deveagles_be.common.dto.PagedResult;
-import com.deveagles.be15_deveagles_be.features.coupons.entity.Coupon;
-import com.deveagles.be15_deveagles_be.features.coupons.query.dto.CouponQuery;
-import com.deveagles.be15_deveagles_be.features.coupons.query.dto.CouponResponse;
-import com.deveagles.be15_deveagles_be.features.coupons.repository.CouponRepository;
+import com.deveagles.be15_deveagles_be.features.coupons.application.query.CouponQueryServiceImpl;
+import com.deveagles.be15_deveagles_be.features.coupons.application.query.CouponSearchQuery;
+import com.deveagles.be15_deveagles_be.features.coupons.domain.entity.Coupon;
+import com.deveagles.be15_deveagles_be.features.coupons.infrastructure.repository.CouponRepository;
+import com.deveagles.be15_deveagles_be.features.coupons.presentation.dto.response.CouponResponse;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -31,7 +32,7 @@ import org.springframework.data.domain.Pageable;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("CouponQueryService 단위 테스트")
-class CouponQueryServiceImplTest {
+class CouponSearchQueryServiceImplTest {
 
   @Mock private CouponRepository couponRepository;
 
@@ -178,8 +179,13 @@ class CouponQueryServiceImplTest {
   @DisplayName("쿠폰 검색 성공 - 전체 조회")
   void searchCoupons_전체조회_성공() {
     // Given
-    CouponQuery query =
-        CouponQuery.builder().page(0).size(10).sortBy("createdAt").sortDirection("desc").build();
+    CouponSearchQuery query =
+        CouponSearchQuery.builder()
+            .page(0)
+            .size(10)
+            .sortBy("createdAt")
+            .sortDirection("desc")
+            .build();
 
     Pageable pageable = PageRequest.of(0, 10);
     Page<Coupon> couponPage = new PageImpl<>(couponList, pageable, couponList.size());
@@ -203,8 +209,8 @@ class CouponQueryServiceImplTest {
   @DisplayName("쿠폰 검색 성공 - 활성 쿠폰만")
   void searchCoupons_활성쿠폰만_성공() {
     // Given
-    CouponQuery query =
-        CouponQuery.builder()
+    CouponSearchQuery query =
+        CouponSearchQuery.builder()
             .isActive(true)
             .page(0)
             .size(10)
@@ -232,8 +238,8 @@ class CouponQueryServiceImplTest {
   @DisplayName("쿠폰 검색 성공 - 매장별 조회")
   void searchCoupons_매장별조회_성공() {
     // Given
-    CouponQuery query =
-        CouponQuery.builder()
+    CouponSearchQuery query =
+        CouponSearchQuery.builder()
             .shopId(1L)
             .page(0)
             .size(10)
@@ -261,8 +267,8 @@ class CouponQueryServiceImplTest {
   @DisplayName("쿠폰 검색 성공 - 상품별 조회")
   void searchCoupons_상품별조회_성공() {
     // Given
-    CouponQuery query =
-        CouponQuery.builder()
+    CouponSearchQuery query =
+        CouponSearchQuery.builder()
             .primaryItemId(100L)
             .page(0)
             .size(10)
@@ -290,8 +296,8 @@ class CouponQueryServiceImplTest {
   @DisplayName("쿠폰 검색 성공 - 빈 결과")
   void searchCoupons_빈결과_성공() {
     // Given
-    CouponQuery query =
-        CouponQuery.builder()
+    CouponSearchQuery query =
+        CouponSearchQuery.builder()
             .couponCode("NONEXISTENT")
             .page(0)
             .size(10)

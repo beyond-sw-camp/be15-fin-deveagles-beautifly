@@ -1,4 +1,4 @@
-package com.deveagles.be15_deveagles_be.features.coupons.command.service;
+package com.deveagles.be15_deveagles_be.features.coupons.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -10,12 +10,13 @@ import static org.mockito.Mockito.times;
 
 import com.deveagles.be15_deveagles_be.common.exception.BusinessException;
 import com.deveagles.be15_deveagles_be.common.exception.ErrorCode;
-import com.deveagles.be15_deveagles_be.features.coupons.command.dto.CreateCouponCommand;
-import com.deveagles.be15_deveagles_be.features.coupons.command.dto.DeleteCouponCommand;
-import com.deveagles.be15_deveagles_be.features.coupons.dto.CouponDto;
-import com.deveagles.be15_deveagles_be.features.coupons.entity.Coupon;
-import com.deveagles.be15_deveagles_be.features.coupons.repository.CouponRepository;
-import com.deveagles.be15_deveagles_be.features.coupons.utils.CouponCodeGenerator;
+import com.deveagles.be15_deveagles_be.features.coupons.application.command.CouponCommandServiceImpl;
+import com.deveagles.be15_deveagles_be.features.coupons.application.command.CreateCouponRequest;
+import com.deveagles.be15_deveagles_be.features.coupons.common.CouponDto;
+import com.deveagles.be15_deveagles_be.features.coupons.domain.entity.Coupon;
+import com.deveagles.be15_deveagles_be.features.coupons.domain.service.CouponCodeGenerator;
+import com.deveagles.be15_deveagles_be.features.coupons.infrastructure.repository.CouponRepository;
+import com.deveagles.be15_deveagles_be.features.coupons.presentation.dto.request.DeleteCouponRequest;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -37,14 +38,14 @@ class CouponCommandServiceImplTest {
 
   @InjectMocks private CouponCommandServiceImpl couponCommandService;
 
-  private CreateCouponCommand createCommand;
-  private DeleteCouponCommand deleteCommand;
+  private CreateCouponRequest createCommand;
+  private DeleteCouponRequest deleteCommand;
   private Coupon coupon;
 
   @BeforeEach
   void setUp() {
     createCommand =
-        CreateCouponCommand.builder()
+        CreateCouponRequest.builder()
             .couponTitle("테스트 쿠폰")
             .shopId(1L)
             .staffId(1L)
@@ -55,7 +56,7 @@ class CouponCommandServiceImplTest {
             .isActive(true)
             .build();
 
-    deleteCommand = DeleteCouponCommand.builder().id(1L).build();
+    deleteCommand = DeleteCouponRequest.builder().id(1L).build();
 
     coupon =
         Coupon.builder()

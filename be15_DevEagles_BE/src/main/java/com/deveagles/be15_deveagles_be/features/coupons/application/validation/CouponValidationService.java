@@ -1,9 +1,10 @@
-package com.deveagles.be15_deveagles_be.features.coupons.service;
+package com.deveagles.be15_deveagles_be.features.coupons.application.validation;
 
-import com.deveagles.be15_deveagles_be.features.coupons.dto.CouponApplicationRequest;
-import com.deveagles.be15_deveagles_be.features.coupons.dto.CouponValidationResult;
-import com.deveagles.be15_deveagles_be.features.coupons.entity.Coupon;
-import com.deveagles.be15_deveagles_be.features.coupons.repository.CouponRepository;
+import com.deveagles.be15_deveagles_be.features.coupons.common.CouponResponseFactory;
+import com.deveagles.be15_deveagles_be.features.coupons.domain.entity.Coupon;
+import com.deveagles.be15_deveagles_be.features.coupons.infrastructure.repository.CouponRepository;
+import com.deveagles.be15_deveagles_be.features.coupons.presentation.dto.request.CouponApplicationRequest;
+import com.deveagles.be15_deveagles_be.features.coupons.presentation.dto.response.CouponValidationResponse;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,41 +18,42 @@ import org.springframework.transaction.annotation.Transactional;
 public class CouponValidationService {
 
   private final CouponRepository couponRepository;
+  private final CouponResponseFactory couponResponseFactory;
 
-  public CouponValidationResult validateForSale(CouponApplicationRequest request) {
+  public CouponValidationResponse validateForSale(CouponApplicationRequest request) {
     log.info("쿠폰 검증 시작 - 코드: {}, 매장ID: {}", request.getCouponCode(), request.getShopId());
 
     Optional<Coupon> couponOpt =
         couponRepository.findByCouponCodeAndDeletedAtIsNull(request.getCouponCode());
 
     if (couponOpt.isEmpty()) {
-      return CouponValidationResult.invalid("쿠폰을 찾을 수 없습니다");
+      return couponResponseFactory.createInvalidResponse("쿠폰을 찾을 수 없습니다");
     }
 
     Coupon coupon = couponOpt.get();
 
     if (!coupon.getShopId().equals(request.getShopId())) {
-      return CouponValidationResult.invalid("해당 매장에서 사용할 수 없는 쿠폰입니다");
+      return couponResponseFactory.createInvalidResponse("해당 매장에서 사용할 수 없는 쿠폰입니다");
     }
 
     if (!coupon.getIsActive()) {
-      return CouponValidationResult.invalid("비활성화된 쿠폰입니다");
+      return couponResponseFactory.createInvalidResponse("비활성화된 쿠폰입니다");
     }
 
     if (coupon.isExpired()) {
-      return CouponValidationResult.invalid("만료된 쿠폰입니다");
+      return couponResponseFactory.createInvalidResponse("만료된 쿠폰입니다");
     }
 
     if (!isStaffValid(coupon, request.getStaffId())) {
-      return CouponValidationResult.invalid("해당 직원이 사용할 수 없는 쿠폰입니다");
+      return couponResponseFactory.createInvalidResponse("해당 직원이 사용할 수 없는 쿠폰입니다");
     }
 
     if (!isItemValid(coupon, request.getPrimaryItemId(), request.getSecondaryItemId())) {
-      return CouponValidationResult.invalid("해당 상품에 사용할 수 없는 쿠폰입니다");
+      return couponResponseFactory.createInvalidResponse("해당 상품에 사용할 수 없는 쿠폰입니다");
     }
 
     log.info("쿠폰 검증 성공 - 쿠폰ID: {}, 할인율: {}%", coupon.getId(), coupon.getDiscountRate());
-    return CouponValidationResult.valid(coupon);
+    return couponResponseFactory.createValidResponse(coupon);
   }
 
   private boolean isStaffValid(Coupon coupon, Long requestStaffId) {
