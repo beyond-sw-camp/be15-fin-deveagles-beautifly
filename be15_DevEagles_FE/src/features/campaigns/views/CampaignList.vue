@@ -140,7 +140,6 @@
     setup() {
       // List management composable
       const {
-        items: campaigns,
         currentPage,
         loading,
         showDeleteConfirm,
@@ -150,7 +149,6 @@
         totalPages,
         itemsPerPage,
         paginatedItems: paginatedCampaigns,
-        toggleItemStatus,
         deleteItem,
         confirmDelete,
         cancelDelete,
