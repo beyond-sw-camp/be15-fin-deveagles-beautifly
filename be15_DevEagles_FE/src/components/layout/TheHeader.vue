@@ -86,7 +86,6 @@
         <div class="tooltip-container relative">
           <button ref="bellButtonRef" class="quick-menu-item" @click="toggleNotifications">
             <BellIcon :size="16" />
-            <span>알림</span>
 
             <!-- 🔴 알림 개수 뱃지 -->
             <span
