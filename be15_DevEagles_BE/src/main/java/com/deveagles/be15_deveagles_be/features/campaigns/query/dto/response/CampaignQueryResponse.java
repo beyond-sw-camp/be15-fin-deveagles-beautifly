@@ -7,12 +7,13 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.springframework.hateoas.RepresentationModel;
 
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class CampaignQueryResponse {
+public class CampaignQueryResponse extends RepresentationModel<CampaignQueryResponse> {
 
   private Long id;
   private String campaignTitle;
