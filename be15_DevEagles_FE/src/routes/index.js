@@ -71,7 +71,7 @@ const routes = [
   {
     path: '/item/membership',
     name: 'ItemMembership',
-    component: Home,
+    component: () => import('@/features/membership/view/MembershipView.vue'),
   },
   // 데이터 분석 라우트
   {
