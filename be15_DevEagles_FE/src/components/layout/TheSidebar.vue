@@ -68,16 +68,16 @@
               class="nav-sublist"
             >
               <li>
-                <router-link to="/reservation/calendar" class="nav-sublink">캘린더</router-link>
+                <router-link to="/schedule/calendar" class="nav-sublink">캘린더</router-link>
               </li>
               <li>
                 <router-link to="/reservation/list" class="nav-sublink">예약 목록</router-link>
               </li>
               <li>
-                <router-link to="/reservation/schedule" class="nav-sublink">일정 목록</router-link>
+                <router-link to="/schedule/plan" class="nav-sublink">일정 목록</router-link>
               </li>
               <li>
-                <router-link to="/reservation/holiday" class="nav-sublink">휴무 목록</router-link>
+                <router-link to="/schedule/leave" class="nav-sublink">휴무 목록</router-link>
               </li>
               <li>
                 <router-link to="/reservation/requests" class="nav-sublink"

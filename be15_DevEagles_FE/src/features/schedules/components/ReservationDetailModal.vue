@@ -1,4 +1,3 @@
-<!-- 📄 src/components/schedule/ReservationDetailModal.vue -->
 <template>
   <div v-if="modelValue" class="overlay">
     <div class="modal-panel">
