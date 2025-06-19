@@ -60,7 +60,7 @@ const routes = [
   {
     path: '/sales/staff',
     name: 'SalesStaff',
-    component: Home,
+    component: () => import('@/features/staffsales/view/StaffSalesListView.vue'),
   },
   // 상품 관리 라우트 - 임시로 모두 Home으로 라우팅
   {
