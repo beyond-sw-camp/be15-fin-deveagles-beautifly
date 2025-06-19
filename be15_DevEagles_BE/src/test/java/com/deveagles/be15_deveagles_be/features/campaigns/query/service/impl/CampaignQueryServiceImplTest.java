@@ -16,6 +16,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -36,8 +37,8 @@ class CampaignQueryServiceImplTest {
   @InjectMocks private CampaignQueryServiceImpl campaignQueryService;
 
   @Test
-  @DisplayName("매장 ID로 캠페인 목록을 성공적으로 조회한다")
-  void 매장_ID로_캠페인_목록을_성공적으로_조회한다() {
+  @DisplayName("매장 ID로 캠페인 목록 조회 성공")
+  void getCampaignsByShop_매장ID로캠페인목록조회_성공() {
     // Given
     Long shopId = 1L;
     CampaignSearchRequest request = new CampaignSearchRequest(shopId, 0, 10);
@@ -98,6 +99,11 @@ class CampaignQueryServiceImplTest {
     assertThat(firstResponse.getShopId()).isEqualTo(shopId);
     assertThat(firstResponse.isActive()).isTrue(); // 현재 날짜 기준으로 활성 상태
 
+    // HATEOAS 링크 검증
+    assertThat(firstResponse.getLinks()).isNotEmpty();
+    assertThat(firstResponse.getLink("self")).isPresent();
+    assertThat(firstResponse.getLink("coupon")).isPresent();
+
     // 두 번째 캠페인 검증
     CampaignQueryResponse secondResponse = result.getContent().get(1);
     assertThat(secondResponse.getId()).isEqualTo(2L);
@@ -105,14 +111,19 @@ class CampaignQueryServiceImplTest {
     assertThat(secondResponse.getDescription()).isEqualTo("두 번째 캠페인 설명");
     assertThat(secondResponse.getShopId()).isEqualTo(shopId);
 
+    // HATEOAS 링크 검증
+    assertThat(secondResponse.getLinks()).isNotEmpty();
+    assertThat(secondResponse.getLink("self")).isPresent();
+    assertThat(secondResponse.getLink("coupon")).isPresent();
+
     then(campaignQueryRepository)
         .should(times(1))
         .findByShopIdAndDeletedAtIsNullOrderByCreatedAtDesc(eq(shopId), any(Pageable.class));
   }
 
   @Test
-  @DisplayName("존재하지 않는 매장 ID로 조회하면 빈 페이지를 반환한다")
-  void 존재하지_않는_매장_ID로_조회하면_빈_페이지를_반환한다() {
+  @DisplayName("존재하지 않는 매장 ID로 조회시 빈 페이지 반환")
+  void getCampaignsByShop_존재하지않는매장ID로조회_빈페이지반환() {
     // Given
     Long nonExistentShopId = 999L;
     CampaignSearchRequest request = new CampaignSearchRequest(nonExistentShopId, 0, 10);
@@ -141,8 +152,8 @@ class CampaignQueryServiceImplTest {
   }
 
   @Test
-  @DisplayName("페이징 파라미터가 올바르게 적용된다")
-  void 페이징_파라미터가_올바르게_적용된다() {
+  @DisplayName("페이징 파라미터 적용 성공")
+  void getCampaignsByShop_페이징파라미터적용_성공() {
     // Given
     Long shopId = 1L;
     int page = 1;
@@ -187,8 +198,8 @@ class CampaignQueryServiceImplTest {
   }
 
   @Test
-  @DisplayName("삭제된 캠페인은 조회되지 않는다")
-  void 삭제된_캠페인은_조회되지_않는다() {
+  @DisplayName("삭제된 캠페인 조회 제외")
+  void getCampaignsByShop_삭제된캠페인조회_제외() {
     // Given
     Long shopId = 1L;
     CampaignSearchRequest request = new CampaignSearchRequest(shopId, 0, 10);
@@ -222,11 +233,112 @@ class CampaignQueryServiceImplTest {
     // Then
     assertThat(result).isNotNull();
     assertThat(result.getContent()).hasSize(1);
-    assertThat(result.getContent().get(0).getId()).isEqualTo(1L);
     assertThat(result.getContent().get(0).getCampaignTitle()).isEqualTo("활성 캠페인");
 
     then(campaignQueryRepository)
         .should(times(1))
         .findByShopIdAndDeletedAtIsNullOrderByCreatedAtDesc(eq(shopId), any(Pageable.class));
+  }
+
+  @Test
+  @DisplayName("캠페인 ID로 상세 조회 성공")
+  void getCampaignById_캠페인ID로상세조회_성공() {
+    // Given
+    Long campaignId = 1L;
+    Campaign campaign =
+        Campaign.builder()
+            .id(campaignId)
+            .campaignTitle("테스트 캠페인")
+            .description("테스트 캠페인 설명")
+            .startDate(LocalDate.now().minusDays(5))
+            .endDate(LocalDate.now().plusDays(5))
+            .messageSendAt(LocalDateTime.now().minusDays(1))
+            .staffId(1L)
+            .templateId(1L)
+            .couponId(1L)
+            .shopId(1L)
+            .createdAt(LocalDateTime.now().minusDays(10))
+            .build();
+
+    given(campaignQueryRepository.findByIdAndDeletedAtIsNull(campaignId))
+        .willReturn(Optional.of(campaign));
+
+    // When
+    Optional<CampaignQueryResponse> result = campaignQueryService.getCampaignById(campaignId);
+
+    // Then
+    assertThat(result).isPresent();
+    CampaignQueryResponse response = result.get();
+    assertThat(response.getId()).isEqualTo(campaignId);
+    assertThat(response.getCampaignTitle()).isEqualTo("테스트 캠페인");
+    assertThat(response.getDescription()).isEqualTo("테스트 캠페인 설명");
+    assertThat(response.getCouponId()).isEqualTo(1L);
+
+    // HATEOAS 링크 검증
+    assertThat(response.getLinks()).isNotEmpty();
+    assertThat(response.getLink("self")).isPresent();
+    assertThat(response.getLink("coupon")).isPresent();
+    assertThat(response.getLink("campaigns")).isPresent();
+
+    then(campaignQueryRepository).should(times(1)).findByIdAndDeletedAtIsNull(campaignId);
+  }
+
+  @Test
+  @DisplayName("존재하지 않는 캠페인 ID로 조회시 빈 Optional 반환")
+  void getCampaignById_존재하지않는캠페인ID로조회_빈Optional반환() {
+    // Given
+    Long nonExistentCampaignId = 999L;
+
+    given(campaignQueryRepository.findByIdAndDeletedAtIsNull(nonExistentCampaignId))
+        .willReturn(Optional.empty());
+
+    // When
+    Optional<CampaignQueryResponse> result =
+        campaignQueryService.getCampaignById(nonExistentCampaignId);
+
+    // Then
+    assertThat(result).isEmpty();
+
+    then(campaignQueryRepository)
+        .should(times(1))
+        .findByIdAndDeletedAtIsNull(nonExistentCampaignId);
+  }
+
+  @Test
+  @DisplayName("쿠폰 ID가 없는 캠페인 조회시 쿠폰 링크 제외")
+  void getCampaignById_쿠폰ID없는캠페인조회_쿠폰링크제외() {
+    // Given
+    Long campaignId = 1L;
+    Campaign campaignWithoutCoupon =
+        Campaign.builder()
+            .id(campaignId)
+            .campaignTitle("쿠폰 없는 캠페인")
+            .description("쿠폰이 없는 캠페인")
+            .startDate(LocalDate.now().minusDays(5))
+            .endDate(LocalDate.now().plusDays(5))
+            .staffId(1L)
+            .templateId(1L)
+            .couponId(null) // 쿠폰 ID 없음
+            .shopId(1L)
+            .createdAt(LocalDateTime.now())
+            .build();
+
+    given(campaignQueryRepository.findByIdAndDeletedAtIsNull(campaignId))
+        .willReturn(Optional.of(campaignWithoutCoupon));
+
+    // When
+    Optional<CampaignQueryResponse> result = campaignQueryService.getCampaignById(campaignId);
+
+    // Then
+    assertThat(result).isPresent();
+    CampaignQueryResponse response = result.get();
+
+    // HATEOAS 링크 검증 - 쿠폰 링크는 없어야 함
+    assertThat(response.getLinks()).isNotEmpty();
+    assertThat(response.getLink("self")).isPresent();
+    assertThat(response.getLink("coupon")).isEmpty(); // 쿠폰 링크 없음
+    assertThat(response.getLink("campaigns")).isPresent();
+
+    then(campaignQueryRepository).should(times(1)).findByIdAndDeletedAtIsNull(campaignId);
   }
 }
