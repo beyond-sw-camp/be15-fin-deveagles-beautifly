@@ -49,7 +49,7 @@
       title: '개인 사유로 휴무',
       start: '2025-06-19',
       end: '2025-06-20',
-      type: 'holiday',
+      type: 'leave',
       staff: '김민지',
       service: '',
       customer: '',
@@ -70,15 +70,15 @@
       isModalOpen.value = true;
 
       if (target.type === 'reservation') modalType.value = 'reservation';
-      else if (['holiday', 'regular_holiday'].includes(target.type)) modalType.value = 'leave';
+      else if (['leave', 'regular_leave'].includes(target.type)) modalType.value = 'leave';
       else if (['event', 'regular_event'].includes(target.type)) modalType.value = 'plan';
     }
   };
 
   const calendarEvents = computed(() =>
     schedules.value.map(item => {
-      const isHoliday = item.type === 'holiday';
-      const isAllDay = isHoliday;
+      const isLeave = item.type === 'leave';
+      const isAllDay = isLeave;
 
       return {
         id: item.id,
@@ -130,7 +130,7 @@
       <select v-model="selectedType" class="input input-select">
         <option value="">스케줄</option>
         <option value="reservation">예약</option>
-        <option value="holiday">휴무</option>
+        <option value="leave">휴무</option>
         <option value="event">일정</option>
       </select>
       <button class="btn btn-primary schedule-btn">스케줄 등록</button>

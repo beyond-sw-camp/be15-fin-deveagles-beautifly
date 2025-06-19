@@ -3,8 +3,9 @@
     <div class="page-header">
       <h1 class="font-screen-title">예약 변경 이력</h1>
     </div>
-
-    <BaseTable :columns="columns" :data="pagedData" row-key="id" :striped="true" :hover="true" />
+    <div class="base-table-wrapper">
+      <BaseTable :columns="columns" :data="pagedData" row-key="id" :striped="true" :hover="true" />
+    </div>
 
     <Pagination
       :current-page="currentPage"
@@ -199,10 +200,16 @@
 </script>
 
 <style scoped>
+  .base-table-wrapper {
+    background-color: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    padding: 24px;
+    box-sizing: border-box;
+  }
+
   .history-wrapper {
     padding: 24px;
-    max-width: 1000px;
-    margin: 0 auto;
   }
 
   .page-header {

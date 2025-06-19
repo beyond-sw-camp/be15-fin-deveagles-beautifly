@@ -49,7 +49,7 @@
       return {
         html: `
         <div class="custom-event-style ${type}">
-          ${type === 'reservation' || type === 'holiday' ? '<div class="left-bar"></div>' : ''}
+          ${type === 'reservation' || type === 'leave' ? '<div class="left-bar"></div>' : ''}
           <div class="text">
             ${viewType === 'dayGridMonth' ? `<strong>${time}</strong>&nbsp;` : ''}
             ${event.title}
@@ -72,7 +72,7 @@
       const bgColor =
         type === 'reservation'
           ? statusColors[status] || '#e2e8f0'
-          : type === 'holiday'
+          : type === 'leave'
             ? 'rgba(255, 0, 0, 0.3)'
             : '#fff';
 
@@ -86,7 +86,7 @@
         }
       }
 
-      if (bar && (type === 'reservation' || type === 'holiday')) {
+      if (bar && (type === 'reservation' || type === 'leave')) {
         bar.style.backgroundColor = borderColor;
         if (viewType === 'dayGridMonth') {
           nextTick(() => {
@@ -115,7 +115,7 @@
           (timeRange || fallbackTimeRange) && `🕒 시간: ${timeRange || fallbackTimeRange}`,
           memo && `📝 메모: ${memo}`
         );
-      } else if (type === 'holiday') {
+      } else if (type === 'leave') {
         tooltipLines.push(`📅 종일 휴무`, memo && `📝 메모: ${memo}`);
       }
 
