@@ -3,6 +3,8 @@ package com.deveagles.be15_deveagles_be.features.coupons.presentation.controller
 import com.deveagles.be15_deveagles_be.common.dto.ApiResponse;
 import com.deveagles.be15_deveagles_be.common.dto.PagedResponse;
 import com.deveagles.be15_deveagles_be.common.dto.PagedResult;
+import com.deveagles.be15_deveagles_be.common.exception.BusinessException;
+import com.deveagles.be15_deveagles_be.common.exception.ErrorCode;
 import com.deveagles.be15_deveagles_be.features.coupons.application.command.CouponCommandService;
 import com.deveagles.be15_deveagles_be.features.coupons.application.command.CreateCouponRequest;
 import com.deveagles.be15_deveagles_be.features.coupons.application.query.CouponQueryService;
@@ -114,12 +116,12 @@ public class CouponController {
       @Parameter(description = "쿠폰 ID", required = true) @PathVariable Long id) {
     log.info("쿠폰 ID로 조회 요청 - ID: {}", id);
 
-    return couponQueryService
-        .getCouponById(id)
-        .map(coupon -> ResponseEntity.ok(ApiResponse.success(coupon)))
-        .orElse(
-            ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(ApiResponse.failure("COUPON_NOT_FOUND", "쿠폰을 찾을 수 없습니다")));
+    CouponResponse coupon =
+        couponQueryService
+            .getCouponById(id)
+            .orElseThrow(() -> new BusinessException(ErrorCode.COUPON_NOT_FOUND));
+
+    return ResponseEntity.ok(ApiResponse.success(coupon));
   }
 
   @Operation(summary = "쿠폰 코드로 조회", description = "쿠폰 코드를 사용하여 특정 쿠폰을 조회합니다.")
@@ -137,12 +139,12 @@ public class CouponController {
           String couponCode) {
     log.info("쿠폰 코드로 조회 요청 - 코드: {}", couponCode);
 
-    return couponQueryService
-        .getCouponByCode(couponCode)
-        .map(coupon -> ResponseEntity.ok(ApiResponse.success(coupon)))
-        .orElse(
-            ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(ApiResponse.failure("COUPON_NOT_FOUND", "쿠폰을 찾을 수 없습니다")));
+    CouponResponse coupon =
+        couponQueryService
+            .getCouponByCode(couponCode)
+            .orElseThrow(() -> new BusinessException(ErrorCode.COUPON_NOT_FOUND));
+
+    return ResponseEntity.ok(ApiResponse.success(coupon));
   }
 
   @Operation(summary = "쿠폰 통합 검색", description = "다양한 조건으로 쿠폰을 검색하고 페이징 결과를 반환합니다.")

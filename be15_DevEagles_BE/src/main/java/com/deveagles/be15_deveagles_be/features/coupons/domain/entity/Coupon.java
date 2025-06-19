@@ -79,4 +79,19 @@ public class Coupon {
   public boolean isExpired() {
     return this.expirationDate != null && this.expirationDate.isBefore(LocalDate.now());
   }
+
+  public boolean isUsableForShop(Long requestShopId) {
+    return this.shopId.equals(requestShopId);
+  }
+
+  public boolean isUsableForStaff(Long requestStaffId) {
+    return this.staffId == null || this.staffId.equals(requestStaffId);
+  }
+
+  public boolean isUsableForItem(Long requestPrimaryItemId, Long requestSecondaryItemId) {
+    if (!this.primaryItemId.equals(requestPrimaryItemId)) {
+      return false;
+    }
+    return this.secondaryItemId == null || this.secondaryItemId.equals(requestSecondaryItemId);
+  }
 }

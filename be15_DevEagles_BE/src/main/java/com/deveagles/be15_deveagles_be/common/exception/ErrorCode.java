@@ -25,8 +25,11 @@ public enum ErrorCode implements ErrorCodeType {
   COUPON_ALREADY_EXPIRED("50004", "만료된 쿠폰입니다", HttpStatus.BAD_REQUEST),
   COUPON_ALREADY_ACTIVE("50005", "이미 활성화된 쿠폰입니다", HttpStatus.BAD_REQUEST),
   COUPON_ALREADY_INACTIVE("50006", "이미 비활성화된 쿠폰입니다", HttpStatus.BAD_REQUEST),
+  COUPON_DISCOUNT_CALCULATION_ERROR("50007", "쿠폰 할인 계산 중 오류가 발생했습니다", HttpStatus.BAD_REQUEST),
+  COUPON_INVALID_AMOUNT("50008", "유효하지 않은 금액입니다", HttpStatus.BAD_REQUEST),
+  COUPON_INVALID_DISCOUNT_RATE("50009", "유효하지 않은 할인율입니다", HttpStatus.BAD_REQUEST),
   DELETED_COUPON_OPERATION_NOT_ALLOWED(
-      "50007", "삭제된 쿠폰은 해당 작업을 수행할 수 없습니다", HttpStatus.BAD_REQUEST);
+      "50010", "삭제된 쿠폰은 해당 작업을 수행할 수 없습니다", HttpStatus.BAD_REQUEST);
 
   private final String code;
   private final String message;
