@@ -1,9 +1,8 @@
-package com.deveagles.be15_deveagles_be.features.coupons.service;
+package com.deveagles.be15_deveagles_be.features.coupons.application.validation;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
 
-import com.deveagles.be15_deveagles_be.features.coupons.application.validation.CouponValidationService;
 import com.deveagles.be15_deveagles_be.features.coupons.common.CouponResponseFactory;
 import com.deveagles.be15_deveagles_be.features.coupons.domain.entity.Coupon;
 import com.deveagles.be15_deveagles_be.features.coupons.infrastructure.repository.CouponJpaRepository;
@@ -210,5 +209,100 @@ class CouponValidationServiceTest {
 
     // Then
     assertThat(result.isValid()).isTrue();
+  }
+
+  @Test
+  @DisplayName("쿠폰 검증 실패 - 다른 1차 상품")
+  void validateForSale_다른1차상품_실패() {
+    // Given
+    CouponApplicationRequest wrongPrimaryRequest =
+        CouponApplicationRequest.builder()
+            .couponCode("CP241201ABCD1234")
+            .shopId(1L)
+            .staffId(1L)
+            .primaryItemId(999L)
+            .secondaryItemId(200L)
+            .originalAmount(10000)
+            .build();
+
+    CouponValidationResponse expectedResponse =
+        new CouponValidationResponse(false, "해당 상품에 적용할 수 없는 쿠폰입니다", null);
+    given(couponJpaRepository.findByCouponCodeAndDeletedAtIsNull("CP241201ABCD1234"))
+        .willReturn(Optional.of(validCoupon));
+    given(couponResponseFactory.createInvalidResponse("해당 상품에 적용할 수 없는 쿠폰입니다"))
+        .willReturn(expectedResponse);
+
+    // When
+    CouponValidationResponse result = couponValidationService.validateForSale(wrongPrimaryRequest);
+
+    // Then
+    assertThat(result.isValid()).isFalse();
+    assertThat(result.getErrorMessage()).isEqualTo("해당 상품에 적용할 수 없는 쿠폰입니다");
+  }
+
+  @Test
+  @DisplayName("쿠폰 검증 실패 - 만료된 쿠폰")
+  void validateForSale_만료된쿠폰_실패() {
+    // Given
+    Coupon expiredCoupon =
+        Coupon.builder()
+            .id(1L)
+            .couponCode("CP241201ABCD1234")
+            .couponTitle("만료된 쿠폰")
+            .shopId(1L)
+            .staffId(1L)
+            .primaryItemId(100L)
+            .secondaryItemId(200L)
+            .discountRate(10)
+            .expirationDate(LocalDate.now().minusDays(1))
+            .isActive(true)
+            .createdAt(LocalDateTime.now())
+            .build();
+
+    CouponValidationResponse expectedResponse =
+        new CouponValidationResponse(false, "만료된 쿠폰입니다", null);
+    given(couponJpaRepository.findByCouponCodeAndDeletedAtIsNull("CP241201ABCD1234"))
+        .willReturn(Optional.of(expiredCoupon));
+    given(couponResponseFactory.createInvalidResponse("만료된 쿠폰입니다")).willReturn(expectedResponse);
+
+    // When
+    CouponValidationResponse result = couponValidationService.validateForSale(request);
+
+    // Then
+    assertThat(result.isValid()).isFalse();
+    assertThat(result.getErrorMessage()).isEqualTo("만료된 쿠폰입니다");
+  }
+
+  @Test
+  @DisplayName("쿠폰 검증 실패 - 비활성 쿠폰")
+  void validateForSale_비활성쿠폰_실패() {
+    // Given
+    Coupon inactiveCoupon =
+        Coupon.builder()
+            .id(1L)
+            .couponCode("CP241201ABCD1234")
+            .couponTitle("비활성 쿠폰")
+            .shopId(1L)
+            .staffId(1L)
+            .primaryItemId(100L)
+            .secondaryItemId(200L)
+            .discountRate(10)
+            .expirationDate(LocalDate.now().plusDays(30))
+            .isActive(false)
+            .createdAt(LocalDateTime.now())
+            .build();
+
+    CouponValidationResponse expectedResponse =
+        new CouponValidationResponse(false, "비활성화된 쿠폰입니다", null);
+    given(couponJpaRepository.findByCouponCodeAndDeletedAtIsNull("CP241201ABCD1234"))
+        .willReturn(Optional.of(inactiveCoupon));
+    given(couponResponseFactory.createInvalidResponse("비활성화된 쿠폰입니다")).willReturn(expectedResponse);
+
+    // When
+    CouponValidationResponse result = couponValidationService.validateForSale(request);
+
+    // Then
+    assertThat(result.isValid()).isFalse();
+    assertThat(result.getErrorMessage()).isEqualTo("비활성화된 쿠폰입니다");
   }
 }
