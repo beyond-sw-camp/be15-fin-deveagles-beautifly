@@ -12,6 +12,7 @@ import com.deveagles.be15_deveagles_be.features.customers.command.application.dt
 import com.deveagles.be15_deveagles_be.features.customers.command.domain.aggregate.Customer;
 import com.deveagles.be15_deveagles_be.features.customers.command.domain.repository.CustomerRepository;
 import com.deveagles.be15_deveagles_be.features.customers.query.service.CustomerSearchService;
+import java.lang.reflect.Field;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -38,7 +39,7 @@ class CustomerCommandServiceImplTest {
   private UpdateCustomerRequest updateRequest;
 
   @BeforeEach
-  void setUp() {
+  void setUp() throws Exception {
     customer =
         Customer.builder()
             .customerGradeId(1L)
@@ -54,6 +55,8 @@ class CustomerCommandServiceImplTest {
             .notificationConsent(true)
             .channelId(1L)
             .build();
+
+    setCustomerId(customer, 1L);
 
     createRequest =
         new CreateCustomerRequest(
@@ -74,6 +77,12 @@ class CustomerCommandServiceImplTest {
         new UpdateCustomerRequest(1L, "김수정", "01087654321", "수정된 메모", Customer.Gender.F, 2L);
   }
 
+  private void setCustomerId(Customer customer, Long id) throws Exception {
+    Field idField = Customer.class.getDeclaredField("id");
+    idField.setAccessible(true);
+    idField.set(customer, id);
+  }
+
   @Test
   @DisplayName("고객 생성 - 성공")
   void createCustomer_Success() {
@@ -81,7 +90,7 @@ class CustomerCommandServiceImplTest {
     given(customerRepository.existsByPhoneNumberAndShopId(anyString(), anyLong()))
         .willReturn(false);
     given(customerRepository.save(any(Customer.class))).willReturn(customer);
-    willDoNothing().given(customerSearchService).syncCustomerToElasticsearch(anyLong());
+    willDoNothing().given(customerSearchService).syncCustomerToElasticsearch(1L);
 
     // When
     CustomerResponse result = customerCommandService.createCustomer(createRequest);
@@ -94,7 +103,7 @@ class CustomerCommandServiceImplTest {
     verify(customerRepository)
         .existsByPhoneNumberAndShopId(createRequest.phoneNumber(), createRequest.shopId());
     verify(customerRepository).save(any(Customer.class));
-    verify(customerSearchService).syncCustomerToElasticsearch(anyLong());
+    verify(customerSearchService).syncCustomerToElasticsearch(1L);
   }
 
   @Test
@@ -119,7 +128,7 @@ class CustomerCommandServiceImplTest {
     given(customerRepository.findByIdAndShopId(anyLong(), anyLong()))
         .willReturn(Optional.of(customer));
     given(customerRepository.save(any(Customer.class))).willReturn(customer);
-    willDoNothing().given(customerSearchService).syncCustomerToElasticsearch(anyLong());
+    willDoNothing().given(customerSearchService).syncCustomerToElasticsearch(1L);
 
     // When
     CustomerResponse result = customerCommandService.updateCustomer(updateRequest);
@@ -128,7 +137,7 @@ class CustomerCommandServiceImplTest {
     assertThat(result).isNotNull();
     verify(customerRepository).findByIdAndShopId(updateRequest.customerId(), 1L);
     verify(customerRepository).save(customer);
-    verify(customerSearchService).syncCustomerToElasticsearch(customer.getId());
+    verify(customerSearchService).syncCustomerToElasticsearch(1L);
   }
 
   @Test
