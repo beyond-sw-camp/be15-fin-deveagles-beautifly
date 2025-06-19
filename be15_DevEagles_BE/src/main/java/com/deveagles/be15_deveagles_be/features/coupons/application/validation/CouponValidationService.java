@@ -45,11 +45,11 @@ public class CouponValidationService {
     }
 
     if (!isStaffValid(coupon, request.getStaffId())) {
-      return couponResponseFactory.createInvalidResponse("해당 직원이 사용할 수 없는 쿠폰입니다");
+      return couponResponseFactory.createInvalidResponse("해당 직원에 적용할 수 없는 쿠폰입니다");
     }
 
     if (!isItemValid(coupon, request.getPrimaryItemId(), request.getSecondaryItemId())) {
-      return couponResponseFactory.createInvalidResponse("해당 상품에 사용할 수 없는 쿠폰입니다");
+      return couponResponseFactory.createInvalidResponse("해당 상품에 적용할 수 없는 쿠폰입니다");
     }
 
     log.info("쿠폰 검증 성공 - 쿠폰ID: {}, 할인율: {}%", coupon.getId(), coupon.getDiscountRate());
