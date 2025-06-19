@@ -86,13 +86,42 @@ public class CouponQueryRepositoryImpl implements CouponQueryRepository {
     String sortBy = query.getSortBy() != null ? query.getSortBy() : "createdAt";
     String sortDirection = query.getSortDirection() != null ? query.getSortDirection() : "desc";
 
-    com.querydsl.core.types.dsl.PathBuilder<Coupon> pathBuilder =
-        new com.querydsl.core.types.dsl.PathBuilder<>(Coupon.class, "coupon");
+    com.querydsl.core.types.OrderSpecifier<?> orderSpecifier;
 
-    if ("asc".equalsIgnoreCase(sortDirection)) {
-      return pathBuilder.getString(sortBy).asc();
-    } else {
-      return pathBuilder.getString(sortBy).desc();
+    switch (sortBy.toLowerCase()) {
+      case "createdat":
+      case "created_at":
+        orderSpecifier =
+            "asc".equalsIgnoreCase(sortDirection)
+                ? coupon.createdAt.asc()
+                : coupon.createdAt.desc();
+        break;
+      case "couponcode":
+      case "coupon_code":
+        orderSpecifier =
+            "asc".equalsIgnoreCase(sortDirection)
+                ? coupon.couponCode.asc()
+                : coupon.couponCode.desc();
+        break;
+      case "coupontitle":
+      case "coupon_title":
+        orderSpecifier =
+            "asc".equalsIgnoreCase(sortDirection)
+                ? coupon.couponTitle.asc()
+                : coupon.couponTitle.desc();
+        break;
+      case "expirationdate":
+      case "expiration_date":
+        orderSpecifier =
+            "asc".equalsIgnoreCase(sortDirection)
+                ? coupon.expirationDate.asc()
+                : coupon.expirationDate.desc();
+        break;
+      default:
+        orderSpecifier = coupon.createdAt.desc();
+        break;
     }
+
+    return orderSpecifier;
   }
 }

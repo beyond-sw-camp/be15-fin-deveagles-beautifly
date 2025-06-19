@@ -5,7 +5,7 @@ import com.deveagles.be15_deveagles_be.common.exception.ErrorCode;
 import com.deveagles.be15_deveagles_be.features.coupons.common.CouponDto;
 import com.deveagles.be15_deveagles_be.features.coupons.domain.entity.Coupon;
 import com.deveagles.be15_deveagles_be.features.coupons.domain.service.CouponCodeGenerator;
-import com.deveagles.be15_deveagles_be.features.coupons.infrastructure.repository.CouponRepository;
+import com.deveagles.be15_deveagles_be.features.coupons.infrastructure.repository.CouponJpaRepository;
 import com.deveagles.be15_deveagles_be.features.coupons.presentation.dto.request.DeleteCouponRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,7 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 public class CouponCommandServiceImpl implements CouponCommandService {
 
-  private final CouponRepository couponRepository;
+  private final CouponJpaRepository couponJpaRepository;
   private final CouponCodeGenerator couponCodeGenerator;
 
   @Override
@@ -40,7 +40,7 @@ public class CouponCommandServiceImpl implements CouponCommandService {
             .isActive(command.getIsActive())
             .build();
 
-    Coupon savedCoupon = couponRepository.save(coupon);
+    Coupon savedCoupon = couponJpaRepository.save(coupon);
     log.info("쿠폰 생성 완료 - ID: {}, 쿠폰코드: {}", savedCoupon.getId(), savedCoupon.getCouponCode());
 
     return CouponDto.from(savedCoupon);
@@ -59,7 +59,7 @@ public class CouponCommandServiceImpl implements CouponCommandService {
         log.error("쿠폰 코드 생성 실패 - 최대 시도 횟수 초과");
         throw new BusinessException(ErrorCode.INTERNAL_SERVER_ERROR, "쿠폰 코드 생성에 실패했습니다");
       }
-    } while (couponRepository.existsByCouponCodeAndNotDeleted(couponCode));
+    } while (couponJpaRepository.existsByCouponCodeAndNotDeleted(couponCode));
 
     if (attempts > 1) {
       log.info("쿠폰 코드 생성 - {}번 시도 후 성공: {}", attempts, couponCode);
@@ -73,7 +73,7 @@ public class CouponCommandServiceImpl implements CouponCommandService {
     log.info("쿠폰 삭제 시작 - ID: {}", command.getId());
 
     Coupon coupon =
-        couponRepository
+        couponJpaRepository
             .findById(command.getId())
             .orElseThrow(
                 () -> {
@@ -87,7 +87,7 @@ public class CouponCommandServiceImpl implements CouponCommandService {
     }
 
     coupon.softDelete();
-    couponRepository.save(coupon);
+    couponJpaRepository.save(coupon);
     log.info("쿠폰 삭제 완료 - ID: {}", command.getId());
   }
 
@@ -96,7 +96,7 @@ public class CouponCommandServiceImpl implements CouponCommandService {
     log.info("쿠폰 상태 토글 시작 - ID: {}", couponId);
 
     Coupon coupon =
-        couponRepository
+        couponJpaRepository
             .findById(couponId)
             .orElseThrow(
                 () -> {
@@ -117,7 +117,7 @@ public class CouponCommandServiceImpl implements CouponCommandService {
       log.info("쿠폰 활성화 완료 - ID: {}", couponId);
     }
 
-    Coupon savedCoupon = couponRepository.save(coupon);
+    Coupon savedCoupon = couponJpaRepository.save(coupon);
     return CouponDto.from(savedCoupon);
   }
 }

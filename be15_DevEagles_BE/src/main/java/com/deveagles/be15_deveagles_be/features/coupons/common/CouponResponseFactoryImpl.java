@@ -1,6 +1,7 @@
 package com.deveagles.be15_deveagles_be.features.coupons.common;
 
 import com.deveagles.be15_deveagles_be.features.coupons.domain.entity.Coupon;
+import com.deveagles.be15_deveagles_be.features.coupons.domain.vo.DiscountResult;
 import com.deveagles.be15_deveagles_be.features.coupons.presentation.dto.response.CouponApplicationResponse;
 import com.deveagles.be15_deveagles_be.features.coupons.presentation.dto.response.CouponValidationResponse;
 import org.springframework.stereotype.Service;
@@ -20,9 +21,14 @@ public class CouponResponseFactoryImpl implements CouponResponseFactory {
 
   @Override
   public CouponApplicationResponse createSuccessResponse(
-      Coupon coupon, Integer discountRate, Integer discountAmount, Integer finalAmount) {
+      Coupon coupon, DiscountResult discountResult) {
     return new CouponApplicationResponse(
-        true, null, coupon, discountRate, discountAmount, finalAmount);
+        true,
+        null,
+        coupon,
+        discountResult.getDiscountRate(),
+        discountResult.getDiscountAmount(),
+        discountResult.getFinalAmount());
   }
 
   @Override

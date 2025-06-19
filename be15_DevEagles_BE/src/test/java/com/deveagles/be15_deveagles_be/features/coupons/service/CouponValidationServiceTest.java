@@ -6,7 +6,7 @@ import static org.mockito.BDDMockito.given;
 import com.deveagles.be15_deveagles_be.features.coupons.application.validation.CouponValidationService;
 import com.deveagles.be15_deveagles_be.features.coupons.common.CouponResponseFactory;
 import com.deveagles.be15_deveagles_be.features.coupons.domain.entity.Coupon;
-import com.deveagles.be15_deveagles_be.features.coupons.infrastructure.repository.CouponRepository;
+import com.deveagles.be15_deveagles_be.features.coupons.infrastructure.repository.CouponJpaRepository;
 import com.deveagles.be15_deveagles_be.features.coupons.presentation.dto.request.CouponApplicationRequest;
 import com.deveagles.be15_deveagles_be.features.coupons.presentation.dto.response.CouponValidationResponse;
 import java.time.LocalDate;
@@ -24,7 +24,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @DisplayName("CouponValidationService 단위 테스트")
 class CouponValidationServiceTest {
 
-  @Mock private CouponRepository couponRepository;
+  @Mock private CouponJpaRepository couponJpaRepository;
   @Mock private CouponResponseFactory couponResponseFactory;
 
   @InjectMocks private CouponValidationService couponValidationService;
@@ -66,7 +66,7 @@ class CouponValidationServiceTest {
     // Given
     CouponValidationResponse expectedResponse =
         new CouponValidationResponse(true, null, validCoupon);
-    given(couponRepository.findByCouponCodeAndDeletedAtIsNull("CP241201ABCD1234"))
+    given(couponJpaRepository.findByCouponCodeAndDeletedAtIsNull("CP241201ABCD1234"))
         .willReturn(Optional.of(validCoupon));
     given(couponResponseFactory.createValidResponse(validCoupon)).willReturn(expectedResponse);
 
@@ -85,7 +85,7 @@ class CouponValidationServiceTest {
     // Given
     CouponValidationResponse expectedResponse =
         new CouponValidationResponse(false, "쿠폰을 찾을 수 없습니다", null);
-    given(couponRepository.findByCouponCodeAndDeletedAtIsNull("CP241201ABCD1234"))
+    given(couponJpaRepository.findByCouponCodeAndDeletedAtIsNull("CP241201ABCD1234"))
         .willReturn(Optional.empty());
     given(couponResponseFactory.createInvalidResponse("쿠폰을 찾을 수 없습니다"))
         .willReturn(expectedResponse);
@@ -114,7 +114,7 @@ class CouponValidationServiceTest {
 
     CouponValidationResponse expectedResponse =
         new CouponValidationResponse(false, "해당 매장에서 사용할 수 없는 쿠폰입니다", null);
-    given(couponRepository.findByCouponCodeAndDeletedAtIsNull("CP241201ABCD1234"))
+    given(couponJpaRepository.findByCouponCodeAndDeletedAtIsNull("CP241201ABCD1234"))
         .willReturn(Optional.of(validCoupon));
     given(couponResponseFactory.createInvalidResponse("해당 매장에서 사용할 수 없는 쿠폰입니다"))
         .willReturn(expectedResponse);
@@ -158,7 +158,7 @@ class CouponValidationServiceTest {
 
     CouponValidationResponse expectedResponse =
         new CouponValidationResponse(true, null, allStaffCoupon);
-    given(couponRepository.findByCouponCodeAndDeletedAtIsNull("CP241201ABCD1234"))
+    given(couponJpaRepository.findByCouponCodeAndDeletedAtIsNull("CP241201ABCD1234"))
         .willReturn(Optional.of(allStaffCoupon));
     given(couponResponseFactory.createValidResponse(allStaffCoupon)).willReturn(expectedResponse);
 
@@ -200,7 +200,7 @@ class CouponValidationServiceTest {
 
     CouponValidationResponse expectedResponse =
         new CouponValidationResponse(true, null, primaryItemOnlyCoupon);
-    given(couponRepository.findByCouponCodeAndDeletedAtIsNull("CP241201ABCD1234"))
+    given(couponJpaRepository.findByCouponCodeAndDeletedAtIsNull("CP241201ABCD1234"))
         .willReturn(Optional.of(primaryItemOnlyCoupon));
     given(couponResponseFactory.createValidResponse(primaryItemOnlyCoupon))
         .willReturn(expectedResponse);
