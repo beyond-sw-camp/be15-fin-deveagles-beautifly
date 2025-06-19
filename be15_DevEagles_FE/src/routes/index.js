@@ -44,7 +44,7 @@ const routes = [
   {
     path: '/customer/list',
     name: 'CustomerList',
-    component: Home,
+    component: () => import('@/features/customer/views/CustomerListView.vue'),
   },
   {
     path: '/customer/prepaid',
