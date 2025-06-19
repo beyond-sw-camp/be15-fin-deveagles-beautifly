@@ -1,4 +1,4 @@
-package com.deveagles.be15_deveagles_be.features.campaigns.query.service.impl;
+package com.deveagles.be15_deveagles_be.features.campaigns.query.service;
 
 import com.deveagles.be15_deveagles_be.common.dto.PagedResult;
 import com.deveagles.be15_deveagles_be.features.campaigns.command.domain.aggregate.Campaign;
@@ -6,7 +6,6 @@ import com.deveagles.be15_deveagles_be.features.campaigns.query.controller.Campa
 import com.deveagles.be15_deveagles_be.features.campaigns.query.dto.request.CampaignSearchRequest;
 import com.deveagles.be15_deveagles_be.features.campaigns.query.dto.response.CampaignQueryResponse;
 import com.deveagles.be15_deveagles_be.features.campaigns.query.repository.CampaignQueryRepository;
-import com.deveagles.be15_deveagles_be.features.campaigns.query.service.CampaignQueryService;
 import com.deveagles.be15_deveagles_be.features.coupons.presentation.controller.CouponController;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
