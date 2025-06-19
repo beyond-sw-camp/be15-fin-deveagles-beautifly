@@ -5,10 +5,14 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.times;
 
-import com.deveagles.be15_deveagles_be.features.coupons.dto.CouponApplicationRequest;
-import com.deveagles.be15_deveagles_be.features.coupons.dto.CouponApplicationResult;
-import com.deveagles.be15_deveagles_be.features.coupons.dto.CouponValidationResult;
-import com.deveagles.be15_deveagles_be.features.coupons.entity.Coupon;
+import com.deveagles.be15_deveagles_be.features.coupons.application.validation.CouponApplicationService;
+import com.deveagles.be15_deveagles_be.features.coupons.application.validation.CouponValidationService;
+import com.deveagles.be15_deveagles_be.features.coupons.common.CouponResponseFactory;
+import com.deveagles.be15_deveagles_be.features.coupons.domain.entity.Coupon;
+import com.deveagles.be15_deveagles_be.features.coupons.domain.service.CouponDiscountCalculator;
+import com.deveagles.be15_deveagles_be.features.coupons.presentation.dto.request.CouponApplicationRequest;
+import com.deveagles.be15_deveagles_be.features.coupons.presentation.dto.response.CouponApplicationResponse;
+import com.deveagles.be15_deveagles_be.features.coupons.presentation.dto.response.CouponValidationResponse;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import org.junit.jupiter.api.BeforeEach;
@@ -25,6 +29,7 @@ class CouponApplicationServiceTest {
 
   @Mock private CouponValidationService couponValidationService;
   @Mock private CouponDiscountCalculator couponDiscountCalculator;
+  @Mock private CouponResponseFactory couponResponseFactory;
 
   @InjectMocks private CouponApplicationService couponApplicationService;
 
@@ -63,11 +68,11 @@ class CouponApplicationServiceTest {
   @DisplayName("쿠폰 검증 성공")
   void validateCoupon_성공() {
     // Given
-    CouponValidationResult expectedResult = CouponValidationResult.valid(validCoupon);
+    CouponValidationResponse expectedResult = new CouponValidationResponse(true, null, validCoupon);
     given(couponValidationService.validateForSale(request)).willReturn(expectedResult);
 
     // When
-    CouponValidationResult result = couponApplicationService.validateCoupon(request);
+    CouponValidationResponse result = couponApplicationService.validateCoupon(request);
 
     // Then
     assertThat(result).isEqualTo(expectedResult);
@@ -78,16 +83,17 @@ class CouponApplicationServiceTest {
   @DisplayName("쿠폰 적용 성공")
   void applyCoupon_성공() {
     // Given
-    CouponValidationResult validationResult = CouponValidationResult.valid(validCoupon);
-    CouponApplicationResult expectedResult =
-        CouponApplicationResult.success(validCoupon, 10, 1000, 9000);
+    CouponValidationResponse validationResult =
+        new CouponValidationResponse(true, null, validCoupon);
+    CouponApplicationResponse expectedResult =
+        new CouponApplicationResponse(true, null, validCoupon, 10, 1000, 9000);
 
     given(couponValidationService.validateForSale(request)).willReturn(validationResult);
     given(couponDiscountCalculator.calculateDiscount(validCoupon, 10000))
         .willReturn(expectedResult);
 
     // When
-    CouponApplicationResult result = couponApplicationService.applyCoupon(request);
+    CouponApplicationResponse result = couponApplicationService.applyCoupon(request);
 
     // Then
     assertThat(result).isEqualTo(expectedResult);
@@ -99,11 +105,17 @@ class CouponApplicationServiceTest {
   @DisplayName("쿠폰 적용 실패 - 검증 실패")
   void applyCoupon_검증실패() {
     // Given
-    CouponValidationResult validationResult = CouponValidationResult.invalid("쿠폰을 찾을 수 없습니다");
+    CouponValidationResponse validationResult =
+        new CouponValidationResponse(false, "쿠폰을 찾을 수 없습니다", null);
+    CouponApplicationResponse expectedFailedResponse =
+        new CouponApplicationResponse(false, "쿠폰을 찾을 수 없습니다", null, null, null, null);
+
     given(couponValidationService.validateForSale(request)).willReturn(validationResult);
+    given(couponResponseFactory.createFailedResponse("쿠폰을 찾을 수 없습니다"))
+        .willReturn(expectedFailedResponse);
 
     // When
-    CouponApplicationResult result = couponApplicationService.applyCoupon(request);
+    CouponApplicationResponse result = couponApplicationService.applyCoupon(request);
 
     // Then
     assertThat(result.isSuccess()).isFalse();
