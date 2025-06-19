@@ -19,8 +19,8 @@
                 v-model="edited.type"
                 type="select"
                 :options="[
-                  { text: '휴무', value: 'holiday' },
-                  { text: '정기휴무', value: 'regular_holiday' },
+                  { text: '휴무', value: 'leave' },
+                  { text: '정기휴무', value: 'regular_leave' },
                 ]"
                 placeholder="구분 선택"
               />
@@ -144,7 +144,7 @@
   };
 
   const leaveTypeLabel = computed(() => {
-    return props.reservation.type === 'regular_holiday' ? '정기휴무' : '휴무';
+    return props.reservation.type === 'regular_leave' ? '정기휴무' : '휴무';
   });
 </script>
 
