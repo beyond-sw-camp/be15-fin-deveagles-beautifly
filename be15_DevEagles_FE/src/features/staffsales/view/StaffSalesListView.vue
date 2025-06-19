@@ -75,6 +75,11 @@
       </BaseTable>
     </div>
   </div>
+  <Teleport to="body">
+    <BaseModal v-model="showIncentiveModal" :title="'인센티브 설정'">
+      <IncentiveSettingModal />
+    </BaseModal>
+  </Teleport>
 </template>
 
 <script setup>
@@ -84,13 +89,16 @@
   import BaseTable from '@/components/common/BaseTable.vue';
   import PrimeDatePicker from '@/components/common/PrimeDatePicker.vue';
   import BaseLoading from '@/components/common/BaseLoading.vue';
-  import BaseTab from '@/features/staffsales/components/BaseTab.vue';
+  import BaseTab from '@/components/common/BaseTab.vue';
+  import IncentiveSettingModal from '@/features/staffsales/components/IncentiveSettingModal.vue';
+  import BaseModal from '@/components/common/BaseModal.vue';
 
   const activeTab = ref('직원별 결산');
   const tabs = ['직원별 결산', '직원별 상세결산', '목표매출'];
   const searchMode = ref('month');
   const selectedMonth = ref(new Date());
   const selectedRange = ref([]);
+  const showIncentiveModal = ref(false);
   const loading = ref(false);
 
   const columns = [
@@ -206,7 +214,7 @@
   ]);
 
   function openIncentivePopup() {
-    // 직원별 인센티브 설정 팝업 오픈
+    showIncentiveModal.value = true;
   }
 
   function openGoalPopup() {

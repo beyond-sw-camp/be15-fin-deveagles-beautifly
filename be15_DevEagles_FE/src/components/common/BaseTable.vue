@@ -25,6 +25,7 @@
             :key="getRowKey(item, index)"
             :class="getRowClass(item, index)"
             @click="$emit('row-click', item, $event)"
+          >
             <td v-for="column in columns" :key="column.key" :class="column.cellClass">
               <slot
                 :name="`cell-${column.key}`"
