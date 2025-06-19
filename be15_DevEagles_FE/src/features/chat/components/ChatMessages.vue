@@ -44,13 +44,13 @@
     <div
       v-for="(msg, index) in props.messages"
       :key="index"
-      :class="['chat-msg-wrapper', msg.from]"
+      class="chat-msg-wrapper"
+      :class="msg.from"
     >
       <div class="chat-sender">
         {{ senderName(msg.from) }}
       </div>
-
-      <div :class="['chat-msg', msg.from]">
+      <div class="chat-msg" :class="msg.from">
         {{ msg.text }}
       </div>
     </div>
@@ -73,14 +73,14 @@
     max-width: 80%;
   }
 
-  .chat-msg-wrapper.bot,
-  .chat-msg-wrapper.person {
-    align-self: flex-start;
-  }
-
   .chat-msg-wrapper.user {
     align-self: flex-end;
     align-items: flex-end;
+  }
+
+  .chat-msg-wrapper.bot,
+  .chat-msg-wrapper.person {
+    align-self: flex-start;
   }
 
   .chat-sender {
@@ -97,15 +97,15 @@
     white-space: pre-wrap;
   }
 
+  .chat-msg.user {
+    background-color: #d0f5e8;
+  }
+
   .chat-msg.bot {
     background-color: #eef4ff;
   }
 
   .chat-msg.person {
     background-color: #fff3cd;
-  }
-
-  .chat-msg.user {
-    background-color: #d0f5e8;
   }
 </style>
