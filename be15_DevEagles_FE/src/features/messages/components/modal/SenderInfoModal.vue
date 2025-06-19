@@ -68,7 +68,7 @@
     </div>
 
     <div class="modal-footer mt-6 flex justify-end gap-2">
-      <BaseButton type="gray" @click="visible = false">취소</BaseButton>
+      <BaseButton type="secondary" @click="visible = false">취소</BaseButton>
       <BaseButton type="primary" @click="submit">등록</BaseButton>
     </div>
   </BaseModal>
