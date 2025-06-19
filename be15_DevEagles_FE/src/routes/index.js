@@ -122,6 +122,11 @@ const routes = [
     component: () => import('@/features/campaigns/views/CampaignList.vue'),
   },
   {
+    path: '/campaigns/:id',
+    name: 'CampaignDetail',
+    component: () => import('@/features/campaigns/views/CampaignDetail.vue'),
+  },
+  {
     path: '/coupons',
     name: 'CouponList',
     component: () => import('@/features/coupons/views/CouponList.vue'),
