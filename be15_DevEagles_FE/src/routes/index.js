@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router';
 import Home from '../views/Home.vue';
 import { userRoutes } from '@/features/users/route.js';
 import { staffRoutes } from '@/features/staffs/route.js';
+import { scheduleRoutes } from '@/features/schedules/routes.js';
 
 const routes = [
   {
@@ -174,6 +175,7 @@ const routes = [
   },
   ...userRoutes, // 추후에 밖으로 빼기
   ...staffRoutes,
+  ...scheduleRoutes,
 ];
 
 const router = createRouter({
