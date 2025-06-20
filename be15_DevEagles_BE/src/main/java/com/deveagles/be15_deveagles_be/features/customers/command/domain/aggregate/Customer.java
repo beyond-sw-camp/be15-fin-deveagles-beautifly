@@ -89,8 +89,8 @@ public class Customer {
   @Column(name = "last_message_sent_at")
   private LocalDateTime lastMessageSentAt;
 
-  @Column(name = "acquisition_channel", length = 20)
-  private String acquisitionChannel;
+  @Column(name = "channel_id", nullable = false)
+  private Long channelId;
 
   @CreationTimestamp
   @Column(name = "created_at", nullable = false, updatable = false)
@@ -105,16 +105,12 @@ public class Customer {
 
   // Business methods
   public void updateCustomerInfo(
-      String customerName,
-      String phoneNumber,
-      String memo,
-      Gender gender,
-      String acquisitionChannel) {
+      String customerName, String phoneNumber, String memo, Gender gender, Long channelId) {
     this.customerName = customerName;
     this.phoneNumber = phoneNumber;
     this.memo = memo;
     this.gender = gender;
-    this.acquisitionChannel = acquisitionChannel;
+    this.channelId = channelId;
   }
 
   public void updateMarketingConsent(Boolean marketingConsent) {
