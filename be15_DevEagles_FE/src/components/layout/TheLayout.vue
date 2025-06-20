@@ -7,16 +7,16 @@
         <router-view />
       </main>
     </div>
-    <!-- 고정된 채팅 버튼 -->
+    <!-- ✅ 채팅 아이콘 버튼 -->
     <div class="chat-button-wrapper">
-      <button class="chat-inquiry-button" @click="isChatOpen = !isChatOpen">
-        <img src="@/images/logo_positive.png" class="chat-icon" />
+      <button class="chat-inquiry-button" @click="toggleChat">
+        <img src="@/images/logo_positive.png" class="chat-icon" alt="채팅 아이콘" />
         <span>1:1 문의하기</span>
       </button>
-
-      <!-- 버튼 "위에" 고정된 채팅창 -->
-      <ChatModal v-if="isChatOpen" @close="isChatOpen = false" />
     </div>
+
+    <!-- ✅ 채팅 모달 -->
+    <ChatModal v-if="isChatOpen" @close="toggleChat" />
   </div>
 </template>
 
@@ -31,6 +31,10 @@
   const handleSidebarToggle = isCollapsed => {
     sidebarCollapsed.value = isCollapsed;
   };
+
+  function toggleChat() {
+    isChatOpen.value = !isChatOpen.value;
+  }
 </script>
 
 <style scoped>
@@ -64,38 +68,44 @@
     background-color: var(--color-gray-50);
   }
 
-  .chat-inquiry-button {
-    position: fixed;
-    bottom: 0;
-    right: 0;
-    margin: 0;
-    padding: 0.5rem 1rem;
-    border-radius: 9999px 9999px 9999px 9999px; /* 둥근 모서리 하나만 */
-    background-color: var(--color-primary-main);
-    color: white;
-    font-size: 14px;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    cursor: pointer;
-    z-index: 9999;
-    box-shadow: -2px -2px 8px rgba(0, 0, 0, 0.1);
-  }
-  .chat-icon {
-    width: 16px; /* ✅ 작고 귀엽게 줄임 */
-    height: 16px;
-    object-fit: contain;
-  }
   .chat-button-wrapper {
     position: fixed;
-    bottom: 50px;
-    right: 20px;
+    bottom: 10px;
+    right: 10px;
     display: flex;
     flex-direction: column-reverse;
     align-items: flex-end;
-    /* ↓ 여기 줄여야 함 */
     gap: 4px;
     z-index: 3000;
+  }
+
+  .chat-inquiry-button {
+    background-color: var(--color-primary-main);
+    color: white;
+    display: flex;
+    align-items: center;
+    padding: 0.75rem;
+    border-radius: 9999px;
+    gap: 0.5rem;
+    transition: width 0.3s ease;
+    overflow: hidden;
+    width: 44px;
+  }
+  .chat-inquiry-button span {
+    white-space: nowrap;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+  }
+  .chat-inquiry-button:hover {
+    width: 160px;
+  }
+  .chat-inquiry-button:hover span {
+    opacity: 1;
+  }
+  .chat-icon {
+    width: 18px;
+    height: 18px;
+    object-fit: contain;
   }
 
   @media (max-width: 768px) {
