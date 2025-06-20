@@ -1,58 +1,20 @@
 <script setup>
-  import { nextTick, onUpdated, watch, ref } from 'vue';
-
   const props = defineProps({
     messages: {
       type: Array,
       required: true,
     },
   });
-
-  const containerRef = ref(null);
-
-  function scrollToBottom() {
-    if (!containerRef.value) return;
-    containerRef.value.scrollTop = containerRef.value.scrollHeight;
-  }
-
-  watch(
-    () => props.messages.length,
-    async () => {
-      await nextTick();
-      scrollToBottom();
-    }
-  );
-
-  onUpdated(scrollToBottom);
-
-  function senderName(from) {
-    switch (from) {
-      case 'user':
-        return '나';
-      case 'bot':
-        return 'Beautifly 도우미';
-      case 'person':
-        return '상담 직원';
-      default:
-        return '알 수 없음';
-    }
-  }
 </script>
 
 <template>
-  <div ref="containerRef" class="chat-messages">
+  <div class="chat-messages">
     <div
       v-for="(msg, index) in props.messages"
       :key="index"
-      class="chat-msg-wrapper"
-      :class="msg.from"
+      :class="['chat-bubble', msg.from === 'user' ? 'user' : 'bot']"
     >
-      <div class="chat-sender">
-        {{ senderName(msg.from) }}
-      </div>
-      <div class="chat-msg" :class="msg.from">
-        {{ msg.text }}
-      </div>
+      {{ msg.text }}
     </div>
   </div>
 </template>
@@ -61,51 +23,22 @@
   .chat-messages {
     display: flex;
     flex-direction: column;
-    gap: 0.6rem;
-    overflow-y: auto;
-    height: 100%;
-    padding-right: 4px;
+    gap: 0.5rem;
   }
-
-  .chat-msg-wrapper {
-    display: flex;
-    flex-direction: column;
-    max-width: 80%;
-  }
-
-  .chat-msg-wrapper.user {
-    align-self: flex-end;
-    align-items: flex-end;
-  }
-
-  .chat-msg-wrapper.bot,
-  .chat-msg-wrapper.person {
-    align-self: flex-start;
-  }
-
-  .chat-sender {
-    font-size: 11px;
-    color: var(--color-gray-500);
-    margin-bottom: 2px;
-    line-height: 1;
-  }
-
-  .chat-msg {
-    padding: 0.6rem 1rem;
-    border-radius: 12px;
+  .chat-bubble {
+    max-width: 75%;
+    padding: 0.5rem 0.75rem;
+    border-radius: 1rem;
     word-break: break-word;
-    white-space: pre-wrap;
   }
-
-  .chat-msg.user {
-    background-color: #d0f5e8;
+  .user {
+    align-self: flex-end;
+    background-color: var(--color-primary-main);
+    color: white;
   }
-
-  .chat-msg.bot {
-    background-color: #eef4ff;
-  }
-
-  .chat-msg.person {
-    background-color: #fff3cd;
+  .bot {
+    align-self: flex-start;
+    background-color: #e5e7eb;
+    color: black;
   }
 </style>

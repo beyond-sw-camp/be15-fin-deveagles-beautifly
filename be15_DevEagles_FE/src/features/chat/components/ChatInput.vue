@@ -4,45 +4,45 @@
   const emit = defineEmits(['send']);
   const input = ref('');
 
-  function sendMessage() {
-    const trimmed = input.value.trim();
-    if (!trimmed) return;
-    emit('send', trimmed);
-    input.value = '';
+  function handleSend() {
+    if (input.value.trim()) {
+      emit('send', input.value.trim());
+      input.value = '';
+    }
   }
 </script>
 
 <template>
-  <div class="chat-input-wrap">
+  <div class="chat-input-wrapper">
     <input
       v-model="input"
-      type="text"
       class="chat-input"
-      placeholder="메시지를 입력하세요..."
-      @keydown.enter="sendMessage"
+      type="text"
+      placeholder="메시지를 입력하세요"
+      @keydown.enter="handleSend"
     />
-    <button class="send-button" @click="sendMessage">전송</button>
+    <button class="chat-send-btn" @click="handleSend">전송</button>
   </div>
 </template>
 
 <style scoped>
-  .chat-input-wrap {
+  .chat-input-wrapper {
     display: flex;
     gap: 0.5rem;
   }
   .chat-input {
     flex: 1;
-    padding: 0.6rem 1rem;
+    padding: 0.5rem;
     border: 1px solid #ccc;
-    border-radius: 8px;
+    border-radius: 6px;
     font-size: 14px;
   }
-  .send-button {
+  .chat-send-btn {
+    padding: 0.5rem 1rem;
     background-color: var(--color-primary-main);
     color: white;
     border: none;
-    border-radius: 8px;
-    padding: 0.6rem 1rem;
+    border-radius: 6px;
     cursor: pointer;
   }
 </style>
