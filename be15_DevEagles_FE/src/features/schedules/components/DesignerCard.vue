@@ -1,3 +1,19 @@
+<script setup>
+  import { useRouter } from 'vue-router';
+
+  const props = defineProps({
+    id: [String, Number],
+    name: String,
+    image: String,
+  });
+
+  const router = useRouter();
+
+  const onReserveClick = () => {
+    router.push(`/reserve/designer/${props.id}`);
+  };
+</script>
+
 <template>
   <div class="designer-card">
     <div class="tags">
@@ -7,28 +23,12 @@
     <div class="content">
       <img class="profile" :src="image" alt="디자이너 이미지" />
       <div class="description">
-        <p>
-          정성껏 시술하는 {{ name }} 디자이너입니다. 고객의 스타일을 가장 잘 살리는 디테일을
-          추구합니다.
-        </p>
+        <p>정성껏 시술하는 {{ name }} 디자이너입니다.</p>
       </div>
     </div>
     <button class="reserve-button" @click="onReserveClick">예약</button>
   </div>
 </template>
-
-<script setup>
-  const props = defineProps({
-    name: String,
-    image: String,
-  });
-
-  const emit = defineEmits(['reserve']);
-
-  const onReserveClick = () => {
-    emit('reserve', props.name);
-  };
-</script>
 
 <style scoped>
   .designer-card {
