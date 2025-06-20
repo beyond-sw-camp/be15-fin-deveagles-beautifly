@@ -1,26 +1,20 @@
 <script setup>
-  import { ref, watch } from 'vue';
+  import { computed } from 'vue';
   import BaseModal from '@/components/common/BaseModal.vue';
   import BaseButton from '@/components/common/BaseButton.vue';
 
+  defineOptions({
+    inheritAttrs: false,
+  });
+
   const props = defineProps({
-    modelValue: {
-      type: Boolean,
-      required: true,
-    },
+    modelValue: Boolean,
   });
   const emit = defineEmits(['confirm', 'update:modelValue']);
 
-  const visible = ref(props.modelValue);
-
-  watch(
-    () => props.modelValue,
-    val => {
-      visible.value = val;
-    }
-  );
-  watch(visible, val => {
-    emit('update:modelValue', val);
+  const visible = computed({
+    get: () => props.modelValue,
+    set: val => emit('update:modelValue', val),
   });
 </script>
 
@@ -34,7 +28,7 @@
     </div>
 
     <div class="modal-footer mt-6 flex justify-end gap-2">
-      <BaseButton type="gray" @click="visible = false">취소</BaseButton>
+      <BaseButton type="secondary" @click="visible = false">취소</BaseButton>
       <BaseButton type="primary" @click="$emit('confirm')">신청</BaseButton>
     </div>
   </BaseModal>

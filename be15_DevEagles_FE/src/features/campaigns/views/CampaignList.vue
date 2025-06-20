@@ -12,7 +12,9 @@
         <!-- Campaign Name Column -->
         <template #cell-name="{ item }">
           <div class="item-name">
-            {{ item.name }}
+            <router-link :to="`/campaigns/${item.id}`" class="campaign-link">
+              {{ item.name }}
+            </router-link>
           </div>
         </template>
 
@@ -30,12 +32,11 @@
           </BaseBadge>
         </template>
 
-        <!-- Active Status Column -->
-        <template #cell-isActive="{ item }">
-          <label class="toggle-switch enhanced">
-            <input v-model="item.isActive" type="checkbox" @change="toggleCampaignStatus(item)" />
-            <span class="slider"></span>
-          </label>
+        <!-- Coupon Column -->
+        <template #cell-coupon="{ item }">
+          <div class="item-secondary small">
+            {{ getCouponName(item.couponId) }}
+          </div>
         </template>
 
         <!-- Actions Column -->
@@ -107,7 +108,7 @@
   import { ref, computed } from 'vue';
   import { useListManagement } from '@/composables/useListManagement';
   import { MESSAGES } from '@/constants/messages';
-  import { MOCK_CAMPAIGNS } from '@/constants/mockData';
+  import { MOCK_CAMPAIGNS, MOCK_COUPONS } from '@/constants/mockData';
   import { formatPeriod, getStatusText, getStatusBadgeType } from '@/utils/formatters';
   import BaseButton from '@/components/common/BaseButton.vue';
   import BaseModal from '@/components/common/BaseModal.vue';
@@ -139,7 +140,6 @@
     setup() {
       // List management composable
       const {
-        items: campaigns,
         currentPage,
         loading,
         showDeleteConfirm,
@@ -149,7 +149,6 @@
         totalPages,
         itemsPerPage,
         paginatedItems: paginatedCampaigns,
-        toggleItemStatus,
         deleteItem,
         confirmDelete,
         cancelDelete,
@@ -170,7 +169,7 @@
         { key: 'name', title: '캠페인명' },
         { key: 'period', title: '기간' },
         { key: 'status', title: '상태' },
-        { key: 'isActive', title: '활성화' },
+        { key: 'coupon', title: '쿠폰' },
         { key: 'actions', title: 'Actions', width: '80px' },
       ];
 
@@ -196,7 +195,11 @@
       };
 
       const deleteCampaign = (campaign, event) => deleteItem(campaign, event);
-      const toggleCampaignStatus = campaign => toggleItemStatus(campaign);
+
+      const getCouponName = couponId => {
+        const coupon = MOCK_COUPONS.find(c => c.id === couponId);
+        return coupon ? coupon.name : '쿠폰 정보 없음';
+      };
 
       return {
         // State
@@ -224,9 +227,9 @@
         deleteCampaign,
         confirmDelete,
         cancelDelete,
-        toggleCampaignStatus,
         handlePageChange,
         handleItemsPerPageChange,
+        getCouponName,
         formatPeriod,
         getStatusText,
         getStatusBadgeType,
@@ -237,4 +240,16 @@
 
 <style scoped>
   @import '@/assets/css/list-components.css';
+
+  .campaign-link {
+    color: var(--color-primary-main);
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.2s ease;
+  }
+
+  .campaign-link:hover {
+    color: var(--color-primary-dark);
+    text-decoration: underline;
+  }
 </style>

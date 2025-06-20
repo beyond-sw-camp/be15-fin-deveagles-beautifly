@@ -1,10 +1,8 @@
-<script setup>
-  import { TheLayout } from './components/layout/index.js';
-</script>
+<script setup></script>
 
 <template>
   <div id="app">
-    <TheLayout />
+    <router-view />
   </div>
 </template>
 
