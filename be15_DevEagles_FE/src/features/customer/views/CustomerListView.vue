@@ -3,7 +3,9 @@
     <header class="customer-list-header">
       <h1>고객 리스트</h1>
       <div class="customer-list-actions">
-        <BaseButton type="primary" size="sm">+ 신규 고객 등록</BaseButton>
+        <BaseButton type="primary" size="sm" @click="showCreateDrawer = true"
+          >+ 신규 고객 등록</BaseButton
+        >
         <BaseButton type="primary" size="sm">+ 등급·태그 설정</BaseButton>
       </div>
     </header>
@@ -26,7 +28,7 @@
           <FilterIcon style="margin-right: 4px" />
           필터
         </BaseButton>
-        <BaseButton type="primary" size="sm" class="settings-btn" @click="onSettings">
+        <BaseButton type="primary" size="sm" class="settings-btn" @click="openColumnDrawer">
           <SettingsIcon />
         </BaseButton>
       </div>
@@ -46,7 +48,7 @@
         </span>
       </div>
       <BaseTable
-        :columns="columns"
+        :columns="visibleColumns"
         :data="pagedData"
         :loading="loading"
         row-key="customer_id"
@@ -54,7 +56,6 @@
         hover
         class="wide-table"
       >
-        <!-- 헤더: 체크박스 + 드롭다운 -->
         <template #header-checkbox>
           <div class="dropdown-checkbox-wrapper">
             <input
@@ -75,7 +76,6 @@
             </div>
           </div>
         </template>
-        <!-- 헤더: 정렬 아이콘 추가 -->
         <template #header-customer_name>
           <div class="sortable-header" @click="sortBy('customer_name')">
             고객명
@@ -106,23 +106,25 @@
             <SortIcon :direction="getSortDirection('recent_visit_date')" />
           </div>
         </template>
-        <!-- row 체크박스 -->
         <template #cell-checkbox="{ item }">
           <input v-model="selectedIds" type="checkbox" :value="item.customer_id" />
         </template>
-        <!-- 메모: 한 줄만, 길면 ... -->
         <template #cell-memo="{ value }">
           <span class="memo-ellipsis" :title="value">{{ value }}</span>
         </template>
-        <!-- 태그 컬러 뱃지 -->
         <template #cell-tags="{ item }">
-          <BaseBadge
-            v-for="tag in item.tags"
-            :key="tag.tag_id"
-            :text="tag.tag_name"
-            :style="{ backgroundColor: tag.color_code, color: '#222', marginRight: '4px' }"
-            pill
-          />
+          <template v-if="Array.isArray(item.tags) && item.tags.length > 0">
+            <BaseBadge
+              v-for="tag in item.tags"
+              :key="tag.tag_name"
+              :text="tag.tag_name"
+              :style="{ backgroundColor: tag.color_code, color: '#222', marginRight: '4px' }"
+              pill
+            />
+          </template>
+        </template>
+        <template #cell-customer_grade_name="{ value }">
+          <span class="single-line-ellipsis" :title="value">{{ value }}</span>
         </template>
       </BaseTable>
     </BaseCard>
@@ -136,6 +138,19 @@
         @page-change="handlePageChange"
       />
     </div>
+
+    <!-- 신규 고객 등록 Drawer -->
+    <CustomerCreateDrawer v-model="showCreateDrawer" @create="handleCreateCustomer" />
+
+    <!-- 컬럼 설정 Drawer -->
+    <CustomerColumnSettingsDrawer
+      v-model="showColumnDrawer"
+      :columns="columns"
+      :value="columnSettings"
+      @save="applyColumnSettings"
+    />
+
+    <BaseToast ref="toastRef" position="top-right" />
   </div>
 </template>
 
@@ -151,34 +166,44 @@
   import SortIcon from '@/components/icons/SortIcon.vue';
   import SearchIcon from '@/components/icons/SearchIcon.vue';
   import { SendHorizonalIcon } from 'lucide-vue-next';
+  import CustomerCreateDrawer from '../components/CustomerCreateDrawer.vue';
+  import CustomerColumnSettingsDrawer from '../components/CustomerColumnSettingsDrawer.vue';
+  import BaseToast from '@/components/common/BaseToast.vue';
 
-  const dummyData = Array.from({ length: 20 }, (_, i) => ({
-    customer_id: 100 - i,
-    customer_name: `고객${100 - i}`,
-    phone_number: `010-0000-${String(1000 + i).slice(-4)}`,
-    staff_name: i % 2 === 0 ? '부재녕' : '김담당',
-    memo: i % 3 === 0 ? '이것은 예시 메모입니다. 길어지면 ...으로 표시됩니다.' : '',
-    visit_count: Math.floor(Math.random() * 10),
-    remaining_amount: Math.floor(Math.random() * 100000),
-    total_revenue: Math.floor(Math.random() * 1000000),
-    recent_visit_date: `2025-06-${String(10 + (i % 20)).padStart(2, '0')}`,
-    tags: [
-      {
-        tag_id: 1,
-        tag_name: i % 2 === 0 ? 'VIP' : '신규',
-        color_code: i % 2 === 0 ? '#FFD700' : '#00BFFF',
-      },
-    ],
-    customer_grade_name: i % 2 === 0 ? '일반' : 'VIP',
-    birthdate: `1990${String(i + 1).padStart(2, '0')}15`,
-    created_at: new Date(2025, 5, 30 - i).toISOString(),
-  }));
+  const dummyData = ref(
+    Array.from({ length: 20 }, (_, i) => ({
+      customer_id: 100 - i,
+      customer_name: `고객${100 - i}`,
+      phone_number: `010-0000-${String(1000 + i).slice(-4)}`,
+      staff_name: i % 2 === 0 ? '부재녕' : '김담당',
+      memo: i % 3 === 0 ? '이것은 예시 메모입니다. 길어지면 ...으로 표시됩니다.' : '',
+      visit_count: Math.floor(Math.random() * 10),
+      remaining_amount: Math.floor(Math.random() * 100000),
+      total_revenue: Math.floor(Math.random() * 1000000),
+      recent_visit_date: `2025-06-${String(10 + (i % 20)).padStart(2, '0')}`,
+      tags:
+        i % 3 !== 0
+          ? [
+              {
+                tag_name: i % 2 === 0 ? 'VIP' : '신규',
+                color_code: i % 2 === 0 ? '#FFD700' : '#00BFFF',
+              },
+            ]
+          : [],
+      customer_grade_name: i % 2 === 0 ? '일반' : '아주아주 긴 등급명 테스트',
+      birthdate: `1990${String(i + 1).padStart(2, '0')}15`,
+      channel_id: i % 2 === 0 ? 1 : 2,
+      acquisition_channel_name: i % 2 === 0 ? '네이버검색' : '지인 추천',
+      created_at: new Date(2025, 5, 30 - i).toISOString(),
+    }))
+  );
 
-  const columns = [
+  const columns = ref([
     { key: 'checkbox', title: '', width: '60px' },
     { key: 'customer_name', title: '고객명', width: '170px' },
     { key: 'phone_number', title: '연락처', width: '160px' },
     { key: 'staff_name', title: '담당자', width: '110px' },
+    { key: 'acquisition_channel_name', title: '유입경로', width: '120px' },
     { key: 'memo', title: '메모', width: '170px' },
     { key: 'visit_count', title: '방문횟수', width: '120px' },
     { key: 'remaining_amount', title: '잔여선불액', width: '130px' },
@@ -187,14 +212,41 @@
     { key: 'tags', title: '태그', width: '110px' },
     { key: 'customer_grade_name', title: '등급', width: '80px' },
     { key: 'birthdate', title: '생일', width: '110px' },
-  ];
+  ]);
+
+  // 컬럼 설정 로직
+  const showColumnDrawer = ref(false);
+  const columnSettings = ref(
+    columns.value
+      .filter(col => col.key !== 'checkbox')
+      .map(col => ({ key: col.key, title: col.title, visible: true }))
+  );
+
+  function openColumnDrawer() {
+    showColumnDrawer.value = true;
+  }
+
+  function applyColumnSettings(newSettings) {
+    columnSettings.value = newSettings;
+  }
+
+  const visibleColumns = computed(() => {
+    const checkboxCol = columns.value.find(c => c.key === 'checkbox');
+    const settingOrder = columnSettings.value.map(s => s.key);
+    const visibleCols = columns.value
+      .filter(
+        c => c.key !== 'checkbox' && columnSettings.value.find(s => s.key === c.key && s.visible)
+      )
+      .sort((a, b) => settingOrder.indexOf(a.key) - settingOrder.indexOf(b.key));
+
+    return [checkboxCol, ...visibleCols].filter(Boolean);
+  });
 
   const search = ref('');
   const page = ref(1);
   const pageSize = ref(10);
   const selectedIds = ref([]);
   const loading = ref(false);
-
   const sortKey = ref('created_at');
   const sortOrder = ref('desc');
   const sortableKeys = [
@@ -218,7 +270,7 @@
   }
 
   const sortedData = computed(() => {
-    let data = dummyData.filter(
+    let data = dummyData.value.filter(
       c =>
         !search.value ||
         c.customer_name.includes(search.value) ||
@@ -312,11 +364,45 @@
   function handlePageChange(newPage) {
     page.value = newPage;
   }
-  function onSendMessage() {
-    // 문자 발송 모달/페이지 이동
-  }
-  function onSettings() {
-    // 환경설정 모달/페이지 이동
+  function onSendMessage() {}
+
+  const acquisitionChannelOptions = [
+    { channel_id: 1, channel_name: '네이버검색' },
+    { channel_id: 2, channel_name: '지인 추천' },
+  ];
+
+  const toastRef = ref(null);
+  const showCreateDrawer = ref(false);
+  function handleCreateCustomer(newCustomer) {
+    const channel = acquisitionChannelOptions.find(c => c.channel_id === newCustomer.channel_id);
+
+    dummyData.value.unshift({
+      customer_id: Date.now(),
+      customer_name: newCustomer.name,
+      phone_number: newCustomer.phone,
+      staff_name: newCustomer.staff_name,
+      memo: newCustomer.memo,
+      visit_count: 0,
+      remaining_amount: 0,
+      total_revenue: 0,
+      recent_visit_date: newCustomer.birthdate || '',
+      channel_id: newCustomer.channel_id,
+      acquisition_channel_name: channel ? channel.channel_name : '',
+      tags:
+        Array.isArray(newCustomer.tags) && newCustomer.tags.length > 0
+          ? newCustomer.tags.map((tag, idx) => ({
+              tag_id: Date.now() + idx,
+              ...tag,
+            }))
+          : [],
+      customer_grade_name: newCustomer.grade,
+      birthdate: newCustomer.birthdate || '',
+      created_at: new Date().toISOString(),
+    });
+    toastRef.value?.success('고객 등록 완료', { duration: 2000 });
+    sortKey.value = 'created_at';
+    sortOrder.value = 'desc';
+    page.value = 1;
   }
 </script>
 
@@ -436,6 +522,12 @@
     white-space: nowrap;
     text-overflow: ellipsis;
     max-width: 150px;
+  }
+  .single-line-ellipsis {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
   }
   .dropdown-checkbox-wrapper {
     position: relative;
