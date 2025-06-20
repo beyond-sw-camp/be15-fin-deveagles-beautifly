@@ -26,32 +26,12 @@ public class TagByCustomer {
   @Column(name = "tag_id")
   private Long tagId;
 
+  @Getter
+  @NoArgsConstructor
+  @AllArgsConstructor
   public static class TagByCustomerId implements Serializable {
     private Long customerId;
     private Long tagId;
-
-    public TagByCustomerId() {}
-
-    public TagByCustomerId(Long customerId, Long tagId) {
-      this.customerId = customerId;
-      this.tagId = tagId;
-    }
-
-    public Long getCustomerId() {
-      return customerId;
-    }
-
-    public void setCustomerId(Long customerId) {
-      this.customerId = customerId;
-    }
-
-    public Long getTagId() {
-      return tagId;
-    }
-
-    public void setTagId(Long tagId) {
-      this.tagId = tagId;
-    }
 
     @Override
     public boolean equals(Object o) {
