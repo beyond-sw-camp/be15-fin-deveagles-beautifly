@@ -1,4 +1,4 @@
-package com.deveagles.be15_deveagles_be.features.coupons.service;
+package com.deveagles.be15_deveagles_be.features.coupons.application.command;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -10,8 +10,6 @@ import static org.mockito.Mockito.times;
 
 import com.deveagles.be15_deveagles_be.common.exception.BusinessException;
 import com.deveagles.be15_deveagles_be.common.exception.ErrorCode;
-import com.deveagles.be15_deveagles_be.features.coupons.application.command.CouponCommandServiceImpl;
-import com.deveagles.be15_deveagles_be.features.coupons.application.command.CreateCouponRequest;
 import com.deveagles.be15_deveagles_be.features.coupons.common.CouponDto;
 import com.deveagles.be15_deveagles_be.features.coupons.domain.entity.Coupon;
 import com.deveagles.be15_deveagles_be.features.coupons.domain.service.CouponCodeGenerator;
@@ -204,6 +202,8 @@ class CouponCommandServiceImplTest {
 
     // Then
     assertThat(result).isNotNull();
+    assertThat(result.getIsActive()).isFalse(); // 비활성화됨
+
     then(couponJpaRepository).should(times(1)).findById(1L);
     then(couponJpaRepository).should(times(1)).save(any(Coupon.class));
   }
@@ -234,6 +234,8 @@ class CouponCommandServiceImplTest {
 
     // Then
     assertThat(result).isNotNull();
+    assertThat(result.getIsActive()).isTrue(); // 활성화됨
+
     then(couponJpaRepository).should(times(1)).findById(1L);
     then(couponJpaRepository).should(times(1)).save(any(Coupon.class));
   }

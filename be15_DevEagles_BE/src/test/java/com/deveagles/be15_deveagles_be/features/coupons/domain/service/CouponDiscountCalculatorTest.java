@@ -1,11 +1,10 @@
-package com.deveagles.be15_deveagles_be.features.coupons.service;
+package com.deveagles.be15_deveagles_be.features.coupons.domain.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.deveagles.be15_deveagles_be.common.exception.BusinessException;
 import com.deveagles.be15_deveagles_be.features.coupons.domain.entity.Coupon;
-import com.deveagles.be15_deveagles_be.features.coupons.domain.service.CouponDiscountCalculator;
 import com.deveagles.be15_deveagles_be.features.coupons.domain.vo.DiscountResult;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -201,6 +200,37 @@ class CouponDiscountCalculatorTest {
     assertThat(result.getDiscountRate()).isEqualTo(0);
     assertThat(result.getDiscountAmount()).isEqualTo(0);
     assertThat(result.getFinalAmount()).isEqualTo(10000);
+    assertThat(result.isValid()).isTrue();
+  }
+
+  @Test
+  @DisplayName("할인 계산 성공 - 100% 할인")
+  void calculateDiscount_100퍼센트할인_성공() {
+    // Given
+    Coupon fullDiscountCoupon =
+        Coupon.builder()
+            .id(1L)
+            .couponCode("CP241201ABCD1234")
+            .couponTitle("무료 쿠폰")
+            .shopId(1L)
+            .primaryItemId(100L)
+            .discountRate(100)
+            .expirationDate(LocalDate.now().plusDays(30))
+            .isActive(true)
+            .createdAt(LocalDateTime.now())
+            .build();
+
+    Integer originalAmount = 10000;
+
+    // When
+    DiscountResult result =
+        couponDiscountCalculator.calculateDiscount(fullDiscountCoupon, originalAmount);
+
+    // Then
+    assertThat(result.getOriginalAmount()).isEqualTo(10000);
+    assertThat(result.getDiscountRate()).isEqualTo(100);
+    assertThat(result.getDiscountAmount()).isEqualTo(10000);
+    assertThat(result.getFinalAmount()).isEqualTo(0);
     assertThat(result.isValid()).isTrue();
   }
 }

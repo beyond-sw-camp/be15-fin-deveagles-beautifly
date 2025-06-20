@@ -29,7 +29,12 @@ public enum ErrorCode implements ErrorCodeType {
   COUPON_INVALID_AMOUNT("50008", "유효하지 않은 금액입니다", HttpStatus.BAD_REQUEST),
   COUPON_INVALID_DISCOUNT_RATE("50009", "유효하지 않은 할인율입니다", HttpStatus.BAD_REQUEST),
   DELETED_COUPON_OPERATION_NOT_ALLOWED(
-      "50010", "삭제된 쿠폰은 해당 작업을 수행할 수 없습니다", HttpStatus.BAD_REQUEST);
+      "50010", "삭제된 쿠폰은 해당 작업을 수행할 수 없습니다", HttpStatus.BAD_REQUEST),
+
+  // 캠페인 관련 에러 (51000번대)
+  CAMPAIGN_NOT_FOUND("51001", "캠페인을 찾을 수 없습니다", HttpStatus.NOT_FOUND),
+  CAMPAIGN_ALREADY_DELETED("51002", "이미 삭제된 캠페인입니다", HttpStatus.BAD_REQUEST),
+  INVALID_CAMPAIGN_DATE_RANGE("51003", "캠페인 종료일은 시작일보다 늦어야 합니다", HttpStatus.BAD_REQUEST);
 
   private final String code;
   private final String message;

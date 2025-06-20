@@ -63,7 +63,16 @@
   --color-primary-400: #5e6f91;
   --color-primary-500: #364f6b;
   --color-primary-600: #2d4157;
+  --color-primary-dark: #1a2331;
   --color-primary-main: #364f6b;
+
+  /* Text Colors */
+  --color-text-primary: #1f1f1f;
+  --color-text-secondary: #6b7280;
+
+  /* Background Colors */
+  --color-bg-primary: #ffffff;
+  --color-bg-secondary: #f9fafb;
 
   /* Secondary */
   --color-secondary-50: #ffe7ed;
