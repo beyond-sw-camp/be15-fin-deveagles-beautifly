@@ -140,7 +140,7 @@ const routes = [
   {
     path: '/settings/reservation',
     name: 'SettingsReservation',
-    component: Home,
+    component: () => import('@/features/schedules/views/SettingsReservation.vue'),
   },
   {
     path: '/settings/staff',
