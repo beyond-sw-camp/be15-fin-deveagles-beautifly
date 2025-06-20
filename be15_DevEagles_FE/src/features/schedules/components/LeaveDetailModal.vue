@@ -1,5 +1,5 @@
 <template>
-  <div v-if="modelValue" class="overlay">
+  <div v-if="modelValue" class="overlay" @click.self="close">
     <div class="modal-panel">
       <div class="modal-header">
         <div>
@@ -89,7 +89,7 @@
 </template>
 
 <script setup>
-  import { ref, defineProps, defineEmits, watch, computed } from 'vue';
+  import { ref, defineProps, defineEmits, watch, computed, onMounted, onBeforeUnmount } from 'vue';
   import BaseButton from '@/components/common/BaseButton.vue';
   import BaseForm from '@/components/common/BaseForm.vue';
 
@@ -109,6 +109,19 @@
     showMenu.value = false;
     edited.value = {};
   };
+
+  const handleEsc = e => {
+    if (e.key === 'Escape') {
+      close();
+    }
+  };
+
+  onMounted(() => {
+    window.addEventListener('keydown', handleEsc);
+  });
+  onBeforeUnmount(() => {
+    window.removeEventListener('keydown', handleEsc);
+  });
 
   watch(
     () => props.modelValue,
