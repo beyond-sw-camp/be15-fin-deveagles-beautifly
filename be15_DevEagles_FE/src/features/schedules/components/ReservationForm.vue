@@ -6,22 +6,53 @@
       <input v-model="form.customer" type="text" placeholder="고객명 또는 연락처 검색" />
     </div>
 
-    <!-- 일정 날짜 및 시간 (한 줄) -->
+    <!-- 예약 날짜 및 시간  -->
     <div class="row row-inline">
-      <label class="label-wide">일정 날짜</label>
+      <label class="label-wide">예약 날짜</label>
       <div class="flat-flex">
-        <input v-model="form.date" type="date" class="input-date" />
-        <input
-          v-model="form.timeRange"
-          type="text"
-          placeholder="오후 2:00 ~ 오후 3:00"
-          class="input-time big-width"
+        <!-- 날짜 선택 -->
+        <PrimeDatePicker
+          v-model="form.date"
+          :show-time="false"
+          :show-button-bar="true"
+          :clearable="false"
+          hour-format="24"
+          placeholder="날짜 선택"
+          style="width: 160px"
         />
+
+        <!-- 시작 시간 -->
+        <PrimeDatePicker
+          v-model="form.startTime"
+          :show-time="true"
+          :time-only="true"
+          :clearable="false"
+          hour-format="24"
+          placeholder="시작 시간"
+          style="width: 130px"
+          @update:model-value="updateDuration"
+        />
+
+        <!-- 종료 시간 -->
+        <PrimeDatePicker
+          v-model="form.endTime"
+          :show-time="true"
+          :time-only="true"
+          :clearable="false"
+          hour-format="24"
+          placeholder="종료 시간"
+          style="width: 130px"
+          @update:model-value="updateDuration"
+        />
+
+        <!-- 소요 시간 -->
+        <p>소요시간 :</p>
         <input
-          v-model="form.duration"
+          :value="form.duration"
           type="text"
-          placeholder="01:00 소요"
           class="input-time small-width"
+          readonly
+          placeholder="소요 시간"
         />
       </div>
     </div>
@@ -72,16 +103,29 @@
 <script setup>
   import { ref } from 'vue';
   import BaseButton from '@/components/common/BaseButton.vue';
+  import PrimeDatePicker from '@/components/common/PrimeDatePicker.vue';
 
   const form = ref({
-    customer: '',
-    date: '',
-    timeRange: '',
+    date: null,
+    startTime: null,
+    endTime: null,
     duration: '',
-    staff: '',
-    note: '',
-    memo: '',
   });
+
+  const updateDuration = () => {
+    const start = form.value.startTime;
+    const end = form.value.endTime;
+
+    if (start instanceof Date && end instanceof Date && end > start) {
+      const diff = end - start;
+      const mins = Math.floor(diff / 60000);
+      const hours = String(Math.floor(mins / 60)).padStart(2, '0');
+      const minutes = String(mins % 60).padStart(2, '0');
+      form.value.duration = `${hours}:${minutes}`;
+    } else {
+      form.value.duration = '';
+    }
+  };
 
   const selectedServices = ref([
     {

@@ -1,22 +1,48 @@
 <template>
   <div>
-    <!-- 일정 날짜 및 시간 (한 줄) -->
+    <!-- 일정 날짜 및 시간 -->
     <div class="row row-inline">
       <label class="label-wide">일정 날짜</label>
       <div class="flat-flex">
-        <input v-model="form.date" type="date" class="input-date" />
-        <input
-          v-model="form.timeRange"
-          type="text"
-          placeholder="오후 2:00 ~ 오후 3:00"
-          class="input-time big-width"
+        <!-- 날짜는 항상 표시 -->
+        <PrimeDatePicker
+          v-model="form.date"
+          :show-time="false"
+          :show-button-bar="true"
+          :clearable="false"
+          hour-format="24"
+          placeholder="날짜 선택"
+          style="width: 160px"
         />
+        <PrimeDatePicker
+          v-model="form.startTime"
+          :show-time="true"
+          :time-only="true"
+          :clearable="false"
+          hour-format="24"
+          placeholder="시작 시간"
+          @update:model-value="updateDuration"
+        />
+        <PrimeDatePicker
+          v-model="form.endTime"
+          :show-time="true"
+          :time-only="true"
+          :clearable="false"
+          hour-format="24"
+          placeholder="종료 시간"
+          @update:model-value="updateDuration"
+        />
+
+        <!-- 소요 시간 -->
         <input
-          v-model="form.duration"
+          :value="form.duration"
           type="text"
-          placeholder="01:00 소요"
           class="input-time small-width"
+          placeholder="소요 시간"
+          readonly
         />
+
+        <!-- 종일 체크 -->
         <label class="checkbox-inline">
           <input v-model="form.allDay" type="checkbox" /> 종일
         </label>
@@ -58,17 +84,64 @@
 </template>
 
 <script setup>
-  import { ref } from 'vue';
+  import { ref, watch } from 'vue';
+  import PrimeDatePicker from '@/components/common/PrimeDatePicker.vue';
 
   const form = ref({
-    date: '',
-    timeRange: '',
+    date: null,
+    startTime: null,
+    endTime: null,
     duration: '',
     allDay: false,
     repeat: 'none',
     title: '',
     staff: '',
     memo: '',
+  });
+
+  const updateDuration = () => {
+    const start = form.value.startTime;
+    const end = form.value.endTime;
+
+    if (start instanceof Date && end instanceof Date && end > start) {
+      const diff = end - start;
+      const mins = Math.floor(diff / 60000);
+      const hours = String(Math.floor(mins / 60)).padStart(2, '0');
+      const minutes = String(mins % 60).padStart(2, '0');
+      form.value.duration = `${hours}:${minutes}`;
+    } else {
+      form.value.duration = '';
+    }
+  };
+
+  watch(
+    () => form.value.allDay,
+    val => {
+      const base = form.value.date instanceof Date ? form.value.date : new Date();
+      const y = base.getFullYear();
+      const m = base.getMonth();
+      const d = base.getDate();
+
+      if (val) {
+        form.value.startTime = new Date(y, m, d, 0, 0);
+        form.value.endTime = new Date(y, m, d, 23, 59);
+        form.value.duration = '23:59';
+      } else {
+        form.value.startTime = null;
+        form.value.endTime = null;
+        form.value.duration = '';
+      }
+    }
+  );
+  watch([() => form.value.startTime, () => form.value.endTime], ([start, end]) => {
+    if (!form.value.allDay) return;
+
+    const isStart00 = start instanceof Date && start.getHours() === 0 && start.getMinutes() === 0;
+    const isEnd2359 = end instanceof Date && end.getHours() === 23 && end.getMinutes() === 59;
+
+    if (!(isStart00 && isEnd2359)) {
+      form.value.allDay = false;
+    }
   });
 </script>
 
