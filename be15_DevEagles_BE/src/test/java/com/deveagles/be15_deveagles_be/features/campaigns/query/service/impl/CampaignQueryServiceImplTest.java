@@ -12,6 +12,7 @@ import com.deveagles.be15_deveagles_be.features.campaigns.command.domain.aggrega
 import com.deveagles.be15_deveagles_be.features.campaigns.query.dto.request.CampaignSearchRequest;
 import com.deveagles.be15_deveagles_be.features.campaigns.query.dto.response.CampaignQueryResponse;
 import com.deveagles.be15_deveagles_be.features.campaigns.query.repository.CampaignQueryRepository;
+import com.deveagles.be15_deveagles_be.features.campaigns.query.service.CampaignQueryServiceImpl;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Arrays;
