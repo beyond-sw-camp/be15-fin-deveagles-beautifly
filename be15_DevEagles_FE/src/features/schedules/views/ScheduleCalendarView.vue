@@ -51,10 +51,7 @@
       :reservation="selectedReservation"
     />
 
-    <ScheduleRegistModal
-      v-if="handleClickScheduleRegist"
-      @close="handleClickScheduleRegist = false"
-    />
+    <ScheduleRegistModal v-if="handleClickScheduleRegist" v-model="handleClickScheduleRegist" />
   </div>
 </template>
 
@@ -91,6 +88,11 @@
       status: '예약 확정',
       note: '첫 방문 고객',
       memo: '고객 요청사항 없음',
+      date: '2025-06-17',
+      startTime: '10:00',
+      endTime: '11:00',
+      timeRange: '오전 10:00 - 오전 11:00',
+      duration: '01:00',
     },
     {
       id: 2,
@@ -117,6 +119,7 @@
       status: '',
       memo: '사전 공지 완료',
       repeat: 'none',
+      date: '2025-06-19',
     },
   ]);
 

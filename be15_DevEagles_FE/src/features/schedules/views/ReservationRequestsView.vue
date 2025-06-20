@@ -12,8 +12,16 @@
         전체 예약 확정
       </BaseButton>
     </div>
+
     <div class="base-table-wrapper">
-      <BaseTable :columns="columns" :data="pagedData" row-key="id" :striped="true" :hover="true">
+      <BaseTable
+        :columns="columns"
+        :data="pagedData"
+        row-key="id"
+        :striped="true"
+        :hover="true"
+        @row-click="handleRowClick"
+      >
         <template #header-checkbox>
           <input v-model="selectAll" type="checkbox" />
         </template>
@@ -28,16 +36,13 @@
               outline
               type="primary"
               size="sm"
-              @click="
-                () =>
-                  openConfirm(`예약 ID ${item.id}를 확정하시겠습니까?`, () =>
-                    confirmSingle(item.id)
-                  )
+              @click.stop="
+                openConfirm(`예약 ID ${item.id}를 확정하시겠습니까?`, () => confirmSingle(item.id))
               "
             >
               예약 확정
             </BaseButton>
-            <BaseButton outline type="error" size="sm" @click="() => openModal(item, 'cancel')">
+            <BaseButton outline type="error" size="sm" @click.stop="openModal(item, 'cancel')">
               예약 취소
             </BaseButton>
           </div>
@@ -79,6 +84,12 @@
       </template>
     </BaseModal>
 
+    <ReservationDetailModal
+      v-model="isDetailOpen"
+      :reservation="selectedReservation"
+      @cancel-reservation="cancelFromDetail"
+    />
+
     <BaseToast ref="toast" />
   </div>
 </template>
@@ -91,6 +102,7 @@
   import BaseModal from '@/components/common/BaseModal.vue';
   import BaseToast from '@/components/common/BaseToast.vue';
   import BaseTable from '@/components/common/BaseTable.vue';
+  import ReservationDetailModal from '@/features/schedules/components/ReservationDetailModal.vue';
 
   const dummyData = ref([
     { id: 1, name: '김미글', service: '염색', employee: '박미글', date: '2025.06.08 14시' },
@@ -101,14 +113,14 @@
     { id: 6, name: '한소희', service: '드라이', employee: '이팀장', date: '2025.06.12 17시' },
     { id: 7, name: '박보검', service: '펌', employee: '박미글', date: '2025.06.13 09시' },
     { id: 8, name: '김태희', service: '커트', employee: '이팀장', date: '2025.06.14 14시' },
-    { id: 9, name: '김미글', service: '염색', employee: '박미글', date: '2025.06.08 14시' },
-    { id: 10, name: '이예정', service: '커트', employee: '이팀장', date: '2025.06.09 11시' },
-    { id: 11, name: '장현수', service: '펌', employee: '박미글', date: '2025.06.10 15시' },
-    { id: 12, name: '최유리', service: '염색', employee: '이팀장', date: '2025.06.11 13시' },
-    { id: 13, name: '오태식', service: '커트', employee: '박미글', date: '2025.06.12 10시' },
-    { id: 14, name: '한소희', service: '드라이', employee: '이팀장', date: '2025.06.12 17시' },
-    { id: 15, name: '박보검', service: '펌', employee: '박미글', date: '2025.06.13 09시' },
-    { id: 16, name: '김태희', service: '커트', employee: '이팀장', date: '2025.06.14 14시' },
+    { id: 9, name: '서강준', service: '염색', employee: '박미글', date: '2025.06.15 11시' },
+    { id: 10, name: '문채원', service: '펌', employee: '이팀장', date: '2025.06.16 16시' },
+    { id: 11, name: '정해인', service: '커트', employee: '박미글', date: '2025.06.17 10시' },
+    { id: 12, name: '김소현', service: '드라이', employee: '이팀장', date: '2025.06.18 15시' },
+    { id: 13, name: '이준기', service: '염색', employee: '박미글', date: '2025.06.19 13시' },
+    { id: 14, name: '윤아', service: '커트', employee: '이팀장', date: '2025.06.20 14시' },
+    { id: 15, name: '지성', service: '펌', employee: '박미글', date: '2025.06.21 11시' },
+    { id: 16, name: '아이유', service: '드라이', employee: '이팀장', date: '2025.06.22 17시' },
   ]);
 
   const columns = [
@@ -128,6 +140,8 @@
   const confirmMessage = ref('');
   const isCancelModalOpen = ref(false);
   const cancelTarget = ref(null);
+  const isDetailOpen = ref(false);
+  const selectedReservation = ref(null);
 
   let confirmCallback = () => {};
 
@@ -202,32 +216,22 @@
     toast.value.success(`${reason}로 예약이 취소되었습니다.`);
     isCancelModalOpen.value = false;
   }
+
+  function handleRowClick(item) {
+    selectedReservation.value = item;
+    isDetailOpen.value = true;
+  }
+
+  function cancelFromDetail(reservation) {
+    dummyData.value = dummyData.value.filter(item => item.id !== reservation.id);
+    toast.value.success(`예약 ID ${reservation.id} 취소 완료`);
+    isDetailOpen.value = false;
+  }
 </script>
 
 <style scoped>
-  .base-table-wrapper {
-    background-color: #ffffff;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-    padding: 24px;
-    box-sizing: border-box;
-  }
-
-  .page-header {
-    margin-bottom: 24px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-
   .reservation-wrapper {
     padding: 30px;
-  }
-
-  .title {
-    font-size: 24px;
-    font-weight: bold;
-    margin-bottom: 24px;
   }
 
   .page-header {
@@ -241,6 +245,14 @@
     display: flex;
     justify-content: flex-start;
     margin-bottom: 20px;
+  }
+
+  .base-table-wrapper {
+    background-color: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    padding: 24px;
+    box-sizing: border-box;
   }
 
   .actions {

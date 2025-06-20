@@ -4,7 +4,14 @@
       <h1 class="font-screen-title">예약 변경 이력</h1>
     </div>
     <div class="base-table-wrapper">
-      <BaseTable :columns="columns" :data="pagedData" row-key="id" :striped="true" :hover="true" />
+      <BaseTable
+        :columns="columns"
+        :data="pagedData"
+        row-key="id"
+        :striped="true"
+        :hover="true"
+        @row-click="openDetailModal"
+      />
     </div>
 
     <Pagination
@@ -15,6 +22,9 @@
       @page-change="handlePageChange"
       @items-per-page-change="handleItemsPerPageChange"
     />
+
+    <!-- 상세 모달 -->
+    <ReservationDetailModal v-model="isModalOpen" :reservation="selectedReservation" />
   </div>
 </template>
 
@@ -22,6 +32,7 @@
   import { ref, computed } from 'vue';
   import BaseTable from '@/components/common/BaseTable.vue';
   import Pagination from '@/components/common/Pagination.vue';
+  import ReservationDetailModal from '@/features/schedules/components/ReservationDetailModal.vue';
 
   const columns = [
     { key: 'name', title: '고객 이름', width: '120px' },
@@ -197,19 +208,28 @@
     itemsPerPage.value = count;
     currentPage.value = 1;
   }
+
+  // 모달 관련
+  const isModalOpen = ref(false);
+  const selectedReservation = ref({});
+
+  function openDetailModal(item) {
+    selectedReservation.value = item;
+    isModalOpen.value = true;
+  }
 </script>
 
 <style scoped>
+  .history-wrapper {
+    padding: 24px;
+  }
+
   .base-table-wrapper {
     background-color: #ffffff;
     border-radius: 12px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
     padding: 24px;
     box-sizing: border-box;
-  }
-
-  .history-wrapper {
-    padding: 24px;
   }
 
   .page-header {

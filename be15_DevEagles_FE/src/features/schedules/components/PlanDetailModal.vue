@@ -1,5 +1,5 @@
 <template>
-  <div v-if="modelValue" class="overlay">
+  <div v-if="modelValue" class="overlay" @click.self="close">
     <div class="modal-panel">
       <div class="modal-header">
         <div>
@@ -11,6 +11,7 @@
 
       <div class="modal-body">
         <div class="left-detail">
+          <!-- 구분 -->
           <div class="row row-select">
             <label>구분</label>
             <div class="form-control-wrapper">
@@ -28,12 +29,14 @@
             </div>
           </div>
 
+          <!-- 제목 -->
           <div class="row">
             <label>제목</label>
             <span v-if="!isEditMode">{{ reservation.title }}</span>
             <input v-else v-model="edited.title" />
           </div>
 
+          <!-- 담당자 -->
           <div class="row row-select">
             <label>담당자</label>
             <div class="form-control-wrapper">
@@ -51,24 +54,49 @@
             </div>
           </div>
 
+          <!-- 날짜 및 시간 -->
           <div class="row">
             <label>날짜</label>
             <div class="date-inline">
               <template v-if="isEditMode">
-                <input v-model="edited.date" type="date" />
-                <input
-                  v-if="!edited.allDay"
-                  v-model="edited.timeRange"
-                  type="text"
-                  placeholder="오후 01:00 - 오후 04:00"
+                <PrimeDatePicker
+                  v-model="edited.date"
+                  :clearable="false"
+                  :show-time="false"
+                  :show-button-bar="true"
+                  :style="{ width: '200px' }"
                 />
-                <input type="text" :value="edited.duration" readonly class="duration-input" />
+                <PrimeDatePicker
+                  v-model="edited.startTime"
+                  :clearable="false"
+                  :show-time="true"
+                  :time-only="true"
+                  hour-format="24"
+                  placeholder="시작 시간"
+                  :style="{ width: '140px' }"
+                />
+                <PrimeDatePicker
+                  v-model="edited.endTime"
+                  :clearable="false"
+                  :show-time="true"
+                  :time-only="true"
+                  hour-format="24"
+                  placeholder="종료 시간"
+                  :style="{ width: '140px' }"
+                />
+                <span>소요 시간 : </span>
+                <input
+                  type="text"
+                  :value="edited.duration"
+                  readonly
+                  class="duration-input"
+                  style="width: 100px"
+                />
                 <label class="all-day-checkbox">
                   <input v-model="edited.allDay" type="checkbox" @change="handleAllDayToggle" />
                   <span>종일</span>
                 </label>
               </template>
-
               <template v-else>
                 <span>{{ reservation.date }}</span>
                 <span v-if="!reservation.allDay">{{ reservation.timeRange }}</span>
@@ -78,6 +106,7 @@
             </div>
           </div>
 
+          <!-- 반복 -->
           <div class="row">
             <label>반복</label>
             <div class="repeat-inline">
@@ -104,7 +133,6 @@
                   }}
                 </span>
               </template>
-
               <template v-else>
                 <span>
                   {{
@@ -123,6 +151,7 @@
             </div>
           </div>
 
+          <!-- 메모 -->
           <div class="row">
             <label>메모</label>
             <span v-if="!isEditMode">{{ reservation.memo }}</span>
@@ -151,19 +180,29 @@
 </template>
 
 <script setup>
-  import { ref, defineProps, defineEmits, watch, computed } from 'vue';
+  import {
+    ref,
+    defineProps,
+    defineEmits,
+    computed,
+    onMounted,
+    onBeforeUnmount,
+    watchEffect,
+  } from 'vue';
   import BaseButton from '@/components/common/BaseButton.vue';
   import BaseForm from '@/components/common/BaseForm.vue';
+  import PrimeDatePicker from '@/components/common/PrimeDatePicker.vue';
 
   const props = defineProps({
-    modelValue: { type: Boolean, required: true },
-    reservation: { type: Object, default: () => ({}) },
+    modelValue: Boolean,
+    reservation: Object,
   });
   const emit = defineEmits(['update:modelValue']);
 
   const isEditMode = ref(false);
   const showMenu = ref(false);
   const edited = ref({});
+  const backup = ref({});
 
   const close = () => {
     emit('update:modelValue', false);
@@ -172,32 +211,35 @@
     edited.value = {};
   };
 
-  watch(
-    () => props.modelValue,
-    newVal => {
-      if (newVal) {
-        isEditMode.value = false;
-        showMenu.value = false;
-        edited.value = {};
-      }
-    }
-  );
-
-  const toggleMenu = () => {
-    showMenu.value = !showMenu.value;
-  };
-
+  const toggleMenu = () => (showMenu.value = !showMenu.value);
   const handleEdit = () => {
     isEditMode.value = true;
     showMenu.value = false;
-    edited.value = { ...props.reservation };
+    const { date, timeRange, duration, ...rest } = props.reservation;
+    const [startStr, endStr] = (timeRange || '').split(' - ').map(str => str.trim());
 
-    const isAllDay = edited.value.timeRange === '00:00 - 23:59';
-    edited.value.allDay = isAllDay;
-    edited.value.repeat = edited.value.repeat || 'none';
+    const toTime = str => {
+      if (!str) return null;
+      const [period, time] = str.split(' ');
+      let [h, m] = time.split(':').map(Number);
+      if (period === '오후' && h !== 12) h += 12;
+      if (period === '오전' && h === 12) h = 0;
+      const d = new Date(date);
+      d.setHours(h, m, 0, 0);
+      return d;
+    };
 
-    prevTimeRange.value = edited.value.timeRange || '';
-    prevDuration.value = edited.value.duration || '';
+    edited.value = {
+      ...rest,
+      date: new Date(date),
+      startTime: toTime(startStr),
+      endTime: toTime(endStr),
+      duration,
+      timeRange,
+      allDay: timeRange === '00:00 - 23:59',
+      repeat: props.reservation.repeat || 'none',
+    };
+    backup.value = JSON.parse(JSON.stringify(edited.value));
   };
 
   const handleDelete = () => {
@@ -212,26 +254,62 @@
     isEditMode.value = false;
   };
 
-  const prevTimeRange = ref('');
-  const prevDuration = ref('');
-
   const handleAllDayToggle = () => {
     if (edited.value.allDay) {
-      if (!prevTimeRange.value) prevTimeRange.value = edited.value.timeRange;
-      if (!prevDuration.value || prevDuration.value === '하루 종일') {
-        prevDuration.value = edited.value.duration !== '하루 종일' ? edited.value.duration : '';
-      }
-      edited.value.timeRange = '00:00 - 23:59';
-      edited.value.duration = '하루 종일';
+      edited.value.startTime = new Date(edited.value.date);
+      edited.value.startTime.setHours(0, 0, 0);
+      edited.value.endTime = new Date(edited.value.date);
+      edited.value.endTime.setHours(23, 59, 0);
     } else {
-      edited.value.timeRange = prevTimeRange.value || '';
-      edited.value.duration = prevDuration.value || '';
+      edited.value.startTime = new Date(backup.value.startTime);
+      edited.value.endTime = new Date(backup.value.endTime);
     }
   };
 
-  const planTypeLabel = computed(() => {
-    return props.reservation.type === 'regular_event' ? '정기일정' : '일정';
+  watchEffect(() => {
+    if (edited.value.startTime && edited.value.endTime) {
+      const start = new Date(
+        0,
+        0,
+        0,
+        edited.value.startTime.getHours(),
+        edited.value.startTime.getMinutes()
+      );
+      const end = new Date(
+        0,
+        0,
+        0,
+        edited.value.endTime.getHours(),
+        edited.value.endTime.getMinutes()
+      );
+
+      const diffMs = end - start;
+      if (diffMs >= 0) {
+        const totalMinutes = Math.floor(diffMs / (1000 * 60));
+        const hours = String(Math.floor(totalMinutes / 60)).padStart(2, '0');
+        const minutes = String(totalMinutes % 60).padStart(2, '0');
+        edited.value.duration = `${hours}:${minutes}`;
+
+        const formatTime = date => {
+          const h = date.getHours();
+          const m = String(date.getMinutes()).padStart(2, '0');
+          const period = h < 12 ? '오전' : '오후';
+          const hour12 = h % 12 || 12;
+          return `${period} ${hour12}:${m}`;
+        };
+
+        edited.value.timeRange = `${formatTime(edited.value.startTime)} - ${formatTime(edited.value.endTime)}`;
+      }
+    }
   });
+
+  const handleEsc = e => e.key === 'Escape' && close();
+  onMounted(() => window.addEventListener('keydown', handleEsc));
+  onBeforeUnmount(() => window.removeEventListener('keydown', handleEsc));
+
+  const planTypeLabel = computed(() =>
+    props.reservation.type === 'regular_event' ? '정기일정' : '일정'
+  );
 </script>
 
 <style scoped>
@@ -244,7 +322,6 @@
     background: rgba(0, 0, 0, 0.3);
     z-index: 1000;
   }
-
   .modal-panel {
     position: fixed;
     top: 0;
@@ -257,42 +334,35 @@
     padding: 24px;
     overflow-y: auto;
   }
-
   .modal-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 24px;
   }
-
   .modal-header h1 {
     font-size: 20px;
     font-weight: bold;
   }
-
   .close-btn {
     background: none;
     border: none;
     font-size: 24px;
     cursor: pointer;
   }
-
   .modal-body {
     display: flex;
     gap: 32px;
     flex: 1;
   }
-
   .left-detail {
     flex: 1;
   }
-
   .row {
     display: flex;
     align-items: flex-start;
     margin-bottom: 14px;
   }
-
   .row label {
     width: 100px;
     font-weight: bold;
@@ -300,7 +370,6 @@
     padding-top: 6px;
     line-height: 1.5;
   }
-
   .row span,
   .row input,
   .row textarea {
@@ -312,51 +381,42 @@
     max-width: 400px;
     box-sizing: border-box;
   }
-
   .row input,
   .row textarea {
     border: 1px solid var(--color-gray-300);
     border-radius: 4px;
   }
-
   .row textarea {
     resize: vertical;
   }
-
   .form-control-wrapper {
     flex: 1;
     display: flex;
     align-items: flex-start;
   }
-
   .form-control-wrapper :deep(.input) {
     width: 100%;
     max-width: 300px;
   }
-
   .right-box {
     width: 200px;
     padding: 12px;
     border-left: 1px solid var(--color-gray-200);
   }
-
   .right-box p {
     margin-bottom: 16px;
     font-weight: 500;
     color: var(--color-gray-700);
   }
-
   .modal-footer {
     margin-top: 32px;
     display: flex;
     gap: 12px;
     justify-content: flex-end;
   }
-
   .action-dropdown {
     position: relative;
   }
-
   .dropdown-menu {
     position: absolute;
     bottom: 40px;
@@ -370,31 +430,26 @@
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
     z-index: 10;
   }
-
   .dropdown-menu li {
     padding: 8px 12px;
     cursor: pointer;
     color: var(--color-gray-800);
   }
-
   .dropdown-menu li:hover {
     background: var(--color-gray-100);
   }
-
   .type-label {
     margin-top: 4px;
     font-size: 18px;
     font-weight: 500;
     color: var(--color-gray-500);
   }
-
   .date-inline {
     display: flex;
     align-items: center;
     gap: 8px;
     flex-wrap: nowrap;
   }
-
   .date-inline input[type='date'],
   .date-inline input[type='text'],
   .date-inline select {
@@ -407,7 +462,6 @@
     min-width: 120px;
     height: 32px;
   }
-
   .all-day-checkbox {
     display: flex;
     align-items: center;
@@ -415,39 +469,29 @@
     white-space: nowrap;
     color: var(--color-gray-700);
   }
-
   .repeat-inline {
     display: flex;
     align-items: center;
     gap: 12px;
     flex-wrap: nowrap;
   }
-
   .repeat-inline :deep(.input) {
     display: inline-block;
     width: auto;
     min-width: 160px;
   }
-
   .repeat-description {
     font-size: 14px;
     color: var(--color-gray-500);
     white-space: nowrap;
   }
-
-  .date-inline span {
+  .date-inline span,
+  .repeat-inline span {
     white-space: nowrap;
     width: auto !important;
     max-width: none;
     color: var(--color-gray-800);
   }
-
-  .repeat-inline span {
-    white-space: nowrap;
-    width: auto !important;
-    max-width: none;
-  }
-
   .duration-input {
     font-size: 14px;
     padding: 6px 8px;

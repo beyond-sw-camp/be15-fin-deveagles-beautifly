@@ -54,7 +54,15 @@
           <div class="row">
             <label>날짜</label>
             <template v-if="isEditMode">
-              <input v-model="edited.date" type="date" />
+              <PrimeDatePicker
+                v-model="edited.date"
+                :show-time="false"
+                :show-button-bar="true"
+                :clearable="false"
+                hour-format="24"
+                placeholder="날짜를 선택하세요"
+                style="max-width: 200px"
+              />
             </template>
             <template v-else>
               <span>{{ reservation.start }}</span>
@@ -92,6 +100,7 @@
   import { ref, defineProps, defineEmits, watch, computed, onMounted, onBeforeUnmount } from 'vue';
   import BaseButton from '@/components/common/BaseButton.vue';
   import BaseForm from '@/components/common/BaseForm.vue';
+  import PrimeDatePicker from '@/components/common/PrimeDatePicker.vue';
 
   const props = defineProps({
     modelValue: { type: Boolean, required: true },

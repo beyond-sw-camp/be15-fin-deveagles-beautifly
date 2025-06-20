@@ -1,109 +1,116 @@
 <template>
-  <div class="reservation-wrapper">
-    <!-- 고객 정보 입력 -->
-    <h3 class="section-title">👤 고객 정보를 입력해주세요</h3>
-    <div class="input-section">
-      <div class="form-group">
-        <label for="name">이름</label>
-        <input
-          id="name"
-          v-model="form.name"
-          type="text"
-          placeholder="이름을 입력해주세요"
-          class="form-input"
-        />
-      </div>
+  <div class="page-wrapper">
+    <h1 class="page-title">
+      <img src="@/images/suri/team_logo-cutout.png" class="logo-img" alt="로고" />
+      예약 페이지
+    </h1>
 
-      <div class="form-group">
-        <label for="phone">전화번호</label>
-        <input
-          id="phone"
-          v-model="phoneInput"
-          type="tel"
-          inputmode="numeric"
-          pattern="[0-9]*"
-          placeholder="연락 가능한 번호를 입력해주세요"
-          class="form-input"
-        />
-      </div>
-
-      <div class="form-group">
-        <label for="memo">메모</label>
-        <input
-          id="memo"
-          v-model="form.memo"
-          type="text"
-          placeholder="요청 사항이 있다면 적어주세요"
-          class="form-input"
-        />
-      </div>
-    </div>
-
-    <div class="main-section">
-      <!-- 왼쪽: 날짜 & 시간 -->
-      <div class="left-section">
-        <h3>📅 날짜와 시간을 선택해 주세요</h3>
-        <PrimeDatePicker
-          v-model="form.date"
-          :inline="true"
-          :show-time="false"
-          :min-date="new Date()"
-          :show-icon="false"
-        />
-        <h4>오전</h4>
-        <div class="time-grid">
-          <BaseButton
-            v-for="t in times.am"
-            :key="t"
-            :outline="form.time !== t"
-            @click="selectTime(t)"
-          >
-            {{ t }}
-          </BaseButton>
+    <div class="reservation-wrapper">
+      <!-- 고객 정보 입력 -->
+      <h3 class="section-title">👤 고객 정보를 입력해주세요</h3>
+      <div class="input-section">
+        <div class="form-group">
+          <label for="name">이름</label>
+          <input
+            id="name"
+            v-model="form.name"
+            type="text"
+            placeholder="이름을 입력해주세요"
+            class="form-input"
+          />
         </div>
-        <h4>오후</h4>
-        <div class="time-grid">
-          <BaseButton
-            v-for="t in times.pm"
-            :key="t"
-            :outline="form.time !== t"
-            @click="selectTime(t)"
-          >
-            {{ t }}
-          </BaseButton>
+
+        <div class="form-group">
+          <label for="phone">전화번호</label>
+          <input
+            id="phone"
+            v-model="phoneInput"
+            type="tel"
+            inputmode="numeric"
+            pattern="[0-9]*"
+            placeholder="연락 가능한 번호를 입력해주세요"
+            class="form-input"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="memo">메모</label>
+          <input
+            id="memo"
+            v-model="form.memo"
+            type="text"
+            placeholder="요청 사항이 있다면 적어주세요"
+            class="form-input"
+          />
         </div>
       </div>
 
-      <!-- 오른쪽: 시술 -->
-      <div class="right-section">
-        <h3>💇 시술 메뉴를 선택해 주세요</h3>
-        <div class="menu-tabs">
-          <BaseButton
-            v-for="menu in menus"
-            :key="menu"
-            :outline="form.menu !== menu"
-            @click="selectMenu(menu)"
-          >
-            {{ menu }}
-          </BaseButton>
-        </div>
-
-        <div class="service-box">
-          <div
-            v-for="item in serviceOptions"
-            :key="item"
-            class="service-item"
-            :class="{ selected: form.services.includes(item) }"
-            @click="toggleService(item)"
-          >
-            {{ item }}
+      <div class="main-section">
+        <!-- 왼쪽: 날짜 & 시간 -->
+        <div class="left-section">
+          <h3>📅 날짜와 시간을 선택해 주세요</h3>
+          <PrimeDatePicker
+            v-model="form.date"
+            :inline="true"
+            :show-time="false"
+            :min-date="new Date()"
+            :show-icon="false"
+          />
+          <h4>오전</h4>
+          <div class="time-grid">
+            <BaseButton
+              v-for="t in times.am"
+              :key="t"
+              :outline="form.time !== t"
+              @click="selectTime(t)"
+            >
+              {{ t }}
+            </BaseButton>
+          </div>
+          <h4>오후</h4>
+          <div class="time-grid">
+            <BaseButton
+              v-for="t in times.pm"
+              :key="t"
+              :outline="form.time !== t"
+              @click="selectTime(t)"
+            >
+              {{ t }}
+            </BaseButton>
           </div>
         </div>
 
-        <div class="submit-area">
-          <BaseButton type="primary" :disabled="!isValid" @click="submitReservation">
-            예약하기
-          </BaseButton>
+        <!-- 오른쪽: 시술 -->
+        <div class="right-section">
+          <h3>💇 시술 메뉴를 선택해 주세요</h3>
+          <div class="menu-tabs">
+            <BaseButton
+              v-for="menu in menus"
+              :key="menu"
+              :outline="form.menu !== menu"
+              @click="selectMenu(menu)"
+            >
+              {{ menu }}
+            </BaseButton>
+          </div>
+
+          <div class="service-box">
+            <div
+              v-for="item in serviceOptions"
+              :key="item"
+              class="service-item"
+              :class="{ selected: form.services.includes(item) }"
+              @click="toggleService(item)"
+            >
+              {{ item }}
+            </div>
+          </div>
+
+          <div class="submit-area">
+            <BaseButton type="primary" :disabled="!isValid" @click="submitReservation">
+              예약하기
+            </BaseButton>
+          </div>
         </div>
       </div>
     </div>
@@ -153,8 +160,9 @@
   };
 
   const menus = ['커트', '펌', '클리닉', '컬러'];
+
   const serviceOptionsMap = {
-    커트: ['학생 커트', '남성 커트', '여성 커트', '샴푸', '(미취학) 아동컷', '병지 커트'],
+    커트: ['남성 커트', '여성 커트', '샴푸', '(미취학) 아동컷', '병지 커트'],
     펌: ['베이직 펌', '볼륨 펌'],
     클리닉: ['모발 케어', '두피 케어'],
     컬러: ['전체 염색', '부분 염색'],
@@ -229,46 +237,93 @@
 </script>
 
 <style scoped>
-  .section-title {
-    font-size: 18px;
-    font-weight: bold;
-    margin-bottom: 0;
+  /* 전체 페이지 배경용 */
+  .page-wrapper {
+    padding: 32px 40px;
+    background-color: #f9fafb;
+    min-height: 100vh;
+    box-sizing: border-box;
   }
 
+  /* 상단 타이틀 */
+  .page-title {
+    font-size: 40px;
+    font-weight: bold;
+    margin-bottom: 30px;
+    color: #222;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding-left: 132px;
+  }
+
+  .logo-img {
+    height: 60px;
+    width: auto;
+  }
+
+  /* 예약 카드 */
   .reservation-wrapper {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+    padding: 32px;
+    max-width: 1200px;
+    margin: 0 auto;
     display: flex;
     flex-direction: column;
-    padding: 24px;
     gap: 16px;
+  }
+
+  /* 고객 정보 */
+  .section-title {
+    font-size: 20px;
+    font-weight: 600;
+    margin: 12px 0 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
   }
 
   .input-section {
     display: grid;
     grid-template-columns: 1fr 1fr 2fr;
     gap: 8px 16px;
-    align-items: flex-start;
   }
 
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .form-input {
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 14px;
+  }
+
+  .form-input:focus {
+    outline: none;
+    border-color: var(--color-primary-main);
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.15);
+  }
+
+  /* 메인 콘텐츠 */
   .main-section {
     display: flex;
     justify-content: space-between;
-    align-items: flex-start;
     gap: 48px;
   }
 
-  .left-section {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-  }
-
+  .left-section,
   .right-section {
     flex: 1;
     display: flex;
     flex-direction: column;
     gap: 16px;
-    max-height: 600px;
   }
 
   .time-grid {
@@ -284,6 +339,7 @@
     margin-bottom: 4px;
   }
 
+  /* 시술 메뉴 */
   .menu-tabs {
     display: flex;
     gap: 8px;
@@ -299,7 +355,6 @@
     flex-direction: column;
     gap: 8px;
     max-height: 325px;
-    min-height: 325px;
     overflow-y: auto;
   }
 
@@ -326,25 +381,5 @@
     padding-top: 16px;
     display: flex;
     justify-content: flex-end;
-    background: white;
-  }
-
-  .form-group {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-
-  .form-input {
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    font-size: 14px;
-  }
-
-  .form-input:focus {
-    outline: none;
-    border-color: var(--color-primary-main);
-    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.15);
   }
 </style>

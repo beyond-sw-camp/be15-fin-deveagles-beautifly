@@ -4,7 +4,14 @@
     <div class="row row-inline">
       <label class="label-wide">휴무 날짜</label>
       <div class="flat-flex">
-        <input v-model="form.date" type="date" class="input-date" />
+        <PrimeDatePicker
+          v-model="form.date"
+          :show-time="false"
+          :show-button-bar="true"
+          :clearable="false"
+          hour-format="24"
+          placeholder="날짜를 선택하세요"
+        />
       </div>
     </div>
 
@@ -44,6 +51,7 @@
 
 <script setup>
   import { ref } from 'vue';
+  import PrimeDatePicker from '@/components/common/PrimeDatePicker.vue';
 
   const form = ref({
     date: '',
@@ -89,18 +97,6 @@
     border: 1px solid var(--color-gray-300);
     border-radius: 4px;
     box-sizing: border-box;
-  }
-  .input-date {
-    width: 160px !important;
-  }
-  .input-time {
-    width: 110px;
-  }
-  .small-width {
-    width: 110px !important;
-  }
-  .big-width {
-    width: 160px !important;
   }
   .row textarea {
     resize: vertical;

@@ -6,43 +6,45 @@
 
     <!-- 필터 영역 -->
     <div class="filter-bar">
-      <input
-        v-model="searchText"
-        type="text"
-        placeholder="고객명 또는 연락처 검색"
-        class="input input-search"
-      />
-      <select v-model="selectedDate" class="input input-select">
-        <option value="">날짜</option>
-        <option value="today">오늘</option>
-        <option value="thisWeek">이번 주</option>
-        <option value="thisMonth">이번 달</option>
-      </select>
+      <div class="filter-fields">
+        <input
+          v-model="searchText"
+          type="text"
+          placeholder="고객명 또는 연락처 검색"
+          class="input input-search"
+        />
+        <select v-model="selectedDate" class="input input-select">
+          <option value="">날짜</option>
+          <option value="today">오늘</option>
+          <option value="thisWeek">이번 주</option>
+          <option value="thisMonth">이번 달</option>
+        </select>
 
-      <select v-model="selectedStaff" class="input input-select">
-        <option value="">담당자</option>
-        <option value="박미글">박미글</option>
-        <option value="이팀장">이팀장</option>
-      </select>
+        <select v-model="selectedStaff" class="input input-select">
+          <option value="">담당자</option>
+          <option value="박미글">박미글</option>
+          <option value="이팀장">이팀장</option>
+        </select>
 
-      <select v-model="selectedService" class="input input-select">
-        <option value="">시술 종류</option>
-        <option value="커트">커트</option>
-        <option value="염색">염색</option>
-        <option value="펌">펌</option>
-      </select>
+        <select v-model="selectedService" class="input input-select">
+          <option value="">시술 종류</option>
+          <option value="커트">커트</option>
+          <option value="염색">염색</option>
+          <option value="펌">펌</option>
+        </select>
 
-      <select v-model="selectedStatus" class="input input-select">
-        <option value="">예약 상태</option>
-        <option value="예약 대기">예약 대기</option>
-        <option value="예약 확정">예약 확정</option>
-        <option value="노쇼">노쇼</option>
-        <option value="고객에 의한 예약 취소">고객에 의한 예약 취소</option>
-        <option value="가게에 의한 예약 취소">가게에 의한 예약 취소</option>
-      </select>
+        <select v-model="selectedStatus" class="input input-select">
+          <option value="">예약 상태</option>
+          <option value="예약 대기">예약 대기</option>
+          <option value="예약 확정">예약 확정</option>
+          <option value="노쇼">노쇼</option>
+          <option value="고객에 의한 예약 취소">고객에 의한 예약 취소</option>
+          <option value="가게에 의한 예약 취소">가게에 의한 예약 취소</option>
+        </select>
+      </div>
+      <BaseButton type="primary" @click="openReservationModal"> 예약 등록 </BaseButton>
     </div>
 
-    <!-- 테이블 -->
     <div class="base-table-wrapper">
       <BaseTable
         :columns="columns"
@@ -50,6 +52,7 @@
         :striped="true"
         :hover="true"
         row-key="id"
+        @row-click="openDetail"
       >
         <template #cell-date="{ value }">
           <div class="text-center">{{ formatDate(value) }}</div>
@@ -73,20 +76,47 @@
         </template>
 
         <template #cell-actions="{ item }">
-          <div
-            v-if="item.status === '예약 대기' || item.status === '예약 확정'"
-            class="action-buttons"
-          >
-            <BaseButton outline type="primary" size="sm" @click="openModal(item, 'confirm')"
-              >예약 확정
+          <div class="action-buttons">
+            <BaseButton
+              v-if="item.status === '예약 대기'"
+              outline
+              type="primary"
+              size="sm"
+              @click="
+                e => {
+                  e.stopPropagation();
+                  confirmWithoutModal(item);
+                }
+              "
+            >
+              예약 확정
             </BaseButton>
-            <BaseButton outline type="error" size="sm" @click="openModal(item, 'cancel')"
-              >예약 취소
+
+            <BaseButton
+              v-if="item.status === '예약 대기' || item.status === '예약 확정'"
+              outline
+              type="error"
+              size="sm"
+              @click="
+                e => {
+                  e.stopPropagation();
+                  openModal(item, 'cancel');
+                }
+              "
+            >
+              예약 취소
             </BaseButton>
           </div>
         </template>
       </BaseTable>
     </div>
+
+    <ReservationDetailModal
+      v-if="isDetailOpen"
+      v-model="isDetailOpen"
+      :reservation="selectedReservation"
+      @cancel-reservation="handleCancelFromDetail"
+    />
     <Pagination
       :current-page="1"
       :total-pages="3"
@@ -107,14 +137,14 @@
       <template #footer>
         <div style="display: flex; gap: 12px; justify-content: flex-end; flex-wrap: wrap">
           <BaseButton v-if="modalType === 'confirm'" type="primary" @click="onConfirm"
-            >예
-          </BaseButton>
+            >예</BaseButton
+          >
           <template v-else>
-            <BaseButton type="error" @click="confirmCancel('가게에 의한 예약 취소')"
-              >가게에 의한 예약 취소
+            <BaseButton type="error" @click="confirmCancel('가게에 의한 예약 취소')">
+              가게에 의한 예약 취소
             </BaseButton>
-            <BaseButton type="error" @click="confirmCancel('고객에 의한 예약 취소')"
-              >고객에 의한 예약 취소
+            <BaseButton type="error" @click="confirmCancel('고객에 의한 예약 취소')">
+              고객에 의한 예약 취소
             </BaseButton>
           </template>
           <BaseButton outline @click="onCancel">닫기</BaseButton>
@@ -122,8 +152,14 @@
       </template>
     </BaseModal>
 
-    <!-- Toast -->
     <BaseToast ref="toast" />
+
+    <!-- 예약 등록 모달 -->
+    <ScheduleRegistModal
+      v-if="isRegistModalOpen"
+      v-model="isRegistModalOpen"
+      :default-tab="'reservation'"
+    />
   </div>
 </template>
 
@@ -134,22 +170,20 @@
   import BaseToast from '@/components/common/BaseToast.vue';
   import BaseButton from '@/components/common/BaseButton.vue';
   import Pagination from '@/components/common/Pagination.vue';
+  import ScheduleRegistModal from '@/features/schedules/components/ScheduleRegistModal.vue';
+  import ReservationDetailModal from '@/features/schedules/components/ReservationDetailModal.vue';
 
   const searchText = ref('');
   const selectedDate = ref('');
   const selectedStaff = ref('');
   const selectedService = ref('');
   const selectedStatus = ref('');
-
-  const columns = [
-    { key: 'name', title: '고객 이름', width: '120px' },
-    { key: 'service', title: '시술', width: '100px' },
-    { key: 'staff', title: '담당자', width: '100px' },
-    { key: 'date', title: '예약 날짜', width: '160px' },
-    { key: 'status', title: '예약 상태', width: '140px' },
-    { key: 'prepaidUsed', title: '선불권 사용 여부', width: '140px' },
-    { key: 'actions', title: '예약 상태 변경', width: '200px' },
-  ];
+  const isModalOpen = ref(false);
+  const isRegistModalOpen = ref(false);
+  const modalType = ref('confirm');
+  const modalTitle = ref('');
+  const toast = ref(null);
+  let selectedReservation = null;
 
   const reservations = ref([
     {
@@ -181,6 +215,35 @@
     },
   ]);
 
+  const columns = [
+    { key: 'name', title: '고객 이름', width: '120px' },
+    { key: 'service', title: '시술', width: '100px' },
+    { key: 'staff', title: '담당자', width: '100px' },
+    { key: 'date', title: '예약 날짜', width: '160px' },
+    { key: 'status', title: '예약 상태', width: '140px' },
+    { key: 'prepaidUsed', title: '선불권 사용 여부', width: '140px' },
+    { key: 'actions', title: '예약 상태 변경', width: '200px' },
+  ];
+
+  function openModal(item, type) {
+    selectedReservation = item;
+    modalType.value = type;
+    modalTitle.value = type === 'confirm' ? '예약 확정' : '예약 취소 사유 선택';
+    isModalOpen.value = true;
+  }
+
+  function confirmWithoutModal(item) {
+    item.status = '예약 확정';
+    toast.value.success('예약이 확정되었습니다.');
+  }
+
+  function confirmCancel(reason) {
+    if (!selectedReservation) return;
+    selectedReservation.status = reason;
+    toast.value.success(`예약이 취소되었습니다.`);
+    isModalOpen.value = false;
+  }
+
   const filteredReservations = computed(() => {
     const now = new Date();
 
@@ -191,9 +254,7 @@
         (r.phone && r.phone.includes(searchText.value));
 
       const matchStaff = !selectedStaff.value || r.staff.includes(selectedStaff.value);
-
       const matchService = !selectedService.value || r.service.includes(selectedService.value);
-
       const matchStatus = !selectedStatus.value || r.status === selectedStatus.value;
 
       const reservationDate = new Date(r.date);
@@ -223,17 +284,17 @@
     });
   });
 
-  const isModalOpen = ref(false);
-  const modalType = ref('confirm');
-  const modalTitle = ref('');
-  const toast = ref(null);
-  let selectedReservation = null;
+  const isDetailOpen = ref(false);
 
-  function openModal(item, type) {
+  function openDetail(item) {
     selectedReservation = item;
-    modalType.value = type;
-    modalTitle.value = type === 'confirm' ? '예약 확정' : '예약 취소 사유 선택';
-    isModalOpen.value = true;
+    isDetailOpen.value = true;
+  }
+
+  function handleCancelFromDetail(reservation) {
+    reservation.status = '고객에 의한 예약 취소';
+    toast.value.success('예약이 취소되었습니다.');
+    isDetailOpen.value = false;
   }
 
   function onConfirm() {
@@ -243,15 +304,12 @@
     isModalOpen.value = false;
   }
 
-  function confirmCancel(reason) {
-    if (!selectedReservation) return;
-    selectedReservation.status = reason;
-    toast.value.success(`예약이 취소되었습니다.`);
+  function onCancel() {
     isModalOpen.value = false;
   }
 
-  function onCancel() {
-    isModalOpen.value = false;
+  function openReservationModal() {
+    isRegistModalOpen.value = true;
   }
 
   function formatDate(dateStr) {
@@ -265,14 +323,6 @@
 </script>
 
 <style scoped>
-  .base-table-wrapper {
-    background-color: #ffffff;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-    padding: 24px;
-    box-sizing: border-box;
-  }
-
   .page-header {
     margin-bottom: 24px;
     display: flex;
@@ -282,10 +332,19 @@
 
   .filter-bar {
     display: flex;
+    justify-content: flex-end;
     align-items: center;
     gap: 16px;
     flex-wrap: wrap;
     margin-bottom: 24px;
+  }
+
+  .filter-fields {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
   }
 
   .input-search {
@@ -327,11 +386,12 @@
     color: #d93025;
   }
 
-  .table td,
-  .table th {
-    padding: 8px 12px;
-    white-space: nowrap;
-    vertical-align: middle;
+  .base-table-wrapper {
+    background-color: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    padding: 24px;
+    box-sizing: border-box;
   }
 
   .action-buttons {
@@ -339,5 +399,13 @@
     gap: 8px;
     flex-wrap: nowrap;
     align-items: center;
+  }
+
+  .base-table-wrapper :deep(tbody tr) {
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+  }
+  .base-table-wrapper :deep(tbody tr:hover) {
+    background-color: #f9f9f9;
   }
 </style>
