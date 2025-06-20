@@ -59,6 +59,19 @@
         </select>
       </div>
       <div class="form-row">
+        <label class="form-label">유입경로</label>
+        <select v-model="form.channel_id" class="form-input">
+          <option :value="null" disabled>유입경로 선택</option>
+          <option
+            v-for="channel in acquisitionChannelOptions"
+            :key="channel.channel_id"
+            :value="channel.channel_id"
+          >
+            {{ channel.channel_name }}
+          </option>
+        </select>
+      </div>
+      <div class="form-row">
         <label class="form-label">태그</label>
         <Multiselect
           v-model="form.tags"
@@ -131,6 +144,10 @@
   watch(visible, v => emit('update:modelValue', v));
 
   const staffOptions = ['부재녕', '김담당', '이팀장'];
+  const acquisitionChannelOptions = [
+    { channel_id: 1, channel_name: '네이버검색' },
+    { channel_id: 2, channel_name: '지인 추천' },
+  ];
   const tagOptions = [
     { tag_name: 'VIP', color_code: '#FFD700' },
     { tag_name: '신규', color_code: '#00BFFF' },
@@ -148,6 +165,7 @@
     gender: '',
     birthdate: '',
     staff_name: '',
+    channel_id: null,
     tags: [],
     memo: '',
     grade: '기본등급',
@@ -172,7 +190,6 @@
     validateField('grade');
     if (!errors.value.name && !errors.value.phone && !errors.value.grade) {
       const payload = { ...form.value };
-      // @vueform/multiselect는 value-prop으로 지정된 값의 배열을 반환하므로, 전체 객체로 다시 매핑해준다.
       payload.tags = payload.tags.map(
         tagName =>
           tagOptions.find(opt => opt.tag_name === tagName) || {
@@ -196,7 +213,6 @@
 </script>
 
 <style>
-  /* @vueform/multiselect 디자인 통일 */
   .multiselect-custom {
     --ms-font-size: 15px;
     --ms-line-height: 1.4;

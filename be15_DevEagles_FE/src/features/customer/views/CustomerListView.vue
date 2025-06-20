@@ -116,12 +116,15 @@
           <template v-if="Array.isArray(item.tags) && item.tags.length > 0">
             <BaseBadge
               v-for="tag in item.tags"
-              :key="tag.tag_id"
+              :key="tag.tag_name"
               :text="tag.tag_name"
               :style="{ backgroundColor: tag.color_code, color: '#222', marginRight: '4px' }"
               pill
             />
           </template>
+        </template>
+        <template #cell-customer_grade_name="{ value }">
+          <span class="single-line-ellipsis" :title="value">{{ value }}</span>
         </template>
       </BaseTable>
     </BaseCard>
@@ -182,14 +185,15 @@
         i % 3 !== 0
           ? [
               {
-                tag_id: 1,
                 tag_name: i % 2 === 0 ? 'VIP' : '신규',
                 color_code: i % 2 === 0 ? '#FFD700' : '#00BFFF',
               },
             ]
           : [],
-      customer_grade_name: i % 2 === 0 ? '일반' : 'VIP',
+      customer_grade_name: i % 2 === 0 ? '일반' : '아주아주 긴 등급명 테스트',
       birthdate: `1990${String(i + 1).padStart(2, '0')}15`,
+      channel_id: i % 2 === 0 ? 1 : 2,
+      acquisition_channel_name: i % 2 === 0 ? '네이버검색' : '지인 추천',
       created_at: new Date(2025, 5, 30 - i).toISOString(),
     }))
   );
@@ -199,6 +203,7 @@
     { key: 'customer_name', title: '고객명', width: '170px' },
     { key: 'phone_number', title: '연락처', width: '160px' },
     { key: 'staff_name', title: '담당자', width: '110px' },
+    { key: 'acquisition_channel_name', title: '유입경로', width: '120px' },
     { key: 'memo', title: '메모', width: '170px' },
     { key: 'visit_count', title: '방문횟수', width: '120px' },
     { key: 'remaining_amount', title: '잔여선불액', width: '130px' },
@@ -361,9 +366,16 @@
   }
   function onSendMessage() {}
 
+  const acquisitionChannelOptions = [
+    { channel_id: 1, channel_name: '네이버검색' },
+    { channel_id: 2, channel_name: '지인 추천' },
+  ];
+
   const toastRef = ref(null);
   const showCreateDrawer = ref(false);
   function handleCreateCustomer(newCustomer) {
+    const channel = acquisitionChannelOptions.find(c => c.channel_id === newCustomer.channel_id);
+
     dummyData.value.unshift({
       customer_id: Date.now(),
       customer_name: newCustomer.name,
@@ -374,12 +386,13 @@
       remaining_amount: 0,
       total_revenue: 0,
       recent_visit_date: newCustomer.birthdate || '',
+      channel_id: newCustomer.channel_id,
+      acquisition_channel_name: channel ? channel.channel_name : '',
       tags:
         Array.isArray(newCustomer.tags) && newCustomer.tags.length > 0
           ? newCustomer.tags.map((tag, idx) => ({
               tag_id: Date.now() + idx,
-              tag_name: tag.tag_name,
-              color_code: tag.color_code,
+              ...tag,
             }))
           : [],
       customer_grade_name: newCustomer.grade,
@@ -509,6 +522,12 @@
     white-space: nowrap;
     text-overflow: ellipsis;
     max-width: 150px;
+  }
+  .single-line-ellipsis {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
   }
   .dropdown-checkbox-wrapper {
     position: relative;
