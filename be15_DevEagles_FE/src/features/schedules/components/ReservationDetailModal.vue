@@ -11,17 +11,21 @@
 
       <div class="modal-body">
         <div class="left-detail">
+          <!-- 고객명 -->
           <div class="row">
             <label>고객명</label>
             <span v-if="!isEditMode">{{ reservation.customer }}</span>
-            <input v-else v-model="edited.customer" />
+            <BaseForm v-else v-model="edited.customer" type="text" />
           </div>
+
+          <!-- 연락처 -->
           <div class="row">
             <label>연락처</label>
             <span v-if="!isEditMode">{{ reservation.phone }}</span>
-            <input v-else v-model="edited.phone" />
+            <BaseForm v-else v-model="edited.phone" type="text" />
           </div>
 
+          <!-- 예약일 -->
           <div class="row">
             <label>예약일</label>
             <span v-if="!isEditMode">
@@ -68,12 +72,14 @@
             </div>
           </div>
 
+          <!-- 시술 -->
           <div class="row">
             <label>시술</label>
             <span v-if="!isEditMode">{{ reservation.service }}</span>
-            <input v-else v-model="edited.service" />
+            <BaseForm v-else v-model="edited.service" type="text" />
           </div>
 
+          <!-- 담당자 -->
           <div class="row row-select">
             <label>담당자</label>
             <div class="form-control-wrapper">
@@ -91,6 +97,7 @@
             </div>
           </div>
 
+          <!-- 예약 상태 -->
           <div class="row row-select">
             <label>예약 상태</label>
             <div class="form-control-wrapper">
@@ -105,24 +112,29 @@
             </div>
           </div>
 
+          <!-- 특이사항 -->
           <div class="row">
             <label>특이사항</label>
             <span v-if="!isEditMode">{{ reservation.note }}</span>
-            <textarea v-else v-model="edited.note" />
+            <BaseForm v-else v-model="edited.note" type="textarea" rows="3" />
           </div>
+
+          <!-- 고객 메모 -->
           <div class="row">
             <label>고객 메모</label>
             <span v-if="!isEditMode">{{ reservation.memo }}</span>
-            <textarea v-else v-model="edited.memo" />
+            <BaseForm v-else v-model="edited.memo" type="textarea" rows="3" />
           </div>
         </div>
 
+        <!-- 우측 영역 -->
         <div class="right-box">
           <p>고객정보 확인</p>
           <p>매출 등록</p>
         </div>
       </div>
 
+      <!-- 푸터 -->
       <div class="modal-footer">
         <BaseButton type="error" @click="close">닫기</BaseButton>
         <template v-if="isEditMode">
@@ -254,7 +266,6 @@
     gap: 8px;
     flex-wrap: nowrap;
     flex: 1;
-    margin-left: 10px;
   }
   .duration-inline {
     display: flex;
@@ -269,11 +280,11 @@
 
   .duration-input {
     width: 60px;
-    text-align: center;
+    text-align: left;
     padding: 6px 8px;
     border: 1px solid var(--color-gray-300);
     border-radius: 4px;
-    margin-left: 2px;
+    margin-left: 4px;
   }
 
   .modal-header {

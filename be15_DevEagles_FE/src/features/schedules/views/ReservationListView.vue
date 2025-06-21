@@ -4,45 +4,61 @@
       <h1 class="font-screen-title">예약 목록</h1>
     </div>
 
-    <!-- 필터 영역 -->
     <div class="filter-bar">
       <div class="filter-fields">
-        <input
+        <BaseForm
           v-model="searchText"
           type="text"
           placeholder="고객명 또는 연락처 검색"
-          class="input input-search"
+          style="width: 200px"
         />
-        <select v-model="selectedDate" class="input input-select">
-          <option value="">날짜</option>
-          <option value="today">오늘</option>
-          <option value="thisWeek">이번 주</option>
-          <option value="thisMonth">이번 달</option>
-        </select>
-
-        <select v-model="selectedStaff" class="input input-select">
-          <option value="">담당자</option>
-          <option value="박미글">박미글</option>
-          <option value="이팀장">이팀장</option>
-        </select>
-
-        <select v-model="selectedService" class="input input-select">
-          <option value="">시술 종류</option>
-          <option value="커트">커트</option>
-          <option value="염색">염색</option>
-          <option value="펌">펌</option>
-        </select>
-
-        <select v-model="selectedStatus" class="input input-select">
-          <option value="">예약 상태</option>
-          <option value="예약 대기">예약 대기</option>
-          <option value="예약 확정">예약 확정</option>
-          <option value="노쇼">노쇼</option>
-          <option value="고객에 의한 예약 취소">고객에 의한 예약 취소</option>
-          <option value="가게에 의한 예약 취소">가게에 의한 예약 취소</option>
-        </select>
+        <BaseForm
+          v-model="selectedDate"
+          type="select"
+          :options="[
+            { text: '날짜', value: '' },
+            { text: '오늘', value: 'today' },
+            { text: '이번 주', value: 'thisWeek' },
+            { text: '이번 달', value: 'thisMonth' },
+          ]"
+          style="width: 160px"
+        />
+        <BaseForm
+          v-model="selectedStaff"
+          type="select"
+          :options="[
+            { text: '담당자', value: '' },
+            { text: '박미글', value: '박미글' },
+            { text: '이팀장', value: '이팀장' },
+          ]"
+          style="width: 160px"
+        />
+        <BaseForm
+          v-model="selectedService"
+          type="select"
+          :options="[
+            { text: '시술 종류', value: '' },
+            { text: '커트', value: '커트' },
+            { text: '염색', value: '염색' },
+            { text: '펌', value: '펌' },
+          ]"
+          style="width: 160px"
+        />
+        <BaseForm
+          v-model="selectedStatus"
+          type="select"
+          :options="[
+            { text: '예약 상태', value: '' },
+            { text: '예약 대기', value: '예약 대기' },
+            { text: '예약 확정', value: '예약 확정' },
+            { text: '노쇼', value: '노쇼' },
+            { text: '고객에 의한 예약 취소', value: '고객에 의한 예약 취소' },
+            { text: '가게에 의한 예약 취소', value: '가게에 의한 예약 취소' },
+          ]"
+          style="width: 160px"
+        />
       </div>
-      <BaseButton type="primary" @click="openReservationModal"> 예약 등록 </BaseButton>
+      <BaseButton type="primary" @click="openReservationModal">예약 등록</BaseButton>
     </div>
 
     <div class="base-table-wrapper">
@@ -172,6 +188,7 @@
   import Pagination from '@/components/common/Pagination.vue';
   import ScheduleRegistModal from '@/features/schedules/components/ScheduleRegistModal.vue';
   import ReservationDetailModal from '@/features/schedules/components/ReservationDetailModal.vue';
+  import BaseForm from '@/components/common/BaseForm.vue';
 
   const searchText = ref('');
   const selectedDate = ref('');
@@ -188,35 +205,41 @@
   const reservations = ref([
     {
       id: 1,
-      name: '김미글',
+      customer: '김미글',
       service: '염색',
       staff: '박미글',
+      phone: '010-2222-2221',
       date: '2025-06-08T14:00:00',
       status: '예약 대기',
       prepaidUsed: true,
+      duration: '03:00',
     },
     {
       id: 2,
-      name: '이예정',
+      customer: '이예정',
       service: '커트',
       staff: '이팀장',
+      phone: '010-2222-2222',
       date: '2025-06-09T11:00:00',
       status: '예약 확정',
       prepaidUsed: false,
+      duration: '03:00',
     },
     {
       id: 3,
-      name: '장현수',
+      customer: '장현수',
       service: '펌',
       staff: '박미글',
+      phone: '010-2222-2223',
       date: '2025-06-10T15:00:00',
       status: '노쇼',
       prepaidUsed: false,
+      duration: '03:00',
     },
   ]);
 
   const columns = [
-    { key: 'name', title: '고객 이름', width: '120px' },
+    { key: 'customer', title: '고객 이름', width: '120px' },
     { key: 'service', title: '시술', width: '100px' },
     { key: 'staff', title: '담당자', width: '100px' },
     { key: 'date', title: '예약 날짜', width: '160px' },
@@ -250,7 +273,7 @@
     return reservations.value.filter(r => {
       const matchText =
         !searchText.value ||
-        r.name.includes(searchText.value) ||
+        r.customer.includes(searchText.value) ||
         (r.phone && r.phone.includes(searchText.value));
 
       const matchStaff = !selectedStaff.value || r.staff.includes(selectedStaff.value);
@@ -333,7 +356,7 @@
   .filter-bar {
     display: flex;
     justify-content: flex-end;
-    align-items: center;
+    align-items: flex-start;
     gap: 16px;
     flex-wrap: wrap;
     margin-bottom: 24px;
@@ -351,14 +374,18 @@
     width: 200px;
     padding: 8px;
     border-radius: 6px;
-    border: 1px solid #ccc;
+    border: 1px solid var(--color-gray-300);
+    background-color: var(--color-neutral-white);
+    color: var(--color-text-primary);
   }
 
   .input-select {
     width: 160px;
     padding: 8px;
     border-radius: 6px;
-    border: 1px solid #ccc;
+    border: 1px solid var(--color-gray-300);
+    background-color: var(--color-neutral-white);
+    color: var(--color-text-primary);
   }
 
   .badge {
@@ -371,23 +398,24 @@
     line-height: 1.2;
   }
 
+  /* 상태별 뱃지 */
   .badge-success {
-    background-color: #e6f9ed;
-    color: #1a7f37;
+    background-color: var(--color-success-50);
+    color: var(--color-success-600);
   }
 
   .badge-warning {
-    background-color: #fff8e1;
-    color: #c38e00;
+    background-color: var(--color-warning-50);
+    color: var(--color-warning-400);
   }
 
   .badge-error {
-    background-color: #fdecea;
-    color: #d93025;
+    background-color: var(--color-error-100);
+    color: var(--color-error-300);
   }
 
   .base-table-wrapper {
-    background-color: #ffffff;
+    background-color: var(--color-neutral-white);
     border-radius: 12px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
     padding: 24px;
@@ -405,7 +433,8 @@
     cursor: pointer;
     transition: background-color 0.2s ease;
   }
+
   .base-table-wrapper :deep(tbody tr:hover) {
-    background-color: #f9f9f9;
+    background-color: var(--color-gray-50);
   }
 </style>

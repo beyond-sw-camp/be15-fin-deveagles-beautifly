@@ -32,9 +32,9 @@
         스케줄 등록
       </button>
     </div>
-
-    <ScheduleCalendar :schedules="calendarEvents" @click-schedule="handleClickSchedule" />
-
+    <div class="calendar-wrapper">
+      <ScheduleCalendar :schedules="calendarEvents" @click-schedule="handleClickSchedule" />
+    </div>
     <ReservationDetailModal
       v-if="modalType === 'reservation'"
       v-model="isModalOpen"
@@ -65,8 +65,8 @@
 
   const staffColors = {
     최민수: 'var(--color-primary-main)',
-    이채은: '#60bafa',
-    김민지: '#f4e0ab',
+    김민지: 'var(--color-success-200)',
+    이채은: 'var(--color-secondary-100)',
   };
 
   const searchText = ref('');
@@ -152,8 +152,8 @@
         start: item.start,
         end: item.end,
         allDay: isAllDay,
-        backgroundColor: staffColors[item.staff] || '#d1d5db',
-        textColor: '#111',
+        backgroundColor: staffColors[item.staff] || 'var(--color-gray-300)',
+        textColor: 'var(--color-text-primary)',
         type: item.type,
         status: item.status,
         staff: item.staff,
@@ -166,8 +166,14 @@
 </script>
 
 <style scoped>
+  .calendar-wrapper {
+    background-color: var(--color-neutral-white);
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  }
   .container {
-    padding: 24px;
+    padding: 14px;
   }
   .page-header {
     margin-bottom: 32px;

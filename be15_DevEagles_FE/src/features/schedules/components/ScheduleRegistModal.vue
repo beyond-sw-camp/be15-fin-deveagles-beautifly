@@ -37,7 +37,6 @@
   import PlanForm from './PlanForm.vue';
   import LeaveForm from './LeaveForm.vue';
 
-  // ✅ props 정의 먼저
   const props = defineProps({
     modelValue: { type: Boolean, required: true },
     defaultTab: { type: String, default: 'reservation' }, // 'reservation', 'plan', 'leave'
@@ -45,7 +44,6 @@
 
   const emit = defineEmits(['update:modelValue']);
 
-  // ✅ 초기 탭은 props.defaultTab
   const tab = ref(props.defaultTab);
 
   const currentTabComponent = computed(() => {

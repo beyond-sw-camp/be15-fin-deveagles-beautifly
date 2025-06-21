@@ -37,7 +37,7 @@
         <input
           :value="form.duration"
           type="text"
-          class="input-time small-width"
+          class="input input-time small-width"
           placeholder="소요 시간"
           readonly
         />
@@ -52,7 +52,7 @@
     <!-- 반복 여부 -->
     <div class="row row-inline">
       <label class="label-wide">반복</label>
-      <select v-model="form.repeat">
+      <select v-model="form.repeat" class="input">
         <option value="none">반복 안함</option>
         <option value="weekly">매주</option>
         <option value="monthly">매달</option>
@@ -62,13 +62,13 @@
     <!-- 일정 제목 -->
     <div class="row row-inline">
       <label class="label-wide">일정 제목</label>
-      <input v-model="form.title" type="text" />
+      <input v-model="form.title" type="text" class="input" />
     </div>
 
     <!-- 담당자 -->
     <div class="row row-inline">
       <label class="label-wide">담당자</label>
-      <select v-model="form.staff">
+      <select v-model="form.staff" class="input">
         <option value="">담당자</option>
         <option value="김이글">김이글</option>
         <option value="박이글">박이글</option>
@@ -78,7 +78,7 @@
     <!-- 메모 -->
     <div class="row align-top">
       <label class="label-wide">메모</label>
-      <textarea v-model="form.memo" rows="3" />
+      <textarea v-model="form.memo" rows="3" class="input" />
     </div>
   </div>
 </template>
@@ -152,13 +152,16 @@
     margin-bottom: 14px;
     width: 100%;
   }
+
   .row-inline {
     flex-wrap: nowrap;
     align-items: center;
   }
+
   .row.align-top {
     align-items: flex-start;
   }
+
   .label-wide {
     width: 120px;
     flex-shrink: 0;
@@ -167,6 +170,7 @@
     line-height: 1.5;
     white-space: nowrap;
   }
+
   .row input,
   .row textarea,
   .row select {
@@ -178,22 +182,30 @@
     border: 1px solid var(--color-gray-300);
     border-radius: 4px;
     box-sizing: border-box;
+    background-color: var(--color-neutral-white);
+    color: var(--color-neutral-dark);
   }
+
   .input-date {
     width: 160px !important;
   }
+
   .input-time {
     width: 110px;
   }
+
   .small-width {
     width: 110px !important;
   }
+
   .big-width {
     width: 160px !important;
   }
+
   .row textarea {
     resize: vertical;
   }
+
   .flat-flex {
     display: flex;
     flex: 1;
@@ -201,10 +213,12 @@
     flex-wrap: nowrap;
     align-items: center;
   }
+
   .checkbox-inline {
     display: flex;
     align-items: center;
     gap: 4px;
     white-space: nowrap;
+    color: var(--color-neutral-dark);
   }
 </style>

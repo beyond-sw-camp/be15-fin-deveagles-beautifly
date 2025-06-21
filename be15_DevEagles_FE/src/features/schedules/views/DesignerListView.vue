@@ -40,7 +40,7 @@
 <style scoped>
   .designer-list-page {
     padding: 32px 40px;
-    background-color: #f9fafb;
+    background-color: var(--color-gray-50);
     min-height: 100vh;
     box-sizing: border-box;
   }
@@ -49,7 +49,7 @@
     font-size: 40px;
     font-weight: bold;
     margin-bottom: 30px;
-    color: #222;
+    color: var(--color-text-primary);
     text-align: left;
     display: flex;
     align-items: center;
@@ -63,7 +63,7 @@
   }
 
   .designer-list-wrapper {
-    background: #fff;
+    background-color: var(--color-neutral-white);
     border-radius: 12px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
     padding: 32px;
@@ -73,7 +73,7 @@
 
   .designer-list {
     display: grid;
-    grid-template-columns: repeat(3, 1fr); /* 한 줄에 3개 */
+    grid-template-columns: repeat(3, 1fr);
     gap: 24px 32px;
     justify-items: center;
   }

@@ -35,7 +35,7 @@
   import ReservationDetailModal from '@/features/schedules/components/ReservationDetailModal.vue';
 
   const columns = [
-    { key: 'name', title: '고객 이름', width: '120px' },
+    { key: 'customer', title: '고객 이름', width: '120px' },
     { key: 'service', title: '시술', width: '100px' },
     { key: 'staff', title: '담당자', width: '100px' },
     { key: 'date', title: '예약 날짜', width: '160px' },
@@ -46,7 +46,7 @@
   const historyData = [
     {
       id: 1,
-      name: '김미글',
+      customer: '김미글',
       service: '염펌',
       staff: '박미글',
       date: '2025.06.08 14시',
@@ -55,7 +55,7 @@
     },
     {
       id: 2,
-      name: '김미글',
+      customer: '김미글',
       service: '염펌',
       staff: '박미글',
       date: '2025.06.08 14시',
@@ -64,7 +64,7 @@
     },
     {
       id: 3,
-      name: '김미글',
+      customer: '김미글',
       service: '염펌',
       staff: '박미글',
       date: '2025.06.08 14시',
@@ -73,7 +73,7 @@
     },
     {
       id: 4,
-      name: '김미글',
+      customer: '김미글',
       service: '염펌',
       staff: '박미글',
       date: '2025.06.08 14시',
@@ -82,7 +82,7 @@
     },
     {
       id: 5,
-      name: '김미글',
+      customer: '김미글',
       service: '염펌',
       staff: '박미글',
       date: '2025.06.08 14시',
@@ -91,7 +91,7 @@
     },
     {
       id: 6,
-      name: '김미글',
+      customer: '김미글',
       service: '염펌',
       staff: '박미글',
       date: '2025.06.08 14시',
@@ -100,7 +100,7 @@
     },
     {
       id: 7,
-      name: '김미글',
+      customer: '김미글',
       service: '염펌',
       staff: '박미글',
       date: '2025.06.08 14시',
@@ -109,7 +109,7 @@
     },
     {
       id: 8,
-      name: '김미글',
+      customer: '김미글',
       service: '염펌',
       staff: '박미글',
       date: '2025.06.08 14시',
@@ -118,7 +118,7 @@
     },
     {
       id: 9,
-      name: '김미글',
+      customer: '김미글',
       service: '염펌',
       staff: '박미글',
       date: '2025.06.08 14시',
@@ -127,7 +127,7 @@
     },
     {
       id: 10,
-      name: '김미글',
+      customer: '김미글',
       service: '염펌',
       staff: '박미글',
       date: '2025.06.08 14시',
@@ -136,7 +136,7 @@
     },
     {
       id: 11,
-      name: '김미글',
+      customer: '김미글',
       service: '염펌',
       staff: '박미글',
       date: '2025.06.08 14시',
@@ -145,7 +145,7 @@
     },
     {
       id: 12,
-      name: '김미글',
+      customer: '김미글',
       service: '염펌',
       staff: '박미글',
       date: '2025.06.08 14시',
@@ -154,7 +154,7 @@
     },
     {
       id: 13,
-      name: '김미글',
+      customer: '김미글',
       service: '염펌',
       staff: '박미글',
       date: '2025.06.08 14시',
@@ -163,7 +163,7 @@
     },
     {
       id: 14,
-      name: '김미글',
+      customer: '김미글',
       service: '염펌',
       staff: '박미글',
       date: '2025.06.08 14시',
@@ -172,7 +172,7 @@
     },
     {
       id: 15,
-      name: '김미글',
+      customer: '김미글',
       service: '염펌',
       staff: '박미글',
       date: '2025.06.08 14시',
@@ -181,7 +181,7 @@
     },
     {
       id: 16,
-      name: '김미글',
+      customer: '김미글',
       service: '염펌',
       staff: '박미글',
       date: '2025.06.08 14시',
@@ -225,7 +225,7 @@
   }
 
   .base-table-wrapper {
-    background-color: #ffffff;
+    background-color: var(--color-neutral-white);
     border-radius: 12px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
     padding: 24px;

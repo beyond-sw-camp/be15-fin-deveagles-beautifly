@@ -10,10 +10,10 @@
       <h3 class="section-title">👤 고객 정보를 입력해주세요</h3>
       <div class="input-section">
         <div class="form-group">
-          <label for="name">이름</label>
+          <label for="customer">이름</label>
           <input
-            id="name"
-            v-model="form.name"
+            id="customer"
+            v-model="form.customer"
             type="text"
             placeholder="이름을 입력해주세요"
             class="form-input"
@@ -130,7 +130,7 @@
 
   const form = reactive({
     designerId: route.params.id,
-    name: '',
+    customer: '',
     phone: '',
     memo: '',
     date: null,
@@ -211,7 +211,7 @@
 
   const isValid = computed(() => {
     return (
-      form.name.trim() &&
+      form.customer.trim() &&
       /^\d{3}-\d{3,4}-\d{4}$/.test(form.phone) &&
       form.date &&
       form.time &&
@@ -237,20 +237,18 @@
 </script>
 
 <style scoped>
-  /* 전체 페이지 배경용 */
   .page-wrapper {
     padding: 32px 40px;
-    background-color: #f9fafb;
+    background-color: var(--color-gray-50);
     min-height: 100vh;
     box-sizing: border-box;
   }
 
-  /* 상단 타이틀 */
   .page-title {
     font-size: 40px;
     font-weight: bold;
     margin-bottom: 30px;
-    color: #222;
+    color: var(--color-text-primary);
     text-align: left;
     display: flex;
     align-items: center;
@@ -263,9 +261,8 @@
     width: auto;
   }
 
-  /* 예약 카드 */
   .reservation-wrapper {
-    background: #fff;
+    background-color: var(--color-neutral-white);
     border-radius: 12px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
     padding: 32px;
@@ -276,7 +273,6 @@
     gap: 16px;
   }
 
-  /* 고객 정보 */
   .section-title {
     font-size: 20px;
     font-weight: 600;
@@ -300,18 +296,19 @@
 
   .form-input {
     padding: 10px;
-    border: 1px solid #ccc;
+    border: 1px solid var(--color-gray-300);
     border-radius: 6px;
     font-size: 14px;
+    background-color: var(--color-neutral-white);
+    color: var(--color-text-primary);
   }
 
   .form-input:focus {
     outline: none;
     border-color: var(--color-primary-main);
-    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.15);
+    box-shadow: 0 0 0 2px rgba(54, 79, 107, 0.15);
   }
 
-  /* 메인 콘텐츠 */
   .main-section {
     display: flex;
     justify-content: space-between;
@@ -339,7 +336,6 @@
     margin-bottom: 4px;
   }
 
-  /* 시술 메뉴 */
   .menu-tabs {
     display: flex;
     gap: 8px;
@@ -347,10 +343,10 @@
   }
 
   .service-box {
-    border: 1px solid #ccc;
+    border: 1px solid var(--color-gray-300);
     padding: 12px;
     border-radius: 8px;
-    background-color: #fff;
+    background-color: var(--color-neutral-white);
     display: flex;
     flex-direction: column;
     gap: 8px;
@@ -364,15 +360,17 @@
     cursor: pointer;
     transition: background-color 0.2s ease;
     border: 1px solid transparent;
+    background-color: transparent;
+    color: var(--color-text-primary);
   }
 
   .service-item:hover {
-    background-color: #f3f4f6;
+    background-color: var(--color-gray-100);
   }
 
   .service-item.selected {
     background-color: var(--color-primary-main);
-    color: white;
+    color: var(--color-neutral-white);
     font-weight: bold;
   }
 

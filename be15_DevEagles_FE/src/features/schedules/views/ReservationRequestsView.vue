@@ -105,27 +105,27 @@
   import ReservationDetailModal from '@/features/schedules/components/ReservationDetailModal.vue';
 
   const dummyData = ref([
-    { id: 1, name: '김미글', service: '염색', employee: '박미글', date: '2025.06.08 14시' },
-    { id: 2, name: '이예정', service: '커트', employee: '이팀장', date: '2025.06.09 11시' },
-    { id: 3, name: '장현수', service: '펌', employee: '박미글', date: '2025.06.10 15시' },
-    { id: 4, name: '최유리', service: '염색', employee: '이팀장', date: '2025.06.11 13시' },
-    { id: 5, name: '오태식', service: '커트', employee: '박미글', date: '2025.06.12 10시' },
-    { id: 6, name: '한소희', service: '드라이', employee: '이팀장', date: '2025.06.12 17시' },
-    { id: 7, name: '박보검', service: '펌', employee: '박미글', date: '2025.06.13 09시' },
-    { id: 8, name: '김태희', service: '커트', employee: '이팀장', date: '2025.06.14 14시' },
-    { id: 9, name: '서강준', service: '염색', employee: '박미글', date: '2025.06.15 11시' },
-    { id: 10, name: '문채원', service: '펌', employee: '이팀장', date: '2025.06.16 16시' },
-    { id: 11, name: '정해인', service: '커트', employee: '박미글', date: '2025.06.17 10시' },
-    { id: 12, name: '김소현', service: '드라이', employee: '이팀장', date: '2025.06.18 15시' },
-    { id: 13, name: '이준기', service: '염색', employee: '박미글', date: '2025.06.19 13시' },
-    { id: 14, name: '윤아', service: '커트', employee: '이팀장', date: '2025.06.20 14시' },
-    { id: 15, name: '지성', service: '펌', employee: '박미글', date: '2025.06.21 11시' },
-    { id: 16, name: '아이유', service: '드라이', employee: '이팀장', date: '2025.06.22 17시' },
+    { id: 1, customer: '김미글', service: '염색', employee: '박미글', date: '2025.06.08 14시' },
+    { id: 2, customer: '이예정', service: '커트', employee: '이팀장', date: '2025.06.09 11시' },
+    { id: 3, customer: '장현수', service: '펌', employee: '박미글', date: '2025.06.10 15시' },
+    { id: 4, customer: '최유리', service: '염색', employee: '이팀장', date: '2025.06.11 13시' },
+    { id: 5, customer: '오태식', service: '커트', employee: '박미글', date: '2025.06.12 10시' },
+    { id: 6, customer: '한소희', service: '드라이', employee: '이팀장', date: '2025.06.12 17시' },
+    { id: 7, customer: '박보검', service: '펌', employee: '박미글', date: '2025.06.13 09시' },
+    { id: 8, customer: '김태희', service: '커트', employee: '이팀장', date: '2025.06.14 14시' },
+    { id: 9, customer: '서강준', service: '염색', employee: '박미글', date: '2025.06.15 11시' },
+    { id: 10, customer: '문채원', service: '펌', employee: '이팀장', date: '2025.06.16 16시' },
+    { id: 11, customer: '정해인', service: '커트', employee: '박미글', date: '2025.06.17 10시' },
+    { id: 12, customer: '김소현', service: '드라이', employee: '이팀장', date: '2025.06.18 15시' },
+    { id: 13, customer: '이준기', service: '염색', employee: '박미글', date: '2025.06.19 13시' },
+    { id: 14, customer: '윤아', service: '커트', employee: '이팀장', date: '2025.06.20 14시' },
+    { id: 15, customer: '지성', service: '펌', employee: '박미글', date: '2025.06.21 11시' },
+    { id: 16, customer: '아이유', service: '드라이', employee: '이팀장', date: '2025.06.22 17시' },
   ]);
 
   const columns = [
     { key: 'checkbox', title: '', width: '40px' },
-    { key: 'name', title: '고객 이름' },
+    { key: 'customer', title: '고객 이름' },
     { key: 'service', title: '시술' },
     { key: 'employee', title: '담당자' },
     { key: 'date', title: '예약 날짜' },
@@ -248,7 +248,7 @@
   }
 
   .base-table-wrapper {
-    background-color: #ffffff;
+    background-color: var(--color-neutral-white);
     border-radius: 12px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
     padding: 24px;

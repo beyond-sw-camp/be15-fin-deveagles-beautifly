@@ -11,7 +11,6 @@
 
       <div class="modal-body">
         <div class="left-detail">
-          <!-- 구분 -->
           <div class="row row-select">
             <label>구분</label>
             <div class="form-control-wrapper">
@@ -29,14 +28,12 @@
             </div>
           </div>
 
-          <!-- 제목 -->
           <div class="row">
             <label>제목</label>
             <span v-if="!isEditMode">{{ reservation.title }}</span>
-            <input v-else v-model="edited.title" />
+            <BaseForm v-else v-model="edited.title" type="text" />
           </div>
 
-          <!-- 담당자 -->
           <div class="row row-select">
             <label>담당자</label>
             <div class="form-control-wrapper">
@@ -54,7 +51,6 @@
             </div>
           </div>
 
-          <!-- 날짜 및 시간 -->
           <div class="row">
             <label>날짜</label>
             <div class="date-inline">
@@ -106,7 +102,6 @@
             </div>
           </div>
 
-          <!-- 반복 -->
           <div class="row">
             <label>반복</label>
             <div class="repeat-inline">
@@ -151,11 +146,10 @@
             </div>
           </div>
 
-          <!-- 메모 -->
           <div class="row">
             <label>메모</label>
             <span v-if="!isEditMode">{{ reservation.memo }}</span>
-            <textarea v-else v-model="edited.memo" />
+            <BaseForm v-else v-model="edited.memo" type="textarea" rows="3" />
           </div>
         </div>
       </div>
@@ -319,50 +313,60 @@
     left: 0;
     width: 100%;
     height: 100vh;
-    background: rgba(0, 0, 0, 0.3);
+    background-color: rgba(0, 0, 0, 0.3);
     z-index: 1000;
   }
+
   .modal-panel {
     position: fixed;
     top: 0;
     left: 240px;
     width: calc(100% - 240px);
     height: 100vh;
-    background: var(--color-neutral-white);
+    background-color: var(--color-neutral-white);
     display: flex;
     flex-direction: column;
     padding: 24px;
     overflow-y: auto;
   }
+
   .modal-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 24px;
   }
+
   .modal-header h1 {
     font-size: 20px;
     font-weight: bold;
+    color: var(--color-text-primary);
   }
+
   .close-btn {
     background: none;
     border: none;
     font-size: 24px;
     cursor: pointer;
+    color: var(--color-text-primary);
   }
+
   .modal-body {
     display: flex;
     gap: 32px;
     flex: 1;
   }
+
   .left-detail {
     flex: 1;
   }
+
   .row {
     display: flex;
     align-items: flex-start;
     margin-bottom: 14px;
   }
+
   .row label {
     width: 100px;
     font-weight: bold;
@@ -370,6 +374,7 @@
     padding-top: 6px;
     line-height: 1.5;
   }
+
   .row span,
   .row input,
   .row textarea {
@@ -380,48 +385,59 @@
     width: 100%;
     max-width: 400px;
     box-sizing: border-box;
+    color: var(--color-text-primary);
+    background-color: var(--color-neutral-white);
   }
+
   .row input,
   .row textarea {
     border: 1px solid var(--color-gray-300);
     border-radius: 4px;
   }
+
   .row textarea {
     resize: vertical;
   }
+
   .form-control-wrapper {
     flex: 1;
     display: flex;
     align-items: flex-start;
   }
+
   .form-control-wrapper :deep(.input) {
     width: 100%;
     max-width: 300px;
   }
+
   .right-box {
     width: 200px;
     padding: 12px;
     border-left: 1px solid var(--color-gray-200);
   }
+
   .right-box p {
     margin-bottom: 16px;
     font-weight: 500;
     color: var(--color-gray-700);
   }
+
   .modal-footer {
     margin-top: 32px;
     display: flex;
     gap: 12px;
     justify-content: flex-end;
   }
+
   .action-dropdown {
     position: relative;
   }
+
   .dropdown-menu {
     position: absolute;
     bottom: 40px;
     right: 0;
-    background: var(--color-neutral-white);
+    background-color: var(--color-neutral-white);
     border: 1px solid var(--color-gray-300);
     border-radius: 6px;
     list-style: none;
@@ -430,26 +446,31 @@
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
     z-index: 10;
   }
+
   .dropdown-menu li {
     padding: 8px 12px;
     cursor: pointer;
     color: var(--color-gray-800);
   }
+
   .dropdown-menu li:hover {
-    background: var(--color-gray-100);
+    background-color: var(--color-gray-100);
   }
+
   .type-label {
     margin-top: 4px;
     font-size: 18px;
     font-weight: 500;
     color: var(--color-gray-500);
   }
+
   .date-inline {
     display: flex;
     align-items: center;
     gap: 8px;
     flex-wrap: nowrap;
   }
+
   .date-inline input[type='date'],
   .date-inline input[type='text'],
   .date-inline select {
@@ -462,29 +483,33 @@
     min-width: 120px;
     height: 32px;
   }
+
   .all-day-checkbox {
     display: flex;
     align-items: center;
-    gap: 4px;
     white-space: nowrap;
     color: var(--color-gray-700);
   }
+
   .repeat-inline {
     display: flex;
     align-items: center;
     gap: 12px;
     flex-wrap: nowrap;
   }
+
   .repeat-inline :deep(.input) {
     display: inline-block;
     width: auto;
     min-width: 160px;
   }
+
   .repeat-description {
     font-size: 14px;
     color: var(--color-gray-500);
     white-space: nowrap;
   }
+
   .date-inline span,
   .repeat-inline span {
     white-space: nowrap;
@@ -492,6 +517,7 @@
     max-width: none;
     color: var(--color-gray-800);
   }
+
   .duration-input {
     font-size: 14px;
     padding: 6px 8px;
