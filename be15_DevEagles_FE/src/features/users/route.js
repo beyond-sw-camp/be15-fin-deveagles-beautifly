@@ -9,4 +9,9 @@ export const userRoutes = [
     name: 'SignUp',
     component: () => import('@/features/users/views/SignUpView.vue'),
   },
+  {
+    path: '/verify-owner',
+    name: 'VerifyOwner',
+    component: () => import('@/features/users/views/EmailVerifyView.vue'),
+  },
 ];
