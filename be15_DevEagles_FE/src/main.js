@@ -57,7 +57,7 @@ app.use(PrimeVue, {
       '12월',
     ],
     today: '오늘',
-    clear: '지우기',
+    clear: '닫기',
     dateFormat: 'yy-mm-dd',
     firstDayOfWeek: 0,
     prevText: '이전',

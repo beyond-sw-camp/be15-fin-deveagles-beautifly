@@ -27,7 +27,6 @@
       BlinkMacSystemFont,
       'Segoe UI',
       sans-serif;
-    font-display: swap;
     background-color: var(--color-gray-50);
   }
 

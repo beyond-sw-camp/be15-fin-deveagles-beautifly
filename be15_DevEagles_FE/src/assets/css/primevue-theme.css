@@ -93,6 +93,30 @@
    DatePicker 전체 스타일링
 ────────────────────────────────────────────────────────────────────────────*/
 
+/* 기본 DatePicker 컨테이너 */
+.prime-datepicker-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.prime-datepicker-wrapper .form-label {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-gray-700, #374151);
+}
+
+.prime-datepicker-wrapper .input-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.prime-datepicker-wrapper .error-message {
+  font-size: 12px;
+  color: var(--color-error-500, #ef4444);
+}
+
 /* 기본 DatePicker 스타일링 */
 .prime-datepicker .p-datepicker-input {
   width: 100% !important;
@@ -120,6 +144,31 @@
   background-color: var(--color-gray-100, #f3f4f6) !important;
   color: var(--color-gray-500, #6b7280) !important;
   cursor: not-allowed !important;
+}
+
+/* Clear 아이콘 스타일링 */
+.prime-datepicker-wrapper .clear-icon {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  color: var(--color-gray-400, #9ca3af);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  transition: background-color 0.2s ease;
+  z-index: 20;
+  font-size: 12px;
+  background-color: var(--color-bg-primary, #ffffff);
+}
+
+.prime-datepicker-wrapper .clear-icon:hover {
+  background-color: var(--color-gray-100, #f3f4f6);
+  color: var(--color-gray-600, #4b5563);
 }
 
 /* DatePicker 팝업 스타일링 */
@@ -165,8 +214,8 @@
 /* 호버 효과 */
 .prime-datepicker .p-datepicker-dates-cell:not(.p-disabled):hover span,
 .prime-datepicker .p-datepicker-dates-cell:not(.p-disabled):hover .p-datepicker-day {
-  background-color: #e8ecf1 !important;
-  color: #364f6b !important;
+  background-color: var(--color-primary-50, #e8ecf1) !important;
+  color: var(--color-primary-main, #364f6b) !important;
 }
 
 /* 범위 선택 스타일링 */
@@ -238,7 +287,7 @@
   width: 60px !important;
   text-align: center !important;
   background: white !important;
-  border: 1px solid #d1d5db !important;
+  border: 1px solid var(--color-gray-300, #d1d5db) !important;
   border-radius: 4px !important;
   padding: 4px 8px !important;
   font-size: 14px !important;
@@ -248,7 +297,7 @@
 .p-datepicker .p-datepicker-time-picker .p-hour-input:focus,
 .p-datepicker .p-datepicker-time-picker .p-minute-input:focus,
 .p-datepicker .p-datepicker-time-picker .p-second-input:focus {
-  border-color: #364f6b !important;
+  border-color: var(--color-primary-main, #364f6b) !important;
   box-shadow: 0 0 0 2px rgba(54, 79, 107, 0.1) !important;
   outline: none !important;
 }
@@ -260,14 +309,14 @@
   justify-content: center !important;
   gap: 12px !important;
   padding: 16px !important;
-  background: #f9fafb !important;
-  border-top: 1px solid #e5e7eb !important;
+  background: var(--color-gray-50, #f9fafb) !important;
+  border-top: 1px solid var(--color-gray-200, #e5e7eb) !important;
 }
 
 .p-datepicker .p-datepicker-time-picker .p-separator {
   font-size: 16px !important;
   font-weight: bold !important;
-  color: #364f6b !important;
+  color: var(--color-primary-main, #364f6b) !important;
   margin: 0 4px !important;
 }
 
@@ -278,9 +327,9 @@
   min-width: 28px !important;
   padding: 0 !important;
   margin: 2px !important;
-  border: 1px solid #d1d5db !important;
+  border: 1px solid var(--color-gray-300, #d1d5db) !important;
   background: white !important;
-  color: #364f6b !important;
+  color: var(--color-primary-main, #364f6b) !important;
   border-radius: 4px !important;
   font-size: 12px !important;
   font-weight: bold !important;
