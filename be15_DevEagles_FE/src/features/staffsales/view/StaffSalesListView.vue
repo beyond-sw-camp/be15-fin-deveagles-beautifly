@@ -52,7 +52,7 @@
     <div v-if="!loading" class="table-wrapper">
       <BaseTable
         :columns="columns"
-        :data="settlementData"
+        :data="currentData"
         :row-class="getRowClass"
         :scroll="{ y: '600px' }"
         :pagination="false"
@@ -75,15 +75,22 @@
       </BaseTable>
     </div>
   </div>
-  <Teleport to="body">
-    <BaseModal v-model="showIncentiveModal" :title="'인센티브 설정'">
-      <IncentiveSettingModal />
-    </BaseModal>
-  </Teleport>
+  <BaseSlidePanel
+    v-if="showIncentiveModal"
+    :title="'인센티브 설정'"
+    @close="showIncentiveModal = false"
+  >
+    <IncentiveSettingModal ref="modalRef" />
+    <template #footer>
+      <div class="footer-btn-row">
+        <BaseButton type="primary" @click="modalRef?.handleSave?.()">저장하기</BaseButton>
+      </div>
+    </template>
+  </BaseSlidePanel>
 </template>
 
 <script setup>
-  import { ref } from 'vue';
+  import { computed, ref } from 'vue';
   import BaseButton from '@/components/common/BaseButton.vue';
   import BaseForm from '@/components/common/BaseForm.vue';
   import BaseTable from '@/components/common/BaseTable.vue';
@@ -91,7 +98,7 @@
   import BaseLoading from '@/components/common/BaseLoading.vue';
   import BaseTab from '@/components/common/BaseTab.vue';
   import IncentiveSettingModal from '@/features/staffsales/components/IncentiveSettingModal.vue';
-  import BaseModal from '@/components/common/BaseModal.vue';
+  import BaseSlidePanel from '@/features/staffsales/components/BaseSlidePanel.vue';
 
   const activeTab = ref('직원별 결산');
   const tabs = ['직원별 결산', '직원별 상세결산', '목표매출'];
@@ -111,7 +118,7 @@
     { title: '총영업액', key: 'total' },
   ];
 
-  const settlementData = ref([
+  const baseSettlementData = ref([
     {
       name: '홍길동',
       category: '피부',
@@ -203,8 +210,8 @@
       total: 483149,
     },
     {
-      name: '총계',
-      category: '',
+      name: '',
+      category: '총계',
       card: 1871653,
       sales: 3700743,
       prepaid: 663364,
@@ -212,6 +219,95 @@
       total: 4098862,
     },
   ]);
+
+  const detailedSettlementData = [
+    {
+      name: '김이글',
+      items: [
+        {
+          category: '상품-시술',
+          card: 0,
+          sales: 0,
+          prepaid: 0,
+          discount: 0,
+          total: 0,
+        },
+        {
+          category: '총계',
+          card: 0,
+          sales: 0,
+          prepaid: 0,
+          discount: 0,
+          total: 0,
+        },
+      ],
+    },
+    {
+      name: '한위니',
+      items: [
+        {
+          category: '상품-선불권',
+          card: 0,
+          sales: 0,
+          prepaid: 0,
+          discount: 0,
+          total: 0,
+        },
+        {
+          category: '총계',
+          card: 0,
+          sales: 0,
+          prepaid: 0,
+          discount: 0,
+          total: 0,
+        },
+      ],
+    },
+    {
+      name: '',
+      category: '총계',
+      card: 0,
+      sales: 0,
+      prepaid: 0,
+      discount: 0,
+      total: 0,
+    },
+  ];
+
+  const targetSettlementData = ref([]);
+
+  const currentData = computed(() => {
+    if (activeTab.value === '직원별 상세결산') {
+      return flattenDetailData(detailedSettlementData);
+    } else if (activeTab.value === '목표매출') {
+      return flattenDetailData(targetSettlementData);
+    }
+    return baseSettlementData.value;
+  });
+
+  function flattenDetailData(data) {
+    const result = [];
+
+    data.forEach(staff => {
+      if (staff.items) {
+        staff.items.forEach(item => {
+          result.push({
+            name: item.category === '총계' ? '' : staff.name,
+            category: item.category,
+            card: item.card,
+            sales: item.sales,
+            prepaid: item.prepaid,
+            discount: item.discount,
+            total: item.total,
+          });
+        });
+      } else {
+        result.push(staff);
+      }
+    });
+
+    return result;
+  }
 
   function openIncentivePopup() {
     showIncentiveModal.value = true;
@@ -222,7 +318,9 @@
   }
 
   function getRowClass(row) {
-    return row.name === '총계' ? 'summary-row' : '';
+    if (row.name === '총계' && row.category === '') return 'summary-row';
+    if (row.category === '총계') return 'staff-summary-row';
+    return '';
   }
 
   function formatCurrency(value) {
@@ -287,6 +385,10 @@
   }
   :deep(.summary-row) {
     font-weight: bold;
-    background-color: #f4f4f4;
+    background-color: #eaeaea;
+  }
+  :deep(.staff-summary-row) {
+    font-weight: bold;
+    background-color: #f6f6f6;
   }
 </style>
