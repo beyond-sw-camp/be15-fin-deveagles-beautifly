@@ -11,7 +11,7 @@
         <BaseButton v-if="activeTab !== '목표매출'" @click="openIncentivePopup">
           직원별 인센티브 설정
         </BaseButton>
-        <BaseButton v-else @click="openGoalPopup"> 목표매출 설정 </BaseButton>
+        <BaseButton v-else @click="openTargetPopup"> 목표매출 설정 </BaseButton>
       </div>
     </div>
 
@@ -72,6 +72,13 @@
         <template #cell-total="{ value }">
           {{ formatCurrency(value) }}
         </template>
+        <template #cell-target="{ value }">
+          {{ formatCurrency(value) }}
+        </template>
+        <template #cell-totalSales="{ value }">
+          {{ formatCurrency(value) }}
+        </template>
+        <template #cell-rate="{ value }"> {{ value }}% </template>
       </BaseTable>
     </div>
   </div>
@@ -87,6 +94,19 @@
       </div>
     </template>
   </BaseSlidePanel>
+
+  <BaseSlidePanel
+    v-if="showTargetSalesModal"
+    title="목표매출 설정"
+    @close="showTargetSalesModal = false"
+  >
+    <TargetSalesSettingModal ref="targetModalRef" />
+    <template #footer>
+      <div class="footer-btn-row">
+        <BaseButton type="primary" @click="targetModalRef?.handleSubmit?.()">저장하기</BaseButton>
+      </div>
+    </template>
+  </BaseSlidePanel>
 </template>
 
 <script setup>
@@ -99,6 +119,7 @@
   import BaseTab from '@/components/common/BaseTab.vue';
   import IncentiveSettingModal from '@/features/staffsales/components/IncentiveSettingModal.vue';
   import BaseSlidePanel from '@/features/staffsales/components/BaseSlidePanel.vue';
+  import TargetSalesSettingModal from '@/features/staffsales/components/TargetSalesSettingModal.vue';
 
   const activeTab = ref('직원별 결산');
   const tabs = ['직원별 결산', '직원별 상세결산', '목표매출'];
@@ -106,9 +127,10 @@
   const selectedMonth = ref(new Date());
   const selectedRange = ref([]);
   const showIncentiveModal = ref(false);
+  const showTargetSalesModal = ref(false);
   const loading = ref(false);
 
-  const columns = [
+  const baseColumns = [
     { title: '직원 이름', key: 'name' },
     { title: '분류', key: 'category' },
     { title: '카드', key: 'card' },
@@ -117,6 +139,19 @@
     { title: '할인', key: 'discount' },
     { title: '총영업액', key: 'total' },
   ];
+
+  const targetColumns = [
+    { title: '직원 이름', key: 'name' },
+    { title: '분류', key: 'category' },
+    { title: '목표', key: 'target' },
+    { title: '총영업액', key: 'totalSales' },
+    { title: '달성률', key: 'rate' },
+  ];
+
+  const columns = computed(() => {
+    if (activeTab.value === '목표매출') return targetColumns;
+    return baseColumns;
+  });
 
   const baseSettlementData = ref([
     {
@@ -220,7 +255,7 @@
     },
   ]);
 
-  const detailedSettlementData = [
+  const detailedSettlementData = ref([
     {
       name: '김이글',
       items: [
@@ -272,15 +307,85 @@
       discount: 0,
       total: 0,
     },
-  ];
+  ]);
 
-  const targetSettlementData = ref([]);
+  const targetSalesData = ref([
+    {
+      name: '김이글',
+      items: [
+        {
+          category: '상품-시술 판매',
+          target: 100000,
+          totalSales: 10000,
+          rate: 0,
+        },
+        {
+          category: '상품-선불액 판매',
+          target: 100000,
+          totalSales: 10000,
+          rate: 0,
+        },
+        {
+          category: '상품-제품 판매',
+          target: 100000,
+          totalSales: 10000,
+          rate: 0,
+        },
+        {
+          category: '총계',
+          target: 300000,
+          totalSales: 30000,
+          rate: 0,
+        },
+      ],
+    },
+    {
+      name: '한위니',
+      items: [
+        {
+          category: '상품-시술 판매',
+          target: 100000,
+          totalSales: 10000,
+          rate: 0,
+        },
+        {
+          category: '상품-선불액 판매',
+          target: 200000,
+          totalSales: 10000,
+          rate: 0,
+        },
+        {
+          category: '상품-제품 판매',
+          target: 200000,
+          totalSales: 10000,
+          rate: 0,
+        },
+        {
+          category: '총계',
+          target: 300000,
+          totalSales: 30000,
+          rate: 0,
+        },
+      ],
+    },
+    {
+      name: '',
+      items: [
+        {
+          category: '총계',
+          target: 600000,
+          totalSales: 60000,
+          rate: 0,
+        },
+      ],
+    },
+  ]);
 
   const currentData = computed(() => {
     if (activeTab.value === '직원별 상세결산') {
-      return flattenDetailData(detailedSettlementData);
+      return flattenDetailData(detailedSettlementData.value);
     } else if (activeTab.value === '목표매출') {
-      return flattenDetailData(targetSettlementData);
+      return flattenTargetSales(targetSalesData.value);
     }
     return baseSettlementData.value;
   });
@@ -309,23 +414,49 @@
     return result;
   }
 
-  function openIncentivePopup() {
+  function flattenTargetSales(data) {
+    const result = [];
+
+    data.forEach(staff => {
+      let isFirst = true;
+
+      staff.items.forEach(item => {
+        result.push({
+          name: item.category === '총 합계' ? '' : isFirst ? staff.name : '',
+          category: item.category,
+          target: item.target,
+          totalSales: item.totalSales,
+          rate: item.target ? calculateRate(item.target, item.totalSales) : 0,
+        });
+        isFirst = false;
+      });
+    });
+
+    return result;
+  }
+
+  const calculateRate = (target, actual) => {
+    if (!target || target === 0) return 0;
+    return Math.round((actual / target) * 100);
+  };
+
+  const openIncentivePopup = () => {
     showIncentiveModal.value = true;
-  }
+  };
 
-  function openGoalPopup() {
-    // 목표매출 설정 팝업 오픈
-  }
+  const openTargetPopup = () => {
+    showTargetSalesModal.value = true;
+  };
 
-  function getRowClass(row) {
+  const getRowClass = row => {
     if (row.name === '총계' && row.category === '') return 'summary-row';
     if (row.category === '총계') return 'staff-summary-row';
     return '';
-  }
+  };
 
-  function formatCurrency(value) {
+  const formatCurrency = value => {
     return value?.toLocaleString('ko-KR') ?? '-';
-  }
+  };
 </script>
 
 <style scoped>
