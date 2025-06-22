@@ -15,6 +15,7 @@
       :placeholder="placeholder"
       v-bind="$attrs"
       @input="$emit('update:modelValue', $event.target.value)"
+      @keydown.enter="handleEnterKey"
     />
 
     <!-- Select (Dropdown) -->
@@ -131,8 +132,11 @@
         default: '',
       },
     },
-    emits: ['update:modelValue'],
+    emits: ['update:modelValue', 'enterKey'],
     methods: {
+      handleEnterKey(event) {
+        this.$emit('enterKey', event);
+      },
       handleCheckboxChange(value) {
         if (Array.isArray(this.modelValue)) {
           const newValue = [...this.modelValue];
