@@ -2,20 +2,26 @@
   <BaseItemModal title="1차 분류 상품 등록" @close="$emit('close')" @submit="submit">
     <div class="form-group">
       <label>카테고리</label>
-      <select v-model="form.category">
-        <option value="SERVICE">시술</option>
-        <option value="PRODUCT">상품</option>
-      </select>
+      <BaseForm
+        v-model="form.category"
+        type="select"
+        :options="[
+          { value: 'SERVICE', text: '시술' },
+          { value: 'PRODUCT', text: '상품' },
+        ]"
+      />
     </div>
+
     <div class="form-group">
       <label>1차 분류명</label>
-      <input v-model="form.primaryName" type="text" placeholder="1차 분류명" />
+      <BaseForm v-model="form.primaryName" type="text" placeholder="1차 분류명" />
     </div>
+
     <template #footer>
       <div class="footer-buttons">
         <div class="left-group">
-          <button class="cancel-button" @click="$emit('close')">취소</button>
-          <button class="submit-button" @click="submit">등록</button>
+          <BaseButton type="primary" outline @click="$emit('close')">취소</BaseButton>
+          <BaseButton type="primary" @click="submit">등록</BaseButton>
         </div>
       </div>
     </template>
@@ -25,6 +31,8 @@
 <script setup>
   import { computed } from 'vue';
   import BaseItemModal from './BaseItemModal.vue';
+  import BaseForm from '@/components/common/BaseForm.vue';
+  import BaseButton from '@/components/common/BaseButton.vue';
 
   const props = defineProps({
     modelValue: {
@@ -32,7 +40,8 @@
       required: true,
     },
   });
-  const emit = defineEmits(['close', 'submit', 'update:modelValue']);
+
+  const emit = defineEmits(['close', 'submit', 'update:modelValue', 'toast']); // ✅ toast 이벤트 추가
 
   const form = computed({
     get: () => props.modelValue,
@@ -41,6 +50,7 @@
 
   const submit = () => {
     emit('submit', form.value);
+    emit('toast', '1차 상품이 등록되었습니다.'); // ✅ 토스트 메시지 emit
   };
 </script>
 
@@ -53,26 +63,8 @@
   label {
     margin-bottom: 4px;
   }
-
   .left-group {
     display: flex;
     gap: 8px;
-  }
-
-  .cancel-button,
-  .submit-button {
-    padding: 8px 12px;
-    border-radius: 4px;
-    border: 1px solid #ccc;
-    background: white;
-    cursor: pointer;
-  }
-
-  input,
-  select {
-    padding: 8px;
-    font-size: 14px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
   }
 </style>

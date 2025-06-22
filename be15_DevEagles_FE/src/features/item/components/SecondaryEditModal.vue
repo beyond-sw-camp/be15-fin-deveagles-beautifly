@@ -1,33 +1,37 @@
 <template>
   <BaseItemModal title="2차 분류 상품 수정" @close="$emit('close')" @submit="submit">
+    <!-- 1차 분류명 -->
     <div class="form-group">
       <label>1차 분류명</label>
-      <select v-model="form.primaryItemId">
-        <option disabled value="">1차 분류 선택</option>
-        <option v-for="opt in primaryOptions" :key="opt.id" :value="opt.id">
-          {{ opt.name }}
-        </option>
-      </select>
+      <BaseForm
+        v-model="form.primaryItemId"
+        type="select"
+        :options="primaryOptions.map(opt => ({ value: opt.id, text: opt.name }))"
+        placeholder="1차 분류 선택"
+      />
     </div>
 
+    <!-- 2차 분류명 -->
     <div class="form-group">
       <label>2차 분류명</label>
-      <input v-model="form.secondaryName" type="text" placeholder="2차 분류명" />
+      <BaseForm v-model="form.secondaryName" type="text" placeholder="2차 분류명" />
     </div>
 
+    <!-- 상품 금액 -->
     <div class="form-group">
       <label>상품 금액</label>
-      <input v-model.number="form.price" type="number" placeholder="금액" step="100" />
+      <BaseForm v-model.number="form.price" type="number" step="100" placeholder="금액" />
     </div>
 
+    <!-- 하단 버튼 -->
     <template #footer>
       <div class="footer-buttons">
         <div class="left-group">
-          <button class="cancel-button" @click="$emit('close')">취소</button>
-          <button class="submit-button" @click="submit">수정</button>
+          <BaseButton type="primary" outline @click="$emit('close')">취소</BaseButton>
+          <BaseButton type="primary" @click="submit">수정</BaseButton>
         </div>
         <div class="right-group">
-          <button class="delete-button" @click="showDeleteModal = true">삭제</button>
+          <BaseButton type="error" @click="showDeleteModal = true">삭제</BaseButton>
         </div>
       </div>
     </template>
@@ -44,6 +48,8 @@
 <script setup>
   import { computed, ref } from 'vue';
   import BaseItemModal from './BaseItemModal.vue';
+  import BaseForm from '@/components/common/BaseForm.vue';
+  import BaseButton from '@/components/common/BaseButton.vue';
   import SecondaryDeleteModal from './SecondaryDeleteModal.vue';
 
   const props = defineProps({
@@ -57,17 +63,18 @@
     },
   });
 
-  const emit = defineEmits(['close', 'submit', 'update:modelValue', 'delete']);
-
-  const showDeleteModal = ref(false);
+  const emit = defineEmits(['close', 'submit', 'update:modelValue', 'delete', 'toast']);
 
   const form = computed({
     get: () => props.modelValue,
     set: val => emit('update:modelValue', val),
   });
 
+  const showDeleteModal = ref(false);
+
   const submit = () => {
     emit('submit', form.value);
+    emit('toast', '2차 상품이 수정되었습니다.');
   };
 
   const handleDelete = () => {
@@ -86,42 +93,16 @@
   label {
     margin-bottom: 4px;
   }
-  input,
-  select {
-    padding: 8px;
-    font-size: 14px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-  }
 
-  /* 버튼 레이아웃 */
+  /* 버튼 정렬 */
   .footer-buttons {
     display: flex;
     justify-content: space-between;
     align-items: center;
   }
-
   .left-group,
   .right-group {
     display: flex;
     gap: 8px;
-  }
-
-  .cancel-button,
-  .submit-button {
-    padding: 8px 12px;
-    border-radius: 4px;
-    border: 1px solid #ccc;
-    background: white;
-    cursor: pointer;
-  }
-
-  .delete-button {
-    background-color: red;
-    color: white;
-    border: 1px solid red;
-    padding: 8px 12px;
-    border-radius: 4px;
-    cursor: pointer;
   }
 </style>

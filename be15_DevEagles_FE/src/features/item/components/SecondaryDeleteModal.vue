@@ -13,7 +13,7 @@
     <template #footer>
       <div class="button-group">
         <BaseButton @click="$emit('update:modelValue', false)">취소</BaseButton>
-        <BaseButton class="danger" @click="handleDelete">삭제</BaseButton>
+        <BaseButton type="error" @click="handleDelete">삭제</BaseButton>
       </div>
     </template>
   </BaseModal>
@@ -31,6 +31,7 @@
 
   const handleDelete = () => {
     emit('confirm');
+    alert('2차 상품이 삭제되었습니다.');
     emit('update:modelValue', false);
   };
 </script>
@@ -53,10 +54,5 @@
     display: flex;
     justify-content: center;
     gap: 12px;
-  }
-  .danger {
-    background-color: red;
-    color: white;
-    border-color: red;
   }
 </style>

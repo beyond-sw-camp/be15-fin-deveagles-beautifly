@@ -1,29 +1,38 @@
 <template>
   <BaseItemModal title="1차 분류 상품 수정" @close="$emit('close')" @submit="submit">
+    <!-- 카테고리 -->
     <div class="form-group">
       <label>카테고리</label>
-      <select v-model="form.category">
-        <option value="SERVICE">시술</option>
-        <option value="PRODUCT">상품</option>
-      </select>
-    </div>
-    <div class="form-group">
-      <label>1차 분류명</label>
-      <input v-model="form.primaryName" type="text" placeholder="1차 분류명" />
+      <BaseForm
+        v-model="form.category"
+        type="select"
+        :options="[
+          { value: 'SERVICE', text: '시술' },
+          { value: 'PRODUCT', text: '상품' },
+        ]"
+      />
     </div>
 
+    <!-- 1차 분류명 -->
+    <div class="form-group">
+      <label>1차 분류명</label>
+      <BaseForm v-model="form.primaryName" type="text" placeholder="1차 분류명" />
+    </div>
+
+    <!-- 하단 버튼 -->
     <template #footer>
       <div class="footer-buttons">
         <div class="left-group">
-          <button class="cancel-button" @click="$emit('close')">취소</button>
-          <button class="submit-button" @click="submit">수정</button>
+          <BaseButton type="primary" outline @click="$emit('close')">취소</BaseButton>
+          <BaseButton type="primary" @click="submit">수정</BaseButton>
         </div>
         <div class="right-group">
-          <button class="delete-button" @click="showDeleteModal = true">삭제</button>
+          <BaseButton type="error" @click="showDeleteModal = true">삭제</BaseButton>
         </div>
       </div>
     </template>
 
+    <!-- 삭제 확인 모달 -->
     <PrimaryDeleteModal v-if="showDeleteModal" v-model="showDeleteModal" @confirm="handleDelete" />
   </BaseItemModal>
 </template>
@@ -31,6 +40,8 @@
 <script setup>
   import { computed, ref } from 'vue';
   import BaseItemModal from './BaseItemModal.vue';
+  import BaseForm from '@/components/common/BaseForm.vue';
+  import BaseButton from '@/components/common/BaseButton.vue';
   import PrimaryDeleteModal from './PrimaryDeleteModal.vue';
 
   const props = defineProps({
@@ -39,17 +50,19 @@
       required: true,
     },
   });
-  const emit = defineEmits(['close', 'submit', 'update:modelValue', 'delete']);
 
-  const showDeleteModal = ref(false);
+  const emit = defineEmits(['close', 'submit', 'update:modelValue', 'delete', 'toast']);
 
   const form = computed({
     get: () => props.modelValue,
     set: val => emit('update:modelValue', val),
   });
 
+  const showDeleteModal = ref(false);
+
   const submit = () => {
     emit('submit', form.value);
+    emit('toast', '1차 상품이 수정되었습니다.');
   };
 
   const handleDelete = () => {
@@ -68,42 +81,16 @@
   label {
     margin-bottom: 4px;
   }
-  input,
-  select {
-    padding: 8px;
-    font-size: 14px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-  }
 
-  /* 하단 버튼 */
+  /* 버튼 정렬 */
   .footer-buttons {
     display: flex;
     justify-content: space-between;
     align-items: center;
   }
-
   .left-group,
   .right-group {
     display: flex;
     gap: 8px;
-  }
-
-  .cancel-button,
-  .submit-button {
-    padding: 8px 12px;
-    border-radius: 4px;
-    border: 1px solid #ccc;
-    background: white;
-    cursor: pointer;
-  }
-
-  .delete-button {
-    background-color: red;
-    color: white;
-    border: 1px solid red;
-    padding: 8px 12px;
-    border-radius: 4px;
-    cursor: pointer;
   }
 </style>
