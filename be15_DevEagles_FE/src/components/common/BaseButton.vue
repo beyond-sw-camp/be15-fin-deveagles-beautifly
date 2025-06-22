@@ -1,5 +1,6 @@
 <template>
   <button
+    :type="htmlType"
     :class="[
       'btn',
       `btn-${type}`,
@@ -37,6 +38,11 @@
       disabled: {
         type: Boolean,
         default: false,
+      },
+      htmlType: {
+        type: String,
+        default: 'button',
+        validator: value => ['button', 'submit', 'reset'].includes(value),
       },
     },
     emits: ['click'],

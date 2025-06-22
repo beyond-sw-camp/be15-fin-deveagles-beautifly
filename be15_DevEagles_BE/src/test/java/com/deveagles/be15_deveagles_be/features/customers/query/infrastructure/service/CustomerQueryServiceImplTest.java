@@ -1,6 +1,5 @@
 package com.deveagles.be15_deveagles_be.features.customers.query.infrastructure.service;
 
-import static com.deveagles.be15_deveagles_be.features.customers.command.domain.aggregate.QCustomer.customer;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.given;

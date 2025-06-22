@@ -15,7 +15,7 @@
         :hour-format="hourFormat"
         :date-format="computedDateFormat"
         :show-button-bar="showButtonBar"
-        :show-icon="showIcon"
+        :show-icon="computedShowIcon"
         :icon-display="iconDisplay"
         :number-of-months="numberOfMonths"
         :min-date="minDate"
@@ -222,6 +222,13 @@
         } else {
           return this.placeholder || '날짜를 선택하세요';
         }
+      },
+
+      computedShowIcon() {
+        if (this.clearable && this.modelValue && !this.disabled) {
+          return false;
+        }
+        return this.showIcon;
       },
     },
 
