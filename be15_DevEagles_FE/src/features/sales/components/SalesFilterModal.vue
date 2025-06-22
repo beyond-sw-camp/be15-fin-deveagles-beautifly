@@ -1,5 +1,5 @@
 <template>
-  <BaseModal title="필터" @close="close">
+  <BaseModal v-model="isVisible" title="필터" @close="close">
     <div class="filter-form">
       <!-- 판매일시 -->
       <div class="form-section">
@@ -73,8 +73,10 @@
   const props = defineProps({
     modelValue: Boolean,
   });
+
   const emit = defineEmits(['close', 'apply', 'update:modelValue']);
 
+  const isVisible = ref(props.modelValue);
   const startDate = ref(null);
   const endDate = ref(null);
   const types = ref([]);
@@ -83,6 +85,23 @@
 
   const productTypes = ['시술', '상품', '패키지'];
   const staffOptions = ['김경민', '홍길동', '김민지'];
+
+  // v-model sync
+  watch(
+    () => props.modelValue,
+    val => {
+      isVisible.value = val;
+    }
+  );
+  watch(isVisible, val => {
+    emit('update:modelValue', val);
+  });
+
+  watch(types, newVal => {
+    if (!newVal.includes('상품')) {
+      selectedProducts.value = [];
+    }
+  });
 
   const toggleProduct = option => {
     const index = selectedProducts.value.indexOf(option);
@@ -93,14 +112,8 @@
     }
   };
 
-  watch(types, newVal => {
-    if (!newVal.includes('상품')) {
-      selectedProducts.value = [];
-    }
-  });
-
   const close = () => {
-    emit('update:modelValue', false);
+    isVisible.value = false;
     emit('close');
   };
 
@@ -117,7 +130,6 @@
       staff: selectedStaff.value,
     });
 
-    // 저장 후 모달 닫기
     close();
   };
 </script>

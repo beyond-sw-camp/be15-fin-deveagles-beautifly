@@ -1,39 +1,36 @@
 <template>
-  <BaseTable
-    :columns="columns"
-    :data="filteredData"
-    :striped="true"
-    :hover="true"
-    :loading="loading"
-    row-key="id"
-  >
-    <!-- 이름 클릭 시 모달 열기 -->
-    <template #cell-name="{ value, item }">
-      <span class="text-blue-500 underline cursor-pointer" @click="openModal(item)">
-        {{ value }}
-      </span>
-    </template>
+  <div class="base-table-wrapper">
+    <!-- 회원권 테이블 -->
+    <BaseTable
+      :columns="columns"
+      :data="filteredData"
+      :striped="true"
+      :hover="true"
+      :loading="loading"
+      row-key="id"
+      @row-click="openModal"
+    >
+      <!-- 만료일 강조 표시 -->
+      <template #cell-expiryDate="{ value }">
+        <span :class="{ 'text-red-500': isExpiringSoon(value) }">
+          {{ value }}
+        </span>
+      </template>
+    </BaseTable>
 
-    <!-- 만료일 강조 표시 -->
-    <template #cell-expiryDate="{ value }">
-      <span :class="{ 'text-red-500': isExpiringSoon(value) }">
-        {{ value }}
-      </span>
-    </template>
-  </BaseTable>
-
-  <!-- 상세 모달 -->
-  <CustomerMembershipDetailModal
-    v-if="detailModalVisible"
-    v-model="detailModalVisible"
-    :customer="selectedCustomer"
-  />
+    <!-- 상세 모달 -->
+    <CustomerMembershipDetailModal
+      v-if="detailModalVisible"
+      v-model="detailModalVisible"
+      :customer="selectedCustomer"
+    />
+  </div>
 </template>
 
 <script setup>
+  import { ref, computed } from 'vue';
   import BaseTable from '@/components/common/BaseTable.vue';
   import CustomerMembershipDetailModal from '@/features/membership/components/CustomerMembershipDetailModal.vue';
-  import { ref, computed } from 'vue';
 
   const props = defineProps({
     loading: {
@@ -130,10 +127,11 @@
   });
 
   const columns = computed(() => [
-    { key: 'name', title: '이름', width: '50px' },
-    { key: 'phone', title: '연락처', width: '70px' },
-    { key: 'remaining', title: '잔여선불권', width: '70px' },
-    { key: 'used', title: '보유횟수권', width: '370px' },
+    { key: 'name', title: '이름', width: '120px' },
+    { key: 'phone', title: '연락처', width: '140px' },
+    { key: 'remaining', title: '잔여선불권', width: '100px' },
+    { key: 'used', title: '보유횟수권', width: '300px' },
+    { key: 'expiryDate', title: '만료일', width: '120px' },
   ]);
 
   const isExpiringSoon = dateStr => {
@@ -151,3 +149,13 @@
     detailModalVisible.value = true;
   };
 </script>
+
+<style scoped>
+  .base-table-wrapper {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    padding: 24px;
+    margin-bottom: 24px;
+  }
+</style>

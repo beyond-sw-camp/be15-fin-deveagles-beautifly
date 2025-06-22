@@ -1,33 +1,36 @@
 <template>
-  <BaseTable
-    :columns="columns"
-    :data="filteredData"
-    :striped="true"
-    :hover="true"
-    :loading="loading"
-    row-key="id"
-  >
-    <!-- 이름 클릭 시 모달 열기 -->
-    <template #cell-name="{ value, item }">
-      <span class="text-blue-500 underline cursor-pointer" @click="openModal(item)">
-        {{ value }}
-      </span>
-    </template>
+  <div class="base-table-wrapper">
+    <BaseTable
+      :columns="columns"
+      :data="filteredData"
+      :striped="true"
+      :hover="true"
+      :loading="loading"
+      row-key="id"
+      @row-click="openModal"
+    >
+      <!-- 이름 클릭 시 모달 열기 -->
+      <template #cell-name="{ value, item }">
+        <span class="text-blue-500 underline cursor-pointer" @click.stop="openModal(item)">
+          {{ value }}
+        </span>
+      </template>
 
-    <!-- 만료일 강조 표시 -->
-    <template #cell-expiryDate="{ value }">
-      <span :class="{ 'text-red-500': isExpiringSoon(value) }">
-        {{ value }}
-      </span>
-    </template>
-  </BaseTable>
+      <!-- 만료일 강조 표시 -->
+      <template #cell-expiryDate="{ value }">
+        <span :class="{ 'text-red-500': isExpiringSoon(value) }">
+          {{ value }}
+        </span>
+      </template>
+    </BaseTable>
 
-  <!-- 상세 모달 -->
-  <CustomerMembershipDetailModal
-    v-if="detailModalVisible"
-    v-model="detailModalVisible"
-    :customer="selectedCustomer"
-  />
+    <!-- 상세 모달 -->
+    <CustomerMembershipDetailModal
+      v-if="detailModalVisible"
+      v-model="detailModalVisible"
+      :customer="selectedCustomer"
+    />
+  </div>
 </template>
 
 <script setup>
@@ -37,11 +40,12 @@
 
   const props = defineProps({
     loading: { type: Boolean, default: false },
-    type: { type: String, default: '선불' }, // or '횟수권'
+    type: { type: String, default: '선불' },
   });
 
   const searchKeyword = ref('');
   const filterState = ref(null);
+
   const detailModalVisible = ref(false);
   const selectedCustomer = ref(null);
 
@@ -150,3 +154,13 @@
     return diff >= 0 && diff <= 7;
   };
 </script>
+
+<style scoped>
+  .base-table-wrapper {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    padding: 24px;
+    margin-bottom: 24px;
+  }
+</style>

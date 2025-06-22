@@ -5,135 +5,90 @@
         <div class="custom-modal">
           <div class="modal-header">
             <h2>고객 회원권 상세 조회</h2>
-            <button class="modal-close" @click="close">&times;</button>
+            <BaseButton class="modal-close" size="sm" icon @click="close">×</BaseButton>
           </div>
 
           <div class="modal-content">
-            <!-- 고객 기본 정보 -->
+            <!-- 고객 정보 -->
             <div class="section">
-              <h3>고객 정보</h3>
-              <br />
+              <h3>보유 회원권</h3>
               <div class="info-grid">
-                <div><h3>이름:</h3></div>
-                <div>{{ customer.name }}</div>
-                <div><h3>연락처:</h3></div>
-                <div>{{ customer.phone }}</div>
+                <div><BaseForm label="이름" :model-value="customer.name" readonly /></div>
+                <div><BaseForm label="연락처" :model-value="customer.phone" readonly /></div>
               </div>
             </div>
-
-            <hr class="divider" />
 
             <!-- 보유 회원권 -->
             <div class="section">
               <h3>보유 회원권</h3>
-              <br />
               <div class="tab-row">
-                <div
-                  class="tab"
-                  :class="{ active: activeTab === 'PREPAID' }"
-                  @click="activeTab = 'PREPAID'"
+                <BaseButton
+                  v-for="tab in ['PREPAID', 'COUNT']"
+                  :key="tab"
+                  :type="activeTab === tab ? 'primary' : 'ghost'"
+                  @click="activeTab = tab"
                 >
-                  선불권
-                </div>
-                <div
-                  class="tab"
-                  :class="{ active: activeTab === 'COUNT' }"
-                  @click="activeTab = 'COUNT'"
-                >
-                  횟수권
-                </div>
+                  {{ tab === 'PREPAID' ? '선불권' : '횟수권' }}
+                </BaseButton>
               </div>
 
-              <BaseTable :columns="membershipColumns" :data="filteredMemberships" row-key="id">
-                <template #cell-name="{ value, item }">
-                  <span class="text-blue-500 underline cursor-pointer" @click="openEditModal(item)">
-                    {{ value }}
-                  </span>
-                </template>
-              </BaseTable>
+              <div class="base-table-wrapper scrollable-table">
+                <BaseTable
+                  :columns="membershipColumns"
+                  :data="filteredMemberships"
+                  row-key="id"
+                  @row-click="openEditModal"
+                >
+                  <template #cell-type="{ value }">
+                    {{ value === 'PREPAID' ? '선불권' : value === 'COUNT' ? '횟수권' : value }}
+                  </template>
+                </BaseTable>
+              </div>
             </div>
-
-            <hr class="divider" />
 
             <!-- 사용 내역 -->
             <div class="section">
               <h3>사용 내역</h3>
-              <br />
-              <BaseTable :columns="usageColumns" :data="customer.usageHistory || []" row-key="id" />
+              <div class="base-table-wrapper scrollable-table">
+                <BaseTable :columns="usageColumns" :data="customer.usageHistory" row-key="id" />
+              </div>
             </div>
           </div>
+
+          <!-- ✅ Toast 컴포넌트 위치 여기 -->
+          <BaseToast ref="toastRef" />
         </div>
       </div>
     </transition>
   </Teleport>
 
   <!-- 수정 모달 -->
-  <Teleport to="body">
-    <div v-if="editModalVisible" class="edit-modal-wrapper">
-      <CustomerMembershipEditModal
-        :model-value="editModalVisible"
-        :membership="selectedMembership"
-        @update:model-value="editModalVisible = false"
-        @close="editModalVisible = false"
-      />
-    </div>
-  </Teleport>
+  <CustomerMembershipEditModal
+    v-if="editModalVisible"
+    v-model="editModalVisible"
+    :membership="selectedMembership"
+    @updated="handleUpdated"
+  />
 </template>
 
 <script setup>
   import { ref, computed } from 'vue';
+  import BaseForm from '@/components/common/BaseForm.vue';
+  import BaseButton from '@/components/common/BaseButton.vue';
   import BaseTable from '@/components/common/BaseTable.vue';
+  import BaseToast from '@/components/common/BaseToast.vue';
   import CustomerMembershipEditModal from '@/features/membership/components/CustomerMembershipEditModal.vue';
 
   const props = defineProps({
     modelValue: Boolean,
     customer: {
       type: Object,
-      required: false,
+      required: true,
       default: () => ({
-        name: '홍길동',
-        phone: '010-1234-5678',
-        memberships: [
-          {
-            id: 1,
-            name: '선불권 10만원권',
-            type: 'PREPAID',
-            remaining: 50000,
-            create: '2024-06-01',
-            expiry: '2025-06-01',
-          },
-          {
-            id: 2,
-            name: '시술 5회권',
-            type: 'COUNT',
-            remaining: 3,
-            count: 5,
-            create: '2024-05-15',
-            expiry: '2024-11-15',
-          },
-          {
-            id: 3,
-            name: '선불권 5만원권',
-            type: 'PREPAID',
-            remaining: 20000,
-            create: '2024-03-10',
-            expiry: '2025-03-10',
-          },
-        ],
-        usageHistory: [
-          {
-            id: 101,
-            date: '2024-06-10',
-            detail: '컷트',
-            change: '-1회',
-          },
-          {
-            id: 102,
-            date: '2024-06-05',
-            detail: '염색',
-            change: '-30,000원',
-          },
-        ],
+        name: '',
+        phone: '',
+        memberships: [],
+        usageHistory: [],
       }),
     },
   });
@@ -141,32 +96,37 @@
   const emit = defineEmits(['update:modelValue']);
   const close = () => emit('update:modelValue', false);
 
+  const toastRef = ref(null);
+
   const activeTab = ref('PREPAID');
+  const editModalVisible = ref(false);
+  const selectedMembership = ref(null);
 
   const filteredMemberships = computed(() =>
     props.customer.memberships.filter(m => m.type === activeTab.value)
   );
 
   const membershipColumns = [
-    { key: 'name', title: '회원권명' },
-    { key: 'type', title: '회원권종류' },
-    { key: 'remaining', title: '잔여' },
-    { key: 'create', title: '결제일' },
-    { key: 'expiry', title: '만료일' },
+    { key: 'name', title: '회원권명', width: '180px' },
+    { key: 'type', title: '종류', width: '100px' },
+    { key: 'remaining', title: '잔여', width: '80px' },
+    { key: 'create', title: '결제일', width: '120px' },
+    { key: 'expiry', title: '만료일', width: '120px' },
   ];
 
   const usageColumns = [
-    { key: 'date', title: '사용일' },
-    { key: 'detail', title: '내용' },
-    { key: 'change', title: '증감' },
+    { key: 'date', title: '사용일', width: '120px' },
+    { key: 'detail', title: '내용', width: '300px' },
+    { key: 'change', title: '증감', width: '100px' },
   ];
 
-  const editModalVisible = ref(false);
-  const selectedMembership = ref(null);
-
-  const openEditModal = membership => {
-    selectedMembership.value = membership;
+  const openEditModal = row => {
+    selectedMembership.value = row;
     editModalVisible.value = true;
+  };
+
+  const handleUpdated = () => {
+    toastRef.value?.success('고객 회원권 정보가 수정되었습니다.');
   };
 </script>
 
@@ -180,7 +140,6 @@
     align-items: center;
     justify-content: center;
   }
-
   .custom-modal {
     background: white;
     width: 800px;
@@ -189,76 +148,48 @@
     overflow-y: auto;
     display: flex;
     flex-direction: column;
-    pointer-events: auto;
   }
-
   .modal-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 1rem;
+    padding: 1rem 1.5rem;
     border-bottom: 1px solid #eee;
   }
-
   .modal-close {
     background: none;
     border: none;
-    font-size: 1.5rem;
-    cursor: pointer;
+    font-size: 20px;
+    padding: 0 8px;
+    line-height: 1;
   }
-
   .modal-content {
-    padding: 1rem;
+    padding: 1.5rem;
     flex: 1;
     overflow-y: auto;
   }
-
   .section {
     margin-top: 1.5rem;
   }
-
-  .divider {
-    margin: 1.5rem 0;
-    border: none;
-    border-top: 1px solid #ddd;
-  }
-
   .info-grid {
     display: grid;
-    grid-template-columns: 45px auto 55px auto;
-    gap: 0.5rem 1rem;
-    font-size: 15px;
-    align-items: center;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
   }
-
-  .edit-modal-wrapper {
-    position: fixed;
-    inset: 0;
-    z-index: 2000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  /* 탭 스타일 */
   .tab-row {
     display: flex;
-    gap: 1rem;
-    margin-bottom: 1rem;
+    gap: 0.5rem;
+    margin: 1rem 0;
   }
-
-  .tab {
-    padding: 6px 16px;
-    border: 1px solid #ccc;
-    border-radius: 20px;
-    cursor: pointer;
-    font-size: 14px;
-    transition: all 0.2s ease;
+  .base-table-wrapper {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    padding: 16px;
+    margin-top: 0.5rem;
   }
-
-  .tab.active {
-    background-color: #333;
-    color: white;
-    border-color: #333;
+  .scrollable-table {
+    max-height: 200px;
+    overflow-y: auto;
   }
 </style>
