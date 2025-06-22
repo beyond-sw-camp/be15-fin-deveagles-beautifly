@@ -163,7 +163,7 @@
   transition: background-color 0.2s ease;
   z-index: 20;
   font-size: 12px;
-  background-color: var(--color-white, #ffffff);
+  background-color: var(--color-bg-primary, #ffffff);
 }
 
 .prime-datepicker-wrapper .clear-icon:hover {
