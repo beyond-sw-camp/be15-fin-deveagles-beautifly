@@ -21,7 +21,13 @@
     margin: 0;
     padding: 0;
     height: 100%;
-    font-family: 'Noto Sans KR', sans-serif;
+    font-family:
+      'Noto Sans KR',
+      -apple-system,
+      BlinkMacSystemFont,
+      'Segoe UI',
+      sans-serif;
+    font-display: swap;
     background-color: var(--color-gray-50);
   }
 
