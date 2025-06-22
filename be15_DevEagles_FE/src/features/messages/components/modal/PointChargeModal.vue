@@ -1,28 +1,23 @@
 <script setup>
-  import { ref, watch } from 'vue';
+  import { computed, ref } from 'vue';
   import BaseModal from '@/components/common/BaseModal.vue';
   import BaseButton from '@/components/common/BaseButton.vue';
 
+  defineOptions({
+    inheritAttrs: false,
+  });
+
   const props = defineProps({
-    modelValue: {
-      type: Boolean,
-      required: true,
-    },
+    modelValue: Boolean,
   });
   const emit = defineEmits(['confirm', 'update:modelValue']);
 
-  const visible = ref(props.modelValue);
-  const amount = ref('');
-
-  watch(
-    () => props.modelValue,
-    val => {
-      visible.value = val;
-    }
-  );
-  watch(visible, val => {
-    emit('update:modelValue', val);
+  const visible = computed({
+    get: () => props.modelValue,
+    set: val => emit('update:modelValue', val),
   });
+
+  const amount = ref('');
 
   function confirmCharge() {
     const parsed = parseInt(amount.value, 10);
@@ -49,7 +44,7 @@
     </div>
 
     <div class="modal-footer mt-6 flex justify-end gap-2">
-      <BaseButton type="gray" @click="visible = false">취소</BaseButton>
+      <BaseButton type="secondary" @click="visible = false">취소</BaseButton>
       <BaseButton type="primary" @click="confirmCharge">충전</BaseButton>
     </div>
   </BaseModal>
@@ -68,11 +63,9 @@
       border-color 0.2s,
       box-shadow 0.2s;
   }
-
   .modern-input::placeholder {
     color: var(--color-gray-400);
   }
-
   .modern-input:focus {
     outline: none;
     border-color: var(--color-primary-main);

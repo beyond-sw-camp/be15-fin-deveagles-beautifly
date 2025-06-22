@@ -18,6 +18,14 @@ public enum ErrorCode implements ErrorCodeType {
   DUPLICATE_RESOURCE("00007", "중복된 리소스입니다", HttpStatus.CONFLICT),
   INTERNAL_SERVER_ERROR("00999", "서버 내부 오류가 발생했습니다", HttpStatus.INTERNAL_SERVER_ERROR),
 
+  // 고객 관련 에러 (30000번대)
+  CUSTOMER_NOT_FOUND("30001", "고객을 찾을 수 없습니다", HttpStatus.NOT_FOUND),
+  CUSTOMER_PHONE_DUPLICATE("30002", "이미 등록된 전화번호입니다", HttpStatus.CONFLICT),
+  CUSTOMER_ALREADY_DELETED("30003", "이미 삭제된 고객입니다", HttpStatus.BAD_REQUEST),
+  CUSTOMER_ACCESS_DENIED("30004", "해당 고객에 대한 접근 권한이 없습니다", HttpStatus.FORBIDDEN),
+  CUSTOMER_INVALID_PHONE_NUMBER("30005", "유효하지 않은 전화번호 형식입니다", HttpStatus.BAD_REQUEST),
+  CUSTOMER_INVALID_BIRTHDATE("30006", "유효하지 않은 생년월일입니다", HttpStatus.BAD_REQUEST),
+
   // 쿠폰 관련 에러 (50000번대)
   COUPON_NOT_FOUND("50001", "쿠폰을 찾을 수 없습니다", HttpStatus.NOT_FOUND),
   COUPON_CODE_DUPLICATE("50002", "이미 존재하는 쿠폰 코드입니다", HttpStatus.CONFLICT),
@@ -25,8 +33,16 @@ public enum ErrorCode implements ErrorCodeType {
   COUPON_ALREADY_EXPIRED("50004", "만료된 쿠폰입니다", HttpStatus.BAD_REQUEST),
   COUPON_ALREADY_ACTIVE("50005", "이미 활성화된 쿠폰입니다", HttpStatus.BAD_REQUEST),
   COUPON_ALREADY_INACTIVE("50006", "이미 비활성화된 쿠폰입니다", HttpStatus.BAD_REQUEST),
+  COUPON_DISCOUNT_CALCULATION_ERROR("50007", "쿠폰 할인 계산 중 오류가 발생했습니다", HttpStatus.BAD_REQUEST),
+  COUPON_INVALID_AMOUNT("50008", "유효하지 않은 금액입니다", HttpStatus.BAD_REQUEST),
+  COUPON_INVALID_DISCOUNT_RATE("50009", "유효하지 않은 할인율입니다", HttpStatus.BAD_REQUEST),
   DELETED_COUPON_OPERATION_NOT_ALLOWED(
-      "50007", "삭제된 쿠폰은 해당 작업을 수행할 수 없습니다", HttpStatus.BAD_REQUEST);
+      "50010", "삭제된 쿠폰은 해당 작업을 수행할 수 없습니다", HttpStatus.BAD_REQUEST),
+
+  // 캠페인 관련 에러 (51000번대)
+  CAMPAIGN_NOT_FOUND("51001", "캠페인을 찾을 수 없습니다", HttpStatus.NOT_FOUND),
+  CAMPAIGN_ALREADY_DELETED("51002", "이미 삭제된 캠페인입니다", HttpStatus.BAD_REQUEST),
+  INVALID_CAMPAIGN_DATE_RANGE("51003", "캠페인 종료일은 시작일보다 늦어야 합니다", HttpStatus.BAD_REQUEST);
 
   private final String code;
   private final String message;

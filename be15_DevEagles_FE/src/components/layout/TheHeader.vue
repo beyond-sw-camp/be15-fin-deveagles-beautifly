@@ -82,83 +82,91 @@
           <span class="tooltip tooltip-bottom tooltip-primary">새 고객 등록</span>
         </div>
 
-        <!-- 알림 -->
-        <div class="tooltip-container">
-          <button class="notification-btn" @click="toggleNotifications">
-            <BellIcon :size="18" />
-            <span v-if="notificationCount > 0" class="notification-badge">{{
-              notificationCount > 99 ? '99+' : notificationCount
-            }}</span>
+        <!-- 알림 버튼 -->
+        <div class="tooltip-container relative">
+          <button ref="bellButtonRef" class="quick-menu-item" @click="toggleNotifications">
+            <BellIcon :size="16" />
+
+            <!-- 🔴 알림 개수 뱃지 -->
+            <span
+              v-if="notificationCount > 0"
+              class="absolute -top-1 -right-1 inline-flex items-center justify-center w-4 h-4 text-[10px] font-bold text-white bg-danger rounded-full"
+            >
+              {{ notificationCount }}
+            </span>
           </button>
           <span class="tooltip tooltip-bottom tooltip-primary">알림</span>
         </div>
 
-        <!-- 사용자 메뉴 -->
-        <div ref="userMenuRef" class="user-menu">
-          <button class="user-btn" @click="toggleUserMenu">
-            <span class="user-avatar">
-              <span class="avatar-text">{{ userInitial }}</span>
-            </span>
-            <span class="user-info">
-              <span class="user-name">{{ userName }}</span>
-              <span class="user-role">{{ userRole }}</span>
-            </span>
-            <ChevronDownIcon :size="12" class="dropdown-arrow" :class="{ rotated: showUserMenu }" />
-          </button>
+        <!-- 알림 팝오버 -->
+        <NotificationList v-model="showNotifications" :trigger-element="bellButtonRef" />
+      </div>
 
-          <Transition name="dropdown">
-            <div v-if="showUserMenu" class="user-dropdown">
-              <div class="dropdown-header">
-                <div class="user-profile">
-                  <div class="user-avatar-large">
-                    <span class="avatar-text">{{ userInitial }}</span>
-                  </div>
-                  <div class="user-details">
-                    <div class="user-name">{{ userName }}</div>
-                    <div class="user-uid">{{ userUID }}</div>
-                  </div>
+      <!-- 사용자 메뉴 -->
+      <div ref="userMenuRef" class="user-menu">
+        <button class="user-btn" @click="toggleUserMenu">
+          <span class="user-avatar">
+            <span class="avatar-text">{{ userInitial }}</span>
+          </span>
+          <span class="user-info">
+            <span class="user-name">{{ userName }}</span>
+            <span class="user-role">{{ userRole }}</span>
+          </span>
+          <ChevronDownIcon :size="12" class="dropdown-arrow" :class="{ rotated: showUserMenu }" />
+        </button>
+
+        <Transition name="dropdown">
+          <div v-if="showUserMenu" class="user-dropdown">
+            <div class="dropdown-header">
+              <div class="user-profile">
+                <div class="user-avatar-large">
+                  <span class="avatar-text">{{ userInitial }}</span>
+                </div>
+                <div class="user-details">
+                  <div class="user-name">{{ userName }}</div>
+                  <div class="user-uid">{{ userUID }}</div>
                 </div>
               </div>
-
-              <div class="dropdown-menu">
-                <router-link to="/profile" class="dropdown-item">
-                  <UserIcon :size="16" class="item-icon" />
-                  <span>프로필</span>
-                </router-link>
-                <router-link to="/settings/account" class="dropdown-item">
-                  <SettingsIcon :size="16" class="item-icon" />
-                  <span>계정 설정</span>
-                </router-link>
-                <div class="dropdown-divider"></div>
-                <button class="dropdown-item" @click="logout">
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    class="item-icon"
-                  >
-                    <path
-                      d="M9 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H9"
-                    ></path>
-                    <polyline points="16,17 21,12 16,7"></polyline>
-                    <line x1="21" y1="12" x2="9" y2="12"></line>
-                  </svg>
-                  <span>로그아웃</span>
-                </button>
-              </div>
             </div>
-          </Transition>
-        </div>
+
+            <div class="dropdown-menu">
+              <router-link to="/profile" class="dropdown-item">
+                <UserIcon :size="16" class="item-icon" />
+                <span>프로필</span>
+              </router-link>
+              <router-link to="/settings/account" class="dropdown-item">
+                <SettingsIcon :size="16" class="item-icon" />
+                <span>계정 설정</span>
+              </router-link>
+              <div class="dropdown-divider"></div>
+              <button class="dropdown-item" @click="logout">
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  class="item-icon"
+                >
+                  <path
+                    d="M9 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H9"
+                  ></path>
+                  <polyline points="16,17 21,12 16,7"></polyline>
+                  <line x1="21" y1="12" x2="9" y2="12"></line>
+                </svg>
+                <span>로그아웃</span>
+              </button>
+            </div>
+          </div>
+        </Transition>
       </div>
     </div>
   </header>
 </template>
 
 <script setup>
-  import { ref, computed, onMounted, onUnmounted } from 'vue';
+  import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue';
   import {
     SearchIcon,
     BellIcon,
@@ -171,6 +179,7 @@
     MessageCircleIcon,
     BarChartIcon,
   } from '../icons/index.js';
+  import NotificationList from '@/features/notifications/components/NotificationList.vue';
 
   const userMenuRef = ref(null);
   const searchInputRef = ref(null);
@@ -178,8 +187,10 @@
   // 상태
   const searchQuery = ref('');
   const showUserMenu = ref(false);
+  // 알림 관련 상태
   const showNotifications = ref(false);
   const notificationCount = ref(3);
+  const bellButtonRef = ref(null);
   const isSearchFocused = ref(false);
 
   // 사용자 정보
@@ -245,8 +256,14 @@
     showUserMenu.value = !showUserMenu.value;
   };
 
-  const toggleNotifications = () => {
-    showNotifications.value = !showNotifications.value;
+  const toggleNotifications = async () => {
+    await nextTick();
+    const el = bellButtonRef.value;
+    if (el && el.getBoundingClientRect().width > 0) {
+      showNotifications.value = !showNotifications.value;
+    } else {
+      console.warn('bellButtonRef가 아직 화면에 렌더되지 않았습니다.');
+    }
   };
 
   // 외부 클릭 감지
@@ -440,17 +457,10 @@
 
   .notification-btn {
     position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 36px;
-    height: 36px;
-    border: none;
-    border-radius: 0.5rem;
     background: none;
-    color: var(--color-gray-600);
+    border: none;
+    padding: 0.25rem;
     cursor: pointer;
-    transition: all 150ms ease;
   }
 
   .notification-btn:hover {
@@ -461,22 +471,15 @@
 
   .notification-badge {
     position: absolute;
-    top: 0.125rem;
-    right: 0.125rem;
-    background: linear-gradient(135deg, #ff6b6b, #ee5a52);
-    color: var(--color-neutral-white);
-    font-size: 9px;
-    font-weight: 600;
-    padding: 0.125rem 0.25rem;
-    border-radius: 999px;
-    min-width: 14px;
-    height: 14px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    top: -4px;
+    right: -4px;
+    background-color: var(--color-warning-300);
+    color: white;
+    font-size: 10px;
+    font-weight: bold;
+    padding: 2px 5px;
+    border-radius: 9999px;
     line-height: 1;
-    box-shadow: 0 2px 4px rgba(255, 107, 107, 0.3);
-    border: 1.5px solid var(--color-neutral-white);
   }
 
   .user-menu {

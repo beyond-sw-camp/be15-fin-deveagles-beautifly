@@ -1,10 +1,8 @@
-<script setup>
-  import { TheLayout } from './components/layout/index.js';
-</script>
+<script setup></script>
 
 <template>
   <div id="app">
-    <TheLayout />
+    <router-view />
   </div>
 </template>
 
@@ -23,12 +21,17 @@
     margin: 0;
     padding: 0;
     height: 100%;
-    font-family: 'Noto Sans KR', sans-serif;
+    font-family:
+      'Noto Sans KR',
+      -apple-system,
+      BlinkMacSystemFont,
+      'Segoe UI',
+      sans-serif;
     background-color: var(--color-gray-50);
   }
 
   #app {
-    height: 100vh;
+    min-height: 100vh;
     overflow: hidden;
   }
 

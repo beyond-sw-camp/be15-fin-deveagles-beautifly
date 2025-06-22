@@ -7,7 +7,7 @@
     <div class="input-container">
       <DatePicker
         :id="inputId"
-        v-model="dateValue"
+        :model-value="modelValue"
         :selection-mode="selectionMode"
         :view="view"
         :show-time="showTime"
@@ -18,6 +18,7 @@
         :show-icon="showIcon"
         :icon-display="iconDisplay"
         :number-of-months="numberOfMonths"
+        @update:model-value="onUpdateModelValue"
         :min-date="minDate"
         :max-date="maxDate"
         :placeholder="computedPlaceholder"
@@ -37,12 +38,7 @@
       />
 
       <!-- Clear button -->
-      <div
-        v-if="clearable && modelValue && !disabled"
-        class="clear-icon"
-        title="지우기"
-        @click="clearValue"
-      >
+      <div v-if="shouldShowClearIcon" class="clear-icon" title="닫기" @click.stop="clearValue">
         ✕
       </div>
     </div>
@@ -176,32 +172,6 @@
     ],
 
     computed: {
-      dateValue: {
-        get() {
-          return this.modelValue;
-        },
-        set(value) {
-          // 안전한 값 검증
-          if (value === null || value === undefined) {
-            this.$emit('update:modelValue', null);
-            this.$emit('change', null);
-          } else if (Array.isArray(value)) {
-            // Range/Multiple mode 처리
-            const validValue = value.filter(date => date !== null && date !== undefined);
-            if (validValue.length === 0) {
-              this.$emit('update:modelValue', null);
-              this.$emit('change', null);
-            } else {
-              this.$emit('update:modelValue', value);
-              this.$emit('change', value);
-            }
-          } else {
-            this.$emit('update:modelValue', value);
-            this.$emit('change', value);
-          }
-        },
-      },
-
       // 뷰 모드에 따른 날짜 형식 계산
       computedDateFormat() {
         if (this.view === 'month') {
@@ -223,11 +193,28 @@
           return this.placeholder || '날짜를 선택하세요';
         }
       },
+
+      shouldShowClearIcon() {
+        return this.clearable && this.modelValue && !this.disabled;
+      },
     },
 
     methods: {
+      onUpdateModelValue(value) {
+        // 기본 시간 적용
+        if (this.defaultTime && this.showTime && value) {
+          const adjustedValue = this.applyDefaultTime(value);
+          this.$emit('update:modelValue', adjustedValue);
+          this.$emit('change', adjustedValue);
+        } else {
+          this.$emit('update:modelValue', value);
+          this.$emit('change', value);
+        }
+      },
+
       clearValue() {
-        this.dateValue = null;
+        this.$emit('update:modelValue', null);
+        this.$emit('change', null);
       },
 
       // 기본 시간 적용 함수
@@ -265,64 +252,14 @@
 
       // 날짜 선택 이벤트 핸들러
       onDateSelect(event) {
-        if (this.defaultTime && this.showTime) {
-          const adjustedDate = this.applyDefaultTime(event);
-          this.dateValue = adjustedDate;
-          this.$emit('date-select', adjustedDate);
-        } else {
-          this.$emit('date-select', event);
-        }
+        this.$emit('date-select', event);
       },
     },
   };
 </script>
 
 <style scoped>
-  .prime-datepicker-wrapper {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-
-  .form-label {
-    font-size: 14px;
-    font-weight: 700;
-    color: var(--color-gray-700, #374151);
-  }
-
-  .input-container {
-    position: relative;
-    display: flex;
-    align-items: center;
-  }
-
   .prime-datepicker {
     width: 100%;
-  }
-
-  .clear-icon {
-    position: absolute;
-    right: 8px;
-    cursor: pointer;
-    color: var(--color-gray-400, #9ca3af);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    transition: background-color 0.2s ease;
-    z-index: 10;
-    font-size: 12px;
-  }
-
-  .clear-icon:hover {
-    background-color: var(--color-gray-100, #f3f4f6);
-    color: var(--color-gray-600, #4b5563);
-  }
-
-  .error-message {
-    font-size: 12px;
-    color: var(--color-error-500, #ef4444);
   }
 </style>

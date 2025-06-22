@@ -1,14 +1,72 @@
+<template>
+  <div class="container">
+    <div class="page-header">
+      <h1 class="font-screen-title">예약 캘린더</h1>
+    </div>
+
+    <div class="filter-bar filter-align-right">
+      <input
+        v-model="searchText"
+        type="text"
+        placeholder="고객명 또는 연락처 검색"
+        class="input input-search"
+      />
+      <select v-model="selectedService" class="input input-select">
+        <option value="">시술 종류</option>
+        <option value="커트">커트</option>
+        <option value="염색">염색</option>
+        <option value="펌">펌</option>
+      </select>
+      <select v-model="selectedStaff" class="input input-select">
+        <option value="">담당자</option>
+        <option value="최민수">최민수</option>
+        <option value="이채은">이채은</option>
+      </select>
+      <select v-model="selectedType" class="input input-select">
+        <option value="">스케줄</option>
+        <option value="reservation">예약</option>
+        <option value="leave">휴무</option>
+        <option value="event">일정</option>
+      </select>
+      <button class="btn btn-primary schedule-btn" @click="handleClickScheduleRegist = true">
+        스케줄 등록
+      </button>
+    </div>
+    <div class="calendar-wrapper">
+      <ScheduleCalendar :schedules="calendarEvents" @click-schedule="handleClickSchedule" />
+    </div>
+    <ReservationDetailModal
+      v-if="modalType === 'reservation'"
+      v-model="isModalOpen"
+      :reservation="selectedReservation"
+    />
+    <LeaveDetailModal
+      v-if="modalType === 'leave'"
+      v-model="isModalOpen"
+      :reservation="selectedReservation"
+    />
+    <PlanDetailModal
+      v-if="modalType === 'plan'"
+      v-model="isModalOpen"
+      :reservation="selectedReservation"
+    />
+
+    <ScheduleRegistModal v-if="handleClickScheduleRegist" v-model="handleClickScheduleRegist" />
+  </div>
+</template>
+
 <script setup>
   import { ref, computed } from 'vue';
   import ScheduleCalendar from '@/features/schedules/components/ScheduleCalendar.vue';
   import LeaveDetailModal from '@/features/schedules/components/LeaveDetailModal.vue';
   import PlanDetailModal from '@/features/schedules/components/PlanDetailModal.vue';
   import ReservationDetailModal from '@/features/schedules/components/ReservationDetailModal.vue';
+  import ScheduleRegistModal from '@/features/schedules/components/ScheduleRegistModal.vue';
 
   const staffColors = {
     최민수: 'var(--color-primary-main)',
-    이채은: '#60bafa',
-    김민지: '#f4e0ab',
+    김민지: 'var(--color-success-200)',
+    이채은: 'var(--color-secondary-100)',
   };
 
   const searchText = ref('');
@@ -30,6 +88,11 @@
       status: '예약 확정',
       note: '첫 방문 고객',
       memo: '고객 요청사항 없음',
+      date: '2025-06-17',
+      startTime: '10:00',
+      endTime: '11:00',
+      timeRange: '오전 10:00 - 오전 11:00',
+      duration: '01:00',
     },
     {
       id: 2,
@@ -49,13 +112,14 @@
       title: '개인 사유로 휴무',
       start: '2025-06-19',
       end: '2025-06-20',
-      type: 'holiday',
+      type: 'leave',
       staff: '김민지',
       service: '',
       customer: '',
       status: '',
       memo: '사전 공지 완료',
       repeat: 'none',
+      date: '2025-06-19',
     },
   ]);
 
@@ -70,15 +134,17 @@
       isModalOpen.value = true;
 
       if (target.type === 'reservation') modalType.value = 'reservation';
-      else if (['holiday', 'regular_holiday'].includes(target.type)) modalType.value = 'leave';
+      else if (['leave', 'regular_leave'].includes(target.type)) modalType.value = 'leave';
       else if (['event', 'regular_event'].includes(target.type)) modalType.value = 'plan';
     }
   };
 
+  const handleClickScheduleRegist = ref(false);
+
   const calendarEvents = computed(() =>
     schedules.value.map(item => {
-      const isHoliday = item.type === 'holiday';
-      const isAllDay = isHoliday;
+      const isLeave = item.type === 'leave';
+      const isAllDay = isLeave;
 
       return {
         id: item.id,
@@ -86,12 +152,8 @@
         start: item.start,
         end: item.end,
         allDay: isAllDay,
-
-        // 색상 및 스타일 관련
-        backgroundColor: staffColors[item.staff] || '#d1d5db',
-        textColor: '#111',
-
-        // eventDidMount에서 쓸 수 있도록 추가
+        backgroundColor: staffColors[item.staff] || 'var(--color-gray-300)',
+        textColor: 'var(--color-text-primary)',
         type: item.type,
         status: item.status,
         staff: item.staff,
@@ -103,62 +165,15 @@
   );
 </script>
 
-<template>
-  <div class="container">
-    <div class="page-header">
-      <h1 class="font-screen-title">예약 캘린더</h1>
-    </div>
-
-    <div class="filter-bar">
-      <input
-        v-model="searchText"
-        type="text"
-        placeholder="고객명 또는 연락처 검색"
-        class="input input-search"
-      />
-      <select v-model="selectedService" class="input input-select">
-        <option value="">시술 종류</option>
-        <option value="커트">커트</option>
-        <option value="염색">염색</option>
-        <option value="펌">펌</option>
-      </select>
-      <select v-model="selectedStaff" class="input input-select">
-        <option value="">담당자</option>
-        <option value="최민수">최민수</option>
-        <option value="이채은">이채은</option>
-      </select>
-      <select v-model="selectedType" class="input input-select">
-        <option value="">스케줄</option>
-        <option value="reservation">예약</option>
-        <option value="holiday">휴무</option>
-        <option value="event">일정</option>
-      </select>
-      <button class="btn btn-primary schedule-btn">스케줄 등록</button>
-    </div>
-
-    <ScheduleCalendar :schedules="calendarEvents" @click-schedule="handleClickSchedule" />
-
-    <ReservationDetailModal
-      v-if="modalType === 'reservation'"
-      v-model="isModalOpen"
-      :reservation="selectedReservation"
-    />
-    <LeaveDetailModal
-      v-if="modalType === 'leave'"
-      v-model="isModalOpen"
-      :reservation="selectedReservation"
-    />
-    <PlanDetailModal
-      v-if="modalType === 'plan'"
-      v-model="isModalOpen"
-      :reservation="selectedReservation"
-    />
-  </div>
-</template>
-
 <style scoped>
+  .calendar-wrapper {
+    background-color: var(--color-neutral-white);
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  }
   .container {
-    padding: 24px;
+    padding: 14px;
   }
   .page-header {
     margin-bottom: 32px;
@@ -168,6 +183,7 @@
     align-items: center;
     gap: 16px;
     margin-bottom: 32px;
+    justify-content: flex-end;
   }
   .input-search {
     width: 240px;
@@ -176,6 +192,6 @@
     width: 160px;
   }
   .schedule-btn {
-    margin-left: auto;
+    flex-shrink: 0;
   }
 </style>

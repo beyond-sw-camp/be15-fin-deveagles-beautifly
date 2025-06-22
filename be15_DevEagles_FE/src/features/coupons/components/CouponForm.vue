@@ -9,6 +9,7 @@
       placeholder="쿠폰명을 입력하세요"
       :error="errors.name"
       required
+      @enter-key="handleFormSubmit"
     />
 
     <!-- 카테고리 -->
@@ -85,7 +86,6 @@
       label="만료일*"
       placeholder="날짜와 시간을 선택하세요"
       show-time
-      default-time="00:00:00"
       :show-button-bar="true"
       :min-date="new Date()"
       :error="errors.expiryDate"
@@ -105,8 +105,10 @@
 
     <!-- 버튼들 -->
     <div class="form-actions">
-      <BaseButton type="secondary" outline style="flex: 1" @click="handleCancel"> 취소 </BaseButton>
-      <BaseButton type="primary" style="flex: 1" @click="handleSubmit">
+      <BaseButton type="secondary" outline style="flex: 1" html-type="button" @click="handleCancel">
+        취소
+      </BaseButton>
+      <BaseButton type="primary" style="flex: 1" html-type="submit">
         {{ isEditMode ? '수정' : '생성' }}
       </BaseButton>
     </div>
@@ -264,7 +266,16 @@
         this.$emit('cancel');
       },
 
+      handleFormSubmit(event) {
+        event.preventDefault();
+        this.handleSubmit();
+      },
+
       resetForm() {
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        tomorrow.setHours(0, 0, 0, 0);
+
         this.formData = {
           name: '',
           category: '',
@@ -272,7 +283,7 @@
           primaryProduct: '',
           secondaryProduct: '',
           discount: 10,
-          expiryDate: '',
+          expiryDate: tomorrow,
           isActive: false,
         };
         this.errors = {};

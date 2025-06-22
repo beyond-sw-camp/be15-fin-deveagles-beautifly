@@ -3,8 +3,16 @@
     <div class="page-header">
       <h1 class="font-screen-title">예약 변경 이력</h1>
     </div>
-
-    <BaseTable :columns="columns" :data="pagedData" row-key="id" :striped="true" :hover="true" />
+    <div class="base-table-wrapper">
+      <BaseTable
+        :columns="columns"
+        :data="pagedData"
+        row-key="id"
+        :striped="true"
+        :hover="true"
+        @row-click="openDetailModal"
+      />
+    </div>
 
     <Pagination
       :current-page="currentPage"
@@ -14,6 +22,9 @@
       @page-change="handlePageChange"
       @items-per-page-change="handleItemsPerPageChange"
     />
+
+    <!-- 상세 모달 -->
+    <ReservationDetailModal v-model="isModalOpen" :reservation="selectedReservation" />
   </div>
 </template>
 
@@ -21,9 +32,10 @@
   import { ref, computed } from 'vue';
   import BaseTable from '@/components/common/BaseTable.vue';
   import Pagination from '@/components/common/Pagination.vue';
+  import ReservationDetailModal from '@/features/schedules/components/ReservationDetailModal.vue';
 
   const columns = [
-    { key: 'name', title: '고객 이름', width: '120px' },
+    { key: 'customer', title: '고객 이름', width: '120px' },
     { key: 'service', title: '시술', width: '100px' },
     { key: 'staff', title: '담당자', width: '100px' },
     { key: 'date', title: '예약 날짜', width: '160px' },
@@ -34,7 +46,7 @@
   const historyData = [
     {
       id: 1,
-      name: '김미글',
+      customer: '김미글',
       service: '염펌',
       staff: '박미글',
       date: '2025.06.08 14시',
@@ -43,7 +55,7 @@
     },
     {
       id: 2,
-      name: '김미글',
+      customer: '김미글',
       service: '염펌',
       staff: '박미글',
       date: '2025.06.08 14시',
@@ -52,7 +64,7 @@
     },
     {
       id: 3,
-      name: '김미글',
+      customer: '김미글',
       service: '염펌',
       staff: '박미글',
       date: '2025.06.08 14시',
@@ -61,7 +73,7 @@
     },
     {
       id: 4,
-      name: '김미글',
+      customer: '김미글',
       service: '염펌',
       staff: '박미글',
       date: '2025.06.08 14시',
@@ -70,7 +82,7 @@
     },
     {
       id: 5,
-      name: '김미글',
+      customer: '김미글',
       service: '염펌',
       staff: '박미글',
       date: '2025.06.08 14시',
@@ -79,7 +91,7 @@
     },
     {
       id: 6,
-      name: '김미글',
+      customer: '김미글',
       service: '염펌',
       staff: '박미글',
       date: '2025.06.08 14시',
@@ -88,7 +100,7 @@
     },
     {
       id: 7,
-      name: '김미글',
+      customer: '김미글',
       service: '염펌',
       staff: '박미글',
       date: '2025.06.08 14시',
@@ -97,7 +109,7 @@
     },
     {
       id: 8,
-      name: '김미글',
+      customer: '김미글',
       service: '염펌',
       staff: '박미글',
       date: '2025.06.08 14시',
@@ -106,7 +118,7 @@
     },
     {
       id: 9,
-      name: '김미글',
+      customer: '김미글',
       service: '염펌',
       staff: '박미글',
       date: '2025.06.08 14시',
@@ -115,7 +127,7 @@
     },
     {
       id: 10,
-      name: '김미글',
+      customer: '김미글',
       service: '염펌',
       staff: '박미글',
       date: '2025.06.08 14시',
@@ -124,7 +136,7 @@
     },
     {
       id: 11,
-      name: '김미글',
+      customer: '김미글',
       service: '염펌',
       staff: '박미글',
       date: '2025.06.08 14시',
@@ -133,7 +145,7 @@
     },
     {
       id: 12,
-      name: '김미글',
+      customer: '김미글',
       service: '염펌',
       staff: '박미글',
       date: '2025.06.08 14시',
@@ -142,7 +154,7 @@
     },
     {
       id: 13,
-      name: '김미글',
+      customer: '김미글',
       service: '염펌',
       staff: '박미글',
       date: '2025.06.08 14시',
@@ -151,7 +163,7 @@
     },
     {
       id: 14,
-      name: '김미글',
+      customer: '김미글',
       service: '염펌',
       staff: '박미글',
       date: '2025.06.08 14시',
@@ -160,7 +172,7 @@
     },
     {
       id: 15,
-      name: '김미글',
+      customer: '김미글',
       service: '염펌',
       staff: '박미글',
       date: '2025.06.08 14시',
@@ -169,7 +181,7 @@
     },
     {
       id: 16,
-      name: '김미글',
+      customer: '김미글',
       service: '염펌',
       staff: '박미글',
       date: '2025.06.08 14시',
@@ -196,13 +208,28 @@
     itemsPerPage.value = count;
     currentPage.value = 1;
   }
+
+  // 모달 관련
+  const isModalOpen = ref(false);
+  const selectedReservation = ref({});
+
+  function openDetailModal(item) {
+    selectedReservation.value = item;
+    isModalOpen.value = true;
+  }
 </script>
 
 <style scoped>
   .history-wrapper {
     padding: 24px;
-    max-width: 1000px;
-    margin: 0 auto;
+  }
+
+  .base-table-wrapper {
+    background-color: var(--color-neutral-white);
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    padding: 24px;
+    box-sizing: border-box;
   }
 
   .page-header {

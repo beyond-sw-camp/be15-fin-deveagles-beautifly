@@ -19,13 +19,13 @@
 
   const staffColors = {
     최민수: 'var(--color-primary-main)',
-    이채은: '#60bafa',
-    김민지: '#f4e0ab',
+    김민지: 'var(--color-success-200)',
+    이채은: 'var(--color-secondary-100)',
   };
 
   const statusColors = {
-    '예약 확정': '#c6f6d5',
-    '예약 대기': '#fefcbf',
+    '예약 확정': 'var(--color-success-100)',
+    '예약 대기': 'var(--color-warning-200)',
   };
 
   const calendarOptions = ref({
@@ -49,7 +49,7 @@
       return {
         html: `
         <div class="custom-event-style ${type}">
-          ${type === 'reservation' || type === 'holiday' ? '<div class="left-bar"></div>' : ''}
+          ${type === 'reservation' || type === 'leave' ? '<div class="left-bar"></div>' : ''}
           <div class="text">
             ${viewType === 'dayGridMonth' ? `<strong>${time}</strong>&nbsp;` : ''}
             ${event.title}
@@ -68,13 +68,13 @@
       const { type, status, staff, customer, service, timeRange, memo } = event.extendedProps;
 
       const viewType = view.type;
-      const borderColor = staffColors[staff?.trim()] || '#999';
+      const borderColor = staffColors[staff?.trim()] || 'var(--color-gray-500)';
       const bgColor =
         type === 'reservation'
-          ? statusColors[status] || '#e2e8f0'
-          : type === 'holiday'
-            ? 'rgba(255, 0, 0, 0.3)'
-            : '#fff';
+          ? statusColors[status] || 'var(--color-gray-200)'
+          : type === 'leave'
+            ? 'rgba(220, 38, 38, 0.3)'
+            : 'var(--color-neutral-white)';
 
       const box = el.querySelector('.custom-event-style');
       const bar = el.querySelector('.left-bar');
@@ -86,7 +86,7 @@
         }
       }
 
-      if (bar && (type === 'reservation' || type === 'holiday')) {
+      if (bar && (type === 'reservation' || type === 'leave')) {
         bar.style.backgroundColor = borderColor;
         if (viewType === 'dayGridMonth') {
           nextTick(() => {
@@ -115,7 +115,7 @@
           (timeRange || fallbackTimeRange) && `🕒 시간: ${timeRange || fallbackTimeRange}`,
           memo && `📝 메모: ${memo}`
         );
-      } else if (type === 'holiday') {
+      } else if (type === 'leave') {
         tooltipLines.push(`📅 종일 휴무`, memo && `📝 메모: ${memo}`);
       }
 
@@ -189,7 +189,7 @@
   }
 
   :deep(.custom-event-style.event) {
-    background-color: #fff;
+    background-color: var(--color-neutral-white);
   }
 
   :deep(.custom-event-style .left-bar) {
@@ -207,13 +207,13 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    color: #111;
+    color: var(--color-text-primary);
   }
 
   /* Tippy Tooltip */
   .tippy-box[data-theme~='light'] {
-    background-color: white;
-    color: #333;
+    background-color: var(--color-neutral-white);
+    color: var(--color-text-primary);
     font-size: 13px;
     padding: 8px;
     border-radius: 6px;

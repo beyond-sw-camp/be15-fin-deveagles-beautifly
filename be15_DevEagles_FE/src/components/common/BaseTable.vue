@@ -3,7 +3,7 @@
     <table :class="['table', { 'table-striped': striped }, { 'table-hover': hover }]">
       <!-- Table Header -->
       <thead v-if="columns.length > 0">
-        <tr>
+        <tr @click="$emit('row-click', item, $event)">
           <th
             v-for="column in columns"
             :key="column.key"
@@ -20,7 +20,12 @@
       <!-- Table Body -->
       <tbody>
         <slot name="body">
-          <tr v-for="(item, index) in data" :key="getRowKey(item, index)">
+          <tr
+            v-for="(item, index) in data"
+            :key="getRowKey(item, index)"
+            :class="getRowClass(item, index)"
+            @click="$emit('row-click', item, $event)"
+          >
             <td v-for="column in columns" :key="column.key" :class="column.cellClass">
               <slot
                 :name="`cell-${column.key}`"
@@ -81,7 +86,12 @@
         type: [String, Function],
         default: 'id',
       },
+      rowClass: {
+        type: [Function, String],
+        default: '',
+      },
     },
+    emits: ['row-click'],
     methods: {
       getRowKey(item, index) {
         if (typeof this.rowKey === 'function') {
@@ -91,6 +101,12 @@
       },
       getNestedValue(obj, path) {
         return path.split('.').reduce((current, key) => current?.[key], obj);
+      },
+      getRowClass(item, index) {
+        if (typeof this.rowClass === 'function') {
+          return this.rowClass(item, index);
+        }
+        return this.rowClass;
       },
     },
   };
