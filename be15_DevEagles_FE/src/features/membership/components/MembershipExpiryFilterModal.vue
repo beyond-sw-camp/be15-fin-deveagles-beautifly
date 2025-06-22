@@ -4,13 +4,13 @@
       <!-- 잔여 필드 -->
       <label class="section-title">잔여 {{ type === '선불' ? '선불권' : '횟수권' }}</label>
       <div class="range-inputs">
-        <input
+        <BaseForm
           v-model.number="min"
           type="number"
           step="100"
           :placeholder="`잔여 ${type === '선불' ? '선불권' : '횟수권'}`"
         />
-        <input
+        <BaseForm
           v-model.number="max"
           type="number"
           step="100"
@@ -21,15 +21,15 @@
       <!-- 만료 예정일 필드 -->
       <label class="section-title">만료(예정)일</label>
       <div class="range-inputs">
-        <input v-model="startDate" type="date" />
-        <input v-model="endDate" type="date" />
+        <PrimeDatePicker v-model="startDate" placeholder="시작일 선택" class="date-picker" />
+        <PrimeDatePicker v-model="endDate" placeholder="종료일 선택" class="date-picker" />
       </div>
     </div>
 
     <template #footer>
       <div class="footer-buttons">
-        <button class="cancel-button" @click="closeModal">닫기</button>
-        <button class="apply-button" @click="applyFilter">저장</button>
+        <BaseButton class="primary" outline @click="closeModal">닫기</BaseButton>
+        <BaseButton class="primary" @click="applyFilter">저장</BaseButton>
       </div>
     </template>
   </BaseModal>
@@ -38,6 +38,9 @@
 <script setup>
   import { ref, watch } from 'vue';
   import BaseModal from '@/components/common/BaseModal.vue';
+  import BaseForm from '@/components/common/BaseForm.vue';
+  import BaseButton from '@/components/common/BaseButton.vue';
+  import PrimeDatePicker from '@/components/common/PrimeDatePicker.vue';
 
   const props = defineProps({
     modelValue: {
@@ -61,8 +64,8 @@
 
   const min = ref(null);
   const max = ref(null);
-  const startDate = ref('');
-  const endDate = ref('');
+  const startDate = ref(null); // ✅ Date 객체
+  const endDate = ref(null);
 
   const closeModal = () => {
     modalVisible.value = false;
@@ -97,12 +100,9 @@
     gap: 1rem;
   }
 
-  input {
+  .date-picker {
     flex: 1;
-    padding: 8px;
-    font-size: 14px;
-    border: 1px solid #aaa;
-    border-radius: 4px;
+    min-width: 0;
   }
 
   .footer-buttons {
@@ -110,21 +110,5 @@
     justify-content: flex-end;
     gap: 8px;
     padding: 0 1.5rem 1rem;
-  }
-
-  .cancel-button {
-    padding: 6px 14px;
-    background-color: white;
-    border: 1px solid black;
-    border-radius: 4px;
-    cursor: pointer;
-  }
-
-  .apply-button {
-    padding: 6px 14px;
-    background-color: black;
-    color: white;
-    border-radius: 4px;
-    cursor: pointer;
   }
 </style>

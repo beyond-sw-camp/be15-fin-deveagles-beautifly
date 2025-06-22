@@ -1,36 +1,40 @@
 <template>
   <Teleport to="body">
     <div class="edit-modal-layer">
-      <BaseModal
-        :model-value="modelValue"
-        title="회원권 수정"
-        animation-class="back-in-left"
-        @update:model-value="$emit('close')"
-      >
+      <BaseModal v-model="isVisible" title="회원권 수정">
         <div class="edit-form">
           <!-- 조건부 필드: 선불권 -->
           <div v-if="type === 'PREPAID'" class="form-group">
-            <label>잔여 선불액</label>
-            <input v-model.number="prepaid" type="number" step="100" placeholder="잔여 선불권" />
+            <BaseForm
+              v-model.number="remaining"
+              label="잔여 선불액"
+              type="number"
+              step="100"
+              placeholder="잔여 선불권 금액"
+            />
           </div>
 
           <!-- 조건부 필드: 횟수권 -->
           <div v-if="type === 'COUNT'" class="form-group">
-            <label>잔여 횟수권</label>
-            <input v-model.number="count" type="number" placeholder="잔여 횟수권" />
+            <BaseForm
+              v-model.number="remaining"
+              label="잔여 횟수"
+              type="number"
+              placeholder="잔여 횟수 입력"
+            />
           </div>
 
-          <!-- ✅ 공통: 만료(예정)일 -->
+          <!-- 공통 필드: 만료일 -->
           <div class="form-group">
-            <label>만료(예정)일</label>
-            <input v-model="expiry" type="date" />
+            <label>만료일</label>
+            <PrimeDatePicker v-model="expiry" placeholder="날짜 선택" append-to="body" />
           </div>
         </div>
 
         <template #footer>
           <div class="footer-buttons">
-            <button class="cancel-button" @click="$emit('close')">닫기</button>
-            <button class="apply-button" @click="submitEdit">저장</button>
+            <BaseButton class="primary" outline @click="close">닫기</BaseButton>
+            <BaseButton class="primary" @click="submitEdit">수정</BaseButton>
           </div>
         </template>
       </BaseModal>
@@ -41,6 +45,9 @@
 <script setup>
   import { ref, watch } from 'vue';
   import BaseModal from '@/components/common/BaseModal.vue';
+  import BaseForm from '@/components/common/BaseForm.vue';
+  import BaseButton from '@/components/common/BaseButton.vue';
+  import PrimeDatePicker from '@/components/common/PrimeDatePicker.vue';
 
   const props = defineProps({
     modelValue: Boolean,
@@ -49,34 +56,48 @@
       required: true,
     },
   });
+  const emit = defineEmits(['update:modelValue', 'submit']);
 
-  const emit = defineEmits(['close', 'submit']);
-
-  const prepaid = ref(null);
-  const count = ref(null);
+  const isVisible = ref(props.modelValue);
+  const remaining = ref(null);
   const expiry = ref(null);
   const type = ref('');
+
+  // props.modelValue → isVisible 로 동기화
+  watch(
+    () => props.modelValue,
+    val => {
+      isVisible.value = val;
+    }
+  );
+  watch(isVisible, val => {
+    emit('update:modelValue', val);
+  });
 
   watch(
     () => props.membership,
     val => {
       if (!val) return;
       type.value = val.type;
-      prepaid.value = val.remaining ?? null;
-      count.value = val.remaining ?? null;
+      remaining.value = val.remaining ?? null;
       expiry.value = val.expiry ?? null;
     },
     { immediate: true }
   );
 
+  const close = () => {
+    isVisible.value = false;
+  };
+
   const submitEdit = () => {
     emit('submit', {
       id: props.membership.id,
       type: type.value,
-      prepaid: prepaid.value,
-      count: count.value,
+      remaining: remaining.value,
       expiry: expiry.value,
     });
+    emit('updated'); // ✅ 부모에게 알림
+    isVisible.value = false;
   };
 </script>
 
@@ -103,44 +124,20 @@
     gap: 0.5rem;
   }
 
-  label {
-    font-weight: bold;
-    font-size: 15px;
-  }
-
-  input {
-    padding: 8px;
-    font-size: 14px;
-    border: 1px solid #aaa;
-    border-radius: 4px;
-  }
-
   .footer-buttons {
     display: flex;
     justify-content: flex-end;
     gap: 8px;
     padding: 0 1.5rem 1rem;
   }
-
-  .cancel-button {
-    padding: 6px 14px;
-    background-color: white;
-    border: 1px solid black;
-    border-radius: 4px;
-    cursor: pointer;
-  }
-
-  .apply-button {
-    padding: 6px 14px;
-    background-color: black;
-    color: white;
-    border-radius: 4px;
-    cursor: pointer;
-  }
 </style>
 
 <style>
   .modal-backdrop {
-    z-index: 11000 !important;
+    z-index: 11000;
+  }
+
+  .p-datepicker {
+    z-index: 99999 !important;
   }
 </style>

@@ -2,8 +2,8 @@
   <div class="membership-page-wrapper">
     <!-- 헤더 -->
     <div class="header-row">
-      <h2 class="page-title">회원권 관리 페이지</h2>
-      <button class="register-button" @click="modalVisible = true">회원권 관리</button>
+      <h1 class="page-title">회원권 관리 페이지</h1>
+      <BaseButton class="register-button" @click="modalVisible = true">회원권 관리</BaseButton>
     </div>
 
     <!-- 상단 탭 -->
@@ -40,13 +40,19 @@
 
     <!-- 검색/필터 -->
     <div class="search-bar">
-      <input
+      <BaseForm
         v-model="searchKeyword"
         type="text"
         placeholder="고객명 검색"
+        style="width: 300px"
         @keydown.enter="applySearch"
       />
-      <button class="filter-button" @click="toggleFilterModal">필터</button>
+      <BaseButton
+        class="filter-button"
+        style="transform: translateY(-8px)"
+        @click="toggleFilterModal"
+        >필터</BaseButton
+      >
     </div>
 
     <!-- 필터 뱃지 -->
@@ -104,6 +110,9 @@
   import MembershipExpiryTableForm from '@/features/membership/components/MembershipExpiryTableForm.vue';
   import MembershipDetailModal from '@/features/membership/components/MembershipDetailModal.vue';
 
+  import BaseForm from '@/components/common/BaseForm.vue';
+  import BaseButton from '@/components/common/BaseButton.vue';
+
   const activeTab = ref('전체');
   const expiryType = ref('선불');
   const showFilterModal = ref(false);
@@ -138,45 +147,50 @@
     align-items: center;
     margin-bottom: 1.5rem;
   }
-  .page-title {
-    font-size: 20px;
-    font-weight: bold;
-  }
-  .register-button {
-    padding: 0.5rem 1rem;
-    font-size: 14px;
-    border: 1px solid #ccc;
-    background-color: white;
-    border-radius: 4px;
-    cursor: pointer;
-  }
-  .tab-filter-row {
-    display: flex;
-    justify-content: flex-start;
-    align-items: center;
-    margin-bottom: 0.75rem;
-  }
+
+  .tab-filter-row,
   .sub-tab-row {
     display: flex;
-    justify-content: flex-start;
+    /* ✅ 가운데 정렬 */
     margin-bottom: 1rem;
+    font-weight: bold;
   }
+
   .tab-group {
     display: flex;
-    border: 1px solid #000;
+    width: 220px; /* ✅ 상하 탭 동일한 너비 */
+    border: 1px solid #364f6b;
     border-radius: 6px;
     overflow: hidden;
   }
+
   .tab {
-    padding: 0.5rem 1.25rem;
+    flex: 1; /* ✅ 탭 버튼 너비 동일하게 */
+    text-align: center;
+    padding: 0.5rem 0;
     font-size: 14px;
     cursor: pointer;
     background-color: white;
-    color: black;
+    color: #364f6b;
+    font-weight: bold;
+    border-right: 1px solid #364f6b;
   }
+
+  .tab:last-child {
+    border-right: none;
+  }
+
   .tab.active {
-    background-color: black;
+    background-color: #364f6b;
     color: white;
+    font-weight: bold;
+  }
+
+  .search-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 1rem;
   }
   .search-bar {
     display: flex;
@@ -184,28 +198,16 @@
     gap: 8px;
     margin-bottom: 1rem;
   }
-  .search-bar input {
-    width: 300px;
-    padding: 8px;
-    font-size: 14px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-  }
-  .filter-button {
-    padding: 0.5rem 1rem;
-    font-size: 14px;
-    border: 1px solid #ccc;
-    background-color: white;
-    border-radius: 4px;
-    cursor: pointer;
-  }
+
   .filter-badges {
     display: flex;
     gap: 8px;
     margin-bottom: 1rem;
+    flex-wrap: wrap;
   }
+
   .badge {
-    background-color: #a58cff;
+    background-color: #ff6b91;
     color: white;
     padding: 4px 10px;
     border-radius: 20px;
@@ -213,6 +215,7 @@
     display: flex;
     align-items: center;
   }
+
   .badge button {
     background: none;
     border: none;
@@ -221,6 +224,7 @@
     margin-left: 6px;
     cursor: pointer;
   }
+
   .overlay {
     position: fixed;
     top: 0;

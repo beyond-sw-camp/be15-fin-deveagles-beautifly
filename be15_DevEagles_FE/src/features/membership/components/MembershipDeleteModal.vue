@@ -31,6 +31,7 @@
 
   const handleDelete = () => {
     emit('confirm');
+    alert('회원권이 삭제되었습니다.');
     emit('update:modelValue', false);
   };
 </script>
