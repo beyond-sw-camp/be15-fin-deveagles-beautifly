@@ -75,7 +75,7 @@ const routes = [
       {
         path: 'sales/management',
         name: 'SalesManagement',
-        component: Home,
+        component: () => import('@/features/sales/views/SalesView.vue'),
       },
       {
         path: 'sales/staff',
