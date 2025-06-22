@@ -1,0 +1,173 @@
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+}
+
+.modal-panel {
+  position: fixed;
+  top: 0;
+  left: 240px;
+  width: calc(100% - 240px);
+  height: 100vh;
+  background: white;
+  display: flex;
+  flex-direction: column;
+  padding: 24px;
+  overflow-y: auto;
+  z-index: 1001;
+}
+
+.top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.title {
+  font-size: 20px;
+  font-weight: bold;
+  margin-bottom: 6px;
+  align-items: center;
+}
+
+.close-button {
+  font-size: 24px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.divider {
+  margin: 16px 0;
+  height: 1px;
+  background-color: #e2e2e2;
+}
+
+.register-body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.form-left {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding-right: 24px;
+  position: relative;
+}
+
+.form-left::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: -22px;
+  width: 1px;
+  height: 100%;
+  background-color: #ccc;
+}
+
+.form-right {
+  width: 480px;
+  padding-left: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.receipt-box {
+  border: 2px solid #666;
+  border-radius: 6px;
+  padding: 3rem;
+  background: #fafafa;
+  font-size: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  min-height: 480px;
+  justify-content: space-between;
+}
+
+.receipt-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.receipt-title {
+  font-size: 20px;
+  font-weight: bold;
+  text-align: center;
+}
+
+.receipt-sub {
+  font-size: 14px;
+  color: #333;
+  text-align: center;
+}
+
+.sales-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid #ddd;
+  padding: 10px 0;
+  font-size: 16px;
+  gap: 1rem;
+}
+
+.row-left {
+  flex: 2;
+  white-space: nowrap;
+}
+
+.row-right {
+  flex: 3;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  white-space: nowrap;
+}
+
+.receipt-row {
+  display: flex;
+  justify-content: space-between;
+  border-top: 1px solid #ddd;
+  padding: 10px 0;
+  font-size: 14px;
+}
+
+.total-price-section label {
+  font-weight: bold;
+  margin-bottom: 4px;
+}
+
+.footer-buttons {
+  display: flex;
+  justify-content: flex-start;
+  gap: 8px;
+  margin-top: auto;
+  position: relative;
+}
+
+.dropdown-wrapper {
+  position: relative;
+}
+
+.dropdown-menu {
+  position: absolute;
+  bottom: 100%;
+  margin-bottom: 4px;
+  display: flex;
+  flex-direction: column;
+  z-index: 999;
+}
