@@ -96,10 +96,10 @@
     <div class="form-group">
       <label class="form-label">활성화 설정</label>
       <div class="checkbox-wrapper">
-        <label class="checkbox">
-          <input v-model="formData.isActive" type="checkbox" />
-          <span>쿠폰을 즉시 활성화</span>
-        </label>
+        <div class="checkbox">
+          <input id="isActive" v-model="formData.isActive" type="checkbox" />
+          <label for="isActive">쿠폰을 즉시 활성화</label>
+        </div>
       </div>
     </div>
 
@@ -362,7 +362,6 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    cursor: pointer;
     font-size: 14px;
     color: var(--color-gray-700);
   }
@@ -371,6 +370,14 @@
     width: auto;
     margin: 0;
     accent-color: var(--color-primary-main);
+    cursor: pointer;
+  }
+
+  .checkbox label {
+    cursor: pointer;
+    margin: 0;
+    font-size: 14px;
+    color: var(--color-gray-700);
   }
 
   .error-message {
