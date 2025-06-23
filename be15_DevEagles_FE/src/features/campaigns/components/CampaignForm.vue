@@ -132,11 +132,11 @@
           if (value && Array.isArray(value) && value.length === 2) {
             // 각 날짜가 null이 아닌지 확인
             if (value[0] && value[1]) {
-              this.formData.startDate = value[0].toISOString().split('T')[0];
-              this.formData.endDate = value[1].toISOString().split('T')[0];
+              this.formData.startDate = this.formatDateToLocal(value[0]);
+              this.formData.endDate = this.formatDateToLocal(value[1]);
             } else if (value[0]) {
               // 첫 번째 날짜만 선택된 경우
-              this.formData.startDate = value[0].toISOString().split('T')[0];
+              this.formData.startDate = this.formatDateToLocal(value[0]);
               this.formData.endDate = '';
             }
           } else {
@@ -148,6 +148,13 @@
     },
 
     methods: {
+      formatDateToLocal(date) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      },
+
       validateForm() {
         this.errors = {};
 
