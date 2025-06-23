@@ -7,9 +7,11 @@ import org.springframework.data.domain.Pageable;
 
 public interface CustomerGradeQueryService {
 
-  CustomerGradeResponse getCustomerGrade(Long gradeId);
+  CustomerGradeResponse getCustomerGrade(Long customerGradeId, Long shopId);
 
   List<CustomerGradeResponse> getAllCustomerGrades();
+
+  List<CustomerGradeResponse> getAllCustomerGradesByShopId(Long shopId);
 
   Page<CustomerGradeResponse> getCustomerGrades(Pageable pageable);
 }
