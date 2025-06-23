@@ -9,6 +9,8 @@
   import tippy from 'tippy.js';
   import 'tippy.js/dist/tippy.css';
 
+  const calendarRef = ref(null);
+
   const props = defineProps({
     schedules: {
       type: Array,
@@ -31,7 +33,7 @@
 
   const calendarOptions = ref({
     plugins: [interactionPlugin, resourceTimeGridPlugin, dayGridPlugin, timeGridPlugin],
-    initialView: 'resourceTimeGridDay',
+    initialView: 'dayGridMonth',
     editable: true,
     eventDurationEditable: false,
     locale: koLocale,
@@ -149,58 +151,70 @@
   watch(
     () => props.schedules,
     newVal => {
-      const currentView = calendarOptions.value.view?.type || calendarOptions.value.initialView;
+      const api = calendarRef.value?.getApi();
+      const currentView = api?.view?.type || calendarOptions.value.initialView;
 
-      const staffsFromData = newVal.map(s => s.staff?.trim() || '미지정');
-      const seen = new Set();
-      const uniqueStaffs = [];
-      for (const staff of staffsFromData) {
-        if (!seen.has(staff)) {
-          seen.add(staff);
-          uniqueStaffs.push(staff);
-        }
-      }
-      const resultStaffs = uniqueStaffs.filter(s => s !== '미지정');
-      resultStaffs.unshift('미지정');
-
-      if (currentView === 'resourceTimeGridDay') {
-        calendarOptions.value.resources = resultStaffs.map((staff, index) => ({
-          id: staff,
-          title: staff,
-          customOrder: index,
-        }));
-      } else {
-        calendarOptions.value.resources = [];
-      }
-
-      calendarOptions.value.events = newVal.map(item => {
-        const baseEvent = {
-          id: item.id,
-          title: item.title,
-          start: item.start,
-          end: item.end,
-          extendedProps: {
-            type: item.type,
-            status: item.status,
-            staff: item.staff,
-            customer: item.customer,
-            service: item.service,
-            timeRange: item.timeRange,
-            memo: item.memo,
-          },
-        };
-        if (currentView === 'resourceTimeGridDay') {
-          baseEvent.resourceId = item.staff?.trim() || '미지정';
-        }
-        return baseEvent;
-      });
+      updateResources(currentView);
+      updateEvents(currentView);
     },
     { immediate: true, deep: true }
   );
+  calendarOptions.value.viewDidMount = arg => {
+    const viewType = arg.view.type;
+    updateResources(viewType);
+    updateEvents(viewType);
+  };
+
+  function updateResources(viewType) {
+    const staffsFromData = props.schedules.map(s => s.staff?.trim() || '미지정');
+    const seen = new Set();
+    const uniqueStaffs = [];
+    for (const staff of staffsFromData) {
+      if (!seen.has(staff)) {
+        seen.add(staff);
+        uniqueStaffs.push(staff);
+      }
+    }
+    const resultStaffs = uniqueStaffs.filter(s => s !== '미지정');
+    resultStaffs.unshift('미지정');
+
+    calendarOptions.value.resources =
+      viewType === 'resourceTimeGridDay'
+        ? resultStaffs.map((staff, index) => ({
+            id: staff,
+            title: staff,
+            customOrder: index,
+          }))
+        : [];
+  }
+
+  function updateEvents(viewType) {
+    calendarOptions.value.events = props.schedules.map(item => {
+      const baseEvent = {
+        id: item.id,
+        title: item.title,
+        start: item.start,
+        end: item.end,
+        extendedProps: {
+          type: item.type,
+          status: item.status,
+          staff: item.staff,
+          customer: item.customer,
+          service: item.service,
+          timeRange: item.timeRange,
+          memo: item.memo,
+        },
+      };
+      if (viewType === 'resourceTimeGridDay') {
+        baseEvent.resourceId = item.staff?.trim() || '미지정';
+      }
+      return baseEvent;
+    });
+  }
 </script>
 
 <template>
-  <FullCalendar :options="calendarOptions" />
+  <FullCalendar ref="calendarRef" :options="calendarOptions" />
 </template>
 
 <style scoped>
