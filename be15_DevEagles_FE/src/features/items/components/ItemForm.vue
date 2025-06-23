@@ -91,11 +91,11 @@
 <script setup>
   import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
   import BaseButton from '@/components/common/BaseButton.vue';
-  import PrimaryRegistModal from '@/features/item/components/PrimaryRegistModal.vue';
-  import SecondaryRegistModal from '@/features/item/components/SecondaryRegistModal.vue';
-  import PrimaryEditModal from '@/features/item/components/PrimaryEditModal.vue';
-  import SecondaryEditModal from '@/features/item/components/SecondaryEditModal.vue';
-  import PrimaryDeleteModal from '@/features/item/components/PrimaryDeleteModal.vue';
+  import PrimaryRegistModal from '@/features/items/components/PrimaryRegistModal.vue';
+  import SecondaryRegistModal from '@/features/items/components/SecondaryRegistModal.vue';
+  import PrimaryEditModal from '@/features/items/components/PrimaryEditModal.vue';
+  import SecondaryEditModal from '@/features/items/components/SecondaryEditModal.vue';
+  import PrimaryDeleteModal from '@/features/items/components/PrimaryDeleteModal.vue';
   import BaseToast from '@/components/common/BaseToast.vue';
 
   const toastRef = ref(null);

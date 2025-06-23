@@ -1,5 +1,5 @@
 <script setup>
-  import ItemForm from '@/features/item/components/ItemForm.vue';
+  import ItemForm from '@/features/items/components/ItemForm.vue';
 </script>
 
 <template>
