@@ -45,12 +45,7 @@ const routes = [
       {
         path: 'schedule/plan',
         name: 'ReservationSchedule',
-        component: () => import('@/features/schedules/views/SchedulePlanView.vue'),
-      },
-      {
-        path: 'schedule/leave',
-        name: 'ScheduleLeave',
-        component: () => import('@/features/schedules/views/ScheduleLeaveView.vue'),
+        component: () => import('@/features/schedules/views/SchedulePlanLeaveView.vue'),
       },
       {
         path: 'reservation/requests',

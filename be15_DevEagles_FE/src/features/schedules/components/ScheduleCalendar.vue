@@ -1,9 +1,10 @@
 <script setup>
   import { defineProps, watch, ref, nextTick } from 'vue';
   import FullCalendar from '@fullcalendar/vue3';
+  import interactionPlugin from '@fullcalendar/interaction';
+  import resourceTimeGridPlugin from '@fullcalendar/resource-timegrid';
   import dayGridPlugin from '@fullcalendar/daygrid';
   import timeGridPlugin from '@fullcalendar/timegrid';
-  import interactionPlugin from '@fullcalendar/interaction';
   import koLocale from '@fullcalendar/core/locales/ko';
   import tippy from 'tippy.js';
   import 'tippy.js/dist/tippy.css';
@@ -29,17 +30,33 @@
   };
 
   const calendarOptions = ref({
-    plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
-    initialView: 'dayGridMonth',
+    plugins: [interactionPlugin, resourceTimeGridPlugin, dayGridPlugin, timeGridPlugin],
+    initialView: 'resourceTimeGridDay',
     editable: true,
     eventDurationEditable: false,
     locale: koLocale,
+    resources: [],
+    resourceOrder: 'customOrder',
+
     headerToolbar: {
       left: 'prev,next today',
       center: 'title',
-      right: 'dayGridMonth,timeGridWeek,timeGridDay',
+      right: 'resourceTimeGridDay,timeGridWeek,dayGridMonth',
     },
-    events: props.schedules,
+    views: {
+      resourceTimeGridDay: {
+        type: 'resourceTimeGrid',
+        buttonText: '일',
+      },
+      timeGridWeek: {
+        type: 'timeGrid',
+        buttonText: '주',
+      },
+      dayGridMonth: {
+        type: 'dayGridMonth',
+        buttonText: '월',
+      },
+    },
 
     eventContent({ event, view }) {
       const type = event.extendedProps.type;
@@ -66,7 +83,6 @@
     eventDidMount(info) {
       const { event, el, view } = info;
       const { type, status, staff, customer, service, timeRange, memo } = event.extendedProps;
-
       const viewType = view.type;
       const borderColor = staffColors[staff?.trim()] || 'var(--color-gray-500)';
       const bgColor =
@@ -95,9 +111,7 @@
         }
       }
 
-      // Tooltip 구성
       const tooltipLines = [];
-
       const fallbackTimeRange =
         event.start && event.end
           ? `${event.start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - ${event.end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
@@ -135,21 +149,51 @@
   watch(
     () => props.schedules,
     newVal => {
-      calendarOptions.value.events = newVal.map(item => ({
-        id: item.id,
-        title: item.title,
-        start: item.start,
-        end: item.end,
-        extendedProps: {
-          type: item.type,
-          status: item.status,
-          staff: item.staff,
-          customer: item.customer,
-          service: item.service,
-          timeRange: item.timeRange,
-          memo: item.memo,
-        },
-      }));
+      const currentView = calendarOptions.value.view?.type || calendarOptions.value.initialView;
+
+      const staffsFromData = newVal.map(s => s.staff?.trim() || '미지정');
+      const seen = new Set();
+      const uniqueStaffs = [];
+      for (const staff of staffsFromData) {
+        if (!seen.has(staff)) {
+          seen.add(staff);
+          uniqueStaffs.push(staff);
+        }
+      }
+      const resultStaffs = uniqueStaffs.filter(s => s !== '미지정');
+      resultStaffs.unshift('미지정');
+
+      if (currentView === 'resourceTimeGridDay') {
+        calendarOptions.value.resources = resultStaffs.map((staff, index) => ({
+          id: staff,
+          title: staff,
+          customOrder: index,
+        }));
+      } else {
+        calendarOptions.value.resources = [];
+      }
+
+      calendarOptions.value.events = newVal.map(item => {
+        const baseEvent = {
+          id: item.id,
+          title: item.title,
+          start: item.start,
+          end: item.end,
+          extendedProps: {
+            type: item.type,
+            status: item.status,
+            staff: item.staff,
+            customer: item.customer,
+            service: item.service,
+            timeRange: item.timeRange,
+            memo: item.memo,
+          },
+        };
+        if (currentView === 'resourceTimeGridDay') {
+          baseEvent.resourceId = item.staff?.trim() || '미지정';
+        }
+        return baseEvent;
+      });
     },
     { immediate: true, deep: true }
   );
@@ -210,7 +254,6 @@
     color: var(--color-text-primary);
   }
 
-  /* Tippy Tooltip */
   .tippy-box[data-theme~='light'] {
     background-color: var(--color-neutral-white);
     color: var(--color-text-primary);
