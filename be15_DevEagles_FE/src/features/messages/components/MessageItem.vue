@@ -1,7 +1,7 @@
 <script setup>
   import BaseButton from '@/components/common/BaseButton.vue';
-  import { TrashIcon, EditIcon } from 'lucide-vue-next';
-
+  import TrashIcon from '@/components/icons/TrashIcon.vue';
+  import EditIcon from '@/components/icons/EditIcon.vue';
   const props = defineProps({
     message: {
       type: Object,
