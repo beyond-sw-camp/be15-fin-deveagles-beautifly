@@ -35,19 +35,21 @@ class CustomerGradeQueryServiceImplTest {
   void getCustomerGrade_Success() {
     // given
     Long gradeId = 1L;
+    Long shopId = 2L;
     CustomerGrade grade = createTestCustomerGrade(gradeId, "VIP", 10);
 
-    given(customerGradeRepository.findById(gradeId)).willReturn(Optional.of(grade));
+    given(customerGradeRepository.findByIdAndShopId(gradeId, shopId))
+        .willReturn(Optional.of(grade));
 
     // when
-    CustomerGradeResponse response = customerGradeQueryService.getCustomerGrade(gradeId);
+    CustomerGradeResponse response = customerGradeQueryService.getCustomerGrade(gradeId, shopId);
 
     // then
     assertThat(response.getId()).isEqualTo(gradeId);
     assertThat(response.getCustomerGradeName()).isEqualTo("VIP");
     assertThat(response.getDiscountRate()).isEqualTo(10);
 
-    then(customerGradeRepository).should().findById(gradeId);
+    then(customerGradeRepository).should().findByIdAndShopId(gradeId, shopId);
   }
 
   @Test
@@ -55,14 +57,15 @@ class CustomerGradeQueryServiceImplTest {
   void getCustomerGrade_NotFound() {
     // given
     Long gradeId = 1L;
-    given(customerGradeRepository.findById(gradeId)).willReturn(Optional.empty());
+    Long shopId = 2L;
+    given(customerGradeRepository.findByIdAndShopId(gradeId, shopId)).willReturn(Optional.empty());
 
     // when & then
-    assertThatThrownBy(() -> customerGradeQueryService.getCustomerGrade(gradeId))
+    assertThatThrownBy(() -> customerGradeQueryService.getCustomerGrade(gradeId, shopId))
         .isInstanceOf(BusinessException.class)
         .hasMessageContaining("고객등급을 찾을 수 없습니다.");
 
-    then(customerGradeRepository).should().findById(gradeId);
+    then(customerGradeRepository).should().findByIdAndShopId(gradeId, shopId);
   }
 
   @Test
@@ -159,6 +162,7 @@ class CustomerGradeQueryServiceImplTest {
   private CustomerGrade createTestCustomerGrade(Long id, String gradeName, Integer discountRate) {
     return CustomerGrade.builder()
         .id(id)
+        .shopId(1L)
         .customerGradeName(gradeName)
         .discountRate(discountRate)
         .build();

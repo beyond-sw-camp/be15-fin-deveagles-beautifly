@@ -106,7 +106,7 @@ public class CustomerListQueryRepositoryImpl implements CustomerListQueryReposit
   private Map<Long, List<CustomerListResponse.TagInfo>> getTagsByCustomerIds(
       List<Long> customerIds) {
     return queryFactory
-        .select(tagByCustomer.customerId, tag.id, tag.tagName, tag.colorCode)
+        .select(tagByCustomer.customerId, tag.id, tag.shopId, tag.tagName, tag.colorCode)
         .from(tagByCustomer)
         .innerJoin(tag)
         .on(tagByCustomer.tagId.eq(tag.id))
