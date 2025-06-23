@@ -89,37 +89,23 @@
                   >예약 변경 이력</router-link
                 >
               </li>
+              <li>
+                <router-link to="/settings/reservation" class="nav-sublink">예약 설정</router-link>
+              </li>
             </ul>
           </div>
         </li>
 
         <li class="nav-item">
-          <div class="nav-group">
-            <button
-              class="nav-link nav-toggle"
-              :class="{ active: activeGroups.includes('customer') }"
-              data-tooltip="고객 관리"
-              @click="toggleGroup('customer')"
-            >
-              <UsersIcon class="nav-icon" />
-              <span v-if="!isCollapsed || isHovered" class="nav-text">고객 관리</span>
-              <ChevronRightIcon
-                v-if="!isCollapsed || isHovered"
-                class="nav-arrow"
-                :class="{ expanded: activeGroups.includes('customer') }"
-              />
-            </button>
-            <ul
-              v-if="!isCollapsed || isHovered"
-              v-show="activeGroups.includes('customer')"
-              class="nav-sublist"
-            >
-              <li><router-link to="/customer/list" class="nav-sublink">고객 목록</router-link></li>
-              <li>
-                <router-link to="/customer/prepaid" class="nav-sublink">선불고객 관리</router-link>
-              </li>
-            </ul>
-          </div>
+          <router-link
+            to="/customer/list"
+            class="nav-link"
+            :class="{ active: isActiveRoute('/customer/list') }"
+            data-tooltip="고객 관리"
+          >
+            <UsersIcon class="nav-icon" />
+            <span v-if="!isCollapsed || isHovered" class="nav-text">고객 관리</span>
+          </router-link>
         </li>
 
         <li class="nav-item">
@@ -243,59 +229,46 @@
               <li>
                 <router-link to="/message/settings" class="nav-sublink">메시지 설정</router-link>
               </li>
+              <!-- todo 개발 후 주석 제거
               <li>
                 <router-link to="/message/ab-test" class="nav-sublink">A/B테스트</router-link>
-              </li>
+              </li>-->
             </ul>
           </div>
         </li>
 
         <li class="nav-item">
-          <router-link
-            to="/workflows"
-            class="nav-link"
-            :class="{ active: isActiveRoute('/workflows') }"
-            data-tooltip="워크플로우"
-          >
-            <WorkflowIcon class="nav-icon" />
-            <span v-if="!isCollapsed || isHovered" class="nav-text">워크플로우</span>
-          </router-link>
-        </li>
-
-        <li class="nav-item">
-          <router-link
-            to="/campaigns"
-            class="nav-link"
-            :class="{ active: isActiveRoute('/campaigns') }"
-            data-tooltip="캠페인"
-          >
-            <MegaphoneIcon class="nav-icon" />
-            <span v-if="!isCollapsed || isHovered" class="nav-text">캠페인</span>
-          </router-link>
-        </li>
-
-        <li class="nav-item">
-          <router-link
-            to="/coupons"
-            class="nav-link"
-            :class="{ active: isActiveRoute('/coupons') }"
-            data-tooltip="쿠폰 관리"
-          >
-            <TagIcon class="nav-icon" />
-            <span v-if="!isCollapsed || isHovered" class="nav-text">쿠폰 관리</span>
-          </router-link>
-        </li>
-
-        <li class="nav-item">
-          <router-link
-            to="/profile-link"
-            class="nav-link"
-            :class="{ active: isActiveRoute('/profile-link') }"
-            data-tooltip="프로필 링크"
-          >
-            <LinkIcon class="nav-icon" />
-            <span v-if="!isCollapsed || isHovered" class="nav-text">프로필 링크</span>
-          </router-link>
+          <div class="nav-group">
+            <button
+              class="nav-link nav-toggle"
+              :class="{ active: activeGroups.includes('marketing') }"
+              data-tooltip="마케팅"
+              @click="toggleGroup('marketing')"
+            >
+              <MegaphoneIcon class="nav-icon" />
+              <span v-if="!isCollapsed || isHovered" class="nav-text">마케팅</span>
+              <ChevronRightIcon
+                v-if="!isCollapsed || isHovered"
+                class="nav-arrow"
+                :class="{ expanded: activeGroups.includes('marketing') }"
+              />
+            </button>
+            <ul
+              v-if="!isCollapsed || isHovered"
+              v-show="activeGroups.includes('marketing')"
+              class="nav-sublist"
+            >
+              <li>
+                <router-link to="/workflows" class="nav-sublink">워크플로우</router-link>
+              </li>
+              <li>
+                <router-link to="/campaigns" class="nav-sublink">캠페인</router-link>
+              </li>
+              <li>
+                <router-link to="/coupons" class="nav-sublink">쿠폰 관리</router-link>
+              </li>
+            </ul>
+          </div>
         </li>
 
         <li class="nav-item">
@@ -322,20 +295,8 @@
               <li>
                 <router-link to="/settings/store" class="nav-sublink">매장 기본 설정</router-link>
               </li>
-              <li>
-                <router-link to="/settings/reservation" class="nav-sublink">예약 설정</router-link>
-              </li>
               <li><router-link to="/settings/staff" class="nav-sublink">직원 관리</router-link></li>
-              <li>
-                <router-link to="/settings/customer-grade" class="nav-sublink"
-                  >고객 등급 등록</router-link
-                >
-              </li>
-              <li>
-                <router-link to="/settings/customer-tag" class="nav-sublink"
-                  >고객 태그 등록</router-link
-                >
-              </li>
+              <li><router-link to="/profile-link" class="nav-sublink">프로필 링크</router-link></li>
             </ul>
           </div>
         </li>
@@ -357,12 +318,9 @@
     MessageCircleIcon,
     SettingsIcon,
     MegaphoneIcon,
-    TagIcon,
-    LinkIcon,
     ChevronRightIcon,
     PinIcon,
     PinOffIcon,
-    WorkflowIcon,
   } from '../icons/index.js';
 
   const route = useRoute();
