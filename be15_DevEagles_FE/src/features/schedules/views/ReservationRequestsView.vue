@@ -9,7 +9,7 @@
         type="primary"
         @click="openConfirm('선택된 예약을 모두 확정하시겠습니까?', confirmSelected)"
       >
-        전체 예약 확정
+        예약 확정
       </BaseButton>
     </div>
 
@@ -27,7 +27,7 @@
         </template>
 
         <template #cell-checkbox="{ item }">
-          <input v-model="selectedIds" type="checkbox" :value="item.id" />
+          <input v-model="selectedIds" type="checkbox" :value="item.id" @click.stop />
         </template>
 
         <template #cell-actions="{ item }">
@@ -85,6 +85,7 @@
     </BaseModal>
 
     <ReservationDetailModal
+      v-if="selectedReservation"
       v-model="isDetailOpen"
       :reservation="selectedReservation"
       @cancel-reservation="cancelFromDetail"
