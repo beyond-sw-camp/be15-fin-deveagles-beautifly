@@ -15,8 +15,8 @@ public class AccessList {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  @Column(name = "auth_id", nullable = false)
-  private Long authId;
+  @Column(name = "access_id", nullable = false)
+  private Long accessId;
 
   @Column(name = "access_name", nullable = false)
   private String accessName;
