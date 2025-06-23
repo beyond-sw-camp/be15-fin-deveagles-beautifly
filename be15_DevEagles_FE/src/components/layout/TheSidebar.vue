@@ -50,7 +50,7 @@
           <div class="nav-group">
             <button
               class="nav-link nav-toggle"
-              :class="{ active: activeGroups.includes('reservation') }"
+              :class="{ active: isCollapsed && isGroupActive('reservation') }"
               data-tooltip="예약"
               @click="toggleGroup('reservation')"
             >
@@ -62,71 +62,60 @@
                 :class="{ expanded: activeGroups.includes('reservation') }"
               />
             </button>
-            <ul
-              v-if="!isCollapsed || isHovered"
-              v-show="activeGroups.includes('reservation')"
-              class="nav-sublist"
-            >
-              <li>
-                <router-link to="/schedule/calendar" class="nav-sublink">캘린더</router-link>
-              </li>
-              <li>
-                <router-link to="/reservation/list" class="nav-sublink">예약 목록</router-link>
-              </li>
-              <li>
-                <router-link to="/schedule/plan" class="nav-sublink">일정 목록</router-link>
-              </li>
-              <li>
+            <transition name="submenu">
+              <ul
+                v-if="(!isCollapsed || isHovered) && activeGroups.includes('reservation')"
+                class="nav-sublist"
+              >
+                <li>
+                  <router-link to="/schedule/calendar" class="nav-sublink">캘린더</router-link>
+                </li>
+                <li>
+                  <router-link to="/reservation/list" class="nav-sublink">예약 목록</router-link>
+                </li>
+                <li>
+                  <router-link to="/schedule/plan" class="nav-sublink">일정 목록</router-link>
+                </li>
+                <!-- <li>
                 <router-link to="/schedule/leave" class="nav-sublink">휴무 목록</router-link>
-              </li>
-              <li>
-                <router-link to="/reservation/requests" class="nav-sublink"
-                  >예약 신청 목록</router-link
-                >
-              </li>
-              <li>
-                <router-link to="/reservation/history" class="nav-sublink"
-                  >예약 변경 이력</router-link
-                >
-              </li>
-            </ul>
+              </li> -->
+                <li>
+                  <router-link to="/reservation/requests" class="nav-sublink"
+                    >예약 신청 목록</router-link
+                  >
+                </li>
+                <li>
+                  <router-link to="/reservation/history" class="nav-sublink"
+                    >예약 변경 이력</router-link
+                  >
+                </li>
+                <li>
+                  <router-link to="/settings/reservation" class="nav-sublink"
+                    >예약 설정</router-link
+                  >
+                </li>
+              </ul>
+            </transition>
           </div>
+        </li>
+
+        <li class="nav-item">
+          <router-link
+            to="/customer/list"
+            class="nav-link"
+            :class="{ active: isActiveRoute('/customer/list') }"
+            data-tooltip="고객 관리"
+          >
+            <UsersIcon class="nav-icon" />
+            <span v-if="!isCollapsed || isHovered" class="nav-text">고객 관리</span>
+          </router-link>
         </li>
 
         <li class="nav-item">
           <div class="nav-group">
             <button
               class="nav-link nav-toggle"
-              :class="{ active: activeGroups.includes('customer') }"
-              data-tooltip="고객 관리"
-              @click="toggleGroup('customer')"
-            >
-              <UsersIcon class="nav-icon" />
-              <span v-if="!isCollapsed || isHovered" class="nav-text">고객 관리</span>
-              <ChevronRightIcon
-                v-if="!isCollapsed || isHovered"
-                class="nav-arrow"
-                :class="{ expanded: activeGroups.includes('customer') }"
-              />
-            </button>
-            <ul
-              v-if="!isCollapsed || isHovered"
-              v-show="activeGroups.includes('customer')"
-              class="nav-sublist"
-            >
-              <li><router-link to="/customer/list" class="nav-sublink">고객 목록</router-link></li>
-              <li>
-                <router-link to="/customer/prepaid" class="nav-sublink">선불고객 관리</router-link>
-              </li>
-            </ul>
-          </div>
-        </li>
-
-        <li class="nav-item">
-          <div class="nav-group">
-            <button
-              class="nav-link nav-toggle"
-              :class="{ active: activeGroups.includes('sales') }"
+              :class="{ active: isCollapsed && isGroupActive('sales') }"
               data-tooltip="매출 관리"
               @click="toggleGroup('sales')"
             >
@@ -138,16 +127,17 @@
                 :class="{ expanded: activeGroups.includes('sales') }"
               />
             </button>
-            <ul
-              v-if="!isCollapsed || isHovered"
-              v-show="activeGroups.includes('sales')"
-              class="nav-sublist"
-            >
-              <li>
-                <router-link to="/sales/management" class="nav-sublink">매출 관리</router-link>
-              </li>
-              <li><router-link to="/sales/staff" class="nav-sublink">직원결산</router-link></li>
-            </ul>
+            <transition name="submenu">
+              <ul
+                v-if="(!isCollapsed || isHovered) && activeGroups.includes('sales')"
+                class="nav-sublist"
+              >
+                <li>
+                  <router-link to="/sales/management" class="nav-sublink">매출 관리</router-link>
+                </li>
+                <li><router-link to="/sales/staff" class="nav-sublink">직원결산</router-link></li>
+              </ul>
+            </transition>
           </div>
         </li>
 
@@ -155,7 +145,7 @@
           <div class="nav-group">
             <button
               class="nav-link nav-toggle"
-              :class="{ active: activeGroups.includes('item') }"
+              :class="{ active: isCollapsed && isGroupActive('item') }"
               data-tooltip="상품 관리"
               @click="toggleGroup('item')"
             >
@@ -167,18 +157,19 @@
                 :class="{ expanded: activeGroups.includes('item') }"
               />
             </button>
-            <ul
-              v-if="!isCollapsed || isHovered"
-              v-show="activeGroups.includes('item')"
-              class="nav-sublist"
-            >
-              <li>
-                <router-link to="/item/service" class="nav-sublink">시술/상품 관리</router-link>
-              </li>
-              <li>
-                <router-link to="/item/membership" class="nav-sublink">회원권 관리</router-link>
-              </li>
-            </ul>
+            <transition name="submenu">
+              <ul
+                v-if="(!isCollapsed || isHovered) && activeGroups.includes('item')"
+                class="nav-sublist"
+              >
+                <li>
+                  <router-link to="/item/service" class="nav-sublink">시술/상품 관리</router-link>
+                </li>
+                <li>
+                  <router-link to="/item/membership" class="nav-sublink">회원권 관리</router-link>
+                </li>
+              </ul>
+            </transition>
           </div>
         </li>
 
@@ -186,7 +177,7 @@
           <div class="nav-group">
             <button
               class="nav-link nav-toggle"
-              :class="{ active: activeGroups.includes('analytics') }"
+              :class="{ active: isCollapsed && isGroupActive('analytics') }"
               data-tooltip="데이터 분석"
               @click="toggleGroup('analytics')"
             >
@@ -198,18 +189,19 @@
                 :class="{ expanded: activeGroups.includes('analytics') }"
               />
             </button>
-            <ul
-              v-if="!isCollapsed || isHovered"
-              v-show="activeGroups.includes('analytics')"
-              class="nav-sublist"
-            >
-              <li>
-                <router-link to="/analytics/usage" class="nav-sublink">예약율 통계</router-link>
-              </li>
-              <li>
-                <router-link to="/analytics/sales" class="nav-sublink">매출 통계</router-link>
-              </li>
-            </ul>
+            <transition name="submenu">
+              <ul
+                v-if="(!isCollapsed || isHovered) && activeGroups.includes('analytics')"
+                class="nav-sublist"
+              >
+                <li>
+                  <router-link to="/analytics/usage" class="nav-sublink">예약율 통계</router-link>
+                </li>
+                <li>
+                  <router-link to="/analytics/sales" class="nav-sublink">매출 통계</router-link>
+                </li>
+              </ul>
+            </transition>
           </div>
         </li>
 
@@ -217,7 +209,7 @@
           <div class="nav-group">
             <button
               class="nav-link nav-toggle"
-              :class="{ active: activeGroups.includes('message') }"
+              :class="{ active: isCollapsed && isGroupActive('message') }"
               data-tooltip="문자"
               @click="toggleGroup('message')"
             >
@@ -229,80 +221,69 @@
                 :class="{ expanded: activeGroups.includes('message') }"
               />
             </button>
-            <ul
-              v-if="!isCollapsed || isHovered"
-              v-show="activeGroups.includes('message')"
-              class="nav-sublist"
-            >
-              <li>
-                <router-link to="/message/history" class="nav-sublink">문자 내역</router-link>
-              </li>
-              <li>
-                <router-link to="/message/templates" class="nav-sublink">문자 보관함</router-link>
-              </li>
-              <li>
-                <router-link to="/message/settings" class="nav-sublink">메시지 설정</router-link>
-              </li>
-              <li>
-                <router-link to="/message/ab-test" class="nav-sublink">A/B테스트</router-link>
-              </li>
-            </ul>
+            <transition name="submenu">
+              <ul
+                v-if="(!isCollapsed || isHovered) && activeGroups.includes('message')"
+                class="nav-sublist"
+              >
+                <li>
+                  <router-link to="/message/history" class="nav-sublink">문자 내역</router-link>
+                </li>
+                <li>
+                  <router-link to="/message/templates" class="nav-sublink">문자 보관함</router-link>
+                </li>
+                <li>
+                  <router-link to="/message/settings" class="nav-sublink">메시지 설정</router-link>
+                </li>
+                <!-- todo 개발 후 주석 제거
+                <li>
+                  <router-link to="/message/ab-test" class="nav-sublink">A/B테스트</router-link>
+                </li>-->
+              </ul>
+            </transition>
           </div>
-        </li>
-
-        <li class="nav-item">
-          <router-link
-            to="/workflows"
-            class="nav-link"
-            :class="{ active: isActiveRoute('/workflows') }"
-            data-tooltip="워크플로우"
-          >
-            <WorkflowIcon class="nav-icon" />
-            <span v-if="!isCollapsed || isHovered" class="nav-text">워크플로우</span>
-          </router-link>
-        </li>
-
-        <li class="nav-item">
-          <router-link
-            to="/campaigns"
-            class="nav-link"
-            :class="{ active: isActiveRoute('/campaigns') }"
-            data-tooltip="캠페인"
-          >
-            <MegaphoneIcon class="nav-icon" />
-            <span v-if="!isCollapsed || isHovered" class="nav-text">캠페인</span>
-          </router-link>
-        </li>
-
-        <li class="nav-item">
-          <router-link
-            to="/coupons"
-            class="nav-link"
-            :class="{ active: isActiveRoute('/coupons') }"
-            data-tooltip="쿠폰 관리"
-          >
-            <TagIcon class="nav-icon" />
-            <span v-if="!isCollapsed || isHovered" class="nav-text">쿠폰 관리</span>
-          </router-link>
-        </li>
-
-        <li class="nav-item">
-          <router-link
-            to="/profile-link"
-            class="nav-link"
-            :class="{ active: isActiveRoute('/profile-link') }"
-            data-tooltip="프로필 링크"
-          >
-            <LinkIcon class="nav-icon" />
-            <span v-if="!isCollapsed || isHovered" class="nav-text">프로필 링크</span>
-          </router-link>
         </li>
 
         <li class="nav-item">
           <div class="nav-group">
             <button
               class="nav-link nav-toggle"
-              :class="{ active: activeGroups.includes('settings') }"
+              :class="{ active: isCollapsed && isGroupActive('marketing') }"
+              data-tooltip="마케팅"
+              @click="toggleGroup('marketing')"
+            >
+              <MegaphoneIcon class="nav-icon" />
+              <span v-if="!isCollapsed || isHovered" class="nav-text">마케팅</span>
+              <ChevronRightIcon
+                v-if="!isCollapsed || isHovered"
+                class="nav-arrow"
+                :class="{ expanded: activeGroups.includes('marketing') }"
+              />
+            </button>
+            <transition name="submenu">
+              <ul
+                v-if="(!isCollapsed || isHovered) && activeGroups.includes('marketing')"
+                class="nav-sublist"
+              >
+                <li>
+                  <router-link to="/workflows" class="nav-sublink">워크플로우</router-link>
+                </li>
+                <li>
+                  <router-link to="/campaigns" class="nav-sublink">캠페인</router-link>
+                </li>
+                <li>
+                  <router-link to="/coupons" class="nav-sublink">쿠폰 관리</router-link>
+                </li>
+              </ul>
+            </transition>
+          </div>
+        </li>
+
+        <li class="nav-item">
+          <div class="nav-group">
+            <button
+              class="nav-link nav-toggle"
+              :class="{ active: isCollapsed && isGroupActive('settings') }"
               data-tooltip="매장 설정"
               @click="toggleGroup('settings')"
             >
@@ -314,29 +295,22 @@
                 :class="{ expanded: activeGroups.includes('settings') }"
               />
             </button>
-            <ul
-              v-if="!isCollapsed || isHovered"
-              v-show="activeGroups.includes('settings')"
-              class="nav-sublist"
-            >
-              <li>
-                <router-link to="/settings/store" class="nav-sublink">매장 기본 설정</router-link>
-              </li>
-              <li>
-                <router-link to="/settings/reservation" class="nav-sublink">예약 설정</router-link>
-              </li>
-              <li><router-link to="/settings/staff" class="nav-sublink">직원 관리</router-link></li>
-              <li>
-                <router-link to="/settings/customer-grade" class="nav-sublink"
-                  >고객 등급 등록</router-link
-                >
-              </li>
-              <li>
-                <router-link to="/settings/customer-tag" class="nav-sublink"
-                  >고객 태그 등록</router-link
-                >
-              </li>
-            </ul>
+            <transition name="submenu">
+              <ul
+                v-if="(!isCollapsed || isHovered) && activeGroups.includes('settings')"
+                class="nav-sublist"
+              >
+                <li>
+                  <router-link to="/settings/store" class="nav-sublink">매장 기본 설정</router-link>
+                </li>
+                <li>
+                  <router-link to="/settings/staff" class="nav-sublink">직원 관리</router-link>
+                </li>
+                <li>
+                  <router-link to="/profile-link" class="nav-sublink">프로필 링크</router-link>
+                </li>
+              </ul>
+            </transition>
           </div>
         </li>
       </ul>
@@ -345,7 +319,7 @@
 </template>
 
 <script setup>
-  import { ref, watch } from 'vue';
+  import { ref, watch, onMounted } from 'vue';
   import { useRoute } from 'vue-router';
   import {
     HomeIcon,
@@ -357,28 +331,72 @@
     MessageCircleIcon,
     SettingsIcon,
     MegaphoneIcon,
-    TagIcon,
-    LinkIcon,
     ChevronRightIcon,
     PinIcon,
     PinOffIcon,
-    WorkflowIcon,
   } from '../icons/index.js';
 
   const route = useRoute();
 
-  // 사이드바 상태
   const isCollapsed = ref(false);
   const isHovered = ref(false);
-  const activeGroups = ref([]); // 기본적으로 모든 하위 메뉴 닫힘
+  const activeGroup = ref(null);
+
+  const loadSidebarState = () => {
+    try {
+      const savedState = localStorage.getItem('sidebar-state');
+      if (savedState) {
+        const state = JSON.parse(savedState);
+        isCollapsed.value = state.isCollapsed || false;
+        activeGroup.value = state.activeGroup || null;
+      }
+    } catch (error) {
+      console.warn('사이드바 상태 복원 실패:', error);
+    }
+  };
+
+  const saveSidebarState = () => {
+    try {
+      const state = {
+        isCollapsed: isCollapsed.value,
+        activeGroup: activeGroup.value,
+      };
+      localStorage.setItem('sidebar-state', JSON.stringify(state));
+    } catch (error) {
+      console.warn('사이드바 상태 저장 실패:', error);
+    }
+  };
+
+  const setActiveGroupByRoute = () => {
+    const path = route.path;
+
+    if (path.startsWith('/schedule/') || path.startsWith('/reservation/')) {
+      activeGroup.value = 'reservation';
+    } else if (path.startsWith('/sales/')) {
+      activeGroup.value = 'sales';
+    } else if (path.startsWith('/item/')) {
+      activeGroup.value = 'item';
+    } else if (path.startsWith('/analytics/')) {
+      activeGroup.value = 'analytics';
+    } else if (path.startsWith('/message/')) {
+      activeGroup.value = 'message';
+    } else if (
+      path.startsWith('/workflows') ||
+      path.startsWith('/campaigns') ||
+      path.startsWith('/coupons')
+    ) {
+      activeGroup.value = 'marketing';
+    } else if (path.startsWith('/settings/') || path.startsWith('/profile-link')) {
+      activeGroup.value = 'settings';
+    }
+  };
 
   const toggleSidebar = () => {
     isCollapsed.value = !isCollapsed.value;
-    // 사이드바가 접히면 모든 서브메뉴도 닫기
     if (isCollapsed.value) {
-      activeGroups.value = [];
+      activeGroup.value = null;
     }
-    // 펼칠 때는 이전 상태 유지 (자동으로 메뉴 열지 않음)
+    saveSidebarState();
   };
 
   const handleMouseEnter = () => {
@@ -392,25 +410,75 @@
   };
 
   const toggleGroup = groupName => {
-    if (isCollapsed.value && !isHovered.value) return; // 접힌 상태에서는 서브메뉴 토글 비활성화
+    if (isCollapsed.value && !isHovered.value) return;
 
-    const index = activeGroups.value.indexOf(groupName);
-    if (index > -1) {
-      activeGroups.value.splice(index, 1);
+    if (activeGroup.value === groupName) {
+      activeGroup.value = null;
     } else {
-      activeGroups.value.push(groupName);
+      activeGroup.value = groupName;
     }
+    saveSidebarState();
   };
 
   const isActiveRoute = path => {
     return route.path === path;
   };
 
-  // 부모 컴포넌트에 사이드바 상태 전달
+  // 현재 라우트가 해당 그룹에 속하는지 확인
+  const isGroupActive = groupName => {
+    const path = route.path;
+
+    switch (groupName) {
+      case 'reservation':
+        return path.startsWith('/schedule/') || path.startsWith('/reservation/');
+      case 'sales':
+        return path.startsWith('/sales/');
+      case 'item':
+        return path.startsWith('/item/');
+      case 'analytics':
+        return path.startsWith('/analytics/');
+      case 'message':
+        return path.startsWith('/message/');
+      case 'marketing':
+        return (
+          path.startsWith('/workflows') ||
+          path.startsWith('/campaigns') ||
+          path.startsWith('/coupons')
+        );
+      case 'settings':
+        return path.startsWith('/settings/') || path.startsWith('/profile-link');
+      default:
+        return false;
+    }
+  };
+
+  const activeGroups = ref([]);
+  watch(activeGroup, newValue => {
+    activeGroups.value = newValue ? [newValue] : [];
+  });
+
   const emit = defineEmits(['sidebar-toggle']);
 
   watch(isCollapsed, newValue => {
     emit('sidebar-toggle', newValue);
+  });
+
+  watch(
+    () => route.path,
+    () => {
+      if (!activeGroup.value) {
+        setActiveGroupByRoute();
+        saveSidebarState();
+      }
+    }
+  );
+
+  onMounted(() => {
+    loadSidebarState();
+    if (!activeGroup.value) {
+      setActiveGroupByRoute();
+      saveSidebarState();
+    }
   });
 </script>
 
@@ -500,7 +568,7 @@
     padding: 0.5rem 0;
     overflow-y: auto;
     overflow-x: hidden;
-    min-height: 0; /* flex 아이템이 축소될 수 있도록 */
+    min-height: 0;
   }
 
   .nav-list {
@@ -602,13 +670,14 @@
     list-style: none;
     margin: 0;
     padding: 0;
-    background-color: rgba(0, 0, 0, 0.1);
+    background-color: rgba(0, 0, 0, 0.15);
+    border-left: 2px solid rgba(0, 0, 0, 0.1);
   }
 
   .nav-sublink {
     display: block;
     padding: 0.5rem 1rem 0.5rem 3rem;
-    color: rgba(255, 255, 255, 0.7);
+    color: rgba(255, 255, 255, 0.8);
     text-decoration: none;
     font-size: 13px;
     transition: all 200ms ease;
@@ -618,14 +687,14 @@
   }
 
   .nav-sublink:hover {
-    background-color: rgba(255, 255, 255, 0.05);
+    background-color: rgba(255, 255, 255, 0.1);
     color: var(--color-neutral-white);
   }
 
-  .nav-sublink.router-link-active {
-    background-color: rgba(255, 255, 255, 0.1);
+  .nav-sublink.router-link-exact-active {
+    background-color: rgba(255, 255, 255, 0.15);
     color: var(--color-neutral-white);
-    border-right: 2px solid var(--color-secondary-main);
+    border-right: 3px solid var(--color-secondary-main);
   }
 
   /* 스크롤바 스타일링 */
@@ -676,5 +745,46 @@
     z-index: 1000;
     margin-left: 0.5rem;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  }
+
+  /* 서브메뉴 슬라이드 애니메이션 - Vue transition 클래스들 (런타임에 동적 적용) */
+  /* stylelint-disable-next-line selector-class-pattern */
+  .submenu-enter-active {
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+  }
+
+  /* stylelint-disable-next-line selector-class-pattern */
+  .submenu-leave-active {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+  }
+
+  /* stylelint-disable-next-line selector-class-pattern */
+  .submenu-enter-from {
+    opacity: 0;
+    max-height: 0;
+    transform: translateY(-8px);
+  }
+
+  /* stylelint-disable-next-line selector-class-pattern */
+  .submenu-enter-to {
+    opacity: 1;
+    max-height: 300px;
+    transform: translateY(0);
+  }
+
+  /* stylelint-disable-next-line selector-class-pattern */
+  .submenu-leave-from {
+    opacity: 1;
+    max-height: 300px;
+    transform: translateY(0);
+  }
+
+  /* stylelint-disable-next-line selector-class-pattern */
+  .submenu-leave-to {
+    opacity: 0;
+    max-height: 0;
+    transform: translateY(-4px);
   }
 </style>

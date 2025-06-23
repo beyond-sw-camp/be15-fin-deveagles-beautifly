@@ -23,21 +23,20 @@ public class TagQueryServiceImpl implements TagQueryService {
   private final TagRepository tagRepository;
 
   @Override
-  public TagResponse getTag(Long tagId) {
-    log.info("태그 단건 조회 요청 - ID: {}", tagId);
+  public TagResponse getTag(Long tagId, Long shopId) {
+    log.info("태그 조회 요청 - 태그ID: {}, 매장ID: {}", tagId, shopId);
 
     Tag tag =
         tagRepository
-            .findById(tagId)
+            .findByIdAndShopId(tagId, shopId)
             .orElseThrow(
                 () -> {
-                  log.error("태그를 찾을 수 없음 - ID: {}", tagId);
+                  log.error("태그를 찾을 수 없음 - 태그ID: {}, 매장ID: {}", tagId, shopId);
                   return new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "태그를 찾을 수 없습니다.");
                 });
 
-    TagResponse response = mapToResponse(tag);
-    log.info("태그 조회 완료 - ID: {}, 태그명: {}", tagId, response.getTagName());
-
+    TagResponse response = TagResponse.from(tag);
+    log.info("태그 조회 완료 - 태그ID: {}", tagId);
     return response;
   }
 
@@ -49,6 +48,17 @@ public class TagQueryServiceImpl implements TagQueryService {
     List<TagResponse> responses = tags.stream().map(this::mapToResponse).toList();
 
     log.info("전체 태그 목록 조회 완료 - 총 {}개", responses.size());
+    return responses;
+  }
+
+  @Override
+  public List<TagResponse> getAllTagsByShopId(Long shopId) {
+    log.info("매장별 태그 목록 조회 요청 - 매장ID: {}", shopId);
+
+    List<Tag> tags = tagRepository.findByShopId(shopId);
+    List<TagResponse> responses = tags.stream().map(this::mapToResponse).toList();
+
+    log.info("매장별 태그 목록 조회 완료 - 매장ID: {}, 총 {}개", shopId, responses.size());
     return responses;
   }
 
@@ -71,6 +81,7 @@ public class TagQueryServiceImpl implements TagQueryService {
   private TagResponse mapToResponse(Tag tag) {
     return TagResponse.builder()
         .tagId(tag.getId())
+        .shopId(tag.getShopId())
         .tagName(tag.getTagName())
         .colorCode(tag.getColorCode())
         .build();

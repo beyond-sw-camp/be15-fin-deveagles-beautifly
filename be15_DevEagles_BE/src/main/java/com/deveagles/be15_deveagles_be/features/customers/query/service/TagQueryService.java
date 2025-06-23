@@ -7,9 +7,11 @@ import org.springframework.data.domain.Pageable;
 
 public interface TagQueryService {
 
-  TagResponse getTag(Long tagId);
+  TagResponse getTag(Long tagId, Long shopId);
 
   List<TagResponse> getAllTags();
+
+  List<TagResponse> getAllTagsByShopId(Long shopId);
 
   Page<TagResponse> getTags(Pageable pageable);
 }

@@ -12,6 +12,7 @@ import lombok.NoArgsConstructor;
 public class CustomerGradeResponse {
 
   private Long id;
+  private Long shopId;
   private String customerGradeName;
   private Integer discountRate;
 }
