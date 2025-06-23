@@ -44,7 +44,7 @@ const routes = [
       },
       {
         path: 'schedule/plan',
-        name: 'ReservationSchedule',
+        name: 'SchedulePlanLeave',
         component: () => import('@/features/schedules/views/SchedulePlanLeaveView.vue'),
       },
       {
