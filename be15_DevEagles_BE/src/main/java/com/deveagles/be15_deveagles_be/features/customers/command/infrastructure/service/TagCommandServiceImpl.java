@@ -22,17 +22,27 @@ public class TagCommandServiceImpl implements TagCommandService {
 
   @Override
   public Long createTag(CreateTagRequest request) {
-    log.info("태그 생성 요청 - 태그명: {}, 색상코드: {}", request.getTagName(), request.getColorCode());
+    log.info(
+        "태그 생성 요청 - 매장ID: {}, 태그명: {}, 색상코드: {}",
+        request.getShopId(),
+        request.getTagName(),
+        request.getColorCode());
 
-    validateTagNameNotExists(request.getTagName());
+    validateTagNameNotExists(request.getTagName(), request.getShopId());
 
-    Tag tag = Tag.builder().tagName(request.getTagName()).colorCode(request.getColorCode()).build();
+    Tag tag =
+        Tag.builder()
+            .shopId(request.getShopId())
+            .tagName(request.getTagName())
+            .colorCode(request.getColorCode())
+            .build();
 
     Tag savedTag = tagRepository.save(tag);
 
     log.info(
-        "태그 생성 완료 - ID: {}, 태그명: {}, 색상코드: {}",
+        "태그 생성 완료 - ID: {}, 매장ID: {}, 태그명: {}, 색상코드: {}",
         savedTag.getId(),
+        savedTag.getShopId(),
         savedTag.getTagName(),
         savedTag.getColorCode());
     return savedTag.getId();
@@ -41,15 +51,16 @@ public class TagCommandServiceImpl implements TagCommandService {
   @Override
   public void updateTag(Long tagId, UpdateTagRequest request) {
     log.info(
-        "태그 수정 요청 - ID: {}, 새 태그명: {}, 새 색상코드: {}",
+        "태그 수정 요청 - ID: {}, 매장ID: {}, 새 태그명: {}, 새 색상코드: {}",
         tagId,
+        request.getShopId(),
         request.getTagName(),
         request.getColorCode());
 
-    Tag tag = findTagById(tagId);
+    Tag tag = findTagByIdAndShopId(tagId, request.getShopId());
 
     if (!tag.getTagName().equals(request.getTagName())) {
-      validateTagNameNotExists(request.getTagName());
+      validateTagNameNotExists(request.getTagName(), request.getShopId());
     }
 
     String oldTagName = tag.getTagName();
@@ -58,8 +69,9 @@ public class TagCommandServiceImpl implements TagCommandService {
     tag.updateTagInfo(request.getTagName(), request.getColorCode());
 
     log.info(
-        "태그 수정 완료 - ID: {}, 태그명: {} -> {}, 색상코드: {} -> {}",
+        "태그 수정 완료 - ID: {}, 매장ID: {}, 태그명: {} -> {}, 색상코드: {} -> {}",
         tagId,
+        request.getShopId(),
         oldTagName,
         request.getTagName(),
         oldColorCode,
@@ -86,9 +98,19 @@ public class TagCommandServiceImpl implements TagCommandService {
             });
   }
 
-  private void validateTagNameNotExists(String tagName) {
-    if (tagRepository.existsByTagName(tagName)) {
-      log.error("중복된 태그명 - 태그명: {}", tagName);
+  private Tag findTagByIdAndShopId(Long tagId, Long shopId) {
+    return tagRepository
+        .findByIdAndShopId(tagId, shopId)
+        .orElseThrow(
+            () -> {
+              log.error("태그를 찾을 수 없음 - ID: {}, 매장ID: {}", tagId, shopId);
+              return new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "태그를 찾을 수 없습니다.");
+            });
+  }
+
+  private void validateTagNameNotExists(String tagName, Long shopId) {
+    if (tagRepository.existsByTagNameAndShopId(tagName, shopId)) {
+      log.error("중복된 태그명 - 태그명: {}, 매장ID: {}", tagName, shopId);
       throw new BusinessException(ErrorCode.DUPLICATE_RESOURCE, "이미 존재하는 태그명입니다.");
     }
   }

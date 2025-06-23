@@ -35,19 +35,20 @@ class TagQueryServiceImplTest {
   void getTag_Success() {
     // given
     Long tagId = 1L;
+    Long shopId = 2L;
     Tag tag = createTestTag(tagId, "VIP고객", "#FF0000");
 
-    given(tagRepository.findById(tagId)).willReturn(Optional.of(tag));
+    given(tagRepository.findByIdAndShopId(tagId, shopId)).willReturn(Optional.of(tag));
 
     // when
-    TagResponse response = tagQueryService.getTag(tagId);
+    TagResponse response = tagQueryService.getTag(tagId, shopId);
 
     // then
     assertThat(response.getTagId()).isEqualTo(tagId);
     assertThat(response.getTagName()).isEqualTo("VIP고객");
     assertThat(response.getColorCode()).isEqualTo("#FF0000");
 
-    then(tagRepository).should().findById(tagId);
+    then(tagRepository).should().findByIdAndShopId(tagId, shopId);
   }
 
   @Test
@@ -55,14 +56,15 @@ class TagQueryServiceImplTest {
   void getTag_NotFound() {
     // given
     Long tagId = 1L;
-    given(tagRepository.findById(tagId)).willReturn(Optional.empty());
+    Long shopId = 2L;
+    given(tagRepository.findByIdAndShopId(tagId, shopId)).willReturn(Optional.empty());
 
     // when & then
-    assertThatThrownBy(() -> tagQueryService.getTag(tagId))
+    assertThatThrownBy(() -> tagQueryService.getTag(tagId, shopId))
         .isInstanceOf(BusinessException.class)
         .hasMessageContaining("태그를 찾을 수 없습니다.");
 
-    then(tagRepository).should().findById(tagId);
+    then(tagRepository).should().findByIdAndShopId(tagId, shopId);
   }
 
   @Test
@@ -157,6 +159,6 @@ class TagQueryServiceImplTest {
   }
 
   private Tag createTestTag(Long id, String tagName, String colorCode) {
-    return Tag.builder().id(id).tagName(tagName).colorCode(colorCode).build();
+    return Tag.builder().id(id).shopId(1L).tagName(tagName).colorCode(colorCode).build();
   }
 }
