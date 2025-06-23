@@ -691,7 +691,7 @@
     color: var(--color-neutral-white);
   }
 
-  .nav-sublink.router-link-active {
+  .nav-sublink.router-link-exact-active {
     background-color: rgba(255, 255, 255, 0.15);
     color: var(--color-neutral-white);
     border-right: 3px solid var(--color-secondary-main);
@@ -747,35 +747,41 @@
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   }
 
-  /* 서브메뉴 슬라이드 애니메이션 */
+  /* 서브메뉴 슬라이드 애니메이션 - Vue transition 클래스들 (런타임에 동적 적용) */
+  /* stylelint-disable-next-line selector-class-pattern */
   .submenu-enter-active {
     transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     overflow: hidden;
   }
 
+  /* stylelint-disable-next-line selector-class-pattern */
   .submenu-leave-active {
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     overflow: hidden;
   }
 
+  /* stylelint-disable-next-line selector-class-pattern */
   .submenu-enter-from {
     opacity: 0;
     max-height: 0;
     transform: translateY(-8px);
   }
 
+  /* stylelint-disable-next-line selector-class-pattern */
   .submenu-enter-to {
     opacity: 1;
     max-height: 300px;
     transform: translateY(0);
   }
 
+  /* stylelint-disable-next-line selector-class-pattern */
   .submenu-leave-from {
     opacity: 1;
     max-height: 300px;
     transform: translateY(0);
   }
 
+  /* stylelint-disable-next-line selector-class-pattern */
   .submenu-leave-to {
     opacity: 0;
     max-height: 0;
