@@ -1,4 +1,4 @@
-package com.deveagles.be15_deveagles_be.shops.command.domain.aggregate;
+package com.deveagles.be15_deveagles_be.features.shops.command.domain.aggregate;
 
 import jakarta.persistence.*;
 import lombok.AccessLevel;
