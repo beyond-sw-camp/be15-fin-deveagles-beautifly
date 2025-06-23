@@ -7,11 +7,17 @@
         <router-view />
       </main>
     </div>
-    <!-- ✅ 채팅 아이콘 버튼 -->
     <div class="chat-button-wrapper">
-      <button class="chat-inquiry-button" @click="toggleChat">
-        <img src="@/images/logo_positive.png" class="chat-icon" alt="채팅 아이콘" />
-        <span>1:1 문의하기</span>
+      <button
+        class="chat-inquiry-button"
+        @mouseenter="isHovered = true"
+        @mouseleave="isHovered = false"
+        @click="toggleChat"
+      >
+        <MessageCircleIcon class="chat-icon" />
+        <transition name="fade">
+          <span v-if="isHovered" class="chat-label">1:1 문의하기</span>
+        </transition>
       </button>
     </div>
 
@@ -25,8 +31,10 @@
   import TheSidebar from './TheSidebar.vue';
   import TheHeader from './TheHeader.vue';
   import ChatModal from '@/features/chat/components/ChatModal.vue';
+  import { MessageCircleIcon } from '@/components/icons/index.js';
 
   const sidebarCollapsed = ref(false);
+  const isHovered = ref(false);
   const isChatOpen = ref(false);
   const handleSidebarToggle = isCollapsed => {
     sidebarCollapsed.value = isCollapsed;
@@ -73,39 +81,43 @@
     bottom: 10px;
     right: 10px;
     display: flex;
-    flex-direction: column-reverse;
     align-items: flex-end;
-    gap: 4px;
     z-index: 3000;
   }
 
   .chat-inquiry-button {
     background-color: var(--color-primary-main);
     color: white;
+    border: none;
+    border-radius: 9999px;
+    padding: 0.75rem 1rem;
     display: flex;
     align-items: center;
-    padding: 0.75rem;
-    border-radius: 9999px;
+    justify-content: center;
     gap: 0.5rem;
+    height: 44px;
     transition: width 0.3s ease;
-    overflow: hidden;
-    width: 44px;
   }
-  .chat-inquiry-button span {
-    white-space: nowrap;
-    opacity: 0;
-    transition: opacity 0.2s ease;
-  }
-  .chat-inquiry-button:hover {
-    width: 160px;
-  }
-  .chat-inquiry-button:hover span {
-    opacity: 1;
-  }
+
   .chat-icon {
     width: 18px;
     height: 18px;
-    object-fit: contain;
+    color: white;
+    flex-shrink: 0;
+  }
+
+  .chat-label {
+    white-space: nowrap;
+  }
+
+  .fade-enter-active,
+  .fade-leave-active {
+    transition: opacity 0.2s ease;
+  }
+
+  .fade-enter-from,
+  .fade-leave-to {
+    opacity: 0;
   }
 
   @media (max-width: 768px) {
