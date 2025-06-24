@@ -235,10 +235,12 @@
               class="nav-sublist"
             >
               <li>
-                <router-link to="/message/history" class="nav-sublink">문자 내역</router-link>
+                <router-link to="/message/history" class="nav-sublink"
+                  >보낸 메시지 목록</router-link
+                >
               </li>
               <li>
-                <router-link to="/message/templates" class="nav-sublink">문자 보관함</router-link>
+                <router-link to="/message/templates" class="nav-sublink">템플릿 보관함</router-link>
               </li>
               <li>
                 <router-link to="/message/settings" class="nav-sublink">메시지 설정</router-link>

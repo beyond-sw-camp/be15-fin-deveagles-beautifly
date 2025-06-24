@@ -1,5 +1,5 @@
 <script setup>
-  import { ref } from 'vue';
+  import { ref, computed } from 'vue';
   import BaseModal from '@/components/common/BaseModal.vue';
   import BaseButton from '@/components/common/BaseButton.vue';
   import PrimeDatePicker from '@/components/common/PrimeDatePicker.vue';
@@ -18,13 +18,21 @@
 
   const selectedDate = ref(null);
 
+  const parsed = computed(() => {
+    try {
+      return JSON.parse(props.messageContent);
+    } catch {
+      return {};
+    }
+  });
+
   function close() {
     emit('update:modelValue', false);
   }
 
   function submit() {
     if (!selectedDate.value) {
-      alert('예약 날짜를 선택해주세요.');
+      alert('예약 날짜와 시간을 선택해주세요.');
       return;
     }
 
@@ -45,16 +53,21 @@
     <div class="modal-body">
       <label class="form-label">메시지 내용</label>
       <div class="message-preview">
-        {{ messageContent }}
+        <p><strong>내용:</strong> {{ parsed?.content || '없음' }}</p>
+        <p v-if="parsed?.link"><strong>링크:</strong> {{ parsed.link }}</p>
+        <p v-if="parsed?.coupon"><strong>쿠폰:</strong> {{ parsed.coupon.name }}</p>
+        <p v-if="parsed?.grades?.length"><strong>등급:</strong> {{ parsed.grades.join(', ') }}</p>
+        <p v-if="parsed?.tags?.length"><strong>태그:</strong> {{ parsed.tags.join(', ') }}</p>
       </div>
 
       <PrimeDatePicker
         v-model="selectedDate"
-        label="발송 날짜"
+        label="발송 날짜 및 시간"
         :min-date="new Date()"
-        placeholder="발송 날짜를 선택하세요"
+        placeholder="날짜 및 시간을 선택하세요"
         :show-button-bar="true"
-        :show-time="false"
+        :show-time="true"
+        :hour-format="'24'"
         :selection-mode="'single'"
       />
     </div>
@@ -90,5 +103,10 @@
     display: flex;
     justify-content: flex-end;
     gap: 8px;
+  }
+
+  .message-preview p {
+    margin: 4px 0;
+    font-size: 14px;
   }
 </style>
