@@ -6,18 +6,7 @@ import { userRoutes } from '@/features/users/route.js';
 
 const routes = [
   // 레이아웃이 없는 관련 페이지 (최상위)
-  // {
-  //   path: '/login',
-  //   name: 'Login',
-  //   component: () => import('@/features/users/views/LoginView.vue'),
-  // },
-  // {
-  //   path: '/sign-up',
-  //   name: 'SignUp',
-  //   component: () => import('@/features/users/views/SignUpView.vue'),
-  // },
 
-  // 스케줄 관련 라우트 (레이아웃 없음)
   ...userRoutes,
   ...scheduleRoutes,
   ...staffRoutes,
@@ -126,6 +115,16 @@ const routes = [
         path: 'workflows',
         name: 'WorkflowList',
         component: () => import('@/features/workflows/views/WorkflowList.vue'),
+      },
+      {
+        path: 'workflows/create',
+        name: 'WorkflowCreate',
+        component: () => import('@/features/workflows/views/WorkflowCreate.vue'),
+      },
+      {
+        path: 'workflows/edit/:id',
+        name: 'WorkflowEdit',
+        component: () => import('@/features/workflows/views/WorkflowEdit.vue'),
       },
       {
         path: 'campaigns',
