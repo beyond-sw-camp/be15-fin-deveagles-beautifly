@@ -1,0 +1,36 @@
+package com.deveagles.be15_deveagles_be.features.schedules.command.application.service;
+
+import com.deveagles.be15_deveagles_be.features.schedules.command.domain.aggregate.ReservationSetting;
+import com.deveagles.be15_deveagles_be.features.schedules.command.domain.aggregate.ReservationSettingId;
+import com.deveagles.be15_deveagles_be.features.schedules.command.domain.repository.ReservationSettingRepository;
+import java.time.LocalTime;
+import java.util.List;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
+
+@Component
+@RequiredArgsConstructor
+public class ReservationSettingInitializer {
+
+  private final ReservationSettingRepository reservationSettingRepository;
+
+  public void initDefault(Long shopId) {
+    List<ReservationSetting> existing = reservationSettingRepository.findAllByShopId(shopId);
+    if (!existing.isEmpty()) {
+      throw new IllegalStateException("이미 예약 설정이 존재합니다.");
+    }
+
+    for (int day = 0; day <= 6; day++) {
+      ReservationSetting setting =
+          ReservationSetting.builder()
+              .id(new ReservationSettingId(shopId, day))
+              .availableStartTime(LocalTime.of(9, 0))
+              .availableEndTime(LocalTime.of(18, 0))
+              .lunchStartTime(null)
+              .lunchEndTime(null)
+              .build();
+
+      reservationSettingRepository.save(setting);
+    }
+  }
+}
