@@ -49,11 +49,11 @@ public class Workflow {
   // 대상 고객 조건들
   @JdbcTypeCode(SqlTypes.JSON)
   @Column(name = "target_customer_grades", columnDefinition = "json")
-  private String targetCustomerGrades; // ["신규 고객", "성장 고객"] 형태의 JSON 배열
+  private String targetCustomerGrades;
 
   @JdbcTypeCode(SqlTypes.JSON)
   @Column(name = "target_tags", columnDefinition = "json")
-  private String targetTags; // ["VIP", "생일"] 형태의 JSON 배열
+  private String targetTags;
 
   @Column(name = "exclude_dormant_customers", nullable = false)
   @Builder.Default
@@ -144,11 +144,11 @@ public class Workflow {
   }
 
   public void recordExecution(boolean success) {
-    this.executionCount++;
+    this.executionCount = (this.executionCount == null ? 0L : this.executionCount) + 1;
     if (success) {
-      this.successCount++;
+      this.successCount = (this.successCount == null ? 0L : this.successCount) + 1;
     } else {
-      this.failureCount++;
+      this.failureCount = (this.failureCount == null ? 0L : this.failureCount) + 1;
     }
     this.lastExecutedAt = LocalDateTime.now();
   }
