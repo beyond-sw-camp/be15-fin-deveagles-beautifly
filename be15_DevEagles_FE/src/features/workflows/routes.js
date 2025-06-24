@@ -17,4 +17,13 @@ export default [
       requiresAuth: true,
     },
   },
+  {
+    path: '/workflows/edit/:id',
+    name: 'WorkflowEdit',
+    component: () => import('./views/WorkflowEdit.vue'),
+    meta: {
+      title: '워크플로우 수정',
+      requiresAuth: true,
+    },
+  },
 ];

@@ -14,6 +14,8 @@ export { default as BaseDrawer } from './BaseDrawer.vue';
 export { default as Pagination } from './Pagination.vue';
 export { default as BaseCalendar } from './BaseCalendar.vue';
 export { default as VCalendarWrapper } from './VCalendarWrapper.vue';
+export { default as BaseTagSelector } from './BaseTagSelector.vue';
+export { default as BaseGradeSelector } from './BaseGradeSelector.vue';
 
 // Common Components
 export * from '../layout/index.js';
