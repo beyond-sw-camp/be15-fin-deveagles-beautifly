@@ -1,7 +1,7 @@
 <template>
   <BaseDrawer
     v-model="visible"
-    title="신규 고객 등록"
+    title="고객 수정"
     position="right"
     size="md"
     :closable="true"
@@ -132,13 +132,14 @@
   import BaseDrawer from '@/components/common/BaseDrawer.vue';
   import BaseButton from '@/components/common/BaseButton.vue';
   import Multiselect from '@vueform/multiselect';
-  import PrimeDatePicker from '@/components/common/PrimeDatePicker.vue'; // 반드시 추가!
+  import PrimeDatePicker from '@/components/common/PrimeDatePicker.vue';
   import '@vueform/multiselect/themes/default.css';
 
   const props = defineProps({
     modelValue: { type: Boolean, default: false },
+    customer: { type: Object, default: null },
   });
-  const emit = defineEmits(['update:modelValue', 'create']);
+  const emit = defineEmits(['update:modelValue', 'update', 'close']);
 
   const visible = ref(props.modelValue);
   watch(
@@ -166,19 +167,45 @@
   const gradeOptions = ['기본등급', '일반', 'VIP', '신규'];
   const today = new Date().toISOString().slice(0, 10);
 
-  const initialForm = () => ({
-    name: '',
-    phone: '',
-    gender: '',
-    birthdate: '',
-    staff_name: '',
-    channel_id: null,
-    tags: [],
-    memo: '',
-    grade: '기본등급',
-  });
-  const form = ref(initialForm());
+  function getInitialForm() {
+    if (!props.customer) {
+      return {
+        name: '',
+        phone: '',
+        gender: '',
+        birthdate: '',
+        staff_name: '',
+        channel_id: null,
+        tags: [],
+        memo: '',
+        grade: '기본등급',
+      };
+    }
+    return {
+      name: props.customer.customer_name || '',
+      phone: props.customer.phone_number || '',
+      gender: props.customer.gender || '',
+      birthdate: props.customer.birthdate ? new Date(props.customer.birthdate) : null,
+      staff_name: props.customer.staff_name || '',
+      channel_id: props.customer.channel_id ?? null,
+      tags: (props.customer.tags || []).map(tag => tag.tag_name),
+      memo: props.customer.memo || '',
+      grade: props.customer.customer_grade_name || '기본등급',
+    };
+  }
+  const form = ref(getInitialForm());
   const errors = ref({ name: '', phone: '', grade: '' });
+
+  watch(
+    () => props.customer,
+    newVal => {
+      if (visible.value && newVal) {
+        form.value = getInitialForm();
+        errors.value = { name: '', phone: '', grade: '' };
+      }
+    },
+    { deep: true }
+  );
 
   function validateField(field) {
     if (field === 'name') errors.value.name = !form.value.name.trim() ? '이름을 입력해주세요' : '';
@@ -190,21 +217,30 @@
     }
     if (field === 'grade') errors.value.grade = !form.value.grade ? '등급을 선택해주세요' : '';
   }
-
   function validateAndSubmit() {
     validateField('name');
     validateField('phone');
     validateField('grade');
     if (!errors.value.name && !errors.value.phone && !errors.value.grade) {
-      const payload = { ...form.value };
-      payload.tags = payload.tags.map(
-        tagName =>
-          tagOptions.find(opt => opt.tag_name === tagName) || {
-            tag_name: tagName,
-            color_code: '#ccc',
-          }
-      );
-      emit('create', payload);
+      const payload = {
+        ...props.customer,
+        customer_name: form.value.name,
+        phone_number: form.value.phone,
+        gender: form.value.gender,
+        birthdate: form.value.birthdate ? form.value.birthdate.toISOString().split('T')[0] : null,
+        staff_name: form.value.staff_name,
+        channel_id: form.value.channel_id,
+        tags: form.value.tags.map(
+          tagName =>
+            tagOptions.find(opt => opt.tag_name === tagName) || {
+              tag_name: tagName,
+              color_code: '#ccc',
+            }
+        ),
+        memo: form.value.memo,
+        customer_grade_name: form.value.grade,
+      };
+      emit('update', payload);
       visible.value = false;
       resetForm();
     }
@@ -212,9 +248,10 @@
   function closeDrawer() {
     visible.value = false;
     resetForm();
+    emit('close');
   }
   function resetForm() {
-    form.value = initialForm();
+    form.value = getInitialForm();
     errors.value = { name: '', phone: '', grade: '' };
   }
 </script>
