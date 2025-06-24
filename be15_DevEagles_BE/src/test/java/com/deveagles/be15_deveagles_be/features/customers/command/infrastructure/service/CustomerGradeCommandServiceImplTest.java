@@ -34,24 +34,29 @@ class CustomerGradeCommandServiceImplTest {
     // given
     String gradeName = "VIP";
     Integer discountRate = 10;
-    CreateCustomerGradeRequest request = new CreateCustomerGradeRequest(gradeName, discountRate);
+    Long shopId = 1L;
+    CreateCustomerGradeRequest request =
+        new CreateCustomerGradeRequest(shopId, gradeName, discountRate);
 
     CustomerGrade savedGrade =
         CustomerGrade.builder()
             .id(1L)
+            .shopId(shopId)
             .customerGradeName(gradeName)
             .discountRate(discountRate)
             .build();
 
-    given(customerGradeRepository.existsByCustomerGradeName(gradeName)).willReturn(false);
+    given(customerGradeRepository.existsByCustomerGradeNameAndShopId(gradeName, shopId))
+        .willReturn(false);
     given(customerGradeRepository.save(any(CustomerGrade.class))).willReturn(savedGrade);
 
     // when
-    Long gradeId = customerGradeCommandService.createCustomerGrade(request);
+    Long result = customerGradeCommandService.createCustomerGrade(request);
 
     // then
-    assertThat(gradeId).isEqualTo(1L);
-    then(customerGradeRepository).should().existsByCustomerGradeName(gradeName);
+    assertThat(result).isEqualTo(1L);
+
+    then(customerGradeRepository).should().existsByCustomerGradeNameAndShopId(gradeName, shopId);
     then(customerGradeRepository).should().save(any(CustomerGrade.class));
   }
 
@@ -61,16 +66,19 @@ class CustomerGradeCommandServiceImplTest {
     // given
     String gradeName = "VIP";
     Integer discountRate = 10;
-    CreateCustomerGradeRequest request = new CreateCustomerGradeRequest(gradeName, discountRate);
+    Long shopId = 1L;
+    CreateCustomerGradeRequest request =
+        new CreateCustomerGradeRequest(shopId, gradeName, discountRate);
 
-    given(customerGradeRepository.existsByCustomerGradeName(gradeName)).willReturn(true);
+    given(customerGradeRepository.existsByCustomerGradeNameAndShopId(gradeName, shopId))
+        .willReturn(true);
 
     // when & then
     assertThatThrownBy(() -> customerGradeCommandService.createCustomerGrade(request))
         .isInstanceOf(BusinessException.class)
         .hasMessageContaining("이미 존재하는 고객등급명입니다.");
 
-    then(customerGradeRepository).should().existsByCustomerGradeName(gradeName);
+    then(customerGradeRepository).should().existsByCustomerGradeNameAndShopId(gradeName, shopId);
     then(customerGradeRepository).should(never()).save(any(CustomerGrade.class));
   }
 
@@ -79,29 +87,31 @@ class CustomerGradeCommandServiceImplTest {
   void updateCustomerGrade_Success() {
     // given
     Long gradeId = 1L;
-    String oldGradeName = "VIP";
+    Long shopId = 1L;
     String newGradeName = "VVIP";
-    Integer oldDiscountRate = 10;
     Integer newDiscountRate = 15;
     UpdateCustomerGradeRequest request =
-        new UpdateCustomerGradeRequest(newGradeName, newDiscountRate);
+        new UpdateCustomerGradeRequest(shopId, newGradeName, newDiscountRate);
 
     CustomerGrade existingGrade =
         CustomerGrade.builder()
             .id(gradeId)
-            .customerGradeName(oldGradeName)
-            .discountRate(oldDiscountRate)
+            .shopId(shopId)
+            .customerGradeName("VIP")
+            .discountRate(10)
             .build();
 
-    given(customerGradeRepository.findById(gradeId)).willReturn(Optional.of(existingGrade));
-    given(customerGradeRepository.existsByCustomerGradeName(newGradeName)).willReturn(false);
+    given(customerGradeRepository.findByIdAndShopId(gradeId, shopId))
+        .willReturn(Optional.of(existingGrade));
+    given(customerGradeRepository.existsByCustomerGradeNameAndShopId(newGradeName, shopId))
+        .willReturn(false);
 
     // when
     customerGradeCommandService.updateCustomerGrade(gradeId, request);
 
     // then
-    then(customerGradeRepository).should().findById(gradeId);
-    then(customerGradeRepository).should().existsByCustomerGradeName(newGradeName);
+    then(customerGradeRepository).should().findByIdAndShopId(gradeId, shopId);
+    then(customerGradeRepository).should().existsByCustomerGradeNameAndShopId(newGradeName, shopId);
   }
 
   @Test
@@ -109,17 +119,18 @@ class CustomerGradeCommandServiceImplTest {
   void updateCustomerGrade_GradeNotFound() {
     // given
     Long gradeId = 1L;
-    UpdateCustomerGradeRequest request = new UpdateCustomerGradeRequest("VVIP", 15);
+    Long shopId = 1L;
+    UpdateCustomerGradeRequest request = new UpdateCustomerGradeRequest(shopId, "VVIP", 15);
 
-    given(customerGradeRepository.findById(gradeId)).willReturn(Optional.empty());
+    given(customerGradeRepository.findByIdAndShopId(gradeId, shopId)).willReturn(Optional.empty());
 
     // when & then
     assertThatThrownBy(() -> customerGradeCommandService.updateCustomerGrade(gradeId, request))
         .isInstanceOf(BusinessException.class)
         .hasMessageContaining("고객등급을 찾을 수 없습니다.");
 
-    then(customerGradeRepository).should().findById(gradeId);
-    then(customerGradeRepository).should(never()).existsByCustomerGradeName(any());
+    then(customerGradeRepository).should().findByIdAndShopId(gradeId, shopId);
+    then(customerGradeRepository).should(never()).existsByCustomerGradeNameAndShopId(any(), any());
   }
 
   @Test
@@ -127,57 +138,65 @@ class CustomerGradeCommandServiceImplTest {
   void updateCustomerGrade_DuplicateGradeName() {
     // given
     Long gradeId = 1L;
+    Long shopId = 1L;
     String oldGradeName = "VIP";
     String newGradeName = "VVIP";
     Integer oldDiscountRate = 10;
     Integer newDiscountRate = 15;
     UpdateCustomerGradeRequest request =
-        new UpdateCustomerGradeRequest(newGradeName, newDiscountRate);
+        new UpdateCustomerGradeRequest(shopId, newGradeName, newDiscountRate);
 
     CustomerGrade existingGrade =
         CustomerGrade.builder()
             .id(gradeId)
+            .shopId(shopId)
             .customerGradeName(oldGradeName)
             .discountRate(oldDiscountRate)
             .build();
 
-    given(customerGradeRepository.findById(gradeId)).willReturn(Optional.of(existingGrade));
-    given(customerGradeRepository.existsByCustomerGradeName(newGradeName)).willReturn(true);
+    given(customerGradeRepository.findByIdAndShopId(gradeId, shopId))
+        .willReturn(Optional.of(existingGrade));
+    given(customerGradeRepository.existsByCustomerGradeNameAndShopId(newGradeName, shopId))
+        .willReturn(true);
 
     // when & then
     assertThatThrownBy(() -> customerGradeCommandService.updateCustomerGrade(gradeId, request))
         .isInstanceOf(BusinessException.class)
         .hasMessageContaining("이미 존재하는 고객등급명입니다.");
 
-    then(customerGradeRepository).should().findById(gradeId);
-    then(customerGradeRepository).should().existsByCustomerGradeName(newGradeName);
+    then(customerGradeRepository).should().findByIdAndShopId(gradeId, shopId);
+    then(customerGradeRepository).should().existsByCustomerGradeNameAndShopId(newGradeName, shopId);
   }
 
   @Test
-  @DisplayName("고객등급 수정 성공 - 같은 등급명으로 할인율만 변경")
-  void updateCustomerGrade_SameGradeName() {
+  @DisplayName("고객등급 수정 성공 - 동일한 등급명으로 수정시 중복 검사 스킵")
+  void updateCustomerGrade_SameGradeNameSkipDuplicateCheck() {
     // given
     Long gradeId = 1L;
+    Long shopId = 1L;
     String gradeName = "VIP";
     Integer oldDiscountRate = 10;
     Integer newDiscountRate = 15;
-    UpdateCustomerGradeRequest request = new UpdateCustomerGradeRequest(gradeName, newDiscountRate);
+    UpdateCustomerGradeRequest request =
+        new UpdateCustomerGradeRequest(shopId, gradeName, newDiscountRate);
 
     CustomerGrade existingGrade =
         CustomerGrade.builder()
             .id(gradeId)
+            .shopId(shopId)
             .customerGradeName(gradeName)
             .discountRate(oldDiscountRate)
             .build();
 
-    given(customerGradeRepository.findById(gradeId)).willReturn(Optional.of(existingGrade));
+    given(customerGradeRepository.findByIdAndShopId(gradeId, shopId))
+        .willReturn(Optional.of(existingGrade));
 
     // when
     customerGradeCommandService.updateCustomerGrade(gradeId, request);
 
     // then
-    then(customerGradeRepository).should().findById(gradeId);
-    then(customerGradeRepository).should(never()).existsByCustomerGradeName(any());
+    then(customerGradeRepository).should().findByIdAndShopId(gradeId, shopId);
+    then(customerGradeRepository).should(never()).existsByCustomerGradeNameAndShopId(any(), any());
   }
 
   @Test
@@ -186,7 +205,12 @@ class CustomerGradeCommandServiceImplTest {
     // given
     Long gradeId = 1L;
     CustomerGrade existingGrade =
-        CustomerGrade.builder().id(gradeId).customerGradeName("VIP").discountRate(10).build();
+        CustomerGrade.builder()
+            .id(gradeId)
+            .shopId(1L)
+            .customerGradeName("VIP")
+            .discountRate(10)
+            .build();
 
     given(customerGradeRepository.findById(gradeId)).willReturn(Optional.of(existingGrade));
 

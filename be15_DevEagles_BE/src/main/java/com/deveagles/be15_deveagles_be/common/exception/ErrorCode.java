@@ -42,7 +42,12 @@ public enum ErrorCode implements ErrorCodeType {
   // 캠페인 관련 에러 (51000번대)
   CAMPAIGN_NOT_FOUND("51001", "캠페인을 찾을 수 없습니다", HttpStatus.NOT_FOUND),
   CAMPAIGN_ALREADY_DELETED("51002", "이미 삭제된 캠페인입니다", HttpStatus.BAD_REQUEST),
-  INVALID_CAMPAIGN_DATE_RANGE("51003", "캠페인 종료일은 시작일보다 늦어야 합니다", HttpStatus.BAD_REQUEST);
+  INVALID_CAMPAIGN_DATE_RANGE("51003", "캠페인 종료일은 시작일보다 늦어야 합니다", HttpStatus.BAD_REQUEST),
+
+  // 예약 설정 관련 에러 (70000번대)
+  INVALID_RESERVATION_TIME_RANGE("70001", "예약 시작 시간은 종료 시간보다 빨라야 합니다", HttpStatus.BAD_REQUEST),
+  INVALID_LUNCH_TIME_RANGE("70002", "점심시간은 예약 가능 시간 범위 내여야 합니다", HttpStatus.BAD_REQUEST),
+  INVALID_LUNCH_TIME_ORDER("70003", "점심시간 시작은 종료보다 빨라야 합니다", HttpStatus.BAD_REQUEST);
 
   private final String code;
   private final String message;

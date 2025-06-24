@@ -178,7 +178,7 @@ public class CustomerQueryServiceImpl implements CustomerQueryService {
     validateCustomerExists(customerId, shopId);
 
     return queryFactory
-        .select(tag.id, tag.tagName, tag.colorCode)
+        .select(tag.id, tag.shopId, tag.tagName, tag.colorCode)
         .from(tagByCustomer)
         .innerJoin(tag)
         .on(tagByCustomer.tagId.eq(tag.id))
@@ -189,6 +189,7 @@ public class CustomerQueryServiceImpl implements CustomerQueryService {
             tuple ->
                 TagResponse.builder()
                     .tagId(tuple.get(tag.id))
+                    .shopId(tuple.get(tag.shopId))
                     .tagName(tuple.get(tag.tagName))
                     .colorCode(tuple.get(tag.colorCode))
                     .build())

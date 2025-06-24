@@ -20,6 +20,9 @@ public class CustomerGrade {
   @Column(name = "customer_grade_id")
   private Long id;
 
+  @Column(name = "shop_id", nullable = false)
+  private Long shopId;
+
   @Column(name = "customer_grade_name", nullable = false, length = 10)
   private String customerGradeName;
 
