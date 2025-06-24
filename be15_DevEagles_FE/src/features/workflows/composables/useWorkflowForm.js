@@ -34,6 +34,7 @@ export function useWorkflowForm(initialData = null) {
       birthdayDaysBefore: 3,
       visitMilestone: 10,
       amountMilestone: 100000,
+      daysAfterFirstVisit: 30,
       riskThresholdDays: 30,
       followupDays: 7,
     },
@@ -86,6 +87,12 @@ export function useWorkflowForm(initialData = null) {
       return false;
     }
     if (formData.trigger === 'amount-milestone' && !formData.triggerConfig.amountMilestone) {
+      return false;
+    }
+    if (
+      formData.trigger === 'first-visit-days-after' &&
+      !formData.triggerConfig.daysAfterFirstVisit
+    ) {
       return false;
     }
 
