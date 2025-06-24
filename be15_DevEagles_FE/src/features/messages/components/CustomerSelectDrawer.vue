@@ -1,6 +1,5 @@
 <template>
   <BaseDrawer v-model="drawerOpen" title="고객 선택">
-    <!-- 🔍 검색 필터 -->
     <div class="search-box">
       <input
         v-model="search"
@@ -10,7 +9,6 @@
       />
     </div>
 
-    <!-- ✅ 선택된 고객 태그 -->
     <div v-if="selected.length" class="selected-preview">
       <div v-for="customer in selected" :key="customer.phone" class="selected-item">
         {{ customer.name }}
@@ -18,7 +16,6 @@
       </div>
     </div>
 
-    <!-- 👥 고객 리스트 -->
     <div class="list-section">
       <div
         v-for="customer in filteredCustomers"
@@ -58,7 +55,6 @@
     set: val => emit('update:modelValue', val),
   });
 
-  // ✅ z-index: 1200 강제 적용 (BaseDrawer 수정 없이)
   watch(drawerOpen, async opened => {
     if (opened) {
       await nextTick();
@@ -67,7 +63,6 @@
     }
   });
 
-  // 🔄 고객 목록 (테스트용)
   const customers = ref([
     { name: '김수현', phone: '010-1234-5678' },
     { name: '이민정', phone: '010-2345-6789' },

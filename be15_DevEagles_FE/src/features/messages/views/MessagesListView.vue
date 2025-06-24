@@ -103,7 +103,7 @@
   const messageToEdit = ref(null);
 
   function handleEditMessage(msg) {
-    messageToEdit.value = null; // 🧼 초기화
+    messageToEdit.value = null;
     nextTick(() => {
       messageToEdit.value = msg;
       showEditModal.value = true;
@@ -142,7 +142,7 @@
   }
 
   function handleReserveRequest(content) {
-    messageToSend.value = JSON.stringify(content); // ✅ 이렇게 감싸기
+    messageToSend.value = JSON.stringify(content);
     showSendModal.value = false;
     nextTick(() => {
       showReserveModal.value = true;
@@ -182,7 +182,6 @@
   }
 
   function handleEditConfirm(updated) {
-    // 예: 메시지 목록에서 해당 id 찾아서 내용 업데이트
     const idx = messages.value.findIndex(m => m.id === updated.id);
     if (idx !== -1) {
       messages.value[idx] = { ...messages.value[idx], ...updated };
