@@ -209,7 +209,7 @@
 
       <!-- Configuration Sidebar -->
       <WorkflowConfigSidebar
-        v-if="sidebarOpen"
+        :show="sidebarOpen"
         :current-sidebar-type="currentSidebarType"
         :current-trigger-view="currentTriggerView"
         :form-data="formData"

@@ -185,20 +185,6 @@
                 />
               </div>
 
-              <div v-if="formData.trigger === 'new-customer-welcome'" class="config-details">
-                <label class="detail-label">환영 메시지 발송 시점</label>
-                <input
-                  v-model="formData.triggerConfig.daysAfterRegistration"
-                  class="config-input"
-                  type="number"
-                  min="0"
-                  placeholder="0"
-                />
-                <p class="detail-help">
-                  고객 등록 후 해당 일수가 지나면 환영 메시지를 발송합니다 (0은 즉시 발송)
-                </p>
-              </div>
-
               <!-- 이벤트 기반 트리거 설정 -->
               <div v-if="formData.trigger === 'birthday'" class="config-details">
                 <label class="detail-label">생일 며칠 전</label>
@@ -239,6 +225,18 @@
                   placeholder="100000"
                 />
                 <p class="detail-help">해당 누적 금액 달성 시 실행됩니다</p>
+              </div>
+
+              <div v-if="formData.trigger === 'first-visit-days-after'" class="config-details">
+                <label class="detail-label">첫 방문 이후 경과 일수</label>
+                <input
+                  v-model="formData.triggerConfig.daysAfterFirstVisit"
+                  class="config-input"
+                  type="number"
+                  min="1"
+                  placeholder="30"
+                />
+                <p class="detail-help">첫 방문일로부터 해당 일수가 경과하면 실행됩니다</p>
               </div>
 
               <!-- 이탈 위험 기반 트리거 설정 -->

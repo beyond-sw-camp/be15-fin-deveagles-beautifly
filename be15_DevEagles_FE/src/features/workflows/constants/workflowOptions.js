@@ -47,13 +47,6 @@ export const triggerCategories = [
 export const triggerOptions = [
   // 고객 생애주기 관리
   {
-    value: 'new-customer-welcome',
-    icon: '👋',
-    title: '신규 고객 환영',
-    description: '신규 고객 등록 후 환영 메시지 발송',
-    category: 'lifecycle',
-  },
-  {
     value: 'new-customer-followup',
     icon: '📞',
     title: '신규 고객 팔로업',
@@ -109,6 +102,13 @@ export const triggerOptions = [
     icon: '💎',
     title: '누적 금액 기념',
     description: '누적 결제 금액 달성 시 실행',
+    category: 'special',
+  },
+  {
+    value: 'first-visit-days-after',
+    icon: '📆',
+    title: '첫 방문 이후 경과',
+    description: '첫 방문일로부터 지정된 일수가 경과한 경우',
     category: 'special',
   },
   // 이탈 방지
