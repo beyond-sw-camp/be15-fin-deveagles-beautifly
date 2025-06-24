@@ -47,8 +47,14 @@
         </select>
       </div>
       <div class="form-row">
-        <label class="form-label">생일</label>
-        <input v-model="form.birthdate" type="date" class="form-input" :max="today" />
+        <PrimeDatePicker
+          v-model="form.birthdate"
+          label="생일"
+          :max-date="new Date(today)"
+          placeholder="생일을 선택하세요"
+          :disabled="false"
+          :error="''"
+        />
       </div>
       <div class="form-row">
         <label class="form-label">담당자</label>
@@ -126,6 +132,7 @@
   import BaseDrawer from '@/components/common/BaseDrawer.vue';
   import BaseButton from '@/components/common/BaseButton.vue';
   import Multiselect from '@vueform/multiselect';
+  import PrimeDatePicker from '@/components/common/PrimeDatePicker.vue'; // 반드시 추가!
   import '@vueform/multiselect/themes/default.css';
 
   const props = defineProps({
@@ -227,7 +234,6 @@
     --ms-tag-radius: 14px;
   }
 </style>
-
 <style scoped>
   .customer-create-form {
     display: flex;

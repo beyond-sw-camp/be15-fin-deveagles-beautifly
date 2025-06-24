@@ -65,7 +65,7 @@
       <BaseTable :columns="tableColumns" :data="paginatedWorkflows" :loading="loading" hover>
         <!-- Workflow Name Column -->
         <template #cell-name="{ item }">
-          <div class="workflow-name" @click="viewWorkflow(item)">
+          <div class="workflow-name">
             <h4 class="font-section-inner text-dark">{{ item.name }}</h4>
             <p class="font-small text-gray-500">{{ item.description }}</p>
           </div>
@@ -171,6 +171,7 @@
 
 <script>
   import { ref, computed } from 'vue';
+  import { useRouter } from 'vue-router';
   import { useListManagement } from '@/composables/useListManagement';
   import { MESSAGES } from '@/constants/messages';
   import { MOCK_WORKFLOWS } from '@/constants/mockData';
@@ -203,6 +204,8 @@
       EditIcon,
     },
     setup() {
+      const router = useRouter();
+
       // List management composable
       const {
         items: workflows,
@@ -308,9 +311,11 @@
       );
 
       // Methods
-      const createWorkflow = () => showNotImplemented(MESSAGES.WORKFLOW.CREATE_NOT_IMPLEMENTED);
-      const viewWorkflow = () => showNotImplemented(MESSAGES.WORKFLOW.DETAIL_NOT_IMPLEMENTED);
-      const editWorkflow = () => showNotImplemented(MESSAGES.WORKFLOW.EDIT_NOT_IMPLEMENTED);
+      const createWorkflow = () => router.push('/workflows/create');
+      const navigateToCreate = () => router.push('/workflows/create');
+      const editWorkflow = workflow => {
+        router.push(`/workflows/edit/${workflow.id}`);
+      };
       const toggleWorkflowStatus = workflow => toggleItemStatus(workflow);
       const deleteWorkflow = (workflow, event) => deleteItem(workflow, event);
 
@@ -371,7 +376,7 @@
 
         // Methods
         createWorkflow,
-        viewWorkflow,
+        navigateToCreate,
         editWorkflow,
         toggleWorkflowStatus,
         deleteWorkflow,

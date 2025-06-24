@@ -27,7 +27,7 @@ public class CustomerTagServiceImpl implements CustomerTagService {
     log.info("고객 태그 추가 요청 - 고객ID: {}, 태그ID: {}, 매장ID: {}", customerId, tagId, shopId);
 
     validateCustomerExists(customerId, shopId);
-    validateTagExists(tagId);
+    validateTagExists(tagId, shopId);
 
     if (tagByCustomerRepository.existsByCustomerIdAndTagId(customerId, tagId)) {
       log.error("이미 할당된 태그 - 고객ID: {}, 태그ID: {}", customerId, tagId);
@@ -65,9 +65,9 @@ public class CustomerTagServiceImpl implements CustomerTagService {
     }
   }
 
-  private void validateTagExists(Long tagId) {
-    if (!tagRepository.existsById(tagId)) {
-      log.error("태그를 찾을 수 없음 - 태그ID: {}", tagId);
+  private void validateTagExists(Long tagId, Long shopId) {
+    if (!tagRepository.existsByIdAndShopId(tagId, shopId)) {
+      log.error("태그를 찾을 수 없음 - 태그ID: {}, 매장ID: {}", tagId, shopId);
       throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "태그를 찾을 수 없습니다.");
     }
   }

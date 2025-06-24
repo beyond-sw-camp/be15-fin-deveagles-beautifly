@@ -23,23 +23,27 @@ public class CustomerGradeQueryServiceImpl implements CustomerGradeQueryService 
   private final CustomerGradeRepository customerGradeRepository;
 
   @Override
-  public CustomerGradeResponse getCustomerGrade(Long gradeId) {
-    log.info("고객등급 단건 조회 요청 - ID: {}", gradeId);
+  public CustomerGradeResponse getCustomerGrade(Long customerGradeId, Long shopId) {
+    log.info("고객등급 조회 요청 - 고객등급ID: {}, 매장ID: {}", customerGradeId, shopId);
 
     CustomerGrade customerGrade =
         customerGradeRepository
-            .findById(gradeId)
+            .findByIdAndShopId(customerGradeId, shopId)
             .orElseThrow(
                 () -> {
-                  log.error("고객등급을 찾을 수 없음 - ID: {}", gradeId);
+                  log.error("고객등급을 찾을 수 없음 - 고객등급ID: {}, 매장ID: {}", customerGradeId, shopId);
                   return new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "고객등급을 찾을 수 없습니다.");
                 });
 
-    CustomerGradeResponse response = mapToResponse(customerGrade);
-    log.info(
-        "고객등급 조회 완료 - ID: {}, 등급명: {}, 할인율: {}%",
-        gradeId, response.getCustomerGradeName(), response.getDiscountRate());
+    CustomerGradeResponse response =
+        CustomerGradeResponse.builder()
+            .id(customerGrade.getId())
+            .shopId(customerGrade.getShopId())
+            .customerGradeName(customerGrade.getCustomerGradeName())
+            .discountRate(customerGrade.getDiscountRate())
+            .build();
 
+    log.info("고객등급 조회 완료 - 고객등급ID: {}", customerGradeId);
     return response;
   }
 
@@ -52,6 +56,18 @@ public class CustomerGradeQueryServiceImpl implements CustomerGradeQueryService 
         customerGrades.stream().map(this::mapToResponse).toList();
 
     log.info("전체 고객등급 목록 조회 완료 - 총 {}개", responses.size());
+    return responses;
+  }
+
+  @Override
+  public List<CustomerGradeResponse> getAllCustomerGradesByShopId(Long shopId) {
+    log.info("매장별 고객등급 목록 조회 요청 - 매장ID: {}", shopId);
+
+    List<CustomerGrade> customerGrades = customerGradeRepository.findByShopId(shopId);
+    List<CustomerGradeResponse> responses =
+        customerGrades.stream().map(this::mapToResponse).toList();
+
+    log.info("매장별 고객등급 목록 조회 완료 - 매장ID: {}, 총 {}개", shopId, responses.size());
     return responses;
   }
 
@@ -74,6 +90,7 @@ public class CustomerGradeQueryServiceImpl implements CustomerGradeQueryService 
   private CustomerGradeResponse mapToResponse(CustomerGrade customerGrade) {
     return CustomerGradeResponse.builder()
         .id(customerGrade.getId())
+        .shopId(customerGrade.getShopId())
         .customerGradeName(customerGrade.getCustomerGradeName())
         .discountRate(customerGrade.getDiscountRate())
         .build();
