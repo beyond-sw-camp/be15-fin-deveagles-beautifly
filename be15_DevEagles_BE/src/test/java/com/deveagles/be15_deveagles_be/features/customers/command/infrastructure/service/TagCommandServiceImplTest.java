@@ -34,19 +34,22 @@ class TagCommandServiceImplTest {
     // given
     String tagName = "VIP고객";
     String colorCode = "#FF0000";
-    CreateTagRequest request = new CreateTagRequest(tagName, colorCode);
+    Long shopId = 1L;
+    CreateTagRequest request = new CreateTagRequest(shopId, tagName, colorCode);
 
-    Tag savedTag = Tag.builder().id(1L).tagName(tagName).colorCode(colorCode).build();
+    Tag savedTag =
+        Tag.builder().id(1L).shopId(shopId).tagName(tagName).colorCode(colorCode).build();
 
-    given(tagRepository.existsByTagName(tagName)).willReturn(false);
+    given(tagRepository.existsByTagNameAndShopId(tagName, shopId)).willReturn(false);
     given(tagRepository.save(any(Tag.class))).willReturn(savedTag);
 
     // when
-    Long tagId = tagCommandService.createTag(request);
+    Long result = tagCommandService.createTag(request);
 
     // then
-    assertThat(tagId).isEqualTo(1L);
-    then(tagRepository).should().existsByTagName(tagName);
+    assertThat(result).isEqualTo(1L);
+
+    then(tagRepository).should().existsByTagNameAndShopId(tagName, shopId);
     then(tagRepository).should().save(any(Tag.class));
   }
 
@@ -56,16 +59,17 @@ class TagCommandServiceImplTest {
     // given
     String tagName = "VIP고객";
     String colorCode = "#FF0000";
-    CreateTagRequest request = new CreateTagRequest(tagName, colorCode);
+    Long shopId = 1L;
+    CreateTagRequest request = new CreateTagRequest(shopId, tagName, colorCode);
 
-    given(tagRepository.existsByTagName(tagName)).willReturn(true);
+    given(tagRepository.existsByTagNameAndShopId(tagName, shopId)).willReturn(true);
 
     // when & then
     assertThatThrownBy(() -> tagCommandService.createTag(request))
         .isInstanceOf(BusinessException.class)
         .hasMessageContaining("이미 존재하는 태그명입니다.");
 
-    then(tagRepository).should().existsByTagName(tagName);
+    then(tagRepository).should().existsByTagNameAndShopId(tagName, shopId);
     then(tagRepository).should(never()).save(any(Tag.class));
   }
 
@@ -74,23 +78,25 @@ class TagCommandServiceImplTest {
   void updateTag_Success() {
     // given
     Long tagId = 1L;
+    Long shopId = 1L;
     String oldTagName = "VIP고객";
-    String newTagName = "VVIP고객";
     String oldColorCode = "#FF0000";
+    String newTagName = "VVIP고객";
     String newColorCode = "#FFD700";
-    UpdateTagRequest request = new UpdateTagRequest(newTagName, newColorCode);
+    UpdateTagRequest request = new UpdateTagRequest(shopId, newTagName, newColorCode);
 
-    Tag existingTag = Tag.builder().id(tagId).tagName(oldTagName).colorCode(oldColorCode).build();
+    Tag existingTag =
+        Tag.builder().id(tagId).shopId(shopId).tagName(oldTagName).colorCode(oldColorCode).build();
 
-    given(tagRepository.findById(tagId)).willReturn(Optional.of(existingTag));
-    given(tagRepository.existsByTagName(newTagName)).willReturn(false);
+    given(tagRepository.findByIdAndShopId(tagId, shopId)).willReturn(Optional.of(existingTag));
+    given(tagRepository.existsByTagNameAndShopId(newTagName, shopId)).willReturn(false);
 
     // when
     tagCommandService.updateTag(tagId, request);
 
     // then
-    then(tagRepository).should().findById(tagId);
-    then(tagRepository).should().existsByTagName(newTagName);
+    then(tagRepository).should().findByIdAndShopId(tagId, shopId);
+    then(tagRepository).should().existsByTagNameAndShopId(newTagName, shopId);
   }
 
   @Test
@@ -98,17 +104,18 @@ class TagCommandServiceImplTest {
   void updateTag_TagNotFound() {
     // given
     Long tagId = 1L;
-    UpdateTagRequest request = new UpdateTagRequest("VVIP고객", "#FFD700");
+    Long shopId = 1L;
+    UpdateTagRequest request = new UpdateTagRequest(shopId, "VVIP고객", "#FFD700");
 
-    given(tagRepository.findById(tagId)).willReturn(Optional.empty());
+    given(tagRepository.findByIdAndShopId(tagId, shopId)).willReturn(Optional.empty());
 
     // when & then
     assertThatThrownBy(() -> tagCommandService.updateTag(tagId, request))
         .isInstanceOf(BusinessException.class)
         .hasMessageContaining("태그를 찾을 수 없습니다.");
 
-    then(tagRepository).should().findById(tagId);
-    then(tagRepository).should(never()).existsByTagName(any());
+    then(tagRepository).should().findByIdAndShopId(tagId, shopId);
+    then(tagRepository).should(never()).existsByTagNameAndShopId(any(), any());
   }
 
   @Test
@@ -116,46 +123,50 @@ class TagCommandServiceImplTest {
   void updateTag_DuplicateTagName() {
     // given
     Long tagId = 1L;
+    Long shopId = 1L;
     String oldTagName = "VIP고객";
-    String newTagName = "VVIP고객";
     String oldColorCode = "#FF0000";
+    String newTagName = "VVIP고객";
     String newColorCode = "#FFD700";
-    UpdateTagRequest request = new UpdateTagRequest(newTagName, newColorCode);
+    UpdateTagRequest request = new UpdateTagRequest(shopId, newTagName, newColorCode);
 
-    Tag existingTag = Tag.builder().id(tagId).tagName(oldTagName).colorCode(oldColorCode).build();
+    Tag existingTag =
+        Tag.builder().id(tagId).shopId(shopId).tagName(oldTagName).colorCode(oldColorCode).build();
 
-    given(tagRepository.findById(tagId)).willReturn(Optional.of(existingTag));
-    given(tagRepository.existsByTagName(newTagName)).willReturn(true);
+    given(tagRepository.findByIdAndShopId(tagId, shopId)).willReturn(Optional.of(existingTag));
+    given(tagRepository.existsByTagNameAndShopId(newTagName, shopId)).willReturn(true);
 
     // when & then
     assertThatThrownBy(() -> tagCommandService.updateTag(tagId, request))
         .isInstanceOf(BusinessException.class)
         .hasMessageContaining("이미 존재하는 태그명입니다.");
 
-    then(tagRepository).should().findById(tagId);
-    then(tagRepository).should().existsByTagName(newTagName);
+    then(tagRepository).should().findByIdAndShopId(tagId, shopId);
+    then(tagRepository).should().existsByTagNameAndShopId(newTagName, shopId);
   }
 
   @Test
-  @DisplayName("태그 수정 성공 - 같은 태그명으로 색상코드만 변경")
-  void updateTag_SameTagName() {
+  @DisplayName("태그 수정 성공 - 동일한 태그명으로 수정시 중복 검사 스킵")
+  void updateTag_SameTagNameSkipDuplicateCheck() {
     // given
     Long tagId = 1L;
+    Long shopId = 1L;
     String tagName = "VIP고객";
     String oldColorCode = "#FF0000";
     String newColorCode = "#FFD700";
-    UpdateTagRequest request = new UpdateTagRequest(tagName, newColorCode);
+    UpdateTagRequest request = new UpdateTagRequest(shopId, tagName, newColorCode);
 
-    Tag existingTag = Tag.builder().id(tagId).tagName(tagName).colorCode(oldColorCode).build();
+    Tag existingTag =
+        Tag.builder().id(tagId).shopId(shopId).tagName(tagName).colorCode(oldColorCode).build();
 
-    given(tagRepository.findById(tagId)).willReturn(Optional.of(existingTag));
+    given(tagRepository.findByIdAndShopId(tagId, shopId)).willReturn(Optional.of(existingTag));
 
     // when
     tagCommandService.updateTag(tagId, request);
 
     // then
-    then(tagRepository).should().findById(tagId);
-    then(tagRepository).should(never()).existsByTagName(any());
+    then(tagRepository).should().findByIdAndShopId(tagId, shopId);
+    then(tagRepository).should(never()).existsByTagNameAndShopId(any(), any());
   }
 
   @Test
@@ -163,7 +174,8 @@ class TagCommandServiceImplTest {
   void deleteTag_Success() {
     // given
     Long tagId = 1L;
-    Tag existingTag = Tag.builder().id(tagId).tagName("VIP고객").colorCode("#FF0000").build();
+    Tag existingTag =
+        Tag.builder().id(tagId).shopId(1L).tagName("VIP고객").colorCode("#FF0000").build();
 
     given(tagRepository.findById(tagId)).willReturn(Optional.of(existingTag));
 

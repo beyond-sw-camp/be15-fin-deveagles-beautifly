@@ -54,8 +54,8 @@ public class CustomerGradeController {
       @Parameter(description = "고객등급 생성 정보", required = true) @Valid @RequestBody
           CreateCustomerGradeRequest request) {
     log.info(
-        "고객등급 생성 요청 - 등급명: {}, 할인율: {}%",
-        request.getCustomerGradeName(), request.getDiscountRate());
+        "고객등급 생성 요청 - 매장ID: {}, 등급명: {}, 할인율: {}%",
+        request.getShopId(), request.getCustomerGradeName(), request.getDiscountRate());
 
     Long gradeId = customerGradeCommandService.createCustomerGrade(request);
     return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(gradeId));
@@ -74,10 +74,11 @@ public class CustomerGradeController {
   @GetMapping("/{gradeId}")
   public ResponseEntity<ApiResponse<CustomerGradeResponse>> getCustomerGrade(
       @Parameter(description = "고객등급 ID", required = true, example = "1") @PathVariable
-          Long gradeId) {
-    log.info("고객등급 단건 조회 요청 - ID: {}", gradeId);
+          Long gradeId,
+      @Parameter(description = "매장 ID", required = true, example = "1") @RequestParam Long shopId) {
+    log.info("고객등급 단건 조회 요청 - ID: {}, 매장ID: {}", gradeId, shopId);
 
-    CustomerGradeResponse response = customerGradeQueryService.getCustomerGrade(gradeId);
+    CustomerGradeResponse response = customerGradeQueryService.getCustomerGrade(gradeId, shopId);
     return ResponseEntity.ok(ApiResponse.success(response));
   }
 
@@ -99,17 +100,19 @@ public class CustomerGradeController {
     return ResponseEntity.ok(ApiResponse.success(response));
   }
 
-  @Operation(summary = "전체 고객등급 조회", description = "모든 고객등급을 조회합니다.")
+  @Operation(summary = "매장별 전체 고객등급 조회", description = "특정 매장의 모든 고객등급을 조회합니다.")
   @ApiResponses({
     @io.swagger.v3.oas.annotations.responses.ApiResponse(
         responseCode = "200",
         description = "전체 고객등급 조회 성공")
   })
-  @GetMapping("/all")
-  public ResponseEntity<ApiResponse<List<CustomerGradeResponse>>> getAllCustomerGrades() {
-    log.info("전체 고객등급 조회 요청");
+  @GetMapping("/shop/{shopId}")
+  public ResponseEntity<ApiResponse<List<CustomerGradeResponse>>> getAllCustomerGradesByShopId(
+      @Parameter(description = "매장 ID", required = true, example = "1") @PathVariable Long shopId) {
+    log.info("매장별 전체 고객등급 조회 요청 - 매장ID: {}", shopId);
 
-    List<CustomerGradeResponse> response = customerGradeQueryService.getAllCustomerGrades();
+    List<CustomerGradeResponse> response =
+        customerGradeQueryService.getAllCustomerGradesByShopId(shopId);
     return ResponseEntity.ok(ApiResponse.success(response));
   }
 
@@ -135,8 +138,8 @@ public class CustomerGradeController {
       @Parameter(description = "고객등급 수정 정보", required = true) @Valid @RequestBody
           UpdateCustomerGradeRequest request) {
     log.info(
-        "고객등급 수정 요청 - ID: {}, 새 등급명: {}, 새 할인율: {}%",
-        gradeId, request.getCustomerGradeName(), request.getDiscountRate());
+        "고객등급 수정 요청 - ID: {}, 매장ID: {}, 새 등급명: {}, 새 할인율: {}%",
+        gradeId, request.getShopId(), request.getCustomerGradeName(), request.getDiscountRate());
 
     customerGradeCommandService.updateCustomerGrade(gradeId, request);
     return ResponseEntity.ok(ApiResponse.success(null));

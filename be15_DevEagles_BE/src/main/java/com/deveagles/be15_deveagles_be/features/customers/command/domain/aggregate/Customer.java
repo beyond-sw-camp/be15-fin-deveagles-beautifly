@@ -61,9 +61,6 @@ public class Customer {
   @Column(name = "birthdate", nullable = false)
   private LocalDate birthdate;
 
-  @Column(name = "registered_at", nullable = false)
-  private LocalDateTime registeredAt;
-
   @Builder.Default
   @ColumnDefault("0")
   @Column(name = "noshow_count", nullable = false)
