@@ -36,7 +36,6 @@ public class CustomerDetailQueryRepositoryImpl implements CustomerDetailQueryRep
                     customer.totalRevenue,
                     customer.recentVisitDate,
                     customer.birthdate,
-                    customer.registeredAt,
                     customer.noshowCount,
                     customer.gender,
                     customer.marketingConsent,
@@ -88,7 +87,6 @@ public class CustomerDetailQueryRepositoryImpl implements CustomerDetailQueryRep
             .totalRevenue(customerDetail.getTotalRevenue())
             .recentVisitDate(customerDetail.getRecentVisitDate())
             .birthdate(customerDetail.getBirthdate())
-            .registeredAt(customerDetail.getRegisteredAt())
             .noshowCount(customerDetail.getNoshowCount())
             .gender(customerDetail.getGender())
             .marketingConsent(customerDetail.getMarketingConsent())

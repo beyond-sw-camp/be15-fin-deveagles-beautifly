@@ -47,7 +47,6 @@ class CustomerCommandServiceImplTest {
             "01012345678",
             "테스트 고객",
             LocalDate.of(1990, 1, 1),
-            LocalDateTime.now(),
             Customer.Gender.M,
             false,
             false,
@@ -88,7 +87,6 @@ class CustomerCommandServiceImplTest {
             "01012345678",
             "테스트 고객",
             LocalDate.of(1990, 1, 1),
-            LocalDateTime.now(),
             Customer.Gender.M,
             false,
             false,
@@ -314,7 +312,6 @@ class CustomerCommandServiceImplTest {
         .totalRevenue(0)
         .recentVisitDate(LocalDate.now())
         .birthdate(LocalDate.of(1990, 1, 1))
-        .registeredAt(LocalDateTime.now())
         .noshowCount(0)
         .gender(Customer.Gender.M)
         .marketingConsent(false)

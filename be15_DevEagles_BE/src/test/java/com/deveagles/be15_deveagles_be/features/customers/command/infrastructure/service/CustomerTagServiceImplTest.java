@@ -44,7 +44,7 @@ class CustomerTagServiceImplTest {
 
     given(customerRepository.findByIdAndShopId(customerId, shopId))
         .willReturn(Optional.of(existingCustomer));
-    given(tagRepository.existsById(tagId)).willReturn(true);
+    given(tagRepository.existsByIdAndShopId(tagId, shopId)).willReturn(true);
     given(tagByCustomerRepository.existsByCustomerIdAndTagId(customerId, tagId)).willReturn(false);
 
     // when
@@ -52,7 +52,7 @@ class CustomerTagServiceImplTest {
 
     // then
     then(customerRepository).should().findByIdAndShopId(customerId, shopId);
-    then(tagRepository).should().existsById(tagId);
+    then(tagRepository).should().existsByIdAndShopId(tagId, shopId);
     then(tagByCustomerRepository).should().existsByCustomerIdAndTagId(customerId, tagId);
     then(tagByCustomerRepository).should().save(any(TagByCustomer.class));
   }
@@ -73,7 +73,7 @@ class CustomerTagServiceImplTest {
         .hasMessageContaining("고객을 찾을 수 없습니다.");
 
     then(customerRepository).should().findByIdAndShopId(customerId, shopId);
-    then(tagRepository).should(never()).existsById(any());
+    then(tagRepository).should(never()).existsByIdAndShopId(any(), any());
     then(tagByCustomerRepository).should(never()).save(any());
   }
 
@@ -89,7 +89,7 @@ class CustomerTagServiceImplTest {
 
     given(customerRepository.findByIdAndShopId(customerId, shopId))
         .willReturn(Optional.of(existingCustomer));
-    given(tagRepository.existsById(tagId)).willReturn(false);
+    given(tagRepository.existsByIdAndShopId(tagId, shopId)).willReturn(false);
 
     // when & then
     assertThatThrownBy(() -> customerTagService.addTagToCustomer(customerId, tagId, shopId))
@@ -97,7 +97,7 @@ class CustomerTagServiceImplTest {
         .hasMessageContaining("태그를 찾을 수 없습니다.");
 
     then(customerRepository).should().findByIdAndShopId(customerId, shopId);
-    then(tagRepository).should().existsById(tagId);
+    then(tagRepository).should().existsByIdAndShopId(tagId, shopId);
     then(tagByCustomerRepository).should(never()).save(any());
   }
 
@@ -113,7 +113,7 @@ class CustomerTagServiceImplTest {
 
     given(customerRepository.findByIdAndShopId(customerId, shopId))
         .willReturn(Optional.of(existingCustomer));
-    given(tagRepository.existsById(tagId)).willReturn(true);
+    given(tagRepository.existsByIdAndShopId(tagId, shopId)).willReturn(true);
     given(tagByCustomerRepository.existsByCustomerIdAndTagId(customerId, tagId)).willReturn(true);
 
     // when & then
@@ -122,7 +122,7 @@ class CustomerTagServiceImplTest {
         .hasMessageContaining("이미 고객에게 할당된 태그입니다.");
 
     then(customerRepository).should().findByIdAndShopId(customerId, shopId);
-    then(tagRepository).should().existsById(tagId);
+    then(tagRepository).should().existsByIdAndShopId(tagId, shopId);
     then(tagByCustomerRepository).should().existsByCustomerIdAndTagId(customerId, tagId);
     then(tagByCustomerRepository).should(never()).save(any());
   }
@@ -206,7 +206,6 @@ class CustomerTagServiceImplTest {
         .totalRevenue(0)
         .recentVisitDate(LocalDate.now())
         .birthdate(LocalDate.of(1990, 1, 1))
-        .registeredAt(LocalDateTime.now())
         .noshowCount(0)
         .gender(Customer.Gender.M)
         .marketingConsent(false)

@@ -39,7 +39,6 @@ public class CustomerCommandServiceImpl implements CustomerCommandService {
             .phoneNumber(request.phoneNumber())
             .memo(request.memo())
             .birthdate(request.birthdate())
-            .registeredAt(request.registeredAt())
             .gender(request.gender())
             .marketingConsent(request.marketingConsent())
             .notificationConsent(request.notificationConsent())

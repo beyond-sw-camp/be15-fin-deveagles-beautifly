@@ -48,7 +48,11 @@ public class TagController {
   public ResponseEntity<ApiResponse<Long>> createTag(
       @Parameter(description = "태그 생성 정보", required = true) @Valid @RequestBody
           CreateTagRequest request) {
-    log.info("태그 생성 요청 - 태그명: {}, 색상코드: {}", request.getTagName(), request.getColorCode());
+    log.info(
+        "태그 생성 요청 - 매장ID: {}, 태그명: {}, 색상코드: {}",
+        request.getShopId(),
+        request.getTagName(),
+        request.getColorCode());
 
     Long tagId = tagCommandService.createTag(request);
     return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(tagId));
@@ -66,24 +70,26 @@ public class TagController {
   })
   @GetMapping("/{tagId}")
   public ResponseEntity<ApiResponse<TagResponse>> getTag(
-      @Parameter(description = "태그 ID", required = true, example = "1") @PathVariable Long tagId) {
-    log.info("태그 단건 조회 요청 - ID: {}", tagId);
+      @Parameter(description = "태그 ID", required = true, example = "1") @PathVariable Long tagId,
+      @Parameter(description = "매장 ID", required = true, example = "1") @RequestParam Long shopId) {
+    log.info("태그 단건 조회 요청 - ID: {}, 매장ID: {}", tagId, shopId);
 
-    TagResponse response = tagQueryService.getTag(tagId);
+    TagResponse response = tagQueryService.getTag(tagId, shopId);
     return ResponseEntity.ok(ApiResponse.success(response));
   }
 
-  @Operation(summary = "전체 태그 조회", description = "모든 태그를 조회합니다.")
+  @Operation(summary = "매장별 전체 태그 조회", description = "특정 매장의 모든 태그를 조회합니다.")
   @ApiResponses({
     @io.swagger.v3.oas.annotations.responses.ApiResponse(
         responseCode = "200",
         description = "전체 태그 조회 성공")
   })
   @GetMapping
-  public ResponseEntity<ApiResponse<List<TagResponse>>> getAllTags() {
-    log.info("전체 태그 조회 요청");
+  public ResponseEntity<ApiResponse<List<TagResponse>>> getAllTags(
+      @Parameter(description = "매장 ID", required = true, example = "1") @RequestParam Long shopId) {
+    log.info("매장별 전체 태그 조회 요청 - 매장ID: {}", shopId);
 
-    List<TagResponse> response = tagQueryService.getAllTags();
+    List<TagResponse> response = tagQueryService.getAllTagsByShopId(shopId);
     return ResponseEntity.ok(ApiResponse.success(response));
   }
 
@@ -108,8 +114,9 @@ public class TagController {
       @Parameter(description = "태그 수정 정보", required = true) @Valid @RequestBody
           UpdateTagRequest request) {
     log.info(
-        "태그 수정 요청 - ID: {}, 새 태그명: {}, 새 색상코드: {}",
+        "태그 수정 요청 - ID: {}, 매장ID: {}, 새 태그명: {}, 새 색상코드: {}",
         tagId,
+        request.getShopId(),
         request.getTagName(),
         request.getColorCode());
 
