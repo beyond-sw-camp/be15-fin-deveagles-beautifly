@@ -16,7 +16,7 @@
           </BaseButton>
           <div v-if="showGradeTagDropdown" class="dropdown-menu">
             <div class="dropdown-item" @click="openGradeSettingsDrawer">등급 설정</div>
-            <div class="dropdown-item">태그 설정</div>
+            <div class="dropdown-item" @click="openTagSettingsDrawer">태그 설정</div>
           </div>
         </div>
       </div>
@@ -160,7 +160,6 @@
         </BaseTable>
       </div>
     </BaseCard>
-
     <div class="customer-list-pagination">
       <Pagination
         :current-page="page"
@@ -181,6 +180,9 @@
     />
 
     <CustomerGradeSettingsDrawer v-model="showGradeSettingsDrawer" />
+
+    <!-- 태그 설정 Drawer 추가 -->
+    <CustomerTagSettingsDrawer v-model="showTagSettingsDrawer" />
 
     <CustomerColumnSettingsDrawer
       v-model="showColumnDrawer"
@@ -230,6 +232,7 @@
   import BaseConfirm from '@/components/common/BaseConfirm.vue';
   import BaseToast from '@/components/common/BaseToast.vue';
   import CustomerGradeSettingsDrawer from '../components/CustomerGradeSettingsDrawer.vue';
+  import CustomerTagSettingsDrawer from '../components/CustomerTagSettingsDrawer.vue'; // 추가
 
   const dummyData = ref(
     Array.from({ length: 20 }, (_, i) => ({
@@ -314,9 +317,15 @@
   const showGradeTagDropdown = ref(false);
   const gradeTagDropdownWrapper = ref(null);
   const showGradeSettingsDrawer = ref(false);
+  const showTagSettingsDrawer = ref(false); // 추가
 
   const openGradeSettingsDrawer = () => {
     showGradeSettingsDrawer.value = true;
+    showGradeTagDropdown.value = false;
+  };
+
+  const openTagSettingsDrawer = () => {
+    showTagSettingsDrawer.value = true;
     showGradeTagDropdown.value = false;
   };
 
