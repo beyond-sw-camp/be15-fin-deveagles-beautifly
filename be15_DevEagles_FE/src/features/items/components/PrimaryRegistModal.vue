@@ -14,7 +14,12 @@
 
     <div class="form-group">
       <label>1차 분류명</label>
-      <BaseForm v-model="form.primaryName" type="text" placeholder="1차 분류명" />
+      <BaseForm
+        v-model="form.primaryName"
+        type="text"
+        placeholder="1차 분류명"
+        :error="errors.primaryName"
+      />
     </div>
 
     <template #footer>
@@ -29,28 +34,63 @@
 </template>
 
 <script setup>
-  import { computed } from 'vue';
+  import { ref, watch } from 'vue';
   import BaseItemModal from './BaseItemModal.vue';
   import BaseForm from '@/components/common/BaseForm.vue';
   import BaseButton from '@/components/common/BaseButton.vue';
+  import { registerPrimaryItem } from '@/features/items/api/items.js';
 
   const props = defineProps({
-    modelValue: {
-      type: Object,
-      required: true,
-    },
+    show: Boolean, // 모달 표시 여부
   });
 
-  const emit = defineEmits(['close', 'submit', 'update:modelValue', 'toast']); // ✅ toast 이벤트 추가
+  const emit = defineEmits(['close', 'submit', 'toast']);
 
-  const form = computed({
-    get: () => props.modelValue,
-    set: val => emit('update:modelValue', val),
+  const initialForm = {
+    category: 'SERVICE',
+    primaryName: '',
+  };
+
+  const form = ref({ ...initialForm });
+  const errors = ref({
+    primaryName: '',
   });
 
-  const submit = () => {
-    emit('submit', form.value);
-    emit('toast', '1차 상품이 등록되었습니다.'); // ✅ 토스트 메시지 emit
+  // 모달이 열릴 때마다 form과 errors 초기화
+  watch(
+    () => props.show,
+    show => {
+      if (show) {
+        form.value = { ...initialForm };
+        errors.value.primaryName = '';
+      }
+    }
+  );
+
+  const submit = async () => {
+    errors.value.primaryName = ''; // 초기화
+
+    if (!form.value.primaryName || form.value.primaryName.trim() === '') {
+      errors.value.primaryName = '1차 분류명을 입력해주세요.';
+      return;
+    }
+
+    try {
+      const payload = {
+        shopId: 1, // 추후 로그인 사용자 기준으로 교체
+        category: form.value.category,
+        primaryItemName: form.value.primaryName.trim(),
+      };
+
+      await registerPrimaryItem(payload);
+
+      emit('toast', '1차 상품이 등록되었습니다.');
+      emit('submit');
+      emit('close');
+    } catch (error) {
+      console.error(error);
+      emit('toast', '등록에 실패했습니다. 다시 시도해주세요.');
+    }
   };
 </script>
 
