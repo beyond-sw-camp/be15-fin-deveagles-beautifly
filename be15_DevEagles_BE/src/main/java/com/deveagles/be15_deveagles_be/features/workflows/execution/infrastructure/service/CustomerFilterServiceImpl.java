@@ -1,6 +1,7 @@
-package com.deveagles.be15_deveagles_be.features.workflows.command.application.service;
+package com.deveagles.be15_deveagles_be.features.workflows.execution.infrastructure.service;
 
 import com.deveagles.be15_deveagles_be.features.workflows.command.domain.aggregate.Workflow;
+import com.deveagles.be15_deveagles_be.features.workflows.execution.application.service.CustomerFilterService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -14,12 +15,13 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class CustomerFilterService {
+public class CustomerFilterServiceImpl implements CustomerFilterService {
 
   private final ObjectMapper objectMapper;
   private final CustomerQueryService customerQueryService;
   private final MessageQueryService messageQueryService;
 
+  @Override
   public List<Long> filterTargetCustomerIds(Workflow workflow) {
     log.info("대상 고객 필터링 시작: 워크플로우 ID={}", workflow.getId());
 
@@ -57,6 +59,23 @@ public class CustomerFilterService {
     } catch (Exception e) {
       log.error("고객 필터링 중 오류 발생: 워크플로우 ID={}, 오류={}", workflow.getId(), e.getMessage(), e);
       return new ArrayList<>();
+    }
+  }
+
+  @Override
+  public List<Long> filterByTriggerConditions(List<Long> customerIds, Workflow workflow) {
+    switch (workflow.getTriggerType()) {
+      case "birthday":
+        return customerQueryService.filterTodayBirthdayCustomers(customerIds);
+      case "visit-cycle":
+        return customerQueryService.filterVisitCycleCustomers(
+            customerIds, workflow.getTriggerConfig());
+      case "first-visit-anniversary":
+        return customerQueryService.filterAnniversaryCustomers(customerIds);
+      case "churn-risk-high":
+        return customerQueryService.filterHighChurnRiskCustomers(customerIds);
+      default:
+        return customerIds;
     }
   }
 
@@ -128,42 +147,27 @@ public class CustomerFilterService {
     return messageQueryService.excludeRecentMessageReceivers(customerIds, recentDate, shopId);
   }
 
-  public List<Long> filterByTriggerConditions(List<Long> customerIds, Workflow workflow) {
-    switch (workflow.getTriggerType()) {
-      case "birthday":
-        return customerQueryService.filterTodayBirthdayCustomers(customerIds);
-      case "visit-cycle":
-        return customerQueryService.filterVisitCycleCustomers(
-            customerIds, workflow.getTriggerConfig());
-      case "first-visit-anniversary":
-        return customerQueryService.filterAnniversaryCustomers(customerIds);
-      case "churn-risk-high":
-        return customerQueryService.filterHighChurnRiskCustomers(customerIds);
-      default:
-        return customerIds;
-    }
+  interface CustomerQueryService {
+    List<Long> findCustomerIdsByShopId(Long shopId);
+
+    List<Long> filterCustomersByGradeIds(List<Long> customerIds, List<Long> gradeIds);
+
+    List<Long> filterCustomersByTagIds(List<Long> customerIds, List<Long> tagIds);
+
+    List<Long> excludeDormantCustomers(
+        List<Long> customerIds, LocalDateTime cutoffDate, Long shopId);
+
+    List<Long> filterTodayBirthdayCustomers(List<Long> customerIds);
+
+    List<Long> filterVisitCycleCustomers(List<Long> customerIds, String triggerConfig);
+
+    List<Long> filterAnniversaryCustomers(List<Long> customerIds);
+
+    List<Long> filterHighChurnRiskCustomers(List<Long> customerIds);
   }
-}
 
-interface CustomerQueryService {
-  List<Long> findCustomerIdsByShopId(Long shopId);
-
-  List<Long> filterCustomersByGradeIds(List<Long> customerIds, List<Long> gradeIds);
-
-  List<Long> filterCustomersByTagIds(List<Long> customerIds, List<Long> tagIds);
-
-  List<Long> excludeDormantCustomers(List<Long> customerIds, LocalDateTime cutoffDate, Long shopId);
-
-  List<Long> filterTodayBirthdayCustomers(List<Long> customerIds);
-
-  List<Long> filterVisitCycleCustomers(List<Long> customerIds, String triggerConfig);
-
-  List<Long> filterAnniversaryCustomers(List<Long> customerIds);
-
-  List<Long> filterHighChurnRiskCustomers(List<Long> customerIds);
-}
-
-interface MessageQueryService {
-  List<Long> excludeRecentMessageReceivers(
-      List<Long> customerIds, LocalDateTime recentDate, Long shopId);
+  interface MessageQueryService {
+    List<Long> excludeRecentMessageReceivers(
+        List<Long> customerIds, LocalDateTime recentDate, Long shopId);
+  }
 }
