@@ -3,7 +3,7 @@ package com.deveagles.be15_deveagles_be.features.items.command.application.servi
 import com.deveagles.be15_deveagles_be.common.exception.BusinessException;
 import com.deveagles.be15_deveagles_be.common.exception.ErrorCode;
 import com.deveagles.be15_deveagles_be.features.items.command.application.dto.request.PrimaryItemRegistRequest;
-import com.deveagles.be15_deveagles_be.features.items.command.application.service.PrimaryItemServiceCommand;
+import com.deveagles.be15_deveagles_be.features.items.command.application.service.PrimaryItemCommandService;
 import com.deveagles.be15_deveagles_be.features.items.command.domain.aggregate.PrimaryItem;
 import com.deveagles.be15_deveagles_be.features.items.command.domain.repository.PrimaryItemRepository;
 import com.deveagles.be15_deveagles_be.features.shops.command.domain.aggregate.Shop;
@@ -14,7 +14,7 @@ import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
-public class PrimaryItemCommandServiceImpl implements PrimaryItemServiceCommand {
+public class PrimaryItemCommandServiceImpl implements PrimaryItemCommandService {
 
   private final PrimaryItemRepository primaryItemRepository;
 
