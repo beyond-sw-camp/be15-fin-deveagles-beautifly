@@ -22,18 +22,31 @@
   // 입력값
   const name = ref('');
   const content = ref('');
+  const grade = ref('');
+  const tags = ref([]);
+  const includeLink = ref(false);
+  const couponId = ref(null);
 
-  // modal 열릴 때 template이 준비돼 있으면 복사 (타이밍 보장용)
+  // 템플릿 열릴 때 기존 값 세팅
   watch(
     () => props.modelValue,
     val => {
       if (val && props.template?.id) {
         name.value = props.template.name ?? '';
         content.value = props.template.content ?? '';
+        grade.value = props.template.grade ?? '';
+        tags.value = props.template.tags ?? [];
+        includeLink.value = !!props.template.includeLink;
+        couponId.value = props.template.couponId ?? null;
       }
     },
     { immediate: true }
   );
+
+  // 메시지에 '#{인스타url}' 포함되면 자동 체크
+  watch(content, val => {
+    includeLink.value = val.includes('#{인스타url}');
+  });
 
   function close() {
     visible.value = false;
@@ -44,9 +57,13 @@
 
     emit('submit', {
       id: props.template.id,
-      name: props.template.name, // 수정하지 않으니 기존 값
-      content: props.template.content, // 수정하지 않으니 기존 값
-      createdAt: props.template.createdAt, // ✨ 반드시 포함
+      name: name.value,
+      content: content.value,
+      grade: grade.value,
+      tags: tags.value,
+      includeLink: includeLink.value,
+      couponId: couponId.value,
+      createdAt: props.template.createdAt,
     });
 
     close();
@@ -68,9 +85,42 @@
         :rows="10"
       />
 
+      <!-- 등급 선택 -->
+      <BaseForm
+        v-model="grade"
+        type="select"
+        label="대상 등급"
+        :options="['전체', 'VIP', 'VVIP']"
+        placeholder="등급을 선택하세요"
+      />
+
+      <!-- 태그 선택 -->
+      <BaseForm
+        v-model="tags"
+        type="multiselect"
+        label="고객 태그"
+        :options="['재방문', '신규', '이탈위험']"
+        placeholder="고객 태그를 선택하세요"
+      />
+
+      <!-- 링크 첨부 여부 (자동으로 체크됨) -->
+      <BaseForm v-model="includeLink" type="checkbox" label="인스타그램 링크 포함 여부" disabled />
+
+      <!-- 쿠폰 선택 -->
+      <BaseForm
+        v-model="couponId"
+        type="select"
+        label="쿠폰 선택"
+        :options="[
+          { label: '10% 할인 쿠폰', value: 'coupon10' },
+          { label: '무료 체험권', value: 'freeTrial' },
+        ]"
+        placeholder="쿠폰을 선택하세요"
+      />
+
       <!-- 버튼 영역 -->
       <div class="action-buttons mt-4 d-flex justify-content-end gap-2">
-        <BaseButton variant="subtle" @click="close">취소</BaseButton>
+        <BaseButton type="ghost" @click="close">취소</BaseButton>
         <BaseButton :disabled="!name.trim() || !content.trim()" @click="submit">수정</BaseButton>
       </div>
     </div>

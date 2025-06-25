@@ -221,38 +221,20 @@
                 :class="{ expanded: activeGroups.includes('message') }"
               />
             </button>
-
-            <ul
-              v-if="!isCollapsed || isHovered"
-              v-show="activeGroups.includes('message')"
-              class="nav-sublist"
-            >
-              <li>
-                <router-link to="/message/history" class="nav-sublink"
-                  >보낸 메시지 목록</router-link
-                >
-              </li>
-              <li>
-                <router-link to="/message/templates" class="nav-sublink">템플릿 보관함</router-link>
-              </li>
-              <li>
-                <router-link to="/message/settings" class="nav-sublink">메시지 설정</router-link>
-              </li>
-              <li>
-                <router-link to="/message/ab-test" class="nav-sublink">A/B테스트</router-link>
-              </li>
-            </ul>
-
             <transition name="submenu">
               <ul
                 v-if="(!isCollapsed || isHovered) && activeGroups.includes('message')"
                 class="nav-sublist"
               >
                 <li>
-                  <router-link to="/message/history" class="nav-sublink">문자 내역</router-link>
+                  <router-link to="/message/history" class="nav-sublink"
+                    >보낸 메시지 목록</router-link
+                  >
                 </li>
                 <li>
-                  <router-link to="/message/templates" class="nav-sublink">문자 보관함</router-link>
+                  <router-link to="/message/templates" class="nav-sublink"
+                    >템플릿 보관함</router-link
+                  >
                 </li>
                 <li>
                   <router-link to="/message/settings" class="nav-sublink">메시지 설정</router-link>
@@ -263,7 +245,6 @@
                 </li>-->
               </ul>
             </transition>
-
           </div>
         </li>
 
@@ -289,7 +270,7 @@
                 class="nav-sublist"
               >
                 <li>
-                  <router-link to="/workflows" class="nav-sublink">워크플로우</router-link>
+                  <router-link to="/workflows" class="nav-sublink">자동화</router-link>
                 </li>
                 <li>
                   <router-link to="/campaigns" class="nav-sublink">캠페인</router-link>

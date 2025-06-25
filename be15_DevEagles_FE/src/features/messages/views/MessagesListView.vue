@@ -60,12 +60,17 @@
   const showSendModal = ref(false);
   const showSendConfirm = ref(false);
   const showReserveModal = ref(false);
-
   const showTemplateDrawer = ref(false);
   const showCustomerDrawer = ref(false);
 
   const selectedCustomers = ref([]);
-  const messageToSend = ref('');
+  const messageToSend = ref({
+    content: '',
+    link: '',
+    coupon: null,
+    grades: [],
+    tags: [],
+  });
   const toast = ref(null);
 
   const columns = [
@@ -109,10 +114,12 @@
       showEditModal.value = true;
     });
   }
+
   function handleShowDetail(msg) {
     selectedMessage.value = msg;
     showDetailModal.value = true;
   }
+
   function onStatusChange(value) {
     statusFilter.value = value;
     currentPage.value = 1;
@@ -134,19 +141,29 @@
   }
 
   function handleSendRequest(content) {
-    messageToSend.value = content;
-    showSendModal.value = false;
+    // ✅ 고객 정보 따로 저장
+    selectedCustomers.value = content.customers || [];
+
+    // ✅ 메시지 내용 저장
+    messageToSend.value = {
+      content: content.content || '',
+      link: content.link || '',
+      coupon: content.coupon || null,
+      grades: content.grades || [],
+      tags: content.tags || [],
+    };
+
+    console.log('[RECV] request-send로 받은 고객 목록:', content.customers);
+
     nextTick(() => {
+      console.log('[CHECK] selectedCustomers 상태:', selectedCustomers.value);
       showSendConfirm.value = true;
     });
   }
 
   function handleReserveRequest(content) {
-    messageToSend.value = JSON.stringify(content);
-    showSendModal.value = false;
-    nextTick(() => {
-      showReserveModal.value = true;
-    });
+    messageToSend.value = { ...content };
+    showReserveModal.value = true;
   }
 
   function handleSendConfirm() {
@@ -154,25 +171,49 @@
     nextTick(() => {
       toast.value.success('메시지를 보냈습니다.');
     });
-    messageToSend.value = '';
+    messageToSend.value = {
+      content: '',
+      link: '',
+      coupon: null,
+      grades: [],
+      tags: [],
+    };
   }
 
   function handleReserveConfirm({ content, date }) {
     showReserveModal.value = false;
-    messageToSend.value = '';
+
+    messageToSend.value = {
+      content: '',
+      link: '',
+      coupon: null,
+      grades: [],
+      tags: [],
+    };
+
+    // ✅ 4. 유저 피드백
     toast.value.success('예약 요청이 완료되었습니다.');
   }
 
   function handleOpenTemplateDrawer() {
-    showTemplateDrawer.value = true;
+    showSendModal.value = true;
+    nextTick(() => {
+      showTemplateDrawer.value = true;
+    });
   }
 
   function handleOpenCustomerDrawer() {
-    showCustomerDrawer.value = true;
+    showSendModal.value = true;
+    nextTick(() => {
+      showCustomerDrawer.value = true;
+    });
   }
 
   function handleTemplateSelect(template) {
-    messageToSend.value = template.content;
+    messageToSend.value = {
+      ...messageToSend.value,
+      content: template.content,
+    };
     showTemplateDrawer.value = false;
   }
 
@@ -242,20 +283,38 @@
       @page-change="page => (currentPage.value = page)"
     />
 
+    <!-- 모달 -->
     <BaseModal
       :model-value="showDeleteConfirm"
       @update:model-value="val => (showDeleteConfirm = val)"
     >
       <template #title>메시지 삭제</template>
-
       <div class="modal-body">정말 삭제하시겠습니까?</div>
-
       <template #footer>
         <BaseButton type="primary" @click="cancelDelete">취소</BaseButton>
         <BaseButton type="error" @click="confirmDelete">삭제</BaseButton>
       </template>
     </BaseModal>
+    <!-- ✅ 모달보다 위로 올리기 위해 최상단에서 teleport 사용 -->
+    <Teleport to="body">
+      <TemplateSelectDrawer
+        v-if="showTemplateDrawer"
+        v-model="showTemplateDrawer"
+        :templates="templateList"
+        @select="handleTemplateSelect"
+      />
+    </Teleport>
 
+    <!-- ✅ 고객 선택도 동일하게 -->
+    <Teleport to="body">
+      <CustomerSelectDrawer
+        v-if="showCustomerDrawer"
+        v-model="showCustomerDrawer"
+        @select="handleCustomerSelect"
+      />
+    </Teleport>
+
+    <!-- 그다음 아래쪽에서 MessageSendModal -->
     <MessageSendModal
       :model-value="showSendModal"
       :template-content="messageToSend"
@@ -267,26 +326,23 @@
       @open-customer="handleOpenCustomerDrawer"
     />
 
-    <TemplateSelectDrawer
-      v-model="showTemplateDrawer"
-      :templates="templateList"
-      @select="handleTemplateSelect"
-    />
-
-    <CustomerSelectDrawer v-model="showCustomerDrawer" @select="handleCustomerSelect" />
-
     <ReservationSendModal
       :model-value="showReserveModal"
       :message-content="messageToSend"
+      :customers="selectedCustomers"
       @update:model-value="val => (showReserveModal = val)"
       @confirm="handleReserveConfirm"
     />
 
     <SendConfirmModal
+      v-if="showSendConfirm"
       :model-value="showSendConfirm"
+      :message-content="messageToSend"
+      :customers="selectedCustomers"
       @update:model-value="val => (showSendConfirm = val)"
       @confirm="handleSendConfirm"
     />
+
     <MessageDetailModal
       :model-value="showDetailModal"
       :message="selectedMessage"
@@ -300,6 +356,9 @@
       @update:model-value="val => (showEditModal = val)"
       @confirm="handleEditConfirm"
     />
+
+    <!-- 🔥 여기서 모달보다 위에 있게 렌더링됨 -->
+
     <BaseToast ref="toast" />
   </div>
 </template>

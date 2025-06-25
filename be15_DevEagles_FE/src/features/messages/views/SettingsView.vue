@@ -10,15 +10,15 @@
         <!-- 발신 번호 -->
         <div class="setting-item">
           <div class="setting-status-row">
-            <h3 class="setting-title with-underline">발신 번호</h3>
-            <div class="status-controls fixed-width">
-              <span class="status-chip error" :class="{ error: !sender }">
+            <div class="setting-title-group">
+              <h3 class="setting-title with-underline">발신 번호</h3>
+              <span class="status-chip" :class="sender ? 'success' : 'error'">
                 {{ sender || '미등록' }}
               </span>
-              <BaseButton class="action-button sm" type="primary" @click="showSenderModal = true">
-                번호 등록
-              </BaseButton>
             </div>
+            <BaseButton class="action-button sm" type="primary" @click="showSenderModal = true">
+              번호 등록
+            </BaseButton>
           </div>
           <div class="setting-info">
             <p class="setting-description text-sub">
@@ -35,20 +35,20 @@
         <!-- 알림톡 신청 -->
         <div class="setting-item">
           <div class="setting-status-row">
-            <h3 class="setting-title with-underline">알림톡 신청</h3>
-            <div class="status-controls fixed-width">
+            <div class="setting-title-group">
+              <h3 class="setting-title with-underline">알림톡 신청</h3>
               <span class="status-chip" :class="useAlimtalk ? 'success' : 'error'">
                 {{ useAlimtalk ? '신청 완료' : '미신청' }}
               </span>
-              <BaseButton
-                class="action-button sm"
-                type="primary"
-                :disabled="useAlimtalk"
-                @click="showAlimtalkModal = true"
-              >
-                알림톡 신청
-              </BaseButton>
             </div>
+            <BaseButton
+              class="action-button sm"
+              type="primary"
+              :disabled="useAlimtalk"
+              @click="showAlimtalkModal = true"
+            >
+              알림톡 신청
+            </BaseButton>
           </div>
           <div class="setting-info">
             <p class="setting-description text-sub">
@@ -62,13 +62,13 @@
         <!-- 문자 포인트 -->
         <div class="setting-item no-border">
           <div class="setting-status-row">
-            <h3 class="setting-title with-underline">문자 포인트</h3>
-            <div class="status-controls fixed-width">
+            <div class="setting-title-group">
+              <h3 class="setting-title with-underline">문자 포인트</h3>
               <span class="status-chip neutral"> {{ messagePoints.toLocaleString() }}P </span>
-              <BaseButton class="action-button sm" type="primary" @click="showChargeModal = true">
-                포인트 충전
-              </BaseButton>
             </div>
+            <BaseButton class="action-button sm" type="primary" @click="showChargeModal = true">
+              포인트 충전
+            </BaseButton>
           </div>
           <div class="setting-info">
             <p class="setting-description text-sub">
@@ -81,13 +81,11 @@
 
     <!-- 모달들 -->
     <SenderInfoModal v-model="showSenderModal" @confirm="confirmSender" />
-
     <AlimtalkConfirmModal
       v-model="showAlimtalkModal"
       @confirm="confirmAlimtalk"
       @close="showAlimtalkModal = false"
     />
-
     <PointChargeModal
       v-model="showChargeModal"
       @confirm="handleConfirmCharge"
@@ -197,8 +195,8 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    flex-wrap: nowrap;
-    gap: 1rem;
+    flex-wrap: wrap; /* 모바일 대응 */
+    gap: 0.5rem;
   }
 
   .setting-title.with-underline {
@@ -210,15 +208,12 @@
     flex-shrink: 0;
   }
 
-  .status-controls {
+  .setting-title-group {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-  }
-
-  .status-controls.fixed-width {
-    min-width: 200px;
-    justify-content: flex-end;
+    flex-grow: 1;
+    min-width: 0; /* flex 줄바꿈 안전 */
   }
 
   .status-chip {
@@ -227,6 +222,7 @@
     font-size: 12px;
     border-radius: 9999px;
     font-weight: 500;
+    white-space: nowrap;
   }
 
   .status-chip.success {
@@ -244,12 +240,20 @@
     color: #374151;
   }
 
+  .status-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
   .action-button.sm {
-    min-width: auto;
     padding: 6px 12px;
     font-size: 13px;
-    height: auto;
     line-height: 1.2;
+    white-space: nowrap;
+    height: auto;
+    flex-shrink: 0;
+    min-width: 100px;
   }
 
   .section-divider {
