@@ -28,7 +28,7 @@ public class Incentive {
   @Column(name = "staff_id")
   private Long staffId;
 
-  @Column(name = "is_acitve", nullable = false)
+  @Column(name = "is_active", nullable = false)
   private boolean isActive = false;
 
   @Builder
