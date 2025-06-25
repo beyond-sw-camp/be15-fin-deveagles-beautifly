@@ -2,7 +2,7 @@ package com.deveagles.be15_deveagles_be.features.items.command.application.servi
 
 import com.deveagles.be15_deveagles_be.common.exception.BusinessException;
 import com.deveagles.be15_deveagles_be.common.exception.ErrorCode;
-import com.deveagles.be15_deveagles_be.features.items.command.application.dto.request.PrimaryItemRegistRequest;
+import com.deveagles.be15_deveagles_be.features.items.command.application.dto.request.PrimaryItemRequest;
 import com.deveagles.be15_deveagles_be.features.items.command.application.service.PrimaryItemCommandService;
 import com.deveagles.be15_deveagles_be.features.items.command.domain.aggregate.PrimaryItem;
 import com.deveagles.be15_deveagles_be.features.items.command.domain.repository.PrimaryItemRepository;
@@ -19,7 +19,7 @@ public class PrimaryItemCommandServiceImpl implements PrimaryItemCommandService 
   private final PrimaryItemRepository primaryItemRepository;
 
   @Override
-  public void registerPrimaryItem(PrimaryItemRegistRequest request) {
+  public void registerPrimaryItem(PrimaryItemRequest request) {
     // 유효성 검사
     if (request == null) {
       throw new BusinessException(ErrorCode.INVALID_PRIMARY_ITEM_INPUT);
