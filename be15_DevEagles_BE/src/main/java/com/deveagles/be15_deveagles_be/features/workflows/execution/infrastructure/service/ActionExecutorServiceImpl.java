@@ -19,9 +19,9 @@ import org.springframework.stereotype.Service;
 public class ActionExecutorServiceImpl implements ActionExecutorService {
 
   private final ObjectMapper objectMapper;
-  private final MessageService messageService;
-  private final CouponService couponService;
-  private final NotificationService notificationService;
+  private final MockMessageService messageService;
+  private final MockCouponService couponService;
+  private final MockNotificationService notificationService;
 
   @Override
   public ActionExecutionResult executeAction(

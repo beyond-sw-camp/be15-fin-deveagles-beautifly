@@ -20,7 +20,7 @@ public class TriggerCheckServiceImpl implements TriggerCheckService {
   private final WorkflowRepository workflowRepository;
   private final WorkflowExecutionService workflowExecutionService;
   private final ObjectMapper objectMapper;
-  private final CustomerEventService customerEventService;
+  private final MockCustomerEventService customerEventService;
 
   @EventListener
   @Override

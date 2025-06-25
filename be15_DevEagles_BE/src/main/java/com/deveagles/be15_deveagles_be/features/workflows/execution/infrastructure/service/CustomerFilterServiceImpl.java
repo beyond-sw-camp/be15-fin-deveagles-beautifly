@@ -18,8 +18,8 @@ import org.springframework.stereotype.Service;
 public class CustomerFilterServiceImpl implements CustomerFilterService {
 
   private final ObjectMapper objectMapper;
-  private final CustomerQueryService customerQueryService;
-  private final MessageQueryService messageQueryService;
+  private final MockCustomerQueryService customerQueryService;
+  private final MockMessageQueryService messageQueryService;
 
   @Override
   public List<Long> filterTargetCustomerIds(Workflow workflow) {
