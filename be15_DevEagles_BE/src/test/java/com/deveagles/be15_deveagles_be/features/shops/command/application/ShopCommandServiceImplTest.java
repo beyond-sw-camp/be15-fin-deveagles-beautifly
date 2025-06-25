@@ -33,7 +33,7 @@ public class ShopCommandServiceImplTest {
   }
 
   @Test
-  @DisplayName("shopRegist: 신규 매장 등록 시 예약 설정도 초기화된다")
+  @DisplayName("shopRegist: 신규 매장 등록 시 정상적으로 수행되고 예약 설정도 초기화된다")
   void shopRegist_정상_등록_테스트() {
     // given
     ShopCreateRequest request =
@@ -69,7 +69,6 @@ public class ShopCommandServiceImplTest {
     assertEquals("1234567890", result.getBusinessNumber());
     assertEquals("프리미엄 헤어샵", result.getShopDescription());
 
-    // 예약 설정 초기화가 호출되었는지 검증
     Mockito.verify(reservationSettingInitializer).initDefault(1L);
   }
 
