@@ -4,4 +4,6 @@ import com.deveagles.be15_deveagles_be.features.items.command.application.dto.re
 
 public interface PrimaryItemCommandService {
   void registerPrimaryItem(PrimaryItemRequest request);
+
+  void updatePrimaryItem(Long primaryItemId, PrimaryItemRequest request);
 }

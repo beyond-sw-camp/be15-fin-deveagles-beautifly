@@ -1,5 +1,7 @@
 package com.deveagles.be15_deveagles_be.features.items.command.application.service.impl;
 
+import static com.deveagles.be15_deveagles_be.features.items.command.domain.aggregate.QPrimaryItem.primaryItem;
+
 import com.deveagles.be15_deveagles_be.common.exception.BusinessException;
 import com.deveagles.be15_deveagles_be.common.exception.ErrorCode;
 import com.deveagles.be15_deveagles_be.features.items.command.application.dto.request.PrimaryItemRequest;
@@ -44,6 +46,38 @@ public class PrimaryItemCommandServiceImpl implements PrimaryItemCommandService 
             .createdAt(LocalDateTime.now())
             .build();
 
+    primaryItemRepository.save(primaryItem);
+  }
+
+  @Override
+  public void updatePrimaryItem(Long primaryItemId, PrimaryItemRequest request) {
+    // 유효성 검사
+    if (request == null) {
+      throw new BusinessException(ErrorCode.INVALID_PRIMARY_ITEM_INPUT);
+    }
+
+    if (Objects.isNull(request.getPrimaryItemName()) || request.getPrimaryItemName().isBlank()) {
+      throw new BusinessException(ErrorCode.PRIMARY_ITEM_NAME_REQUIRED);
+    }
+
+    if (Objects.isNull(request.getCategory())) {
+      throw new BusinessException(ErrorCode.PRIMARY_ITEM_CATEGORY_REQUIRED);
+    }
+
+    if (!Objects.equals(request.getShopId(), 1L)) {
+      throw new BusinessException(ErrorCode.INVALID_SHOP_ID);
+    }
+
+    // 기존 엔티티 조회
+    PrimaryItem primaryItem =
+        primaryItemRepository
+            .findById(primaryItemId)
+            .orElseThrow(() -> new BusinessException(ErrorCode.PRIMARY_ITEM_NOT_FOUND));
+
+    // 필드 수정
+    primaryItem.updatePrimaryItem(request.getPrimaryItemName(), request.getCategory());
+
+    // 저장
     primaryItemRepository.save(primaryItem);
   }
 }

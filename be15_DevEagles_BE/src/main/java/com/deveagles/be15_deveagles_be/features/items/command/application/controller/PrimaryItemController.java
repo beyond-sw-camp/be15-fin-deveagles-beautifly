@@ -28,4 +28,12 @@ public class PrimaryItemController {
     primaryItemServiceCommand.registerPrimaryItem(request);
     return ResponseEntity.ok(ApiResponse.success(null));
   }
+
+  @Operation(summary = "1차 상품 수정", description = "1차 상품을 수정합니다.")
+  @PutMapping("/{primaryItemId}")
+  public ResponseEntity<ApiResponse<Void>> updatePrimaryItem(
+      @PathVariable Long primaryItemId, @RequestBody PrimaryItemRequest request) {
+    primaryItemServiceCommand.updatePrimaryItem(primaryItemId, request);
+    return ResponseEntity.ok(ApiResponse.success(null));
+  }
 }
