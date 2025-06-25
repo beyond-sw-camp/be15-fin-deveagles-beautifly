@@ -1,7 +1,9 @@
-package com.deveagles.be15_deveagles_be.features.workflows.command.application.service;
+package com.deveagles.be15_deveagles_be.features.workflows.execution.infrastructure.service;
 
 import com.deveagles.be15_deveagles_be.features.workflows.command.domain.aggregate.Workflow;
 import com.deveagles.be15_deveagles_be.features.workflows.command.domain.repository.WorkflowRepository;
+import com.deveagles.be15_deveagles_be.features.workflows.execution.application.service.WorkflowExecutionService;
+import com.deveagles.be15_deveagles_be.features.workflows.execution.application.service.WorkflowScheduler;
 import java.time.LocalDateTime;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -12,13 +14,13 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 @Slf4j
-public class WorkflowScheduler {
+public class WorkflowSchedulerImpl implements WorkflowScheduler {
 
   private final WorkflowRepository workflowRepository;
   private final WorkflowExecutionService workflowExecutionService;
 
-  /** 예약된 워크플로우들을 주기적으로 실행 매 1분마다 실행 */
   @Scheduled(fixedDelay = 60000)
+  @Override
   public void executeScheduledWorkflows() {
     log.debug("스케줄된 워크플로우 실행 체크 시작");
 
@@ -47,13 +49,12 @@ public class WorkflowScheduler {
     }
   }
 
-  /** 매일 오전 9시에 일일 트리거 체크 (생일, 기념일 등) */
   @Scheduled(cron = "0 0 9 * * *")
+  @Override
   public void checkDailyTriggers() {
     log.info("일일 트리거 체크 시작");
 
     try {
-      // 생일 트리거 체크
       List<Workflow> birthdayWorkflows = workflowRepository.findByTriggerType("birthday");
       for (Workflow workflow : birthdayWorkflows) {
         if (workflow.canExecute()) {
@@ -61,7 +62,6 @@ public class WorkflowScheduler {
         }
       }
 
-      // 기념일 트리거 체크
       List<Workflow> anniversaryWorkflows =
           workflowRepository.findByTriggerType("first-visit-anniversary");
       for (Workflow workflow : anniversaryWorkflows) {
@@ -77,13 +77,12 @@ public class WorkflowScheduler {
     }
   }
 
-  /** 매시간 정각에 주기적 트리거 체크 (방문 주기, 이탈 위험 등) */
   @Scheduled(cron = "0 0 * * * *")
+  @Override
   public void checkPeriodicTriggers() {
     log.debug("주기적 트리거 체크 시작");
 
     try {
-      // 방문 주기 기반 트리거
       List<Workflow> visitCycleWorkflows = workflowRepository.findByTriggerType("visit-cycle");
       for (Workflow workflow : visitCycleWorkflows) {
         if (workflow.canExecute()) {
@@ -91,7 +90,6 @@ public class WorkflowScheduler {
         }
       }
 
-      // 이탈 위험 고객 트리거
       List<Workflow> churnRiskWorkflows = workflowRepository.findByTriggerType("churn-risk-high");
       for (Workflow workflow : churnRiskWorkflows) {
         if (workflow.canExecute()) {

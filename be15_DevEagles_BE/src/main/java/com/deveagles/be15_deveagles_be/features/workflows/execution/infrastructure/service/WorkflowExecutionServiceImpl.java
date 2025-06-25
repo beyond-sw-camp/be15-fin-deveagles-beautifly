@@ -1,10 +1,13 @@
-package com.deveagles.be15_deveagles_be.features.workflows.command.application.service;
+package com.deveagles.be15_deveagles_be.features.workflows.execution.infrastructure.service;
 
 import com.deveagles.be15_deveagles_be.features.workflows.command.domain.aggregate.Workflow;
 import com.deveagles.be15_deveagles_be.features.workflows.command.domain.aggregate.WorkflowExecution;
 import com.deveagles.be15_deveagles_be.features.workflows.command.domain.repository.WorkflowExecutionRepository;
 import com.deveagles.be15_deveagles_be.features.workflows.command.domain.repository.WorkflowRepository;
 import com.deveagles.be15_deveagles_be.features.workflows.command.domain.vo.ExecutionStatus;
+import com.deveagles.be15_deveagles_be.features.workflows.execution.application.service.ActionExecutorService;
+import com.deveagles.be15_deveagles_be.features.workflows.execution.application.service.CustomerFilterService;
+import com.deveagles.be15_deveagles_be.features.workflows.execution.application.service.WorkflowExecutionService;
 import java.time.LocalDateTime;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -16,13 +19,14 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 @Slf4j
 @Transactional
-public class WorkflowExecutionService {
+public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
 
   private final WorkflowRepository workflowRepository;
   private final WorkflowExecutionRepository workflowExecutionRepository;
   private final CustomerFilterService customerFilterService;
   private final ActionExecutorService actionExecutorService;
 
+  @Override
   public void executeWorkflow(Workflow workflow) {
     log.info("워크플로우 실행 시작: ID={}, 제목={}", workflow.getId(), workflow.getTitle());
 
@@ -83,6 +87,7 @@ public class WorkflowExecutionService {
     }
   }
 
+  @Override
   public void executeTriggeredWorkflow(Workflow workflow, Long customerId) {
     log.info("트리거된 워크플로우 실행: ID={}, 고객ID={}", workflow.getId(), customerId);
 
@@ -140,31 +145,11 @@ public class WorkflowExecutionService {
         workflow.updateSchedule(LocalDateTime.now().plusDays(1));
         break;
       case "churn-risk-high":
-        // 이탈 위험은 일주일 후 재체크
         workflow.updateSchedule(LocalDateTime.now().plusWeeks(1));
         break;
       default:
-        // 기본적으로 하루 후
         workflow.updateSchedule(LocalDateTime.now().plusDays(1));
         break;
-    }
-  }
-
-  public static class ActionExecutionResult {
-    private final int successCount;
-    private final int failureCount;
-
-    public ActionExecutionResult(int successCount, int failureCount) {
-      this.successCount = successCount;
-      this.failureCount = failureCount;
-    }
-
-    public int getSuccessCount() {
-      return successCount;
-    }
-
-    public int getFailureCount() {
-      return failureCount;
     }
   }
 }

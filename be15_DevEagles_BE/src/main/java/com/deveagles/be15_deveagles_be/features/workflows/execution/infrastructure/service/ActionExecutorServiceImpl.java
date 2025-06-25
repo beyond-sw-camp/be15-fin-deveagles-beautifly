@@ -1,10 +1,11 @@
-package com.deveagles.be15_deveagles_be.features.workflows.command.application.service;
+package com.deveagles.be15_deveagles_be.features.workflows.execution.infrastructure.service;
 
-import com.deveagles.be15_deveagles_be.features.workflows.command.application.service.WorkflowExecutionService.ActionExecutionResult;
 import com.deveagles.be15_deveagles_be.features.workflows.command.domain.aggregate.Workflow;
 import com.deveagles.be15_deveagles_be.features.workflows.command.domain.aggregate.WorkflowExecution;
 import com.deveagles.be15_deveagles_be.features.workflows.command.domain.vo.ActionConfig;
 import com.deveagles.be15_deveagles_be.features.workflows.command.domain.vo.ActionType;
+import com.deveagles.be15_deveagles_be.features.workflows.execution.application.service.ActionExecutorService;
+import com.deveagles.be15_deveagles_be.features.workflows.execution.application.service.WorkflowExecutionService.ActionExecutionResult;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
@@ -15,14 +16,14 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class ActionExecutorService {
+public class ActionExecutorServiceImpl implements ActionExecutorService {
 
   private final ObjectMapper objectMapper;
-  // TODO: 외부 도메인 서비스들 나중에 도메인 서비스 구현되면 이동
-  private final MessageService messageService;
-  private final CouponService couponService;
-  private final NotificationService notificationService;
+  private final MockMessageService messageService;
+  private final MockCouponService couponService;
+  private final MockNotificationService notificationService;
 
+  @Override
   public ActionExecutionResult executeAction(
       Workflow workflow, List<Long> targetCustomerIds, WorkflowExecution execution) {
     log.info(
@@ -101,7 +102,6 @@ public class ActionExecutorService {
     int successCount = 0;
     int failureCount = 0;
 
-    // 쿠폰 정보 유효성 확인
     if (!couponService.isValidCoupon(actionConfig.getCouponId(), workflow.getShopId())) {
       log.error("유효하지 않은 쿠폰: 쿠폰 ID={}, 매장 ID={}", actionConfig.getCouponId(), workflow.getShopId());
       return new ActionExecutionResult(0, customerIds.size());
@@ -167,25 +167,25 @@ public class ActionExecutorService {
     }
     return objectMapper.readValue(actionConfigJson, ActionConfig.class);
   }
-}
 
-interface MessageService {
-  boolean sendMessage(
-      Long customerId, Long shopId, String templateId, java.time.LocalTime sendTime);
+  interface MessageService {
+    boolean sendMessage(
+        Long customerId, Long shopId, String templateId, java.time.LocalTime sendTime);
 
-  boolean sendCouponMessage(
-      Long customerId,
-      Long shopId,
-      String templateId,
-      String couponId,
-      java.time.LocalTime sendTime);
-}
+    boolean sendCouponMessage(
+        Long customerId,
+        Long shopId,
+        String templateId,
+        String couponId,
+        java.time.LocalTime sendTime);
+  }
 
-interface CouponService {
-  boolean isValidCoupon(String couponId, Long shopId);
-}
+  interface CouponService {
+    boolean isValidCoupon(String couponId, Long shopId);
+  }
 
-interface NotificationService {
-  boolean sendNotification(
-      Long shopId, Long staffId, String title, String content, String level, int targetCount);
+  interface NotificationService {
+    boolean sendNotification(
+        Long shopId, Long staffId, String title, String content, String level, int targetCount);
+  }
 }
