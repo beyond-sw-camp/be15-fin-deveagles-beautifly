@@ -10,7 +10,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
-public class PrimaryItemRegistRequest {
+public class PrimaryItemRequest {
 
   @NotNull(message = "shopId는 필수입니다.") private Long shopId;
 

@@ -39,4 +39,9 @@ public class PrimaryItem {
   public void prePersist() {
     this.createdAt = LocalDateTime.now();
   }
+
+  public void updatePrimaryItem(String primaryItemName, Category category) {
+    this.primaryItemName = primaryItemName;
+    this.category = category;
+  }
 }
