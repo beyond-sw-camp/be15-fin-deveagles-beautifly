@@ -1,5 +1,5 @@
 <script setup>
-  import { ref, computed } from 'vue';
+  import { ref } from 'vue';
   import BaseModal from '@/components/common/BaseModal.vue';
   import BaseButton from '@/components/common/BaseButton.vue';
   import PrimeDatePicker from '@/components/common/PrimeDatePicker.vue';
@@ -10,21 +10,18 @@
       required: true,
     },
     messageContent: {
-      type: String,
+      type: Object,
+      required: true,
+    },
+    customers: {
+      type: Array,
       required: true,
     },
   });
+
   const emit = defineEmits(['update:modelValue', 'confirm']);
 
   const selectedDate = ref(null);
-
-  const parsed = computed(() => {
-    try {
-      return JSON.parse(props.messageContent);
-    } catch {
-      return {};
-    }
-  });
 
   function close() {
     emit('update:modelValue', false);
@@ -37,8 +34,9 @@
     }
 
     emit('confirm', {
-      content: props.messageContent,
+      ...props.messageContent,
       date: selectedDate.value,
+      customers: props.customers,
     });
     close();
   }
@@ -53,11 +51,23 @@
     <div class="modal-body">
       <label class="form-label">메시지 내용</label>
       <div class="message-preview">
-        <p><strong>내용:</strong> {{ parsed?.content || '없음' }}</p>
-        <p v-if="parsed?.link"><strong>링크:</strong> {{ parsed.link }}</p>
-        <p v-if="parsed?.coupon"><strong>쿠폰:</strong> {{ parsed.coupon.name }}</p>
-        <p v-if="parsed?.grades?.length"><strong>등급:</strong> {{ parsed.grades.join(', ') }}</p>
-        <p v-if="parsed?.tags?.length"><strong>태그:</strong> {{ parsed.tags.join(', ') }}</p>
+        <p><strong>내용:</strong> {{ props.messageContent.content || '없음' }}</p>
+        <p v-if="props.messageContent.link">
+          <strong>링크:</strong> {{ props.messageContent.link }}
+        </p>
+        <p v-if="props.messageContent.coupon">
+          <strong>쿠폰:</strong> {{ props.messageContent.coupon.name }}
+        </p>
+        <p v-if="props.messageContent.grades?.length">
+          <strong>등급:</strong> {{ props.messageContent.grades.join(', ') }}
+        </p>
+        <p v-if="props.messageContent.tags?.length">
+          <strong>태그:</strong> {{ props.messageContent.tags.join(', ') }}
+        </p>
+        <p v-if="props.customers?.length">
+          <strong>고객:</strong>
+          {{ props.customers.map(c => c.name).join(', ') }}
+        </p>
       </div>
 
       <PrimeDatePicker

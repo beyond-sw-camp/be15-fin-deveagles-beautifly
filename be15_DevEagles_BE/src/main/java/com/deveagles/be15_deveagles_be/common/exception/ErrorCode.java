@@ -59,7 +59,14 @@ public enum ErrorCode implements ErrorCodeType {
   INVALID_SCHEDULE_TYPE("72001", "유효하지 않은 일정 타입입니다", HttpStatus.BAD_REQUEST),
   PLAN_NOT_FOUND("72002", "단기 일정이 존재하지 않습니다", HttpStatus.NOT_FOUND),
   REGULAR_PLAN_NOT_FOUND("72003", "정기 일정이 존재하지 않습니다", HttpStatus.NOT_FOUND),
-  INVALID_SCHEDULE_REPEAT_TYPE("72004", "정기 일정은 요일 또는 월 중 하나만 설정해야 합니다", HttpStatus.BAD_REQUEST);
+  INVALID_SCHEDULE_REPEAT_TYPE("72004", "정기 일정은 요일 또는 월 중 하나만 설정해야 합니다", HttpStatus.BAD_REQUEST),
+
+  // 상품, 회원권 관련 에러 (상품 :81000번대, 회원권: 82000번대)
+  PRIMARY_ITEM_NAME_REQUIRED("81001", "1차 분류명은 필수입니다", HttpStatus.BAD_REQUEST),
+  PRIMARY_ITEM_CATEGORY_REQUIRED("81002", "카테고리는 필수입니다", HttpStatus.BAD_REQUEST),
+  INVALID_PRIMARY_ITEM_INPUT("81003", "잘못된 1차 상품 입력값입니다", HttpStatus.BAD_REQUEST);
+
+  // 매출 관련 에러 (90000번대)
 
   private final String code;
   private final String message;
