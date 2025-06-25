@@ -31,10 +31,8 @@ public class ShopCommandServiceImpl implements ShopCommandService {
             .shopDescription(request.description())
             .build();
 
-    // 1. 먼저 Shop 저장
     Shop savedShop = shopRepository.save(shop);
 
-    // 2. 저장된 shop의 ID를 이용해 예약 설정 초기화
     reservationSettingInitializer.initDefault(savedShop.getShopId());
 
     return savedShop;
