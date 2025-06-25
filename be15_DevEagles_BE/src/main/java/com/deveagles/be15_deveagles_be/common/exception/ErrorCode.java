@@ -57,8 +57,8 @@ public enum ErrorCode implements ErrorCodeType {
   RESERVATION_SETTING_ALREADY_EXISTS("70004", "이미 예약 설정이 존재합니다", HttpStatus.BAD_REQUEST),
   // 일정 삭제 관련 에러 (72000번대)
   INVALID_SCHEDULE_TYPE("72001", "유효하지 않은 일정 타입입니다", HttpStatus.BAD_REQUEST),
-  PLAN_NOT_FOUND("72002", "삭제하려는 단기 일정이 존재하지 않습니다", HttpStatus.NOT_FOUND),
-  REGULAR_PLAN_NOT_FOUND("72003", "삭제하려는 정기 일정이 존재하지 않습니다", HttpStatus.NOT_FOUND),
+  PLAN_NOT_FOUND("72002", "단기 일정이 존재하지 않습니다", HttpStatus.NOT_FOUND),
+  REGULAR_PLAN_NOT_FOUND("72003", "정기 일정이 존재하지 않습니다", HttpStatus.NOT_FOUND),
   INVALID_SCHEDULE_REPEAT_TYPE("72004", "정기 일정은 요일 또는 월 중 하나만 설정해야 합니다", HttpStatus.BAD_REQUEST);
 
   private final String code;
