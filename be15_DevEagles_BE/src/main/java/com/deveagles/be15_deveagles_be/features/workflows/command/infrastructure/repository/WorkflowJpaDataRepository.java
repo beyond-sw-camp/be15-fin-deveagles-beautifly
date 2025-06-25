@@ -4,9 +4,13 @@ import com.deveagles.be15_deveagles_be.features.workflows.command.domain.aggrega
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
-public interface WorkflowJpaDataRepository extends JpaRepository<Workflow, Long> {
+public interface WorkflowJpaDataRepository
+    extends JpaRepository<Workflow, Long>, JpaSpecificationExecutor<Workflow> {
 
   Optional<Workflow> findByIdAndShopIdAndDeletedAtIsNull(Long id, Long shopId);
 
@@ -31,4 +35,9 @@ public interface WorkflowJpaDataRepository extends JpaRepository<Workflow, Long>
   long countByShopIdAndDeletedAtIsNull(Long shopId);
 
   long countByShopIdAndIsActiveTrueAndDeletedAtIsNull(Long shopId);
+
+  List<Workflow> findByTriggerCategoryAndShopIdAndDeletedAtIsNull(
+      String triggerCategory, Long shopId);
+
+  Page<Workflow> findByShopIdAndDeletedAtIsNull(Long shopId, Pageable pageable);
 }
