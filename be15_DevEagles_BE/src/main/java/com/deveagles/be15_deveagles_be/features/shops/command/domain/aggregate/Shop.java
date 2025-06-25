@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import lombok.*;
 
+@Builder
 @Getter
 @Entity
 @Table(name = "shop")
@@ -76,5 +77,9 @@ public class Shop {
 
   public void setReservation(int term) {
     this.reservationTerm = term;
+  }
+
+  public void setOwner(Long ownerId) {
+    this.ownerId = ownerId;
   }
 }
