@@ -136,6 +136,7 @@
     line-height: 1.5;
     color: var(--color-neutral-dark);
     margin-bottom: 1rem;
+    white-space: pre-line; /* 줄바꿈 적용 */
   }
 
   .confirm-actions {

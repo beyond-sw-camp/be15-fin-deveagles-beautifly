@@ -6,7 +6,19 @@
         <BaseButton type="primary" size="sm" @click="showCreateDrawer = true"
           >+ 신규 고객 등록</BaseButton
         >
-        <BaseButton type="primary" size="sm">+ 등급·태그 설정</BaseButton>
+        <div ref="gradeTagDropdownWrapper" class="dropdown-container">
+          <BaseButton
+            type="primary"
+            size="sm"
+            @click="showGradeTagDropdown = !showGradeTagDropdown"
+          >
+            + 등급·태그 설정
+          </BaseButton>
+          <div v-if="showGradeTagDropdown" class="dropdown-menu">
+            <div class="dropdown-item" @click="openGradeSettingsDrawer">등급 설정</div>
+            <div class="dropdown-item">태그 설정</div>
+          </div>
+        </div>
       </div>
     </header>
 
@@ -168,15 +180,7 @@
       @close="showEditDrawer = false"
     />
 
-    <BaseConfirm
-      v-model="showConfirmDelete"
-      title="고객 삭제"
-      message="정말 삭제하시겠습니까?"
-      confirm-text="삭제"
-      confirm-type="error"
-      @confirm="handleDeleteCustomerConfirmed"
-      @cancel="showConfirmDelete = false"
-    />
+    <CustomerGradeSettingsDrawer v-model="showGradeSettingsDrawer" />
 
     <CustomerColumnSettingsDrawer
       v-model="showColumnDrawer"
@@ -191,6 +195,16 @@
       :customer="selectedCustomer"
       @request-delete="handleRequestDelete"
       @request-edit="handleEditRequest"
+    />
+
+    <BaseConfirm
+      v-model="showConfirmDelete"
+      title="고객 삭제"
+      message="정말 삭제하시겠습니까?"
+      confirm-text="삭제"
+      confirm-type="error"
+      @confirm="handleDeleteCustomerConfirmed"
+      @cancel="showConfirmDelete = false"
     />
 
     <BaseToast ref="toastRef" />
@@ -215,6 +229,7 @@
   import CustomerDetailModal from '../components/CustomerDetailModal.vue';
   import BaseConfirm from '@/components/common/BaseConfirm.vue';
   import BaseToast from '@/components/common/BaseToast.vue';
+  import CustomerGradeSettingsDrawer from '../components/CustomerGradeSettingsDrawer.vue';
 
   const dummyData = ref(
     Array.from({ length: 20 }, (_, i) => ({
@@ -296,6 +311,15 @@
   const showConfirmDelete = ref(false);
   const customerIdToDelete = ref(null);
 
+  const showGradeTagDropdown = ref(false);
+  const gradeTagDropdownWrapper = ref(null);
+  const showGradeSettingsDrawer = ref(false);
+
+  const openGradeSettingsDrawer = () => {
+    showGradeSettingsDrawer.value = true;
+    showGradeTagDropdown.value = false;
+  };
+
   const handleRequestDelete = customerId => {
     customerIdToDelete.value = customerId;
     showConfirmDelete.value = true;
@@ -318,7 +342,7 @@
   function handleEditRequest(customer) {
     selectedCustomerEdit.value = customer;
     showEditDrawer.value = true;
-    showDetailModal.value = false; // 상세 모달 닫기
+    showDetailModal.value = false;
   }
 
   function handleUpdateCustomer(updatedCustomer) {
@@ -463,6 +487,9 @@
     if (checkboxDropdownRef.value && !checkboxDropdownRef.value.contains(event.target)) {
       showDropdown.value = false;
     }
+    if (gradeTagDropdownWrapper.value && !gradeTagDropdownWrapper.value.contains(event.target)) {
+      showGradeTagDropdown.value = false;
+    }
   }
   onMounted(() => {
     document.addEventListener('click', handleClickOutside);
@@ -539,8 +566,35 @@
     align-items: center;
     margin-bottom: 16px;
   }
-  .customer-list-actions > * + * {
-    margin-left: 8px;
+  .customer-list-actions {
+    display: flex;
+    gap: 8px;
+  }
+  .dropdown-container {
+    position: relative;
+    display: inline-block;
+  }
+  .dropdown-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 8px;
+    background-color: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    z-index: 100;
+    padding: 0.5rem 0;
+    min-width: 160px;
+  }
+  .dropdown-item {
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: #333;
+  }
+  .dropdown-item:hover {
+    background-color: #f5f5f5;
   }
   .customer-list-toolbar {
     display: flex;
@@ -698,23 +752,24 @@
   .sortable-header {
     display: flex;
     align-items: center;
+    justify-content: flex-start;
     cursor: pointer;
     user-select: none;
     gap: 4px;
     white-space: nowrap;
-    /* 정렬 버튼 크기 통일 */
-    padding: 0 8px; /* 내부 여백 */
-    height: 42px; /* 높이 */
-    min-width: 100px; /* 최소 너비 */
-    font-size: 15px; /* 폰트 크기 */
-    font-weight: 500; /* 폰트 두께 */
-    background: transparent; /* 배경 투명 */
-    border: none; /* 테두리 없음 */
-    outline: none; /* 포커스 아웃라인 없음 */
-    transition: background 0.15s; /* 호버 효과 */
+    padding: 0 8px;
+    height: 42px;
+    width: 100%;
+    font-size: 15px;
+    font-weight: 500;
+    background: transparent;
+    border: none;
+    outline: none;
+    transition: background 0.15s;
+    text-align: left;
   }
   .sortable-header:hover {
-    background: #f0f4fa; /* 호버 시 배경색 */
+    background: #f0f4fa;
   }
   .customer-list-pagination {
     margin-top: 24px;
