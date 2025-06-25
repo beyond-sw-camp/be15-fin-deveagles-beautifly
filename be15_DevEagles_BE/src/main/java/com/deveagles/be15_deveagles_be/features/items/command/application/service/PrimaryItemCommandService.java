@@ -2,6 +2,6 @@ package com.deveagles.be15_deveagles_be.features.items.command.application.servi
 
 import com.deveagles.be15_deveagles_be.features.items.command.application.dto.request.PrimaryItemRegistRequest;
 
-public interface PrimaryItemServiceCommand {
+public interface PrimaryItemCommandService {
   void registerPrimaryItem(PrimaryItemRegistRequest request);
 }

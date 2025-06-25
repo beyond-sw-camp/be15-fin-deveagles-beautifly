@@ -1,5 +1,6 @@
 <template>
-  <BaseItemModal title="2차 상품 등록" @close="$emit('close')" @submit="submit">
+  <BaseItemModal title="2차 분류 상품 등록" @close="handleClose" @submit="submit">
+    <!-- 1차 분류명 -->
     <div class="form-group">
       <label for="primary">1차 분류명</label>
       <BaseForm
@@ -8,9 +9,11 @@
         type="select"
         :options="primaryOptions.map(item => ({ value: item.id, text: item.name }))"
         placeholder="1차 분류명"
+        :error="errors.primaryItemId"
       />
     </div>
 
+    <!-- 2차 분류명 -->
     <div class="form-group">
       <label for="secondaryName">2차 분류명</label>
       <BaseForm
@@ -18,9 +21,11 @@
         v-model="form.secondaryName"
         type="text"
         placeholder="2차 분류명"
+        :error="errors.secondaryName"
       />
     </div>
 
+    <!-- 상품 금액 -->
     <div class="form-group">
       <label for="price">상품 금액</label>
       <BaseForm
@@ -28,11 +33,12 @@
         v-model.number="form.price"
         type="number"
         step="100"
-        placeholder="상품 금액"
+        placeholder="금액"
+        :error="errors.price"
       />
     </div>
 
-    <!-- 시술일 경우만 시술 시간 입력 -->
+    <!-- 시술 시간 -->
     <div v-if="selectedPrimary?.category === 'SERVICE'" class="form-group">
       <label for="duration">시술 시간 (분)</label>
       <BaseForm
@@ -41,13 +47,14 @@
         type="number"
         step="5"
         placeholder="예: 60"
+        :error="errors.duration"
       />
     </div>
 
     <template #footer>
       <div class="footer-buttons">
         <div class="left-group">
-          <BaseButton type="primary" outline @click="$emit('close')">취소</BaseButton>
+          <BaseButton type="primary" outline @click="handleClose">취소</BaseButton>
           <BaseButton type="primary" @click="submit">등록</BaseButton>
         </div>
       </div>
@@ -56,37 +63,77 @@
 </template>
 
 <script setup>
-  import { computed } from 'vue';
+  import { computed, reactive } from 'vue';
   import BaseItemModal from './BaseItemModal.vue';
   import BaseForm from '@/components/common/BaseForm.vue';
   import BaseButton from '@/components/common/BaseButton.vue';
+  import { registerSecondaryItem } from '@/features/items/api/items.js';
 
-  const props = defineProps({
-    modelValue: {
-      type: Object,
-      required: true,
-    },
+  const emit = defineEmits(['close', 'submit', 'toast']);
+
+  const defaultForm = () => ({
+    primaryItemId: null,
+    secondaryName: '',
+    price: null,
+    duration: null,
   });
 
-  const emit = defineEmits(['close', 'submit', 'update:modelValue', 'toast']);
+  const form = reactive(defaultForm());
+  const errors = reactive({
+    primaryItemId: '',
+    secondaryName: '',
+    price: '',
+    duration: '',
+  });
 
   const primaryOptions = [
     { id: 1, name: '펌(남성)', category: 'SERVICE' },
-    { id: 2, name: '헤어', category: 'PRODUCT' },
+    { id: 2, name: '펌', category: 'SERVICE' },
+    { id: 3, name: '헤어', category: 'PRODUCT' },
   ];
 
-  const form = computed({
-    get: () => props.modelValue,
-    set: val => emit('update:modelValue', val),
-  });
+  const selectedPrimary = computed(() => primaryOptions.find(opt => opt.id === form.primaryItemId));
 
-  const selectedPrimary = computed(() =>
-    primaryOptions.find(opt => opt.id === form.value.primaryItemId)
-  );
+  const validate = () => {
+    let valid = true;
+    errors.primaryItemId = form.primaryItemId ? '' : '1차 분류를 선택해주세요.';
+    errors.secondaryName = form.secondaryName.trim() ? '' : '2차 분류명을 입력해주세요.';
+    errors.price = form.price ? '' : '상품 금액을 입력해주세요.';
+    errors.duration =
+      selectedPrimary.value?.category === 'SERVICE' && !form.duration
+        ? '시술 시간을 입력해주세요.'
+        : '';
 
-  const submit = () => {
-    emit('submit', form.value);
-    emit('toast', '2차 상품이 등록되었습니다');
+    if (errors.primaryItemId || errors.secondaryName || errors.price || errors.duration) {
+      valid = false;
+    }
+    return valid;
+  };
+
+  const submit = async () => {
+    if (!validate()) {
+      return;
+    }
+
+    try {
+      await registerSecondaryItem({
+        primaryItemId: form.primaryItemId,
+        secondaryItemName: form.secondaryName.trim(),
+        secondaryItemPrice: form.price,
+        timeTaken: selectedPrimary.value?.category === 'SERVICE' ? form.duration : null,
+      });
+
+      emit('toast', '2차 상품이 등록되었습니다');
+      emit('submit');
+      handleClose();
+    } catch (err) {
+      emit('toast', err.response?.data?.message || '등록 중 오류가 발생했습니다');
+    }
+  };
+
+  const handleClose = () => {
+    Object.assign(form, defaultForm());
+    Object.keys(errors).forEach(key => (errors[key] = ''));
     emit('close');
   };
 </script>
