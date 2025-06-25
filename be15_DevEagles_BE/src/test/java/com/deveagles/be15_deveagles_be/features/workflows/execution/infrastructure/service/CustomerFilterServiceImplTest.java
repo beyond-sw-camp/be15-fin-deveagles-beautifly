@@ -28,8 +28,8 @@ import org.mockito.quality.Strictness;
 class CustomerFilterServiceImplTest {
 
   @Mock private ObjectMapper objectMapper;
-  @Mock private CustomerFilterServiceImpl.CustomerQueryService customerQueryService;
-  @Mock private CustomerFilterServiceImpl.MessageQueryService messageQueryService;
+  @Mock private MockCustomerQueryService customerQueryService;
+  @Mock private MockMessageQueryService messageQueryService;
 
   @InjectMocks private CustomerFilterServiceImpl customerFilterService;
 
