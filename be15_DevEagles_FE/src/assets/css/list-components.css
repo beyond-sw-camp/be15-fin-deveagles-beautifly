@@ -51,12 +51,7 @@
 
 /* 워크플로우 전용 스타일 */
 .workflow-name {
-  cursor: pointer;
-  transition: color 0.2s ease;
-}
-
-.workflow-name:hover h4 {
-  color: var(--color-primary-main);
+  cursor: default;
 }
 
 .workflow-name h4 {

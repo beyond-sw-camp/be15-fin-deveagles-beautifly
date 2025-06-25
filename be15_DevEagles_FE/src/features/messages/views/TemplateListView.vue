@@ -2,7 +2,7 @@
   <div class="template-list-view">
     <!-- 상단 헤더 -->
     <div class="template-list-header">
-      <h2 class="font-section-title text-dark">문자 보관함</h2>
+      <h2 class="font-section-title text-dark">템플릿 보관함</h2>
       <BaseButton type="primary" size="sm" @click="openCreateModal">
         <PlusIcon class="icon" /> 템플릿 등록
       </BaseButton>

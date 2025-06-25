@@ -80,17 +80,14 @@
 
   .icon-blue {
     background-color: var(--color-gray-100);
-    color: var(--color-primary-main);
   }
 
   .icon-gray {
     background-color: var(--color-gray-100);
-    color: var(--color-gray-700);
   }
 
   .icon-yellow {
     background-color: var(--color-gray-100);
-    color: var(--color-warning-500);
   }
 
   .stats-content {
