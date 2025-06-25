@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.deveagles.be15_deveagles_be.features.schedules.query.mapper.RegularPlanQueryMapper">
+    <select id="findRegularPlanDetailById" resultType="com.deveagles.be15_deveagles_be.features.schedules.query.dto.response.RegularPlanDetailResponse">
+        SELECT
+            regular_plan_id     AS regularPlanId,
+            staff_id            AS staffId,
+            shop_id             AS shopId,
+            regular_plan_title  AS title,
+            regular_plan_memo   AS memo,
+            monthly_plan        AS monthlyPlan,
+            weekly_plan         AS weeklyPlan,
+            regular_plan_start_at AS startAt,
+            regular_plan_end_at   AS endAt
+        FROM regular_plan
+        WHERE regular_plan_id = #{regularPlanId}
+    </select>
+</mapper>

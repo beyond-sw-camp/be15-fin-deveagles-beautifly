@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.deveagles.be15_deveagles_be.features.schedules.query.mapper.PlanQueryMapper">
+
+    <!-- 단기 일정 상세 조회 -->
+    <select id="findPlanDetailById" resultType="com.deveagles.be15_deveagles_be.features.schedules.query.dto.response.PlanDetailResponse">
+        SELECT
+            plan_id       AS planId,
+            staff_id      AS staffId,
+            shop_id       AS shopId,
+            plan_title    AS title,
+            plan_memo     AS memo,
+            plan_start_at AS startAt,
+            plan_end_at   AS endAt
+        FROM plan
+        WHERE plan_id = #{planId}
+    </select>
+
+    <!-- 단기 + 정기 일정 목록 조회 -->
+    <select id="findPlans" resultType="com.deveagles.be15_deveagles_be.features.schedules.query.dto.response.PlanListResponse">
+        <choose>
+            <!-- type이 'plan'일 경우 -->
+            <when test="type == 'plan'">
+                SELECT
+                p.plan_id AS id,
+                'plan' AS type,
+                p.plan_title AS title,
+                p.plan_memo AS memo,
+                s.name AS staffName,
+                p.plan_start_at AS startAt,
+                p.plan_end_at AS endAt
+                FROM plan p
+                JOIN staff s ON p.staff_id = s.staff_id
+                WHERE p.deleted_at IS NULL
+                AND p.staff_id = #{staffId}
+                AND p.shop_id = #{shopId}
+                ORDER BY startAt ASC
+                LIMIT #{limit} OFFSET #{offset}
+            </when>
+
+            <!-- type이 'regular'일 경우 -->
+            <when test="type == 'regular'">
+                SELECT
+                rp.regular_plan_id AS id,
+                'regular' AS type,
+                rp.regular_plan_title AS title,
+                rp.regular_plan_memo AS memo,
+                s.name AS staffName,
+                STR_TO_DATE(CONCAT(CURDATE(), ' ', rp.regular_plan_start_at), '%Y-%m-%d %H:%i:%s') AS startAt,
+                STR_TO_DATE(CONCAT(CURDATE(), ' ', rp.regular_plan_end_at), '%Y-%m-%d %H:%i:%s') AS endAt
+                FROM regular_plan rp
+                JOIN staff s ON rp.staff_id = s.staff_id
+                WHERE rp.deleted_at IS NULL
+                AND rp.staff_id = #{staffId}
+                AND rp.shop_id = #{shopId}
+                ORDER BY startAt ASC
+                LIMIT #{limit} OFFSET #{offset}
+            </when>
+
+            <!-- type이 null 또는 전체일 경우 -->
+            <otherwise>
+                (
+                SELECT
+                p.plan_id AS id,
+                'plan' AS type,
+                p.plan_title AS title,
+                p.plan_memo AS memo,
+                s.name AS staffName,
+                p.plan_start_at AS startAt,
+                p.plan_end_at AS endAt
+                FROM plan p
+                JOIN staff s ON p.staff_id = s.staff_id
+                WHERE p.deleted_at IS NULL
+                AND p.staff_id = #{staffId}
+                AND p.shop_id = #{shopId}
+                )
+                UNION ALL
+                (
+                SELECT
+                rp.regular_plan_id AS id,
+                'regular' AS type,
+                rp.regular_plan_title AS title,
+                rp.regular_plan_memo AS memo,
+                s.name AS staffName,
+                STR_TO_DATE(CONCAT(CURDATE(), ' ', rp.regular_plan_start_at), '%Y-%m-%d %H:%i:%s') AS startAt,
+                STR_TO_DATE(CONCAT(CURDATE(), ' ', rp.regular_plan_end_at), '%Y-%m-%d %H:%i:%s') AS endAt
+                FROM regular_plan rp
+                JOIN staff s ON rp.staff_id = s.staff_id
+                WHERE rp.deleted_at IS NULL
+                AND rp.staff_id = #{staffId}
+                AND rp.shop_id = #{shopId}
+                )
+                ORDER BY startAt ASC
+                LIMIT #{limit} OFFSET #{offset}
+            </otherwise>
+        </choose>
+    </select>
+
+    <!-- 개수 조회도 필터링 적용 -->
+    <select id="countPlans" resultType="int">
+        <choose>
+            <when test="type == 'plan'">
+                SELECT COUNT(*)
+                FROM plan
+                WHERE deleted_at IS NULL
+                AND staff_id = #{staffId}
+                AND shop_id = #{shopId}
+            </when>
+
+            <when test="type == 'regular'">
+                SELECT COUNT(*)
+                FROM regular_plan
+                WHERE deleted_at IS NULL
+                AND staff_id = #{staffId}
+                AND shop_id = #{shopId}
+            </when>
+
+            <otherwise>
+                SELECT (
+                SELECT COUNT(*)
+                FROM plan
+                WHERE deleted_at IS NULL
+                AND staff_id = #{staffId}
+                AND shop_id = #{shopId}
+                ) + (
+                SELECT COUNT(*)
+                FROM regular_plan
+                WHERE deleted_at IS NULL
+                AND staff_id = #{staffId}
+                AND shop_id = #{shopId}
+                )
+            </otherwise>
+        </choose>
+    </select>
+
+</mapper>
