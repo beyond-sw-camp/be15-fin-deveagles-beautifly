@@ -9,10 +9,16 @@ Thumbs.db
 # 환경 변수 파일
 .env
 .env.*
+*.local
 
 # 로그 파일
 *.log
 logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
 
 # 패키지, 빌드 아카이브
 *.zip
@@ -127,7 +133,7 @@ be15_DevEagles_DA/logs/
 # Analytics environment configuration
 be15_DevEagles_DA/.env
 be15_DevEagles_DA/config/local.yaml
-be15_DevEagles_DA/config/production.yaml  # 프로덕션 설정은 별도 관리
+be15_DevEagles_DA/config/production.yaml
 be15_DevEagles_DA/config/*.local.yaml
 
 # ======================
@@ -166,13 +172,6 @@ node_modules/
 dist/
 dist-ssr/
 
-# Debug logs
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
-
 # Lock files (프로젝트 정책에 따라 조정)
 package-lock.json
 yarn.lock
@@ -184,17 +183,6 @@ vite.config.js.timestamp-*
 
 # TypeScript
 *.tsbuildinfo
-
-# Coverage
-coverage/
-*.lcov
-
-# Local env files
-*.local
-
-# Cypress
-/cypress/videos/
-/cypress/screenshots/
 
 # ======================
 # 🧠 데이터베이스 및 캐시
@@ -256,6 +244,7 @@ bin/
 # 🧪 테스트 및 리포트
 # ======================
 
+# 테스트 결과 및 커버리지
 test-results/
 test-output/
 coverage/
@@ -263,6 +252,20 @@ coverage/
 # JaCoCo (Java 코드 커버리지)
 jacoco.exec
 *.exec
+
+# Playwright E2E 테스트
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+
+# 테스트 미디어 파일
+*.png
+*.webm
+*.mp4
+
+# ESLint & Prettier 캐시
+.eslintcache
+.stylelintcache
 
 # ======================
 # 🐳 Docker 및 배포
@@ -280,17 +283,8 @@ jacoco.exec
 .terraform/
 
 # ======================
-# 🚀 기타 도구들
+# 🚀 기타 임시 파일
 # ======================
-
-# Prettier
-.prettierignore
-
-# ESLint
-.eslintcache
-
-# Stylelint
-.stylelintcache
 
 # Temporary files
 *.tmp
