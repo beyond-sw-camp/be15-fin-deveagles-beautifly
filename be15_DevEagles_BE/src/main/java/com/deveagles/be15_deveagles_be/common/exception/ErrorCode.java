@@ -44,6 +44,12 @@ public enum ErrorCode implements ErrorCodeType {
   CAMPAIGN_ALREADY_DELETED("51002", "이미 삭제된 캠페인입니다", HttpStatus.BAD_REQUEST),
   INVALID_CAMPAIGN_DATE_RANGE("51003", "캠페인 종료일은 시작일보다 늦어야 합니다", HttpStatus.BAD_REQUEST),
 
+  // 워크플로우 관련 에러 (60000번대)
+  WORKFLOW_NOT_FOUND("60001", "워크플로우를 찾을 수 없습니다", HttpStatus.NOT_FOUND),
+  WORKFLOW_TITLE_ALREADY_EXISTS("60002", "이미 존재하는 워크플로우 제목입니다", HttpStatus.CONFLICT),
+  WORKFLOW_ACCESS_DENIED("60003", "해당 워크플로우에 대한 접근 권한이 없습니다", HttpStatus.FORBIDDEN),
+  WORKFLOW_ALREADY_DELETED("60004", "이미 삭제된 워크플로우입니다", HttpStatus.BAD_REQUEST),
+
   // 예약 설정 관련 에러 (70000번대)
   INVALID_RESERVATION_TIME_RANGE("70001", "예약 시작 시간은 종료 시간보다 빨라야 합니다", HttpStatus.BAD_REQUEST),
   INVALID_LUNCH_TIME_RANGE("70002", "점심시간은 예약 가능 시간 범위 내여야 합니다", HttpStatus.BAD_REQUEST),
