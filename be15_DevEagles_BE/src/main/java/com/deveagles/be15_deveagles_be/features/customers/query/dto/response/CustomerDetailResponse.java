@@ -24,7 +24,6 @@ public class CustomerDetailResponse {
       Integer totalRevenue,
       LocalDate recentVisitDate,
       LocalDate birthdate,
-      LocalDateTime registeredAt,
       Integer noshowCount,
       Gender gender,
       Boolean marketingConsent,
@@ -46,7 +45,6 @@ public class CustomerDetailResponse {
     this.totalRevenue = totalRevenue;
     this.recentVisitDate = recentVisitDate;
     this.birthdate = birthdate;
-    this.registeredAt = registeredAt;
     this.noshowCount = noshowCount;
     this.gender = gender;
     this.marketingConsent = marketingConsent;
@@ -70,7 +68,6 @@ public class CustomerDetailResponse {
   private Integer totalRevenue;
   private LocalDate recentVisitDate;
   private LocalDate birthdate;
-  private LocalDateTime registeredAt;
   private Integer noshowCount;
   private Gender gender;
   private Boolean marketingConsent;

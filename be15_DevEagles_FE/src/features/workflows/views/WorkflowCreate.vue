@@ -1,0 +1,57 @@
+<template>
+  <WorkflowFormBase
+    title="새 워크플로우"
+    subtitle="고객 자동화 규칙을 설정하세요"
+    save-button-text="저장"
+    @save="saveWorkflow"
+    @cancel="goBack"
+  />
+</template>
+
+<script>
+  import { useRouter } from 'vue-router';
+  import { useToast } from '@/composables/useToast';
+  import WorkflowFormBase from '../components/WorkflowFormBase.vue';
+
+  export default {
+    name: 'WorkflowCreate',
+    components: {
+      WorkflowFormBase,
+    },
+    setup() {
+      const router = useRouter();
+      const toast = useToast();
+
+      const goBack = () => {
+        router.push('/workflows');
+      };
+
+      const saveWorkflow = async formData => {
+        try {
+          // TODO: API 호출로 워크플로우 저장
+          console.log('Saving workflow:', formData);
+
+          toast.show({
+            type: 'success',
+            message: '워크플로우가 성공적으로 생성되었습니다.',
+          });
+
+          setTimeout(() => {
+            router.push('/workflows');
+          }, 1500);
+        } catch (error) {
+          console.error('Failed to save workflow:', error);
+          toast.show({
+            type: 'error',
+            message: '워크플로우 생성 중 오류가 발생했습니다.',
+          });
+        }
+      };
+
+      return {
+        goBack,
+        saveWorkflow,
+      };
+    },
+  };
+</script>

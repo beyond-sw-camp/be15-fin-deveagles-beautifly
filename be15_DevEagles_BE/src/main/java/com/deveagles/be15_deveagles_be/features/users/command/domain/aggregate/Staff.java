@@ -1,8 +1,8 @@
 package com.deveagles.be15_deveagles_be.features.users.command.domain.aggregate;
 
 import jakarta.persistence.*;
+import java.sql.Date;
 import java.time.LocalDateTime;
-import java.util.Date;
 import lombok.*;
 
 @Getter

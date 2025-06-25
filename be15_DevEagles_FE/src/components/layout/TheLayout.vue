@@ -15,9 +15,7 @@
         @click="toggleChat"
       >
         <MessageCircleIcon class="chat-icon" />
-        <transition name="fade">
-          <span v-if="isHovered" class="chat-label">1:1 문의하기</span>
-        </transition>
+        <span class="chat-label" :class="{ visible: isHovered }">1:1 문의하기</span>
       </button>
     </div>
 
@@ -107,17 +105,21 @@
   }
 
   .chat-label {
-    white-space: nowrap;
-  }
-
-  .fade-enter-active,
-  .fade-leave-active {
-    transition: opacity 0.2s ease;
-  }
-
-  .fade-enter-from,
-  .fade-leave-to {
+    max-width: 0;
     opacity: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    transform: translateX(-6px);
+    transition:
+      max-width 0.3s ease,
+      opacity 0.3s ease,
+      transform 0.3s ease;
+  }
+
+  .chat-label.visible {
+    max-width: 100px;
+    opacity: 1;
+    transform: translateX(0);
   }
 
   @media (max-width: 768px) {

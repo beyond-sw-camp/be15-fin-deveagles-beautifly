@@ -20,6 +20,9 @@ public class Tag {
   @Column(name = "tag_id")
   private Long id;
 
+  @Column(name = "shop_id", nullable = false)
+  private Long shopId;
+
   @Column(name = "tag_name", nullable = false, length = 10)
   private String tagName;
 

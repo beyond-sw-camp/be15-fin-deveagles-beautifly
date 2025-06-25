@@ -14,6 +14,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class CreateCustomerGradeRequest {
 
+  @NotNull(message = "매장 ID는 필수입니다.") private Long shopId;
+
   @NotBlank(message = "고객등급명은 필수입니다.")
   @Size(max = 10, message = "고객등급명은 10자 이하여야 합니다.")
   private String customerGradeName;
