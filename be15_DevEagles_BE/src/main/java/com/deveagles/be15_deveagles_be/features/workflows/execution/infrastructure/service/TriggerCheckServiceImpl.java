@@ -1,8 +1,10 @@
-package com.deveagles.be15_deveagles_be.features.workflows.command.application.service;
+package com.deveagles.be15_deveagles_be.features.workflows.execution.infrastructure.service;
 
 import com.deveagles.be15_deveagles_be.features.workflows.command.domain.aggregate.Workflow;
 import com.deveagles.be15_deveagles_be.features.workflows.command.domain.repository.WorkflowRepository;
 import com.deveagles.be15_deveagles_be.features.workflows.command.domain.vo.TriggerConfig;
+import com.deveagles.be15_deveagles_be.features.workflows.execution.application.service.TriggerCheckService;
+import com.deveagles.be15_deveagles_be.features.workflows.execution.application.service.WorkflowExecutionService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -13,26 +15,21 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class TriggerCheckService {
+public class TriggerCheckServiceImpl implements TriggerCheckService {
 
   private final WorkflowRepository workflowRepository;
   private final WorkflowExecutionService workflowExecutionService;
   private final ObjectMapper objectMapper;
-  private final CustomerEventService customerEventService;
+  private final MockCustomerEventService customerEventService;
 
-  /** 고객 방문 이벤트에 따른 트리거 체크 */
   @EventListener
+  @Override
   public void onCustomerVisit(CustomerVisitEvent event) {
     log.debug("고객 방문 이벤트 처리: 고객 ID={}, 매장 ID={}", event.getCustomerId(), event.getShopId());
 
     try {
-      // 방문 주기 기반 워크플로우 체크
       checkVisitCycleTriggers(event);
-
-      // 특정 시술 후 워크플로우 체크
       checkSpecificTreatmentTriggers(event);
-
-      // 방문 횟수 마일스톤 체크
       checkVisitMilestoneTriggers(event);
 
     } catch (Exception e) {
@@ -40,13 +37,12 @@ public class TriggerCheckService {
     }
   }
 
-  /** 고객 등록 이벤트에 따른 트리거 체크 */
   @EventListener
+  @Override
   public void onCustomerRegistration(CustomerRegistrationEvent event) {
     log.debug("고객 등록 이벤트 처리: 고객 ID={}, 매장 ID={}", event.getCustomerId(), event.getShopId());
 
     try {
-      // 신규 고객 팔로업 워크플로우 체크
       List<Workflow> newCustomerWorkflows =
           workflowRepository.findByTriggerTypeAndShopId("new-customer-followup", event.getShopId());
 
@@ -63,8 +59,8 @@ public class TriggerCheckService {
     }
   }
 
-  /** 결제 완료 이벤트에 따른 트리거 체크 */
   @EventListener
+  @Override
   public void onPaymentCompleted(PaymentCompletedEvent event) {
     log.debug(
         "결제 완료 이벤트 처리: 고객 ID={}, 매장 ID={}, 금액={}",
@@ -73,7 +69,6 @@ public class TriggerCheckService {
         event.getAmount());
 
     try {
-      // 누적 금액 마일스톤 체크
       checkAmountMilestoneTriggers(event);
 
     } catch (Exception e) {
@@ -91,7 +86,6 @@ public class TriggerCheckService {
       try {
         TriggerConfig triggerConfig = parseTriggerConfig(workflow.getTriggerConfig());
 
-        // 고객의 마지막 방문일 체크
         boolean shouldTrigger =
             customerEventService.checkVisitCycle(
                 event.getCustomerId(), event.getShopId(), triggerConfig.getVisitCycleDays());
@@ -119,7 +113,6 @@ public class TriggerCheckService {
       try {
         TriggerConfig triggerConfig = parseTriggerConfig(workflow.getTriggerConfig());
 
-        // 특정 시술과 매치되는지 체크
         if (event.getTreatmentId().equals(triggerConfig.getTreatmentId())) {
           log.info(
               "특정 시술 후 트리거 실행: 워크플로우 ID={}, 고객 ID={}, 시술 ID={}",
@@ -145,7 +138,6 @@ public class TriggerCheckService {
       try {
         TriggerConfig triggerConfig = parseTriggerConfig(workflow.getTriggerConfig());
 
-        // 고객의 총 방문 횟수 체크
         int totalVisits =
             customerEventService.getTotalVisitCount(event.getCustomerId(), event.getShopId());
 
@@ -174,7 +166,6 @@ public class TriggerCheckService {
       try {
         TriggerConfig triggerConfig = parseTriggerConfig(workflow.getTriggerConfig());
 
-        // 고객의 누적 결제 금액 체크
         long totalAmount =
             customerEventService.getTotalPaymentAmount(event.getCustomerId(), event.getShopId());
 
@@ -204,101 +195,12 @@ public class TriggerCheckService {
       return TriggerConfig.builder().build();
     }
   }
-}
 
-/** 고객 관련 이벤트 클래스들 */
-class CustomerVisitEvent {
-  private final Long customerId;
-  private final Long shopId;
-  private final String treatmentId;
-  private final java.time.LocalDateTime visitTime;
+  interface CustomerEventService {
+    boolean checkVisitCycle(Long customerId, Long shopId, Integer cycleDays);
 
-  public CustomerVisitEvent(
-      Long customerId, Long shopId, String treatmentId, java.time.LocalDateTime visitTime) {
-    this.customerId = customerId;
-    this.shopId = shopId;
-    this.treatmentId = treatmentId;
-    this.visitTime = visitTime;
+    int getTotalVisitCount(Long customerId, Long shopId);
+
+    long getTotalPaymentAmount(Long customerId, Long shopId);
   }
-
-  public Long getCustomerId() {
-    return customerId;
-  }
-
-  public Long getShopId() {
-    return shopId;
-  }
-
-  public String getTreatmentId() {
-    return treatmentId;
-  }
-
-  public java.time.LocalDateTime getVisitTime() {
-    return visitTime;
-  }
-}
-
-class CustomerRegistrationEvent {
-  private final Long customerId;
-  private final Long shopId;
-  private final java.time.LocalDateTime registrationTime;
-
-  public CustomerRegistrationEvent(
-      Long customerId, Long shopId, java.time.LocalDateTime registrationTime) {
-    this.customerId = customerId;
-    this.shopId = shopId;
-    this.registrationTime = registrationTime;
-  }
-
-  public Long getCustomerId() {
-    return customerId;
-  }
-
-  public Long getShopId() {
-    return shopId;
-  }
-
-  public java.time.LocalDateTime getRegistrationTime() {
-    return registrationTime;
-  }
-}
-
-class PaymentCompletedEvent {
-  private final Long customerId;
-  private final Long shopId;
-  private final Long amount;
-  private final java.time.LocalDateTime paymentTime;
-
-  public PaymentCompletedEvent(
-      Long customerId, Long shopId, Long amount, java.time.LocalDateTime paymentTime) {
-    this.customerId = customerId;
-    this.shopId = shopId;
-    this.amount = amount;
-    this.paymentTime = paymentTime;
-  }
-
-  public Long getCustomerId() {
-    return customerId;
-  }
-
-  public Long getShopId() {
-    return shopId;
-  }
-
-  public Long getAmount() {
-    return amount;
-  }
-
-  public java.time.LocalDateTime getPaymentTime() {
-    return paymentTime;
-  }
-}
-
-/** 고객 이벤트 서비스 인터페이스 */
-interface CustomerEventService {
-  boolean checkVisitCycle(Long customerId, Long shopId, Integer cycleDays);
-
-  int getTotalVisitCount(Long customerId, Long shopId);
-
-  long getTotalPaymentAmount(Long customerId, Long shopId);
 }
