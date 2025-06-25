@@ -1,5 +1,6 @@
 package com.deveagles.be15_deveagles_be.features.shops.command.application.service;
 
+import com.deveagles.be15_deveagles_be.features.schedules.command.application.service.ReservationSettingInitializer;
 import com.deveagles.be15_deveagles_be.features.shops.command.application.dto.request.ShopCreateRequest;
 import com.deveagles.be15_deveagles_be.features.shops.command.application.dto.request.ValidBizNumberRequest;
 import com.deveagles.be15_deveagles_be.features.shops.command.domain.aggregate.Shop;
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Service;
 public class ShopCommandServiceImpl implements ShopCommandService {
 
   private final ShopRepository shopRepository;
+  private final ReservationSettingInitializer reservationSettingInitializer;
 
   @Override
   public Shop shopRegist(ShopCreateRequest request) {
@@ -29,7 +31,13 @@ public class ShopCommandServiceImpl implements ShopCommandService {
             .shopDescription(request.description())
             .build();
 
-    return shopRepository.save(shop);
+    // 1. 먼저 Shop 저장
+    Shop savedShop = shopRepository.save(shop);
+
+    // 2. 저장된 shop의 ID를 이용해 예약 설정 초기화
+    reservationSettingInitializer.initDefault(savedShop.getShopId());
+
+    return savedShop;
   }
 
   @Override
