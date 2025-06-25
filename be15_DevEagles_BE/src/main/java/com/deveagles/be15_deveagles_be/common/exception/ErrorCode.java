@@ -53,7 +53,14 @@ public enum ErrorCode implements ErrorCodeType {
   // 예약 설정 관련 에러 (70000번대)
   INVALID_RESERVATION_TIME_RANGE("70001", "예약 시작 시간은 종료 시간보다 빨라야 합니다", HttpStatus.BAD_REQUEST),
   INVALID_LUNCH_TIME_RANGE("70002", "점심시간은 예약 가능 시간 범위 내여야 합니다", HttpStatus.BAD_REQUEST),
-  INVALID_LUNCH_TIME_ORDER("70003", "점심시간 시작은 종료보다 빨라야 합니다", HttpStatus.BAD_REQUEST);
+  INVALID_LUNCH_TIME_ORDER("70003", "점심시간 시작은 종료보다 빨라야 합니다", HttpStatus.BAD_REQUEST),
+
+  // 상품, 회원권 관련 에러 (상품 :81000번대, 회원권: 82000번대)
+  PRIMARY_ITEM_NAME_REQUIRED("81001", "1차 분류명은 필수입니다", HttpStatus.BAD_REQUEST),
+  PRIMARY_ITEM_CATEGORY_REQUIRED("81002", "카테고리는 필수입니다", HttpStatus.BAD_REQUEST),
+  INVALID_PRIMARY_ITEM_INPUT("81003", "잘못된 1차 상품 입력값입니다", HttpStatus.BAD_REQUEST);
+
+  // 매출 관련 에러 (90000번대)
 
   private final String code;
   private final String message;

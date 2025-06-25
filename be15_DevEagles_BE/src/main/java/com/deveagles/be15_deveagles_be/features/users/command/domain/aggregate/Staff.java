@@ -48,14 +48,14 @@ public class Staff {
   private String staffDescription;
 
   @Column(name = "color_code", nullable = false)
-  private String colorCode;
+  private String colorCode = "#364f6b";
 
   @Column(name = "profile_url")
   private String profileUrl;
 
   @Enumerated(EnumType.STRING)
   @Column(name = "staff_status", nullable = false)
-  private StaffStatus staffStatus = StaffStatus.STAFF;
+  private StaffStatus staffStatus;
 
   @Column(name = "created_at", nullable = false, updatable = false)
   private LocalDateTime createdAt;
@@ -79,6 +79,10 @@ public class Staff {
     this.grade = grade;
     this.phoneNumber = phoneNumber;
     this.email = email;
+    this.colorCode = "#364f6b";
+    this.staffStatus = StaffStatus.STAFF;
+    this.createdAt = LocalDateTime.now();
+    this.modifiedAt = LocalDateTime.now();
   }
 
   public void setProfile(String profileUrl, String staffName, String grade) {

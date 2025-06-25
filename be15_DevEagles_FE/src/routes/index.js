@@ -69,7 +69,7 @@ const routes = [
       {
         path: 'item/service',
         name: 'ItemService',
-        component: () => import('@/features/item/view/ItemView.vue'),
+        component: () => import('@/features/items/views/ItemView.vue'),
       },
       {
         path: 'item/membership',

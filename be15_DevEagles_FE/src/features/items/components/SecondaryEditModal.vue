@@ -23,6 +23,12 @@
       <BaseForm v-model.number="form.price" type="number" step="100" placeholder="금액" />
     </div>
 
+    <!-- 시술 시간 -->
+    <div v-if="selectedPrimary?.category === 'SERVICE'" class="form-group">
+      <label>시술 시간 (분)</label>
+      <BaseForm v-model.number="form.duration" type="number" step="5" placeholder="예: 60" />
+    </div>
+
     <!-- 하단 버튼 -->
     <template #footer>
       <div class="footer-buttons">
@@ -70,6 +76,10 @@
     set: val => emit('update:modelValue', val),
   });
 
+  const selectedPrimary = computed(() =>
+    props.primaryOptions.find(opt => opt.id === form.value.primaryItemId)
+  );
+
   const showDeleteModal = ref(false);
 
   const submit = () => {
@@ -94,7 +104,6 @@
     margin-bottom: 4px;
   }
 
-  /* 버튼 정렬 */
   .footer-buttons {
     display: flex;
     justify-content: space-between;

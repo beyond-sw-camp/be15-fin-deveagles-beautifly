@@ -85,7 +85,7 @@
 
 <script setup>
   import { computed, onMounted } from 'vue';
-  import BaseItemModal from '@/features/item/components/BaseItemModal.vue';
+  import BaseItemModal from '@/features/items/components/BaseItemModal.vue';
   import BaseForm from '@/components/common/BaseForm.vue';
   import BaseButton from '@/components/common/BaseButton.vue';
   import '@/features/membership/styles//MembershipModal.css';
