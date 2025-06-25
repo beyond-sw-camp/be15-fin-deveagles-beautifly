@@ -99,6 +99,10 @@ public class WorkflowExecution {
     this.failureCount = failureCount;
   }
 
+  public void setTargetCount(Integer targetCount) {
+    this.targetCount = targetCount;
+  }
+
   public boolean isCompleted() {
     return "SUCCESS".equals(executionStatus)
         || "FAILED".equals(executionStatus)
