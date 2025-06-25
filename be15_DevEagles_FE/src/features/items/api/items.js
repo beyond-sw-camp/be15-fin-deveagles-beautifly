@@ -10,20 +10,3 @@ export const registerPrimaryItem = async ({ shopId, category, primaryItemName })
 
   return response.data.data; // ApiResponse의 data 반환
 };
-
-// 2차 상품 등록 요청
-export const registerSecondaryItem = async ({
-  primaryItemId,
-  secondaryItemName,
-  secondaryItemPrice,
-  timeTaken,
-}) => {
-  const response = await api.post('/secondary-items', {
-    primaryItemId,
-    secondaryItemName,
-    secondaryItemPrice,
-    timeTaken,
-  });
-
-  return response.data.data;
-};

@@ -2,7 +2,7 @@ package com.deveagles.be15_deveagles_be.features.items.command.application.contr
 
 import com.deveagles.be15_deveagles_be.common.dto.ApiResponse;
 import com.deveagles.be15_deveagles_be.features.items.command.application.dto.request.PrimaryItemRegistRequest;
-import com.deveagles.be15_deveagles_be.features.items.command.application.service.PrimaryItemCommandService;
+import com.deveagles.be15_deveagles_be.features.items.command.application.service.PrimaryItemServiceCommand;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -17,9 +17,9 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 @Validated
 @Slf4j
-public class PrimaryItemController {
+public class PrimaryItemCommandController {
 
-  private final PrimaryItemCommandService primaryItemServiceCommand;
+  private final PrimaryItemServiceCommand primaryItemServiceCommand;
 
   @Operation(summary = "1차 상품 등록", description = "1차 상품을 등록합니다.")
   @PostMapping

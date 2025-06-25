@@ -143,8 +143,22 @@
     },
     {
       primary_item_id: 2,
-      primary_item_name: '펌',
+      primary_item_name: '염색',
       category: 'SERVICE',
+      subItems: [
+        {
+          secondary_item_id: 21,
+          secondary_item_name: '전체염색',
+          secondary_item_price: 120000,
+          duration: 60,
+        },
+        {
+          secondary_item_id: 22,
+          secondary_item_name: '탈색',
+          secondary_item_price: 150000,
+          duration: 70,
+        },
+      ],
     },
     {
       primary_item_id: 3,
@@ -321,7 +335,6 @@
       primaryItemId: item.primary_item_id,
       secondaryName: sub.secondary_item_name,
       price: sub.secondary_item_price,
-      isActive: sub.isActive ?? true,
     };
     showDropdownId.value = null;
     showRegisterDropdown.value = false;
