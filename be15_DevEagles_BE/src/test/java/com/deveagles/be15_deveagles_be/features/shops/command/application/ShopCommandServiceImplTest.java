@@ -2,6 +2,7 @@ package com.deveagles.be15_deveagles_be.features.shops.command.application;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import com.deveagles.be15_deveagles_be.features.schedules.command.application.service.ReservationSettingInitializer;
 import com.deveagles.be15_deveagles_be.features.shops.command.application.dto.request.ShopCreateRequest;
 import com.deveagles.be15_deveagles_be.features.shops.command.application.dto.request.ValidBizNumberRequest;
 import com.deveagles.be15_deveagles_be.features.shops.command.application.service.ShopCommandServiceImpl;
@@ -22,15 +23,17 @@ public class ShopCommandServiceImplTest {
 
   @Mock private ShopRepository shopRepository;
 
+  @Mock private ReservationSettingInitializer reservationSettingInitializer;
+
   private ShopCommandServiceImpl service;
 
   @BeforeEach
   void setUp() {
-    service = new ShopCommandServiceImpl(shopRepository);
+    service = new ShopCommandServiceImpl(shopRepository, reservationSettingInitializer);
   }
 
   @Test
-  @DisplayName("shopRegist: 신규 매장 등록이 정상적으로 수행된다")
+  @DisplayName("shopRegist: 신규 매장 등록 시 정상적으로 수행되고 예약 설정도 초기화된다")
   void shopRegist_정상_등록_테스트() {
     // given
     ShopCreateRequest request =
@@ -46,6 +49,7 @@ public class ShopCommandServiceImplTest {
 
     Shop expectedShop =
         Shop.builder()
+            .shopId(1L)
             .shopName("디브이헤어")
             .address("서울특별시 강남구 테헤란로")
             .detailAddress("101호")
@@ -64,6 +68,8 @@ public class ShopCommandServiceImplTest {
     assertEquals("디브이헤어", result.getShopName());
     assertEquals("1234567890", result.getBusinessNumber());
     assertEquals("프리미엄 헤어샵", result.getShopDescription());
+
+    Mockito.verify(reservationSettingInitializer).initDefault(1L);
   }
 
   @Test
@@ -102,7 +108,6 @@ public class ShopCommandServiceImplTest {
   void patchOwnerId_테스트() {
     // given
     Shop shop = Shop.builder().shopName("디브이헤어").build();
-
     Long ownerId = 999L;
 
     // when

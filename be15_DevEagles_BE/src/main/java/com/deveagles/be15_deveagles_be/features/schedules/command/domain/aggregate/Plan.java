@@ -34,4 +34,11 @@ public class Plan {
 
   @Column(name = "plan_end_at", nullable = false)
   private LocalDateTime planEndAt;
+
+  public void update(String title, String memo, LocalDateTime start, LocalDateTime end) {
+    this.planTitle = title;
+    this.planMemo = memo;
+    this.planStartAt = start;
+    this.planEndAt = end;
+  }
 }

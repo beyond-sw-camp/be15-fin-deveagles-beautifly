@@ -14,7 +14,7 @@
             rs.available_end_time,
             rs.lunch_start_time,
             rs.lunch_end_time,
-            s.reservation_unit_minutes
+            s.reservation_term
         FROM reservation_setting rs
                  JOIN shop s ON rs.shop_id = s.shop_id
         WHERE rs.shop_id = #{shopId}
