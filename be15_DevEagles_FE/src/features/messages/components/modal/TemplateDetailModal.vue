@@ -20,7 +20,6 @@
     <div class="detail-content">
       <p><strong>템플릿명:</strong> {{ template?.name }}</p>
       <p><strong>유형:</strong> {{ template?.type || '없음' }}</p>
-      <!-- ✅ 유형 추가 -->
       <p><strong>등록일:</strong> {{ template?.createdAt }}</p>
       <p><strong>내용:</strong></p>
       <div class="content-box">{{ template?.content }}</div>

@@ -1,4 +1,3 @@
-// ✅ TemplateListView.vue
 <template>
   <div class="template-list-view">
     <!-- 상단 헤더 -->

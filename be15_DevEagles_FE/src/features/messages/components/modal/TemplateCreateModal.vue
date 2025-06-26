@@ -94,7 +94,6 @@
     <div class="space-y-4">
       <BaseForm v-model="name" label="템플릿명" placeholder="예: 예약 안내" />
 
-      <!-- ✅ 드롭다운 & 텍스트 영역 -->
       <div class="form-group relative z-0">
         <div class="form-label-area">
           <label class="form-label">내용</label>

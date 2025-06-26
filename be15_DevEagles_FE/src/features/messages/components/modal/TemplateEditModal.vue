@@ -113,7 +113,6 @@
     <div class="space-y-4">
       <BaseForm v-model="name" type="input" label="템플릿명" placeholder="예: 예약 안내" />
 
-      <!-- ✅ 내용 + 변수 삽입 드롭다운 -->
       <div class="form-group relative z-0">
         <div class="form-label-area">
           <label class="form-label">내용</label>

@@ -19,7 +19,6 @@
 
   const toastRef = ref();
 
-  // ✅ 자동 발신 항목 (label + messages 구조)
   const autoSendItems = ref([
     {
       label: '신규 고객 등록',
