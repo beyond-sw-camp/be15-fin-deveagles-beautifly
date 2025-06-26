@@ -25,20 +25,38 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-node-
 
+      - name: Debug file structure
+        run: |
+          echo "Current directory:"
+          pwd
+          echo "Contents:"
+          ls -la
+          echo "be15_DevEagles_FE contents:"
+          ls -la be15_DevEagles_FE/
+          echo "Checking package files:"
+          ls -la be15_DevEagles_FE/package*
+
       - name: Install dependencies
-        working-directory: ./be15_DevEagles_FE
-        run: npm ci
+        working-directory: be15_DevEagles_FE
+        run: |
+          if [ -f package-lock.json ]; then
+            echo "Found package-lock.json, using npm ci"
+            npm ci
+          else
+            echo "No package-lock.json found, using npm install"
+            npm install
+          fi
 
       - name: Install Playwright Browsers
-        working-directory: ./be15_DevEagles_FE
+        working-directory: be15_DevEagles_FE
         run: npx playwright install --with-deps
 
       - name: Build application
-        working-directory: ./be15_DevEagles_FE
+        working-directory: be15_DevEagles_FE
         run: npm run build
 
       - name: Run Playwright tests
-        working-directory: ./be15_DevEagles_FE
+        working-directory: be15_DevEagles_FE
         run: npx playwright test
 
       - name: Upload Playwright Report
