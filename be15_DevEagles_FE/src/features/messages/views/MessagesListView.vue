@@ -5,8 +5,8 @@
   import MessageSendModal from '../components/modal/MessageSendModal.vue';
   import SendConfirmModal from '../components/modal/SendConfirmModal.vue';
   import ReservationSendModal from '../components/modal/ReservationSendModal.vue';
-  import TemplateSelectDrawer from '@/features/messages/components/TemplateSelectDrawer.vue';
-  import CustomerSelectDrawer from '@/features/messages/components/CustomerSelectDrawer.vue';
+  import TemplateSelectDrawer from '@/features/messages/components/drawer/TemplateSelectDrawer.vue';
+  import CustomerSelectDrawer from '@/features/messages/components/drawer/CustomerSelectDrawer.vue';
   import BaseButton from '@/components/common/BaseButton.vue';
   import BaseToast from '@/components/common/BaseToast.vue';
   import BaseTable from '@/components/common/BaseTable.vue';
