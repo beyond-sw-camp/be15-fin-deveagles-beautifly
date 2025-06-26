@@ -1,5 +1,5 @@
 <script setup>
-  import { ref, computed, nextTick } from 'vue';
+  import { ref, computed, nextTick, onMounted, onBeforeUnmount } from 'vue';
   import BaseModal from '@/components/common/BaseModal.vue';
   import BaseForm from '@/components/common/BaseForm.vue';
   import BaseButton from '@/components/common/BaseButton.vue';
@@ -18,11 +18,18 @@
   const content = ref('');
   const grade = ref('전체');
   const tags = ref('');
-  const type = ref('안내'); // ✅ 유형 추가
+  const type = ref('안내');
   const showDropdown = ref(false);
   const contentWrapper = ref(null);
+  const dropdownWrapper = ref(null);
 
-  const variables = ['#{고객명}', '#{잔여선불충전액}', '#{잔여포인트}', '#{상점명}'];
+  const variables = [
+    '#{고객명}',
+    '#{잔여선불충전액}',
+    '#{잔여포인트}',
+    '#{상점명}',
+    '#{인스타url}',
+  ];
 
   function insertVariable(variable) {
     const textarea = contentWrapper.value?.querySelector('textarea');
@@ -45,6 +52,19 @@
     showDropdown.value = !showDropdown.value;
   }
 
+  function handleClickOutside(event) {
+    if (dropdownWrapper.value && !dropdownWrapper.value.contains(event.target)) {
+      showDropdown.value = false;
+    }
+  }
+
+  onMounted(() => {
+    window.addEventListener('click', handleClickOutside);
+  });
+  onBeforeUnmount(() => {
+    window.removeEventListener('click', handleClickOutside);
+  });
+
   function close() {
     visible.value = false;
   }
@@ -61,7 +81,7 @@
         .split(',')
         .map(t => t.trim())
         .filter(Boolean),
-      type: type.value, // ✅ 포함
+      type: type.value,
       createdAt: new Date().toISOString().slice(0, 10),
     });
 
@@ -74,26 +94,36 @@
     <div class="space-y-4">
       <BaseForm v-model="name" label="템플릿명" placeholder="예: 예약 안내" />
 
-      <div class="form-group">
-        <label class="form-label flex justify-between items-center">
-          <span>내용</span>
-          <BaseButton size="xs" type="ghost" @click.stop="toggleDropdown"> 변수 삽입 ▼ </BaseButton>
-        </label>
-        <div ref="contentWrapper" class="relative" @click.self="showDropdown = false">
+      <!-- ✅ 드롭다운 & 텍스트 영역 -->
+      <div class="form-group relative z-0">
+        <div class="form-label-area">
+          <label class="form-label">내용</label>
+
+          <div ref="dropdownWrapper" class="dropdown-wrapper">
+            <BaseButton size="xs" type="ghost" @click.stop="toggleDropdown">
+              변수 삽입 ▼
+            </BaseButton>
+
+            <div v-if="showDropdown" class="dropdown-list">
+              <div
+                v-for="v in variables"
+                :key="v"
+                class="insert-item"
+                @click.stop="insertVariable(v)"
+              >
+                {{ v }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div ref="contentWrapper">
           <BaseForm
             v-model="content"
             type="textarea"
             :rows="8"
             placeholder="메시지 내용을 입력하세요"
           />
-          <div
-            v-if="showDropdown"
-            class="absolute z-10 mt-1 right-0 bg-white border border-gray-200 rounded shadow p-2 w-48"
-          >
-            <div v-for="v in variables" :key="v" class="insert-item" @click="insertVariable(v)">
-              {{ v }}
-            </div>
-          </div>
         </div>
       </div>
 
@@ -133,6 +163,29 @@
 </template>
 
 <style scoped>
+  .form-label-area {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .dropdown-wrapper {
+    position: relative;
+  }
+  .dropdown-list {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 4px;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+    z-index: 999;
+
+    min-width: max-content;
+    white-space: nowrap;
+    padding: 4px 0;
+  }
   .insert-item {
     @apply py-1 px-2 text-sm hover:bg-gray-100 rounded cursor-pointer;
   }
