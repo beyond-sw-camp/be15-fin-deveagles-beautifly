@@ -1,7 +1,5 @@
 package com.deveagles.be15_deveagles_be.features.items.command.application.service.impl;
 
-import static com.deveagles.be15_deveagles_be.features.items.command.domain.aggregate.QPrimaryItem.primaryItem;
-
 import com.deveagles.be15_deveagles_be.common.exception.BusinessException;
 import com.deveagles.be15_deveagles_be.common.exception.ErrorCode;
 import com.deveagles.be15_deveagles_be.features.items.command.application.dto.request.PrimaryItemRequest;
@@ -9,6 +7,7 @@ import com.deveagles.be15_deveagles_be.features.items.command.application.servic
 import com.deveagles.be15_deveagles_be.features.items.command.domain.aggregate.PrimaryItem;
 import com.deveagles.be15_deveagles_be.features.items.command.domain.repository.PrimaryItemRepository;
 import com.deveagles.be15_deveagles_be.features.shops.command.domain.aggregate.Shop;
+import com.deveagles.be15_deveagles_be.features.shops.command.repository.ShopRepository;
 import java.time.LocalDateTime;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +18,7 @@ import org.springframework.stereotype.Service;
 public class PrimaryItemCommandServiceImpl implements PrimaryItemCommandService {
 
   private final PrimaryItemRepository primaryItemRepository;
+  private final ShopRepository shopRepository;
 
   @Override
   public void registerPrimaryItem(PrimaryItemRequest request) {
@@ -35,12 +35,20 @@ public class PrimaryItemCommandServiceImpl implements PrimaryItemCommandService 
       throw new BusinessException(ErrorCode.PRIMARY_ITEM_CATEGORY_REQUIRED);
     }
 
-    // 하드코딩된 Shop 객체 (shop_id = 1)
-    Shop dummyShop = Shop.builder().shopId(1L).build();
+    if (Objects.isNull(request.getShopId())) {
+      throw new BusinessException(ErrorCode.ITEMS_SHOP_ID_REQUIRED);
+    }
 
+    // Shop 조회
+    Shop shop =
+        shopRepository
+            .findById(request.getShopId())
+            .orElseThrow(() -> new BusinessException(ErrorCode.ITEMS_SHOP_NOT_FOUND));
+
+    // PrimaryItem 생성
     PrimaryItem primaryItem =
         PrimaryItem.builder()
-            .shopId(dummyShop)
+            .shopId(shop)
             .primaryItemName(request.getPrimaryItemName())
             .category(request.getCategory())
             .createdAt(LocalDateTime.now())
@@ -64,11 +72,17 @@ public class PrimaryItemCommandServiceImpl implements PrimaryItemCommandService 
       throw new BusinessException(ErrorCode.PRIMARY_ITEM_CATEGORY_REQUIRED);
     }
 
-    if (!Objects.equals(request.getShopId(), 1L)) {
-      throw new BusinessException(ErrorCode.INVALID_SHOP_ID);
+    if (Objects.isNull(request.getShopId())) {
+      throw new BusinessException(ErrorCode.ITEMS_SHOP_ID_REQUIRED);
     }
 
-    // 기존 엔티티 조회
+    // Shop 유효성 검증
+    boolean shopExists = shopRepository.existsById(request.getShopId());
+    if (!shopExists) {
+      throw new BusinessException(ErrorCode.ITEMS_SHOP_NOT_FOUND);
+    }
+
+    // PrimaryItem 조회
     PrimaryItem primaryItem =
         primaryItemRepository
             .findById(primaryItemId)
@@ -77,7 +91,6 @@ public class PrimaryItemCommandServiceImpl implements PrimaryItemCommandService 
     // 필드 수정
     primaryItem.updatePrimaryItem(request.getPrimaryItemName(), request.getCategory());
 
-    // 저장
     primaryItemRepository.save(primaryItem);
   }
 
