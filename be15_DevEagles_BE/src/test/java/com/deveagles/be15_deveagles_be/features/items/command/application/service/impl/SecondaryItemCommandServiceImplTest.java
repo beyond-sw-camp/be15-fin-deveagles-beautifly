@@ -1,6 +1,8 @@
 package com.deveagles.be15_deveagles_be.features.items.command.application.service.impl;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hibernate.validator.internal.util.Contracts.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
 
@@ -217,5 +219,46 @@ class SecondaryItemCommandServiceImplTest {
         assertThrows(
             BusinessException.class, () -> service.updateSecondaryItem(secondaryItemId, request));
     assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.SECONDARY_ITEM_SERVICE_TIME_REQUIRED);
+  }
+
+  @Test
+  @DisplayName("성공: 2차 상품 삭제 수행")
+  void deleteSecondaryItem_success() {
+    Long id = 1L;
+    SecondaryItem item =
+        SecondaryItem.builder()
+            .secondaryItemId(id)
+            .secondaryItemName("디자인컷")
+            .primaryItemId(1L) // 1차 상품 ID 연결
+            .secondaryItemPrice(30000)
+            .build();
+
+    // secondaryItemRepository에서 해당 ID의 아이템을 찾을 수 있도록 설정
+    when(secondaryItemRepository.findById(id)).thenReturn(Optional.of(item));
+
+    // 삭제 메서드 호출
+    service.deleteSecondaryItem(id);
+
+    // 삭제된 시간이 설정됐는지 확인
+    assertNotNull(item.getDeletedAt());
+
+    // secondaryItemRepository에 save 메서드가 호출되었는지 검증
+    verify(secondaryItemRepository).save(item);
+  }
+
+  @Test
+  @DisplayName("실패: 삭제 시 존재하지 않는 ID일 경우 예외 발생")
+  void deleteSecondaryItem_notFound_throwsException() {
+    Long id = 999L;
+
+    // 존재하지 않는 ID로 찾을 때 Optional.empty()를 반환하도록 설정
+    when(secondaryItemRepository.findById(id)).thenReturn(Optional.empty());
+
+    // 예외가 발생하는지 확인
+    BusinessException exception =
+        assertThrows(BusinessException.class, () -> service.deleteSecondaryItem(id));
+
+    // 예외 코드가 맞는지 확인
+    assertEquals(ErrorCode.SECONDARY_ITEM_NOT_FOUND, exception.getErrorCode());
   }
 }

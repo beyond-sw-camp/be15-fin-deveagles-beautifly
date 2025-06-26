@@ -38,4 +38,11 @@ public class SecondaryItemCommandController {
     secondaryItemCommandService.updateSecondaryItem(secondaryItemId, request);
     return ResponseEntity.ok(ApiResponse.success(null));
   }
+
+  @Operation(summary = "2차 상품 삭제", description = "2차 상품을 soft delete 합니다.")
+  @DeleteMapping("/{secondaryItemId}")
+  public ResponseEntity<ApiResponse<Void>> deleteSecondaryItem(@PathVariable Long secondaryItemId) {
+    secondaryItemCommandService.deleteSecondaryItem(secondaryItemId);
+    return ResponseEntity.ok(ApiResponse.success(null));
+  }
 }
