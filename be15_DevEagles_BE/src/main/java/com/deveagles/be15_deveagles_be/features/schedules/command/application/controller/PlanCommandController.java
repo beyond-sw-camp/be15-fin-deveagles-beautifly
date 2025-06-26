@@ -49,7 +49,7 @@ public class PlanCommandController {
   // 단기 <-> 정기 전환
   @PostMapping("/plans/switch")
   public ResponseEntity<ApiResponse<Void>> switchSchedule(
-      @RequestBody UpdateScheduleRequest request) {
+      @RequestBody UpdatePlanScheduleRequest request) {
     planCommandService.switchSchedule(request);
     return ResponseEntity.ok(ApiResponse.success(null));
   }
