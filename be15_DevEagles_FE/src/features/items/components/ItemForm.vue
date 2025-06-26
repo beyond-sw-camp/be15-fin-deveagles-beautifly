@@ -25,15 +25,17 @@
     </div>
 
     <!-- 리스트 -->
-    <div v-for="item in filteredItems" :key="item.primary_item_id" class="card-section">
+    <div v-for="(item, index) in filteredItems" :key="item.primaryItemId" class="card-section">
       <BaseCard>
         <div class="card-title-row">
-          <span>{{ item.primary_item_name }}</span>
+          <span>{{ item.primaryItemName }}</span>
           <div class="text-right relative">
-            <button class="icon-button" @click.stop="toggleDropdown(item.primary_item_id)">
-              ···
-            </button>
-            <div v-if="showDropdownId === item.primary_item_id" class="dropdown-menu below-left">
+            <button class="icon-button" @click.stop="toggleDropdown(index)">···</button>
+            <div
+              v-if="showDropdownIndex === index"
+              :ref="el => setDropdownRef(index, el)"
+              class="dropdown-menu below-left"
+            >
               <div class="dropdown-item" @click="openPrimaryEditModal(item)">1차 상품 수정</div>
               <div class="dropdown-item" @click="deletePrimaryItem(item)">1차 상품 삭제</div>
             </div>
@@ -46,12 +48,12 @@
             <div class="text-right">가격</div>
             <div class="text-right">시술 시간</div>
           </div>
-          <div v-for="sub in item.subItems" :key="sub.secondary_item_id" class="card-row">
+          <div v-for="sub in item.subItems" :key="sub.secondaryItemId" class="card-row">
             <div class="clickable" @click="openSecondaryEditModal(item, sub)">
-              {{ sub.secondary_item_name }}
+              {{ sub.secondaryItemName }}
             </div>
             <div class="text-right clickable" @click="openSecondaryEditModal(item, sub)">
-              {{ formatPrice(sub.secondary_item_price) }}
+              {{ formatPrice(sub.secondaryItemPrice) }}
             </div>
             <div class="text-right clickable" @click="openSecondaryEditModal(item, sub)">
               {{ sub.duration ? sub.duration + '분' : '-' }}
@@ -99,7 +101,7 @@
 </template>
 
 <script setup>
-  import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
+  import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue';
   import BaseButton from '@/components/common/BaseButton.vue';
   import BaseCard from '@/components/common/BaseCard.vue';
   import BaseToast from '@/components/common/BaseToast.vue';
@@ -108,180 +110,73 @@
   import PrimaryEditModal from '@/features/items/components/PrimaryEditModal.vue';
   import SecondaryEditModal from '@/features/items/components/SecondaryEditModal.vue';
   import PrimaryDeleteModal from '@/features/items/components/PrimaryDeleteModal.vue';
+  import { getPrimaryItems } from '@/features/items/api/items.js';
 
   const toastRef = ref(null);
+  const showDropdownIndex = ref(null);
+  const dropdownRefsMap = new Map();
+
+  const setDropdownRef = (index, el) => {
+    if (el) dropdownRefsMap.set(index, el);
+    else dropdownRefsMap.delete(index);
+  };
+
+  const toggleDropdown = async index => {
+    if (showDropdownIndex.value === index) {
+      showDropdownIndex.value = null;
+    } else {
+      showDropdownIndex.value = index;
+      await nextTick();
+    }
+  };
+
+  const handleClickOutside = event => {
+    if (showDropdownIndex.value === null) return;
+    const currentDropdown = dropdownRefsMap.get(showDropdownIndex.value);
+    if (currentDropdown && !currentDropdown.contains(event.target)) {
+      showDropdownIndex.value = null;
+    }
+  };
+
+  const showRegisterDropdown = ref(false);
+  const toggleRegisterDropdown = () => {
+    showRegisterDropdown.value = !showRegisterDropdown.value;
+  };
 
   const activeTab = ref('시술');
-  const showRegisterDropdown = ref(false);
   const showPrimaryRegisterModal = ref(false);
   const showSecondaryRegisterModal = ref(false);
   const showPrimaryEditModal = ref(false);
   const showSecondaryEditModal = ref(false);
   const showPrimaryDeleteModal = ref(false);
-  const showDropdownId = ref(null);
   const selectedProduct = ref(null);
 
-  const items = ref([
-    {
-      primary_item_id: 1,
-      primary_item_name: '펌(남성)',
-      category: 'SERVICE',
-      subItems: [
-        {
-          secondary_item_id: 11,
-          secondary_item_name: '히피펌',
-          secondary_item_price: 158000,
-          duration: 90,
-        },
-        {
-          secondary_item_id: 12,
-          secondary_item_name: '스핀스왈로펌',
-          secondary_item_price: 168000,
-          duration: 80,
-        },
-      ],
-    },
-    {
-      primary_item_id: 2,
-      primary_item_name: '펌',
-      category: 'SERVICE',
-    },
-    {
-      primary_item_id: 3,
-      primary_item_name: '커트',
-      category: 'SERVICE',
-      subItems: [
-        {
-          secondary_item_id: 31,
-          secondary_item_name: '남성커트',
-          secondary_item_price: 25000,
-          duration: 20,
-        },
-        {
-          secondary_item_id: 32,
-          secondary_item_name: '여성커트',
-          secondary_item_price: 30000,
-          duration: 30,
-        },
-      ],
-    },
-    {
-      primary_item_id: 4,
-      primary_item_name: '헤어제품',
-      category: 'PRODUCT',
-      subItems: [
-        { secondary_item_id: 41, secondary_item_name: '샴푸', secondary_item_price: 20000 },
-        { secondary_item_id: 42, secondary_item_name: '트리트먼트', secondary_item_price: 35000 },
-      ],
-    },
-    {
-      primary_item_id: 5,
-      primary_item_name: '스타일링',
-      category: 'SERVICE',
-      subItems: [
-        {
-          secondary_item_id: 51,
-          secondary_item_name: '드라이',
-          secondary_item_price: 15000,
-          duration: 15,
-        },
-        {
-          secondary_item_id: 52,
-          secondary_item_name: '아이롱',
-          secondary_item_price: 20000,
-          duration: 20,
-        },
-      ],
-    },
-    {
-      primary_item_id: 6,
-      primary_item_name: '두피케어',
-      category: 'SERVICE',
-      subItems: [
-        {
-          secondary_item_id: 61,
-          secondary_item_name: '스케일링',
-          secondary_item_price: 40000,
-          duration: 30,
-        },
-        {
-          secondary_item_id: 62,
-          secondary_item_name: '마사지',
-          secondary_item_price: 50000,
-          duration: 35,
-        },
-      ],
-    },
-    {
-      primary_item_id: 7,
-      primary_item_name: '기초화장품',
-      category: 'PRODUCT',
-      subItems: [
-        { secondary_item_id: 71, secondary_item_name: '스킨', secondary_item_price: 18000 },
-        { secondary_item_id: 72, secondary_item_name: '로션', secondary_item_price: 22000 },
-      ],
-    },
-    {
-      primary_item_id: 8,
-      primary_item_name: '메이크업',
-      category: 'SERVICE',
-      subItems: [
-        {
-          secondary_item_id: 81,
-          secondary_item_name: '데일리 메이크업',
-          secondary_item_price: 60000,
-          duration: 45,
-        },
-        {
-          secondary_item_id: 82,
-          secondary_item_name: '혼주 메이크업',
-          secondary_item_price: 100000,
-          duration: 60,
-        },
-      ],
-    },
-    {
-      primary_item_id: 9,
-      primary_item_name: '클렌징',
-      category: 'PRODUCT',
-      subItems: [
-        { secondary_item_id: 91, secondary_item_name: '클렌징폼', secondary_item_price: 15000 },
-        { secondary_item_id: 92, secondary_item_name: '클렌징오일', secondary_item_price: 20000 },
-      ],
-    },
-    {
-      primary_item_id: 10,
-      primary_item_name: '속눈썹',
-      category: 'SERVICE',
-      subItems: [
-        {
-          secondary_item_id: 101,
-          secondary_item_name: '속눈썹 펌',
-          secondary_item_price: 30000,
-          duration: 25,
-        },
-        {
-          secondary_item_id: 102,
-          secondary_item_name: '속눈썹 연장',
-          secondary_item_price: 50000,
-          duration: 40,
-        },
-      ],
-    },
-  ]);
+  const primaryForm = ref({ category: 'SERVICE', primaryItemName: '' });
+  const secondaryForm = ref({ primaryItemId: '', secondaryItemName: '', secondaryItemPrice: '' });
+  const primaryEditForm = ref({ primaryItemId: '', category: '', primaryItemName: '' });
+  const secondaryEditForm = ref({
+    primaryItemId: '',
+    secondaryItemName: '',
+    secondaryItemPrice: '',
+  });
 
-  const primaryForm = ref({ category: 'SERVICE', primaryName: '' });
-  const secondaryForm = ref({ primaryItemId: '', secondaryName: '', price: '' });
-  const primaryEditForm = ref({ category: '', primaryName: '' });
-  const secondaryEditForm = ref({ primaryItemId: '', secondaryName: '', price: '' });
+  const items = ref([]);
 
-  const primaryOptions = computed(() =>
-    items.value.map(item => ({
-      id: item.primary_item_id,
-      name: item.primary_item_name,
-      category: item.category,
-    }))
-  );
+  const fetchPrimaryItems = async () => {
+    try {
+      const response = await getPrimaryItems();
+      items.value = response.map(item => ({
+        primaryItemId: item.primaryItemId,
+        primaryItemName: item.primaryItemName,
+        category: item.category,
+        subItems: item.subItems ?? [],
+      }));
+    } catch (error) {
+      toastRef.value?.error('1차 상품 목록을 불러오지 못했습니다.');
+    }
+  };
+
+  const formatPrice = val => `${val.toLocaleString('ko-KR')} 원`;
 
   const filteredItems = computed(() =>
     items.value.filter(
@@ -289,50 +184,53 @@
     )
   );
 
-  const formatPrice = val => `${val.toLocaleString('ko-KR')} 원`;
-
-  const toggleRegisterDropdown = () => (showRegisterDropdown.value = !showRegisterDropdown.value);
-  const toggleDropdown = id => (showDropdownId.value = showDropdownId.value === id ? null : id);
+  const primaryOptions = computed(() =>
+    items.value.map(item => ({
+      id: item.primaryItemId,
+      name: item.primaryItemName,
+      category: item.category,
+    }))
+  );
 
   const openPrimaryRegisterModal = () => {
     showRegisterDropdown.value = false;
-    showDropdownId.value = null;
-    showRegisterDropdown.value = false;
+    showDropdownIndex.value = null;
     showPrimaryRegisterModal.value = true;
   };
 
   const openSecondaryRegisterModal = () => {
     showRegisterDropdown.value = false;
-    showDropdownId.value = null;
-    showRegisterDropdown.value = false;
+    showDropdownIndex.value = null;
     showSecondaryRegisterModal.value = true;
   };
 
   const openPrimaryEditModal = item => {
-    primaryEditForm.value = { category: item.category, primaryName: item.primary_item_name };
+    primaryEditForm.value = {
+      primaryItemId: item.primaryItemId ?? item.id, // Fallback if key is id
+      category: item.category,
+      primaryItemName: item.primaryItemName,
+    };
     selectedProduct.value = item;
-    showDropdownId.value = null;
-    showRegisterDropdown.value = false;
+    showDropdownIndex.value = null;
     showPrimaryEditModal.value = true;
   };
 
   const openSecondaryEditModal = (item, sub) => {
     secondaryEditForm.value = {
-      primaryItemId: item.primary_item_id,
-      secondaryName: sub.secondary_item_name,
-      price: sub.secondary_item_price,
+      primaryItemId: item.primaryItemId,
+      secondaryItemName: sub.secondaryItemName,
+      secondaryItemPrice: sub.secondaryItemPrice,
       isActive: sub.isActive ?? true,
     };
-    showDropdownId.value = null;
-    showRegisterDropdown.value = false;
     selectedProduct.value = sub;
+    showDropdownIndex.value = null;
     showSecondaryEditModal.value = true;
   };
 
   const deletePrimaryItem = item => {
-    showRegisterDropdown.value = false;
     selectedProduct.value = item;
-    showDropdownId.value = null;
+    showDropdownIndex.value = null;
+    showRegisterDropdown.value = false;
     showPrimaryDeleteModal.value = true;
   };
 
@@ -344,50 +242,45 @@
     selectedProduct.value = null;
   };
 
-  const handlePrimarySubmit = form => {
-    console.log('등록된 1차 상품:', form);
+  const handlePrimarySubmit = () => {
     toastRef.value?.success('1차 상품이 등록되었습니다.');
+    fetchPrimaryItems();
     closeModals();
   };
 
-  const handleSecondarySubmit = form => {
-    console.log('등록된 2차 상품:', form);
+  const handleSecondarySubmit = () => {
     toastRef.value?.success('2차 상품이 등록되었습니다.');
+    fetchPrimaryItems();
     closeModals();
   };
 
-  const handlePrimaryEdit = form => {
-    console.log('수정된 1차 상품:', form);
+  const handlePrimaryEdit = () => {
     toastRef.value?.success('1차 상품이 수정되었습니다.');
+    fetchPrimaryItems();
     closeModals();
   };
 
-  const handleSecondaryEdit = form => {
-    console.log('수정된 2차 상품:', form);
+  const handleSecondaryEdit = () => {
     toastRef.value?.success('2차 상품이 수정되었습니다.');
+    fetchPrimaryItems();
     closeModals();
   };
 
   const handlePrimaryDelete = () => {
-    console.log('삭제할 1차 상품:', selectedProduct.value);
     toastRef.value?.success('1차 상품이 삭제되었습니다.');
     showPrimaryDeleteModal.value = false;
     selectedProduct.value = null;
+    fetchPrimaryItems();
   };
 
-  const handleClickOutside = event => {
-    if (
-      !event.target.closest('.dropdown-menu') &&
-      !event.target.closest('.register-button') &&
-      !event.target.closest('.icon-button')
-    ) {
-      showDropdownId.value = null;
-      showRegisterDropdown.value = false;
-    }
-  };
+  onMounted(() => {
+    fetchPrimaryItems();
+    window.addEventListener('click', handleClickOutside);
+  });
 
-  onMounted(() => window.addEventListener('click', handleClickOutside));
-  onBeforeUnmount(() => window.removeEventListener('click', handleClickOutside));
+  onBeforeUnmount(() => {
+    window.removeEventListener('click', handleClickOutside);
+  });
 </script>
 
 <style scoped>
