@@ -19,7 +19,7 @@ class PrimaryItemQueryServiceImplTest {
 
   @Mock private PrimaryItemRepository primaryItemRepository;
 
-  @InjectMocks private PriamryItemQueryServiceImpl primaryItemQueryService;
+  @InjectMocks private PrimaryItemQueryServiceImpl primaryItemQueryService;
 
   @BeforeEach
   void setUp() {

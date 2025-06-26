@@ -11,7 +11,7 @@ import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
-public class PriamryItemQueryServiceImpl implements PrimaryItemQueryService {
+public class PrimaryItemQueryServiceImpl implements PrimaryItemQueryService {
 
   private final PrimaryItemRepository primaryItemRepository;
 
