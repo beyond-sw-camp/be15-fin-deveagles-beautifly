@@ -1,5 +1,9 @@
 <template>
-  <BaseModal v-model="isVisible" :title="`쿠폰 상세 정보 - ${couponData?.name || ''}`">
+  <BaseWindow
+    v-model="isVisible"
+    :title="`쿠폰 상세 정보 - ${couponData?.name || ''}`"
+    width="750px"
+  >
     <div v-if="couponData" class="coupon-detail-container">
       <!-- 기본 정보 섹션 -->
       <div class="detail-section">
@@ -16,12 +20,6 @@
             </div>
           </div>
           <div class="detail-item">
-            <label class="detail-label">할인율</label>
-            <div class="detail-value">
-              <BaseBadge type="success">{{ couponData.discount }}%</BaseBadge>
-            </div>
-          </div>
-          <div class="detail-item">
             <label class="detail-label">상태</label>
             <div class="detail-value">
               <BaseBadge :type="couponData.isActive ? 'success' : 'secondary'">
@@ -35,7 +33,7 @@
       <!-- 상품 및 서비스 정보 -->
       <div class="detail-section">
         <h3 class="section-title">상품 및 서비스 정보</h3>
-        <div class="detail-grid">
+        <div class="detail-grid-2col">
           <div class="detail-item">
             <label class="detail-label">카테고리</label>
             <div class="detail-value">{{ couponData.category || '-' }}</div>
@@ -57,17 +55,23 @@
         </div>
       </div>
 
-      <!-- 날짜 정보 -->
+      <!-- 날짜 및 할인 정보 -->
       <div class="detail-section">
-        <h3 class="section-title">날짜 정보</h3>
-        <div class="detail-grid">
-          <div class="detail-item">
-            <label class="detail-label">생성일</label>
-            <div class="detail-value">{{ formatDate(couponData.createdAt) || '-' }}</div>
-          </div>
+        <h3 class="section-title">날짜 및 할인 정보</h3>
+        <div class="detail-grid-2col">
           <div class="detail-item">
             <label class="detail-label">만료일</label>
             <div class="detail-value">{{ formatDate(couponData.expiryDate) || '-' }}</div>
+          </div>
+          <div class="detail-item">
+            <label class="detail-label">할인율</label>
+            <div class="detail-value">
+              <BaseBadge type="success">{{ couponData.discount }}%</BaseBadge>
+            </div>
+          </div>
+          <div class="detail-item">
+            <label class="detail-label">생성일</label>
+            <div class="detail-value">{{ formatDate(couponData.createdAt) || '-' }}</div>
           </div>
           <div class="detail-item">
             <label class="detail-label">삭제일</label>
@@ -87,18 +91,18 @@
         </div>
       </div>
     </div>
-  </BaseModal>
+  </BaseWindow>
 </template>
 
 <script>
-  import BaseModal from '@/components/common/BaseModal.vue';
+  import BaseWindow from '@/components/common/BaseWindow.vue';
   import BaseButton from '@/components/common/BaseButton.vue';
   import BaseBadge from '@/components/common/BaseBadge.vue';
 
   export default {
     name: 'CouponDetailModal',
     components: {
-      BaseModal,
+      BaseWindow,
       BaseButton,
       BaseBadge,
     },
@@ -171,6 +175,19 @@
     gap: 12px;
   }
 
+  .detail-grid-2col {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 16px 24px;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .detail-grid-2col .detail-item {
+    min-width: 0;
+    overflow: hidden;
+  }
+
   .detail-item {
     display: flex;
     flex-direction: column;
@@ -197,6 +214,11 @@
     .detail-grid {
       grid-template-columns: 1fr 1fr;
       gap: 8px;
+    }
+
+    .detail-grid-2col {
+      grid-template-columns: 1fr;
+      gap: 12px;
     }
 
     .coupon-detail-container {

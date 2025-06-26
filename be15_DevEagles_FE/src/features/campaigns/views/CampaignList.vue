@@ -8,13 +8,17 @@
 
     <!-- Campaign Table -->
     <BaseCard>
-      <BaseTable :columns="tableColumns" :data="paginatedCampaigns" :loading="loading" hover>
+      <BaseTable
+        :columns="tableColumns"
+        :data="paginatedCampaigns"
+        :loading="loading"
+        hover
+        @row-click="handleRowClick"
+      >
         <!-- Campaign Name Column -->
         <template #cell-name="{ item }">
           <div class="item-name">
-            <router-link :to="`/campaigns/${item.id}`" class="campaign-link">
-              {{ item.name }}
-            </router-link>
+            {{ item.name }}
           </div>
         </template>
 
@@ -41,7 +45,7 @@
 
         <!-- Actions Column -->
         <template #cell-actions="{ item }">
-          <div class="action-buttons">
+          <div class="action-buttons" @click.stop>
             <div class="tooltip-container">
               <BaseButton
                 :ref="`deleteBtn-${item.id}`"
@@ -79,10 +83,10 @@
       @items-per-page-change="handleItemsPerPageChange"
     />
 
-    <!-- Create Modal -->
-    <BaseModal v-model="showModal" title="캠페인 생성">
+    <!-- Create Window -->
+    <BaseWindow v-model="showModal" title="캠페인 생성" :min-height="'500px'">
       <CampaignForm @save="handleSaveCampaign" @cancel="closeModal" />
-    </BaseModal>
+    </BaseWindow>
 
     <!-- Delete Confirm Popover -->
     <BasePopover
@@ -106,12 +110,13 @@
 
 <script>
   import { ref, computed } from 'vue';
+  import { useRouter } from 'vue-router';
   import { useListManagement } from '@/composables/useListManagement';
   import { MESSAGES } from '@/constants/messages';
   import { MOCK_CAMPAIGNS, MOCK_COUPONS } from '@/constants/mockData';
   import { formatPeriod, getStatusText, getStatusBadgeType } from '@/utils/formatters';
   import BaseButton from '@/components/common/BaseButton.vue';
-  import BaseModal from '@/components/common/BaseModal.vue';
+  import BaseWindow from '@/components/common/BaseWindow.vue';
   import BasePopover from '@/components/common/BasePopover.vue';
   import Pagination from '@/components/common/Pagination.vue';
   import BaseCard from '@/components/common/BaseCard.vue';
@@ -126,7 +131,7 @@
     name: 'CampaignList',
     components: {
       BaseButton,
-      BaseModal,
+      BaseWindow,
       BasePopover,
       BasePagination: Pagination,
       BaseCard,
@@ -138,6 +143,8 @@
       CampaignForm,
     },
     setup() {
+      const router = useRouter();
+
       // List management composable
       const {
         currentPage,
@@ -201,6 +208,11 @@
         return coupon ? coupon.name : '쿠폰 정보 없음';
       };
 
+      // Row click handler
+      const handleRowClick = (item, event) => {
+        router.push(`/campaigns/${item.id}`);
+      };
+
       return {
         // State
         paginatedCampaigns,
@@ -230,6 +242,7 @@
         handlePageChange,
         handleItemsPerPageChange,
         getCouponName,
+        handleRowClick,
         formatPeriod,
         getStatusText,
         getStatusBadgeType,
@@ -240,16 +253,4 @@
 
 <style scoped>
   @import '@/assets/css/list-components.css';
-
-  .campaign-link {
-    color: var(--color-primary-main);
-    text-decoration: none;
-    font-weight: 500;
-    transition: all 0.2s ease;
-  }
-
-  .campaign-link:hover {
-    color: var(--color-primary-dark);
-    text-decoration: underline;
-  }
 </style>
