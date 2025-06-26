@@ -50,6 +50,26 @@ export const registerSecondaryItem = async ({
   return response.data.data;
 };
 
+// 2차 상품 수정 요청
+export const updateSecondaryItem = async ({
+  secondaryItemId,
+  primaryItemId,
+  secondaryItemName,
+  secondaryItemPrice,
+  timeTaken,
+  active,
+}) => {
+  const response = await api.put(`/secondary-items/${secondaryItemId}`, {
+    primaryItemId,
+    secondaryItemName,
+    secondaryItemPrice,
+    timeTaken,
+    active,
+  });
+
+  return response.data.data;
+};
+
 // 2차 상품 전체 조회 요청
 export const getAllSecondaryItems = async () => {
   const response = await api.get('/secondary-items');

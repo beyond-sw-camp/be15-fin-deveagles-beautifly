@@ -14,13 +14,18 @@
     <!-- 2차 분류명 -->
     <div class="form-group">
       <label>2차 분류명</label>
-      <BaseForm v-model="form.secondaryName" type="text" placeholder="2차 분류명" />
+      <BaseForm v-model="form.secondaryItemName" type="text" placeholder="2차 분류명" />
     </div>
 
     <!-- 상품 금액 -->
     <div class="form-group">
       <label>상품 금액</label>
-      <BaseForm v-model.number="form.price" type="number" step="100" placeholder="금액" />
+      <BaseForm
+        v-model.number="form.secondaryItemPrice"
+        type="number"
+        step="100"
+        placeholder="금액"
+      />
     </div>
 
     <!-- 시술 시간 -->
@@ -69,6 +74,7 @@
   import BaseForm from '@/components/common/BaseForm.vue';
   import BaseButton from '@/components/common/BaseButton.vue';
   import SecondaryDeleteModal from './SecondaryDeleteModal.vue';
+  import { updateSecondaryItem } from '@/features/items/api/items.js';
 
   const props = defineProps({
     modelValue: {
@@ -94,9 +100,24 @@
 
   const showDeleteModal = ref(false);
 
-  const submit = () => {
-    emit('submit', form.value);
-    emit('toast', '2차 상품이 수정되었습니다.');
+  const submit = async () => {
+    try {
+      await updateSecondaryItem({
+        secondaryItemId: form.value.secondaryItemId,
+        primaryItemId: form.value.primaryItemId,
+        secondaryItemName: form.value.secondaryItemName,
+        secondaryItemPrice: form.value.secondaryItemPrice,
+        timeTaken: form.value.duration,
+        active: form.value.isActive,
+      });
+
+      emit('submit', form.value);
+      emit('toast', '2차 상품이 수정되었습니다.');
+      emit('close');
+    } catch (e) {
+      console.error(e);
+      emit('toast', '수정에 실패했습니다. 다시 시도해주세요.');
+    }
   };
 
   const handleDelete = () => {

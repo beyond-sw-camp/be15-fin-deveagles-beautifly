@@ -95,6 +95,7 @@
       :primary-options="primaryOptions"
       @submit="handleSecondaryEdit"
       @close="closeModals"
+      @success="msg => toastRef.value?.success(msg)"
     />
     <PrimaryDeleteModal
       v-if="showPrimaryDeleteModal"
@@ -249,12 +250,16 @@
   const openSecondaryEditModal = (item, sub) => {
     showRegisterDropdown.value = false;
     showDropdownIndex.value = null;
+
     secondaryEditForm.value = {
+      secondaryItemId: sub.secondaryItemId,
       primaryItemId: item.primaryItemId,
       secondaryItemName: sub.secondaryItemName,
       secondaryItemPrice: sub.secondaryItemPrice,
+      duration: sub.duration ?? null,
       isActive: sub.isActive ?? true,
     };
+
     selectedProduct.value = sub;
     showSecondaryEditModal.value = true;
   };
