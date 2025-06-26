@@ -1,5 +1,5 @@
 <script setup>
-  import { ref, computed, watch } from 'vue';
+  import { ref, computed, nextTick, watch, onMounted, onBeforeUnmount } from 'vue';
   import BaseModal from '@/components/common/BaseModal.vue';
   import BaseForm from '@/components/common/BaseForm.vue';
   import BaseButton from '@/components/common/BaseButton.vue';
@@ -19,15 +19,60 @@
     set: val => emit('update:modelValue', val),
   });
 
-  // 입력값
+  // 입력값 상태
   const name = ref('');
   const content = ref('');
   const grade = ref('');
   const tags = ref([]);
-  const includeLink = ref(false);
-  const couponId = ref(null);
+  const type = ref('');
 
-  // 템플릿 열릴 때 기존 값 세팅
+  const showDropdown = ref(false);
+  const contentWrapper = ref(null);
+  const dropdownWrapper = ref(null);
+
+  const variables = [
+    '#{고객명}',
+    '#{잔여선불충전액}',
+    '#{잔여포인트}',
+    '#{상점명}',
+    '#{인스타url}',
+  ];
+
+  // 변수 삽입
+  function insertVariable(variable) {
+    const textarea = contentWrapper.value?.querySelector('textarea');
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const before = content.value.slice(0, start);
+    const after = content.value.slice(end);
+
+    content.value = before + variable + after;
+
+    nextTick(() => {
+      textarea.focus();
+      textarea.selectionStart = textarea.selectionEnd = start + variable.length;
+    });
+  }
+
+  function toggleDropdown() {
+    showDropdown.value = !showDropdown.value;
+  }
+
+  function handleClickOutside(event) {
+    if (dropdownWrapper.value && !dropdownWrapper.value.contains(event.target)) {
+      showDropdown.value = false;
+    }
+  }
+
+  onMounted(() => {
+    window.addEventListener('click', handleClickOutside);
+  });
+  onBeforeUnmount(() => {
+    window.removeEventListener('click', handleClickOutside);
+  });
+
   watch(
     () => props.modelValue,
     val => {
@@ -36,17 +81,11 @@
         content.value = props.template.content ?? '';
         grade.value = props.template.grade ?? '';
         tags.value = props.template.tags ?? [];
-        includeLink.value = !!props.template.includeLink;
-        couponId.value = props.template.couponId ?? null;
+        type.value = props.template.type ?? '안내';
       }
     },
     { immediate: true }
   );
-
-  // 메시지에 '#{인스타url}' 포함되면 자동 체크
-  watch(content, val => {
-    includeLink.value = val.includes('#{인스타url}');
-  });
 
   function close() {
     visible.value = false;
@@ -61,8 +100,7 @@
       content: content.value,
       grade: grade.value,
       tags: tags.value,
-      includeLink: includeLink.value,
-      couponId: couponId.value,
+      type: type.value,
       createdAt: props.template.createdAt,
     });
 
@@ -73,52 +111,63 @@
 <template>
   <BaseModal v-model="visible" title="템플릿 수정">
     <div class="space-y-4">
-      <!-- 템플릿명 입력 -->
       <BaseForm v-model="name" type="input" label="템플릿명" placeholder="예: 예약 안내" />
 
-      <!-- 내용 입력 -->
+      <div class="form-group relative z-0">
+        <div class="form-label-area">
+          <label class="form-label">내용</label>
+          <div ref="dropdownWrapper" class="dropdown-wrapper">
+            <BaseButton size="xs" type="ghost" @click.stop="toggleDropdown">
+              변수 삽입 ▼
+            </BaseButton>
+
+            <div v-if="showDropdown" class="dropdown-list">
+              <div
+                v-for="v in variables"
+                :key="v"
+                class="insert-item"
+                @click.stop="insertVariable(v)"
+              >
+                {{ v }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div ref="contentWrapper">
+          <BaseForm
+            v-model="content"
+            type="textarea"
+            :rows="10"
+            placeholder="메시지 내용을 입력하세요"
+          />
+        </div>
+      </div>
+
       <BaseForm
-        v-model="content"
-        type="textarea"
-        label="내용"
-        placeholder="메시지 내용을 입력하세요"
-        :rows="10"
+        v-model="type"
+        type="select"
+        label="유형"
+        :options="['안내', '광고', '기타']"
+        placeholder="유형 선택"
       />
 
-      <!-- 등급 선택 -->
       <BaseForm
         v-model="grade"
         type="select"
         label="대상 등급"
         :options="['전체', 'VIP', 'VVIP']"
-        placeholder="등급을 선택하세요"
+        placeholder="등급 선택"
       />
 
-      <!-- 태그 선택 -->
       <BaseForm
         v-model="tags"
         type="multiselect"
         label="고객 태그"
         :options="['재방문', '신규', '이탈위험']"
-        placeholder="고객 태그를 선택하세요"
+        placeholder="고객 태그 선택"
       />
 
-      <!-- 링크 첨부 여부 (자동으로 체크됨) -->
-      <BaseForm v-model="includeLink" type="checkbox" label="인스타그램 링크 포함 여부" disabled />
-
-      <!-- 쿠폰 선택 -->
-      <BaseForm
-        v-model="couponId"
-        type="select"
-        label="쿠폰 선택"
-        :options="[
-          { label: '10% 할인 쿠폰', value: 'coupon10' },
-          { label: '무료 체험권', value: 'freeTrial' },
-        ]"
-        placeholder="쿠폰을 선택하세요"
-      />
-
-      <!-- 버튼 영역 -->
       <div class="action-buttons mt-4 d-flex justify-content-end gap-2">
         <BaseButton type="ghost" @click="close">취소</BaseButton>
         <BaseButton :disabled="!name.trim() || !content.trim()" @click="submit">수정</BaseButton>
@@ -126,3 +175,30 @@
     </div>
   </BaseModal>
 </template>
+
+<style scoped>
+  .form-label-area {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .dropdown-wrapper {
+    position: relative;
+  }
+  .dropdown-list {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 4px;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+    z-index: 999;
+    min-width: 160px;
+    padding: 4px 0;
+  }
+  .insert-item {
+    @apply py-1 px-2 text-sm hover:bg-gray-100 rounded cursor-pointer;
+  }
+</style>

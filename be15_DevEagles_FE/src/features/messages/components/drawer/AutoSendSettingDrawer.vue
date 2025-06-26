@@ -30,7 +30,6 @@
   const variableOptions = ['#{고객명}', '#{방문일}', '#{매장명}', '#{연락처}'];
   const showVariableDropdown = ref(false);
 
-  // ✅ props.item 갱신 시 상태 초기화
   watch(
     () => props.item,
     val => {
@@ -43,7 +42,6 @@
     { immediate: true }
   );
 
-  // ✅ 변수 삽입
   function insertVariable(variable) {
     const textarea = document.getElementById('auto-message-textarea');
     const cursorPos = textarea?.selectionStart ?? message.value.length;
@@ -56,7 +54,6 @@
     });
   }
 
-  // ✅ 저장 시 index 정보 포함 emit
   function handleSave() {
     emit('save', {
       parentIndex: props.item.parentIndex,
@@ -68,7 +65,6 @@
     show.value = false;
   }
 
-  // ✅ 외부 클릭 시 변수 드롭다운 닫기
   function handleClickOutside(e) {
     const wrapper = document.querySelector('.dropdown-wrapper');
     if (wrapper && !wrapper.contains(e.target)) {

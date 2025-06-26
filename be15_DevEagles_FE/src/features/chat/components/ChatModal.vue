@@ -86,7 +86,7 @@
     flex-direction: column;
     overflow: hidden;
     position: fixed;
-    bottom: 60px; /* ✅ 아이콘 위치를 조금 더 아래로 조정 */
+    bottom: 60px;
     right: 24px;
     z-index: 9999;
   }
