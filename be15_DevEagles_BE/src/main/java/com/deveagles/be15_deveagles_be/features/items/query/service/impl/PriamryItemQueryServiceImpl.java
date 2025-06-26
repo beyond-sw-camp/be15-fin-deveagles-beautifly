@@ -17,7 +17,7 @@ public class PriamryItemQueryServiceImpl implements PrimaryItemQueryService {
 
   @Override
   public List<PrimaryItemResponse> getAllPrimaryItems() {
-    List<PrimaryItem> items = primaryItemRepository.findAll();
+    List<PrimaryItem> items = primaryItemRepository.findAllByDeletedAtIsNull();
     return items.stream().map(PrimaryItemResponse::from).collect(Collectors.toList());
   }
 }

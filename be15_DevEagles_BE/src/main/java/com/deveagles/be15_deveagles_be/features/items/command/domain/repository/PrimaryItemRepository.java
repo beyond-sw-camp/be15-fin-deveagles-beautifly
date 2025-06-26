@@ -9,5 +9,5 @@ public interface PrimaryItemRepository {
 
   Optional<PrimaryItem> findById(Long id);
 
-  List<PrimaryItem> findAll();
+  List<PrimaryItem> findAllByDeletedAtIsNull();
 }
