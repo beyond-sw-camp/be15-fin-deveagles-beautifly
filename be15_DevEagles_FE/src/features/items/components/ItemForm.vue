@@ -63,7 +63,7 @@
       </BaseCard>
     </div>
 
-    <!-- 모달들 -->
+    <!-- 모달 -->
     <PrimaryRegistModal
       v-if="showPrimaryRegisterModal"
       v-model="primaryForm"
@@ -93,7 +93,9 @@
     <PrimaryDeleteModal
       v-if="showPrimaryDeleteModal"
       v-model="showPrimaryDeleteModal"
+      :primary-item-id="selectedProduct?.primaryItemId"
       @confirm="handlePrimaryDelete"
+      @error="msg => toastRef.value?.error(msg)"
     />
 
     <BaseToast ref="toastRef" />
@@ -122,12 +124,8 @@
   };
 
   const toggleDropdown = async index => {
-    if (showDropdownIndex.value === index) {
-      showDropdownIndex.value = null;
-    } else {
-      showDropdownIndex.value = index;
-      await nextTick();
-    }
+    showDropdownIndex.value = showDropdownIndex.value === index ? null : index;
+    await nextTick();
   };
 
   const handleClickOutside = event => {
@@ -206,7 +204,7 @@
 
   const openPrimaryEditModal = item => {
     primaryEditForm.value = {
-      primaryItemId: item.primaryItemId ?? item.id, // Fallback if key is id
+      primaryItemId: item.primaryItemId,
       category: item.category,
       primaryItemName: item.primaryItemName,
     };
@@ -255,22 +253,21 @@
   };
 
   const handlePrimaryEdit = () => {
-    toastRef.value?.success('1차 상품이 수정되었습니다.');
+    toastRef.value?.warning('1차 상품이 수정되었습니다.');
     fetchPrimaryItems();
     closeModals();
   };
 
   const handleSecondaryEdit = () => {
-    toastRef.value?.success('2차 상품이 수정되었습니다.');
+    toastRef.value?.warning('2차 상품이 수정되었습니다.');
     fetchPrimaryItems();
     closeModals();
   };
 
   const handlePrimaryDelete = () => {
     toastRef.value?.success('1차 상품이 삭제되었습니다.');
-    showPrimaryDeleteModal.value = false;
-    selectedProduct.value = null;
     fetchPrimaryItems();
+    selectedProduct.value = null;
   };
 
   onMounted(() => {

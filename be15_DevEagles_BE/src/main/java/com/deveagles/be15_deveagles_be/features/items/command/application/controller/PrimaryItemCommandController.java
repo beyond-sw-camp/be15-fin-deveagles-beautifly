@@ -36,4 +36,11 @@ public class PrimaryItemCommandController {
     primaryItemServiceCommand.updatePrimaryItem(primaryItemId, request);
     return ResponseEntity.ok(ApiResponse.success(null));
   }
+
+  @Operation(summary = "1차 상품 삭제", description = "1차 상품을 soft delete 합니다.")
+  @DeleteMapping("/{primaryItemId}")
+  public ResponseEntity<ApiResponse<Void>> deletePrimaryItem(@PathVariable Long primaryItemId) {
+    primaryItemServiceCommand.deletePrimaryItem(primaryItemId);
+    return ResponseEntity.ok(ApiResponse.success(null));
+  }
 }
