@@ -11,6 +11,29 @@ export const registerPrimaryItem = async ({ shopId, category, primaryItemName })
   return response.data.data;
 };
 
+// 1차 상품 수정 요청
+export const updatePrimaryItem = async ({ primaryItemId, shopId, category, primaryItemName }) => {
+  const response = await api.put(`/primary-items/${primaryItemId}`, {
+    shopId,
+    category,
+    primaryItemName,
+  });
+
+  return response.data.data;
+};
+
+// 1차 상품 삭제 요청 (soft delete)
+export const deletePrimaryItem = async primaryItemId => {
+  const response = await api.delete(`/primary-items/${primaryItemId}`);
+  return response.data.data; // 보통 null
+};
+
+// 1차 상품 전체 조회 요청
+export const getPrimaryItems = async () => {
+  const response = await api.get('/primary-items');
+  return response.data.data; // 상품 리스트 배열
+};
+
 // 2차 상품 등록 요청
 export const registerSecondaryItem = async ({
   primaryItemId,
@@ -26,21 +49,4 @@ export const registerSecondaryItem = async ({
   });
 
   return response.data.data;
-};
-
-// 1차 상품 수정 요청
-export const updatePrimaryItem = async ({ primaryItemId, shopId, category, primaryItemName }) => {
-  const response = await api.put(`/primary-items/${primaryItemId}`, {
-    shopId,
-    category,
-    primaryItemName,
-  });
-
-  return response.data.data;
-};
-
-// 1차 상품 전체 조회 요청
-export const getPrimaryItems = async () => {
-  const response = await api.get('/primary-items');
-  return response.data.data; // 상품 리스트 배열
 };
