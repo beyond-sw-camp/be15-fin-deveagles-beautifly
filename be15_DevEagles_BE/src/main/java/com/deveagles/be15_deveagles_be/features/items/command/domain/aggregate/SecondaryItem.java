@@ -46,4 +46,16 @@ public class SecondaryItem {
     this.createdAt = LocalDateTime.now();
     this.modifiedAt = LocalDateTime.now();
   }
+
+  public void updateSecondaryItem(
+      String secondaryItemName, Integer secondaryItemPrice, Integer timeTaken, boolean isActive) {
+    this.secondaryItemName = secondaryItemName;
+    this.secondaryItemPrice = secondaryItemPrice;
+    this.timeTaken = timeTaken;
+    this.isActive = isActive;
+  }
+
+  public void setModifiedAt() {
+    this.modifiedAt = LocalDateTime.now();
+  }
 }

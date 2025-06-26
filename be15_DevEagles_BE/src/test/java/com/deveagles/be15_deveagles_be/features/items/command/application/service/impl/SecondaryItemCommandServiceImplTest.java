@@ -7,6 +7,7 @@ import static org.mockito.Mockito.*;
 import com.deveagles.be15_deveagles_be.common.exception.BusinessException;
 import com.deveagles.be15_deveagles_be.common.exception.ErrorCode;
 import com.deveagles.be15_deveagles_be.features.items.command.application.dto.request.SecondaryItemRegistRequest;
+import com.deveagles.be15_deveagles_be.features.items.command.application.dto.request.SecondaryItemUpdateRequest;
 import com.deveagles.be15_deveagles_be.features.items.command.domain.aggregate.Category;
 import com.deveagles.be15_deveagles_be.features.items.command.domain.aggregate.PrimaryItem;
 import com.deveagles.be15_deveagles_be.features.items.command.domain.aggregate.SecondaryItem;
@@ -120,6 +121,101 @@ class SecondaryItemCommandServiceImplTest {
         assertThrows(BusinessException.class, () -> service.registerSecondaryItem(request));
 
     // then
+    assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.SECONDARY_ITEM_SERVICE_TIME_REQUIRED);
+  }
+
+  @Test
+  @DisplayName("실패: 2차 상품명이 비어있는 경우")
+  void updateSecondaryItem_blankName_throwsException() {
+    Long secondaryItemId = 2L;
+
+    SecondaryItemUpdateRequest request = new SecondaryItemUpdateRequest();
+    request.setPrimaryItemId(1L);
+    request.setSecondaryItemName(" ");
+    request.setSecondaryItemPrice(30000);
+
+    BusinessException exception =
+        assertThrows(
+            BusinessException.class, () -> service.updateSecondaryItem(secondaryItemId, request));
+    assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.SECONDARY_ITEM_NAME_REQUIRED);
+  }
+
+  @Test
+  @DisplayName("실패: 가격이 null인 경우")
+  void updateSecondaryItem_missingPrice_throwsException() {
+    Long secondaryItemId = 2L;
+
+    SecondaryItemUpdateRequest request = new SecondaryItemUpdateRequest();
+    request.setPrimaryItemId(1L);
+    request.setSecondaryItemName("디자인컷");
+    request.setSecondaryItemPrice(null);
+
+    BusinessException exception =
+        assertThrows(
+            BusinessException.class, () -> service.updateSecondaryItem(secondaryItemId, request));
+    assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.SECONDARY_ITEM_PRICE_REQUIRED);
+  }
+
+  @Test
+  @DisplayName("실패: 존재하지 않는 1차 상품 ID")
+  void updateSecondaryItem_primaryItemNotFound_throwsException() {
+    Long secondaryItemId = 2L;
+
+    SecondaryItemUpdateRequest request = new SecondaryItemUpdateRequest();
+    request.setPrimaryItemId(99L);
+    request.setSecondaryItemName("볼륨펌");
+    request.setSecondaryItemPrice(30000);
+
+    when(primaryItemRepository.findById(99L)).thenReturn(Optional.empty());
+
+    BusinessException exception =
+        assertThrows(
+            BusinessException.class, () -> service.updateSecondaryItem(secondaryItemId, request));
+    assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.PRIMARY_ITEM_NOT_FOUND);
+  }
+
+  @Test
+  @DisplayName("실패: 존재하지 않는 2차 상품 ID")
+  void updateSecondaryItem_secondaryItemNotFound_throwsException() {
+    Long secondaryItemId = 999L;
+
+    SecondaryItemUpdateRequest request = new SecondaryItemUpdateRequest();
+    request.setPrimaryItemId(1L);
+    request.setSecondaryItemName("매직펌");
+    request.setSecondaryItemPrice(45000);
+
+    PrimaryItem primaryItem =
+        PrimaryItem.builder().primaryItemId(1L).category(Category.PRODUCT).build();
+    when(primaryItemRepository.findById(1L)).thenReturn(Optional.of(primaryItem));
+    when(secondaryItemRepository.findById(999L)).thenReturn(Optional.empty());
+
+    BusinessException exception =
+        assertThrows(
+            BusinessException.class, () -> service.updateSecondaryItem(secondaryItemId, request));
+    assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.SECONDARY_ITEM_NOT_FOUND);
+  }
+
+  @Test
+  @DisplayName("실패: SERVICE인데 시술시간이 null인 경우")
+  void updateSecondaryItem_serviceMissingTimeTaken_throwsException() {
+    Long secondaryItemId = 2L;
+
+    SecondaryItemUpdateRequest request = new SecondaryItemUpdateRequest();
+    request.setPrimaryItemId(1L);
+    request.setSecondaryItemName("컷트");
+    request.setSecondaryItemPrice(20000);
+    request.setTimeTaken(null);
+
+    PrimaryItem primaryItem =
+        PrimaryItem.builder().primaryItemId(1L).category(Category.SERVICE).build();
+    SecondaryItem existingItem = SecondaryItem.builder().secondaryItemId(secondaryItemId).build();
+
+    when(primaryItemRepository.findById(1L)).thenReturn(Optional.of(primaryItem));
+    when(secondaryItemRepository.findById(secondaryItemId)).thenReturn(Optional.of(existingItem));
+
+    BusinessException exception =
+        assertThrows(
+            BusinessException.class, () -> service.updateSecondaryItem(secondaryItemId, request));
     assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.SECONDARY_ITEM_SERVICE_TIME_REQUIRED);
   }
 }
