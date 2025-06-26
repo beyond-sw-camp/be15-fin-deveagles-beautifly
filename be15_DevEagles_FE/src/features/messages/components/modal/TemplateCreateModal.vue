@@ -6,12 +6,7 @@
 
   const props = defineProps({
     modelValue: Boolean,
-    availableCoupons: {
-      type: Array,
-      default: () => [],
-    },
   });
-
   const emit = defineEmits(['update:modelValue', 'submit']);
 
   const visible = computed({
@@ -23,25 +18,13 @@
   const content = ref('');
   const grade = ref('전체');
   const tags = ref('');
-  const attachLinkUrl = ref('');
-  const selectedCouponId = ref(null);
+  const type = ref('안내'); // ✅ 유형 추가
   const showDropdown = ref(false);
   const contentWrapper = ref(null);
 
-  const variables = [
-    '#{고객명}',
-    '#{잔여선불충전액}',
-    '#{잔여포인트}',
-    '#{상점명}',
-    '#{인스타url}',
-  ];
+  const variables = ['#{고객명}', '#{잔여선불충전액}', '#{잔여포인트}', '#{상점명}'];
 
   function insertVariable(variable) {
-    if (variable === '#{인스타url}') {
-      attachLinkUrl.value = variable;
-      return;
-    }
-
     const textarea = contentWrapper.value?.querySelector('textarea');
     if (!textarea) return;
 
@@ -70,6 +53,7 @@
     if (!name.value || !content.value) return;
 
     emit('submit', {
+      id: Date.now(),
       name: name.value,
       content: content.value,
       grade: grade.value,
@@ -77,8 +61,8 @@
         .split(',')
         .map(t => t.trim())
         .filter(Boolean),
-      attachLinkUrl: attachLinkUrl.value,
-      couponId: selectedCouponId.value,
+      type: type.value, // ✅ 포함
+      createdAt: new Date().toISOString().slice(0, 10),
     });
 
     close();
@@ -88,10 +72,8 @@
 <template>
   <BaseModal v-model="visible" title="템플릿 등록">
     <div class="space-y-4">
-      <!-- 템플릿명 -->
       <BaseForm v-model="name" label="템플릿명" placeholder="예: 예약 안내" />
 
-      <!-- 내용 -->
       <div class="form-group">
         <label class="form-label flex justify-between items-center">
           <span>내용</span>
@@ -115,7 +97,17 @@
         </div>
       </div>
 
-      <!-- 등급 -->
+      <BaseForm
+        v-model="type"
+        label="유형"
+        type="select"
+        :options="[
+          { value: '안내', text: '안내' },
+          { value: '광고', text: '광고' },
+          { value: '기타', text: '기타' },
+        ]"
+      />
+
       <BaseForm
         v-model="grade"
         label="대상 등급"
@@ -128,24 +120,8 @@
         ]"
       />
 
-      <!-- 태그 -->
       <BaseForm v-model="tags" label="태그 (쉼표로 구분)" placeholder="예: 여름,이벤트,첫방문" />
 
-      <!-- 링크 주소 -->
-      <BaseForm v-model="attachLinkUrl" label="링크 주소" placeholder="예: https://..." />
-
-      <!-- 쿠폰 첨부 -->
-      <BaseForm
-        v-model="selectedCouponId"
-        label="쿠폰 첨부"
-        type="select"
-        :options="[
-          { value: '', text: '쿠폰 선택 안함' },
-          ...props.availableCoupons.map(c => ({ value: c.id, text: c.name })),
-        ]"
-      />
-
-      <!-- 버튼 -->
       <div class="flex justify-end mt-4">
         <BaseButton type="error" @click="close">취소</BaseButton>
         <BaseButton type="primary" :disabled="!name || !content" class="ml-3" @click="submit">
