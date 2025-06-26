@@ -141,10 +141,8 @@
   }
 
   function handleSendRequest(content) {
-    // ✅ 고객 정보 따로 저장
     selectedCustomers.value = content.customers || [];
 
-    // ✅ 메시지 내용 저장
     messageToSend.value = {
       content: content.content || '',
       link: content.link || '',
@@ -191,7 +189,6 @@
       tags: [],
     };
 
-    // ✅ 4. 유저 피드백
     toast.value.success('예약 요청이 완료되었습니다.');
   }
 
@@ -295,7 +292,6 @@
         <BaseButton type="error" @click="confirmDelete">삭제</BaseButton>
       </template>
     </BaseModal>
-    <!-- ✅ 모달보다 위로 올리기 위해 최상단에서 teleport 사용 -->
     <Teleport to="body">
       <TemplateSelectDrawer
         v-if="showTemplateDrawer"
@@ -305,7 +301,6 @@
       />
     </Teleport>
 
-    <!-- ✅ 고객 선택도 동일하게 -->
     <Teleport to="body">
       <CustomerSelectDrawer
         v-if="showCustomerDrawer"
