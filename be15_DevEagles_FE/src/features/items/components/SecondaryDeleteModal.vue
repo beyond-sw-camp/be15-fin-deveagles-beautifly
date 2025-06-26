@@ -6,7 +6,7 @@
     @update:model-value="$emit('update:modelValue', $event)"
   >
     <div class="confirm-message">
-      <p class="main">정말 삭제하시겠습니까?</p>
+      <p class="main">2차 상품을 삭제하시겠습니까?</p>
       <p class="sub">삭제된 데이터는 복구할 수 없습니다.</p>
     </div>
 
@@ -22,17 +22,35 @@
 <script setup>
   import BaseModal from '@/components/common/BaseModal.vue';
   import BaseButton from '@/components/common/BaseButton.vue';
+  import { deleteSecondaryItem } from '@/features/items/api/items.js'; // 2차 상품 삭제 API
 
-  defineProps({
+  const props = defineProps({
     modelValue: Boolean,
+    secondaryItemId: {
+      type: Number,
+      required: true, // 2차 상품 삭제에 필요한 ID 필수
+    },
   });
 
-  const emit = defineEmits(['update:modelValue', 'confirm']);
+  const emit = defineEmits(['update:modelValue', 'confirm', 'error']);
 
-  const handleDelete = () => {
-    emit('confirm');
-    alert('2차 상품이 삭제되었습니다.');
-    emit('update:modelValue', false);
+  const handleDelete = async () => {
+    try {
+      // 2차 상품 삭제 API 호출
+      await deleteSecondaryItem(props.secondaryItemId);
+
+      // 알림 창을 alert로 변경
+      alert('2차 상품이 삭제되었습니다.');
+
+      // 새로고침
+      window.location.reload();
+
+      emit('confirm'); // 부모에게 성공 메시지 처리
+    } catch (error) {
+      emit('error', error.response?.data?.message || '삭제에 실패했습니다.');
+    } finally {
+      emit('update:modelValue', false); // 모달 닫기
+    }
   };
 </script>
 

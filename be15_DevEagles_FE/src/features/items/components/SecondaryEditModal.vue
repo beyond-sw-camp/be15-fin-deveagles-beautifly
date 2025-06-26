@@ -63,6 +63,7 @@
     <SecondaryDeleteModal
       v-if="showDeleteModal"
       v-model="showDeleteModal"
+      :secondary-item-id="form.secondaryItemId"
       @confirm="handleDelete"
     />
   </BaseItemModal>
@@ -87,7 +88,7 @@
     },
   });
 
-  const emit = defineEmits(['close', 'submit', 'update:modelValue', 'delete', 'toast']);
+  const emit = defineEmits(['close', 'submit', 'update:modelValue', 'delete']);
 
   const form = computed({
     get: () => props.modelValue,
@@ -112,18 +113,22 @@
       });
 
       emit('submit', form.value);
-      emit('toast', '2차 상품이 수정되었습니다.');
       emit('close');
     } catch (e) {
       console.error(e);
-      emit('toast', '수정에 실패했습니다. 다시 시도해주세요.');
+      emit('close');
     }
   };
 
-  const handleDelete = () => {
-    emit('delete', form.value);
-    showDeleteModal.value = false;
-    emit('close');
+  const handleDelete = async () => {
+    try {
+      // 삭제 후 데이터를 새로 고침 할 수 있게 처리
+      emit('delete', form.value);
+      emit('close');
+    } catch (e) {
+      console.error(e);
+      emit('close');
+    }
   };
 </script>
 
