@@ -7,7 +7,9 @@
         id="primary"
         v-model.number="form.primaryItemId"
         type="select"
-        :options="primaryOptions.map(item => ({ value: item.id, text: item.name }))"
+        :options="
+          primaryOptions.map(item => ({ value: item.primaryItemId, text: item.primaryItemName }))
+        "
         placeholder="1차 분류명"
         :error="errors.primaryItemId"
       />
@@ -63,11 +65,11 @@
 </template>
 
 <script setup>
-  import { computed, reactive } from 'vue';
+  import { ref, reactive, computed, onMounted } from 'vue';
   import BaseItemModal from './BaseItemModal.vue';
   import BaseForm from '@/components/common/BaseForm.vue';
   import BaseButton from '@/components/common/BaseButton.vue';
-  import { registerSecondaryItem } from '@/features/items/api/items.js';
+  import { getPrimaryItems, registerSecondaryItem } from '@/features/items/api/items.js';
 
   const emit = defineEmits(['close', 'submit', 'toast']);
 
@@ -86,13 +88,11 @@
     duration: '',
   });
 
-  const primaryOptions = [
-    { id: 1, name: '펌(남성)', category: 'SERVICE' },
-    { id: 2, name: '펌', category: 'SERVICE' },
-    { id: 3, name: '헤어', category: 'PRODUCT' },
-  ];
+  const primaryOptions = ref([]);
 
-  const selectedPrimary = computed(() => primaryOptions.find(opt => opt.id === form.primaryItemId));
+  const selectedPrimary = computed(() =>
+    primaryOptions.value.find(opt => opt.primaryItemId === form.primaryItemId)
+  );
 
   const validate = () => {
     let valid = true;
@@ -104,16 +104,11 @@
         ? '시술 시간을 입력해주세요.'
         : '';
 
-    if (errors.primaryItemId || errors.secondaryName || errors.price || errors.duration) {
-      valid = false;
-    }
-    return valid;
+    return !errors.primaryItemId && !errors.secondaryName && !errors.price && !errors.duration;
   };
 
   const submit = async () => {
-    if (!validate()) {
-      return;
-    }
+    if (!validate()) return;
 
     try {
       await registerSecondaryItem({
@@ -136,6 +131,15 @@
     Object.keys(errors).forEach(key => (errors[key] = ''));
     emit('close');
   };
+
+  onMounted(async () => {
+    try {
+      const res = await getPrimaryItems();
+      primaryOptions.value = res;
+    } catch (err) {
+      emit('toast', '1차 상품 목록을 불러오는 데 실패했습니다.');
+    }
+  });
 </script>
 
 <style scoped>
