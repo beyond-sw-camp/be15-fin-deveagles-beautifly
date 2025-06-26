@@ -18,7 +18,6 @@
         :show-icon="showIcon"
         :icon-display="iconDisplay"
         :number-of-months="numberOfMonths"
-        @update:model-value="onUpdateModelValue"
         :min-date="minDate"
         :max-date="maxDate"
         :placeholder="computedPlaceholder"
@@ -29,6 +28,7 @@
         :step-minute="1"
         :step-second="1"
         fluid
+        @update:model-value="onUpdateModelValue"
         class="prime-datepicker"
         @date-select="onDateSelect"
         @show="$emit('show')"
@@ -259,7 +259,62 @@
 </script>
 
 <style scoped>
+  .prime-datepicker-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .input-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
   .prime-datepicker {
     width: 100%;
+  }
+
+  .form-label {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--color-gray-700);
+    margin-bottom: 0;
+  }
+
+  .clear-icon {
+    position: absolute;
+    right: 40px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-gray-300);
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 12px;
+    color: var(--color-gray-600);
+    z-index: 10;
+    transition: all 0.2s ease;
+  }
+
+  .clear-icon:hover {
+    background: var(--color-gray-400);
+    color: var(--color-gray-700);
+    transform: translateY(-50%) scale(1.1);
+  }
+
+  .error-message {
+    font-size: 12px;
+    color: var(--color-error-500);
+    margin-top: 0;
+  }
+
+  /* PrimeVue DatePicker 내부 스타일 조정 */
+  :deep(.p-datepicker-input) {
+    padding-right: 70px !important; /* 달력 아이콘(30px) + X 아이콘(30px) + 여백(10px) */
   }
 </style>

@@ -1,6 +1,6 @@
 <template>
   <form class="coupon-form" @submit.prevent="handleSubmit">
-    <!-- 쿠폰명 -->
+    <!-- 쿠폰명 (전체 너비) -->
     <BaseForm
       id="couponName"
       v-model="formData.name"
@@ -12,85 +12,86 @@
       @enter-key="handleFormSubmit"
     />
 
-    <!-- 카테고리 -->
-    <BaseForm
-      id="category"
-      v-model="formData.category"
-      label="카테고리*"
-      type="select"
-      placeholder="카테고리를 선택하세요"
-      :options="categoryOptions"
-      :error="errors.category"
-      required
-    />
-
-    <!-- 디자이너 -->
-    <BaseForm
-      id="designer"
-      v-model="formData.designer"
-      label="디자이너*"
-      type="select"
-      placeholder="디자이너를 선택하세요"
-      :options="designerOptions"
-      :error="errors.designer"
-      required
-    />
-
-    <!-- 1차 상품 -->
-    <BaseForm
-      id="primaryProduct"
-      v-model="formData.primaryProduct"
-      label="1차 상품*"
-      type="select"
-      placeholder="1차 상품을 선택하세요"
-      :options="primaryProductOptions"
-      :error="errors.primaryProduct"
-      required
-    />
-
-    <!-- 2차 상품 -->
-    <BaseForm
-      id="secondaryProduct"
-      v-model="formData.secondaryProduct"
-      label="2차 상품"
-      type="select"
-      placeholder="2차 상품을 선택하세요 (선택사항)"
-      :options="secondaryProductOptions"
-      :error="errors.secondaryProduct"
-    />
-
-    <!-- 할인율 슬라이더 -->
-    <div class="form-group">
-      <label class="form-label">할인율* ({{ formData.discount }}%)</label>
-      <div class="slider-container">
-        <input
-          v-model="formData.discount"
-          type="range"
-          min="0"
-          max="100"
-          step="5"
-          class="discount-slider"
-        />
-        <div class="slider-labels">
-          <span>0%</span>
-          <span>50%</span>
-          <span>100%</span>
-        </div>
-      </div>
-      <div v-if="errors.discount" class="error-message">{{ errors.discount }}</div>
+    <!-- 카테고리 & 디자이너 (2열) -->
+    <div class="form-row">
+      <BaseForm
+        id="category"
+        v-model="formData.category"
+        label="카테고리*"
+        type="select"
+        placeholder="카테고리를 선택하세요"
+        :options="categoryOptions"
+        :error="errors.category"
+        required
+      />
+      <BaseForm
+        id="designer"
+        v-model="formData.designer"
+        label="디자이너"
+        type="select"
+        placeholder="디자이너를 선택하세요"
+        :options="designerOptions"
+        :error="errors.designer"
+      />
     </div>
 
-    <!-- 만료일 -->
-    <PrimeDatePicker
-      v-model="formData.expiryDate"
-      label="만료일*"
-      placeholder="날짜와 시간을 선택하세요"
-      show-time
-      :show-button-bar="true"
-      :min-date="new Date()"
-      :error="errors.expiryDate"
-      clearable
-    />
+    <!-- 1차 상품 & 2차 상품 (2열) -->
+    <div class="form-row">
+      <BaseForm
+        id="primaryProduct"
+        v-model="formData.primaryProduct"
+        label="1차 상품*"
+        type="select"
+        placeholder="1차 상품을 선택하세요"
+        :options="primaryProductOptions"
+        :error="errors.primaryProduct"
+        required
+      />
+      <BaseForm
+        id="secondaryProduct"
+        v-model="formData.secondaryProduct"
+        label="2차 상품"
+        type="select"
+        placeholder="2차 상품을 선택하세요 (선택사항)"
+        :options="secondaryProductOptions"
+        :error="errors.secondaryProduct"
+      />
+    </div>
+
+    <!-- 할인율 & 만료일 (2열) -->
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">할인율* ({{ formData.discount }}%)</label>
+        <div class="slider-container">
+          <input
+            v-model="formData.discount"
+            type="range"
+            min="0"
+            max="100"
+            step="5"
+            class="discount-slider"
+          />
+          <div class="slider-labels">
+            <span>0%</span>
+            <span>50%</span>
+            <span>100%</span>
+          </div>
+        </div>
+        <div v-if="errors.discount" class="error-message">{{ errors.discount }}</div>
+      </div>
+      <div class="form-group">
+        <PrimeDatePicker
+          v-model="formData.expiryDate"
+          label="만료일*"
+          placeholder="날짜와 시간을 선택하세요"
+          show-time
+          :show-button-bar="true"
+          :min-date="new Date()"
+          :error="errors.expiryDate"
+          clearable
+        />
+      </div>
+    </div>
 
     <!-- 활성화 여부 -->
     <div class="form-group">
@@ -161,6 +162,7 @@
           { value: 'massage', text: '마사지' },
         ],
         designerOptions: [
+          { value: '전체', text: '전체 적용' },
           { value: '김미영', text: '김미영' },
           { value: '박지은', text: '박지은' },
           { value: '이수진', text: '이수진' },
@@ -220,10 +222,6 @@
           this.errors.category = '카테고리 선택은 필수입니다.';
         }
 
-        if (!this.formData.designer) {
-          this.errors.designer = '디자이너 선택은 필수입니다.';
-        }
-
         if (!this.formData.primaryProduct) {
           this.errors.primaryProduct = '1차 상품 선택은 필수입니다.';
         }
@@ -279,7 +277,7 @@
         this.formData = {
           name: '',
           category: '',
-          designer: '',
+          designer: '전체',
           primaryProduct: '',
           secondaryProduct: '',
           discount: 10,
@@ -296,6 +294,12 @@
   .coupon-form {
     display: flex;
     flex-direction: column;
+    gap: 1rem;
+  }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     gap: 1.5rem;
   }
 
@@ -393,6 +397,11 @@
   }
 
   @media (max-width: 768px) {
+    .form-row {
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
+
     .form-actions {
       flex-direction: column;
     }
