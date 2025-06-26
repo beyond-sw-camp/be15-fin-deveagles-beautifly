@@ -66,9 +66,15 @@ public enum ErrorCode implements ErrorCodeType {
   INVALID_SCHEDULE_REPEAT_TYPE("74002", "정기 스케줄은 요일 또는 월 중 하나만 설정해야 합니다", HttpStatus.BAD_REQUEST),
 
   // 상품, 회원권 관련 에러 (상품 :81000번대, 회원권: 82000번대)
-  PRIMARY_ITEM_NAME_REQUIRED("81001", "1차 분류명은 필수입니다", HttpStatus.BAD_REQUEST),
-  PRIMARY_ITEM_CATEGORY_REQUIRED("81002", "카테고리는 필수입니다", HttpStatus.BAD_REQUEST),
-  INVALID_PRIMARY_ITEM_INPUT("81003", "잘못된 1차 상품 입력값입니다", HttpStatus.BAD_REQUEST);
+  PRIMARY_ITEM_NAME_REQUIRED("81001", "1차 상품명을 입력해주세요.", HttpStatus.BAD_REQUEST),
+  PRIMARY_ITEM_CATEGORY_REQUIRED("81002", "카테고리를 선택해주세요.", HttpStatus.BAD_REQUEST),
+  INVALID_PRIMARY_ITEM_INPUT("81003", "잘못된 1차 상품 입력값입니다", HttpStatus.BAD_REQUEST),
+  PRIMARY_ITEM_NOT_FOUND("81004", "1차 상품을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+  SECONDARY_ITEM_NAME_REQUIRED("81005", "2차 상품명을 입력해주세요.", HttpStatus.BAD_REQUEST),
+  SECONDARY_ITEM_PRICE_REQUIRED("81006", "2차 상품의 가격을 입력해주세요.", HttpStatus.BAD_REQUEST),
+  INVALID_SECONDARY_ITEM_INPUT("81007", "잘못된 2차 상품 입력값입니다.", HttpStatus.BAD_REQUEST),
+  SECONDARY_ITEM_SERVICE_TIME_REQUIRED("81008", "시술의 시술시간을 입력해주세요.", HttpStatus.BAD_REQUEST),
+  INVALID_SHOP_ID("81099", "유효하지 않은 매장 ID입니다. 현재는 shop_id = 1만 허용됩니다.", HttpStatus.BAD_REQUEST);
 
   // 매출 관련 에러 (90000번대)
 

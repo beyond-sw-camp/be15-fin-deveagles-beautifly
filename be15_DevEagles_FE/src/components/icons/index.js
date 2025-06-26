@@ -17,3 +17,6 @@ export { default as ChevronRightIcon } from './ChevronRightIcon.vue';
 export { default as PinIcon } from './PinIcon.vue';
 export { default as PinOffIcon } from './PinOffIcon.vue';
 export { default as WorkflowIcon } from './WorkflowIcon.vue';
+export { default as XIcon } from './XIcon.vue';
+export { default as TicketIcon } from './TicketIcon.vue';
+export { default as PlusIcon } from './PlusIcon.vue';
