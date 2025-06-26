@@ -99,4 +99,15 @@ public class SecondaryItemCommandServiceImpl implements SecondaryItemCommandServ
     // 저장
     secondaryItemRepository.save(secondaryItem);
   }
+
+  @Override
+  public void deleteSecondaryItem(Long id) {
+    SecondaryItem item =
+        secondaryItemRepository
+            .findById(id)
+            .orElseThrow(() -> new BusinessException(ErrorCode.SECONDARY_ITEM_NOT_FOUND));
+
+    item.setDeletedAt();
+    secondaryItemRepository.save(item);
+  }
 }

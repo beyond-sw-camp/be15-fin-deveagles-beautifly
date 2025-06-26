@@ -25,13 +25,13 @@ export const updatePrimaryItem = async ({ primaryItemId, shopId, category, prima
 // 1차 상품 삭제 요청 (soft delete)
 export const deletePrimaryItem = async primaryItemId => {
   const response = await api.delete(`/primary-items/${primaryItemId}`);
-  return response.data.data; // 보통 null
+  return response.data.data;
 };
 
 // 1차 상품 전체 조회 요청
 export const getPrimaryItems = async () => {
   const response = await api.get('/primary-items');
-  return response.data.data; // 상품 리스트 배열
+  return response.data.data;
 };
 
 // 2차 상품 등록 요청
@@ -70,8 +70,14 @@ export const updateSecondaryItem = async ({
   return response.data.data;
 };
 
+// 2차 상품 삭제 요청 (soft delete)
+export const deleteSecondaryItem = async secondaryItemId => {
+  const response = await api.delete(`/secondary-items/${secondaryItemId}`);
+  return response.data.data;
+};
+
 // 2차 상품 전체 조회 요청
 export const getAllSecondaryItems = async () => {
   const response = await api.get('/secondary-items');
-  return response.data.data; // 2차 상품 리스트 배열
+  return response.data.data;
 };

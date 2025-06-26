@@ -13,6 +13,8 @@
         placeholder="1차 분류명"
         :error="errors.primaryItemId"
       />
+      <!-- 1차 상품명을 텍스트로 보여주고, 자동으로 채우기 -->
+      <div v-if="form.primaryItemName">{{ form.primaryItemName }}</div>
     </div>
 
     <!-- 2차 분류명 -->
@@ -75,6 +77,7 @@
 
   const defaultForm = () => ({
     primaryItemId: null,
+    primaryItemName: '', // 추가: 1차 상품명을 초기화
     secondaryName: '',
     price: null,
     duration: null,

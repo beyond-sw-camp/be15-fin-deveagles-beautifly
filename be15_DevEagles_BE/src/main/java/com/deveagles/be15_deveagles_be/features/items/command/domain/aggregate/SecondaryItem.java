@@ -58,4 +58,8 @@ public class SecondaryItem {
   public void setModifiedAt() {
     this.modifiedAt = LocalDateTime.now();
   }
+
+  public void setDeletedAt() {
+    this.deletedAt = LocalDateTime.now();
+  }
 }

@@ -7,4 +7,6 @@ public interface SecondaryItemCommandService {
   void registerSecondaryItem(SecondaryItemRegistRequest request);
 
   void updateSecondaryItem(Long secondaryItemId, SecondaryItemUpdateRequest request);
+
+  void deleteSecondaryItem(Long id);
 }

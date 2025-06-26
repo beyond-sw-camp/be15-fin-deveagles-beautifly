@@ -36,6 +36,9 @@
               :ref="el => setDropdownRef(index, el)"
               class="dropdown-menu below-left"
             >
+              <div class="dropdown-item" @click="openSecondaryRegisterModal(item)">
+                2차 상품 등록
+              </div>
               <div class="dropdown-item" @click="openPrimaryEditModal(item)">1차 상품 수정</div>
               <div class="dropdown-item" @click="deletePrimaryItem(item)">1차 상품 삭제</div>
             </div>
@@ -229,9 +232,13 @@
     showPrimaryRegisterModal.value = true;
   };
 
-  const openSecondaryRegisterModal = () => {
+  const openSecondaryRegisterModal = item => {
     showRegisterDropdown.value = false;
     showDropdownIndex.value = null;
+    secondaryForm.value = {
+      primaryItemId: item.primaryItemId,
+      primaryItemName: item.primaryItemName, // 1차 상품명 전달
+    };
     showSecondaryRegisterModal.value = true;
   };
 
