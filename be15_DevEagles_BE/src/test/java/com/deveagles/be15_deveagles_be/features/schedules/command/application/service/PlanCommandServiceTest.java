@@ -235,7 +235,7 @@ class PlanCommandServiceTest {
     when(planRepository.findById(planId)).thenReturn(java.util.Optional.of(origin));
 
     planCommandService.switchSchedule(
-        new UpdateScheduleRequest(ScheduleType.PLAN, planId, ScheduleType.PLAN, request, null));
+        new UpdatePlanScheduleRequest(ScheduleType.PLAN, planId, ScheduleType.PLAN, request, null));
 
     assertThat(origin.getPlanTitle()).isEqualTo("수정제목");
     verify(planRepository).findById(planId);
@@ -259,7 +259,7 @@ class PlanCommandServiceTest {
     when(planRepository.save(any(Plan.class))).thenReturn(Plan.builder().planId(999L).build());
 
     planCommandService.switchSchedule(
-        new UpdateScheduleRequest(ScheduleType.REGULAR, id, ScheduleType.PLAN, request, null));
+        new UpdatePlanScheduleRequest(ScheduleType.REGULAR, id, ScheduleType.PLAN, request, null));
 
     verify(regularPlanRepository).deleteById(id);
     verify(planRepository).save(any(Plan.class));
@@ -279,7 +279,7 @@ class PlanCommandServiceTest {
         .thenReturn(RegularPlan.builder().regularPlanId(888L).build());
 
     planCommandService.switchSchedule(
-        new UpdateScheduleRequest(ScheduleType.PLAN, id, ScheduleType.REGULAR, null, request));
+        new UpdatePlanScheduleRequest(ScheduleType.PLAN, id, ScheduleType.REGULAR, null, request));
 
     verify(planRepository).deleteById(id);
     verify(regularPlanRepository).save(any(RegularPlan.class));

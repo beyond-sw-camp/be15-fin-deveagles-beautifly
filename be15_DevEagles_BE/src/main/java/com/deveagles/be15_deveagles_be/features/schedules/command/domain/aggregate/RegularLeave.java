@@ -34,4 +34,11 @@ public class RegularLeave {
 
   @Column(name = "regular_leave_memo")
   private String regularLeaveMemo;
+
+  public void update(String title, Integer monthly, DayOfWeekEnum weekly, String memo) {
+    this.regularLeaveTitle = title;
+    this.monthlyLeave = monthly;
+    this.weeklyLeave = weekly;
+    this.regularLeaveMemo = memo;
+  }
 }

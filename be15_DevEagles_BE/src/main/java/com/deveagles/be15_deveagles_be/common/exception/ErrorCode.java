@@ -56,10 +56,14 @@ public enum ErrorCode implements ErrorCodeType {
   INVALID_LUNCH_TIME_ORDER("70003", "점심시간 시작은 종료보다 빨라야 합니다", HttpStatus.BAD_REQUEST),
   RESERVATION_SETTING_ALREADY_EXISTS("70004", "이미 예약 설정이 존재합니다", HttpStatus.BAD_REQUEST),
   // 일정 삭제 관련 에러 (72000번대)
-  INVALID_SCHEDULE_TYPE("72001", "유효하지 않은 일정 타입입니다", HttpStatus.BAD_REQUEST),
-  PLAN_NOT_FOUND("72002", "단기 일정이 존재하지 않습니다", HttpStatus.NOT_FOUND),
-  REGULAR_PLAN_NOT_FOUND("72003", "정기 일정이 존재하지 않습니다", HttpStatus.NOT_FOUND),
-  INVALID_SCHEDULE_REPEAT_TYPE("72004", "정기 일정은 요일 또는 월 중 하나만 설정해야 합니다", HttpStatus.BAD_REQUEST),
+  PLAN_NOT_FOUND("72001", "단기 일정이 존재하지 않습니다", HttpStatus.NOT_FOUND),
+  REGULAR_PLAN_NOT_FOUND("72002", "정기 일정이 존재하지 않습니다", HttpStatus.NOT_FOUND),
+  // 휴무 삭제 관련 에러 (73000번대)
+  LEAVE_NOT_FOUND("73001", "단기 휴무가 존재하지 않습니다", HttpStatus.NOT_FOUND),
+  REGULAR_LEAVE_NOT_FOUND("73002", "정기 휴무가 존재하지 않습니다", HttpStatus.NOT_FOUND),
+  // 정기 일정,휴무 관련 에러 (74000번대)
+  INVALID_SCHEDULE_TYPE("74001", "유효하지 않은 스케줄 타입입니다", HttpStatus.BAD_REQUEST),
+  INVALID_SCHEDULE_REPEAT_TYPE("74002", "정기 스케줄은 요일 또는 월 중 하나만 설정해야 합니다", HttpStatus.BAD_REQUEST),
 
   // 상품, 회원권 관련 에러 (상품 :81000번대, 회원권: 82000번대)
   PRIMARY_ITEM_NAME_REQUIRED("81001", "1차 분류명은 필수입니다", HttpStatus.BAD_REQUEST),

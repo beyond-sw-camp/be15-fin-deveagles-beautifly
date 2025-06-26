@@ -5,7 +5,7 @@ import com.deveagles.be15_deveagles_be.common.exception.ErrorCode;
 import com.deveagles.be15_deveagles_be.features.schedules.command.application.dto.request.CreatePlanRequest;
 import com.deveagles.be15_deveagles_be.features.schedules.command.application.dto.request.CreateRegularPlanRequest;
 import com.deveagles.be15_deveagles_be.features.schedules.command.application.dto.request.DeleteScheduleRequest;
-import com.deveagles.be15_deveagles_be.features.schedules.command.application.dto.request.UpdateScheduleRequest;
+import com.deveagles.be15_deveagles_be.features.schedules.command.application.dto.request.UpdatePlanScheduleRequest;
 import com.deveagles.be15_deveagles_be.features.schedules.command.domain.aggregate.Plan;
 import com.deveagles.be15_deveagles_be.features.schedules.command.domain.aggregate.RegularPlan;
 import com.deveagles.be15_deveagles_be.features.schedules.command.domain.aggregate.ScheduleType;
@@ -147,7 +147,7 @@ public class PlanCommandService {
   }
 
   @Transactional
-  public void switchSchedule(UpdateScheduleRequest request) {
+  public void switchSchedule(UpdatePlanScheduleRequest request) {
     ScheduleType fromType = request.fromType();
     ScheduleType toType = request.toType();
 
