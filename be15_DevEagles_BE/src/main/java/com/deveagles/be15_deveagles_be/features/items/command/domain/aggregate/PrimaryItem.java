@@ -44,4 +44,8 @@ public class PrimaryItem {
     this.primaryItemName = primaryItemName;
     this.category = category;
   }
+
+  public void setDeletedAt() {
+    this.deletedAt = LocalDateTime.now();
+  }
 }

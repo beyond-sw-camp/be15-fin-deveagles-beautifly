@@ -170,4 +170,43 @@ class PrimaryItemCommandServiceImplTest {
 
     assertEquals(ErrorCode.PRIMARY_ITEM_NOT_FOUND, exception.getErrorCode());
   }
+
+  @Test
+  @DisplayName("성공: 1차 상품 soft delete 수행 시 deletedAt 설정")
+  void deletePrimaryItem_success() {
+    // given
+    Long primaryItemId = 1L;
+    PrimaryItem mockItem =
+        PrimaryItem.builder()
+            .primaryItemId(primaryItemId)
+            .primaryItemName("컷트")
+            .category(Category.SERVICE)
+            .build();
+
+    when(primaryItemRepository.findById(primaryItemId)).thenReturn(java.util.Optional.of(mockItem));
+
+    // when
+    primaryItemCommandService.deletePrimaryItem(primaryItemId);
+
+    // then
+    assertNotNull(mockItem.getDeletedAt());
+    verify(primaryItemRepository, times(1)).save(mockItem);
+  }
+
+  @Test
+  @DisplayName("실패: 존재하지 않는 1차 상품 ID로 삭제 시 예외 발생")
+  void deletePrimaryItem_notFound_throwsException() {
+    // given
+    Long primaryItemId = 999L;
+    when(primaryItemRepository.findById(primaryItemId)).thenReturn(java.util.Optional.empty());
+
+    // when
+    BusinessException exception =
+        assertThrows(
+            BusinessException.class,
+            () -> primaryItemCommandService.deletePrimaryItem(primaryItemId));
+
+    // then
+    assertEquals(ErrorCode.PRIMARY_ITEM_NOT_FOUND, exception.getErrorCode());
+  }
 }

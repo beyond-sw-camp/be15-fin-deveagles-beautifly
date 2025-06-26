@@ -6,4 +6,6 @@ public interface PrimaryItemCommandService {
   void registerPrimaryItem(PrimaryItemRequest request);
 
   void updatePrimaryItem(Long primaryItemId, PrimaryItemRequest request);
+
+  void deletePrimaryItem(Long id);
 }

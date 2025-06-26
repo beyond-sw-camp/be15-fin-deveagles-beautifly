@@ -80,4 +80,15 @@ public class PrimaryItemCommandServiceImpl implements PrimaryItemCommandService 
     // 저장
     primaryItemRepository.save(primaryItem);
   }
+
+  @Override
+  public void deletePrimaryItem(Long id) {
+    PrimaryItem item =
+        primaryItemRepository
+            .findById(id)
+            .orElseThrow(() -> new BusinessException(ErrorCode.PRIMARY_ITEM_NOT_FOUND));
+
+    item.setDeletedAt();
+    primaryItemRepository.save(item);
+  }
 }
