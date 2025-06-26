@@ -108,22 +108,42 @@ class PlanQueryServiceTest {
     int size = 10;
     int offset = 0;
 
+    LocalDateTime from = LocalDateTime.of(2025, 6, 1, 0, 0);
+    LocalDateTime to = LocalDateTime.of(2025, 6, 30, 23, 59);
+
     List<PlanListResponse> mockList =
         List.of(
             new PlanListResponse(
-                1L, "plan", "회의", "메모", "김민지", LocalDateTime.now(), LocalDateTime.now()),
+                1L,
+                "김민지",
+                "회의",
+                "plan",
+                null,
+                LocalDateTime.of(2025, 6, 10, 10, 0),
+                LocalDateTime.of(2025, 6, 10, 11, 0),
+                null,
+                null),
             new PlanListResponse(
-                2L, "regular", "정기미팅", "반복", "김민지", LocalDateTime.now(), LocalDateTime.now()));
+                2L,
+                "김민지",
+                "정기미팅",
+                "regular",
+                "매주 화요일 반복",
+                null,
+                null,
+                LocalTime.of(10, 0),
+                LocalTime.of(11, 0)));
 
-    when(planQueryMapper.findPlans(anyLong(), anyLong(), anyString(), anyInt(), anyInt()))
+    when(planQueryMapper.findPlans(staffId, shopId, planType, from, to, offset, size))
         .thenReturn(mockList);
-    when(planQueryMapper.countPlans(anyLong(), anyLong(), anyString())).thenReturn(mockList.size());
+    when(planQueryMapper.countPlans(staffId, shopId, planType, from, to))
+        .thenReturn(mockList.size());
 
-    var result = scheduleQueryService.getPlanList(staffId, shopId, planType, page, size);
+    var result = scheduleQueryService.getPlanList(staffId, shopId, planType, from, to, page, size);
 
     assertThat(result.getContent()).hasSize(2);
-    assertThat(result.getPagination().getTotalItems()).isEqualTo(2L);
-    verify(planQueryMapper).findPlans(staffId, shopId, planType, offset, size);
-    verify(planQueryMapper).countPlans(staffId, shopId, planType);
+    assertThat(result.getPagination().getTotalItems()).isEqualTo(2);
+    verify(planQueryMapper).findPlans(staffId, shopId, planType, from, to, offset, size);
+    verify(planQueryMapper).countPlans(staffId, shopId, planType, from, to);
   }
 }
