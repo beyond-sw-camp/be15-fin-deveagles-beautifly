@@ -492,7 +492,7 @@
     background: var(--color-neutral-white);
     border-radius: 3px;
     border: 1px solid var(--color-gray-200);
-    box-shadow: var(--shadow-drop);
+    box-shadow: 0 8px 40px -10px rgba(0, 0, 0, 0.08);
     display: flex;
     flex-direction: column;
     height: fit-content;

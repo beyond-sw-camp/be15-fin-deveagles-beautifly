@@ -209,8 +209,7 @@
       const removeFromSelection = coupon => {
         if (props.readonly) return;
 
-        const newSelection = selectedCoupons.value.filter(c => c.id !== coupon.id);
-        selectedCoupons.value = newSelection;
+        selectedCoupons.value = selectedCoupons.value.filter(c => c.id !== coupon.id);
       };
 
       const clearSelection = () => {
@@ -310,7 +309,7 @@
     border: 1px solid var(--color-primary-200);
     border-radius: 16px;
     font-size: 12px;
-    color: var(--color-primary-700);
+    color: var(--color-primary-600);
     max-width: 200px;
   }
 
@@ -407,7 +406,7 @@
   /* 호버 효과 */
   .selected-chip:hover {
     border-color: var(--color-primary-300);
-    background-color: var(--color-primary-25);
+    background-color: var(--color-primary-50);
   }
 
   /* 포커스 상태 */

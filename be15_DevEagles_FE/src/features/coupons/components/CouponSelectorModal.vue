@@ -332,7 +332,7 @@
   .selection-count {
     font-size: 14px;
     font-weight: 500;
-    color: var(--color-primary-700);
+    color: var(--color-primary-600);
   }
 
   .coupon-list {
@@ -357,7 +357,7 @@
 
   .coupon-item:hover:not(.disabled) {
     border-color: var(--color-primary-300);
-    background-color: var(--color-primary-25);
+    background-color: var(--color-primary-50);
   }
 
   .coupon-item.selected {

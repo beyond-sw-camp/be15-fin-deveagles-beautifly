@@ -59,6 +59,23 @@
         };
       },
     },
+    watch: {
+      modelValue(newValue) {
+        if (newValue) {
+          this.addKeyListener();
+        } else {
+          this.removeKeyListener();
+        }
+      },
+    },
+    mounted() {
+      if (this.modelValue) {
+        this.addKeyListener();
+      }
+    },
+    beforeUnmount() {
+      this.removeKeyListener();
+    },
     methods: {
       closeWindow() {
         this.$emit('update:modelValue', false);
@@ -66,6 +83,17 @@
       },
       handleOverlayClick() {
         this.closeWindow();
+      },
+      handleKeyDown(event) {
+        if (event.key === 'Escape') {
+          this.closeWindow();
+        }
+      },
+      addKeyListener() {
+        document.addEventListener('keydown', this.handleKeyDown);
+      },
+      removeKeyListener() {
+        document.removeEventListener('keydown', this.handleKeyDown);
       },
     },
   };

@@ -232,13 +232,13 @@
   }
 
   .template-item:hover {
-    border-color: var(--color-blue-300);
-    background-color: var(--color-blue-25);
+    border-color: var(--color-primary-300);
+    background-color: var(--color-primary-50);
   }
 
   .template-item.selected {
-    border-color: var(--color-blue-500);
-    background-color: var(--color-blue-50);
+    border-color: var(--color-primary-500);
+    background-color: var(--color-primary-50);
   }
 
   .template-content {
