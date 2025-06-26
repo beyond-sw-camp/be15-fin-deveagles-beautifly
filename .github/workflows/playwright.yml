@@ -12,22 +12,51 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: lts/*
-          cache: "npm"
-          cache-dependency-path: "be15_DevEagles_FE/package-lock.json"
+
+      - name: Cache node modules
+        uses: actions/cache@v4
+        with:
+          path: ./be15_DevEagles_FE/node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('./be15_DevEagles_FE/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Debug file structure
+        run: |
+          echo "Current directory:"
+          pwd
+          echo "Contents:"
+          ls -la
+          echo "be15_DevEagles_FE contents:"
+          ls -la be15_DevEagles_FE/
+          echo "Checking package files:"
+          ls -la be15_DevEagles_FE/package*
 
       - name: Install dependencies
-        working-directory: ./be15_DevEagles_FE
-        run: npm ci
+        working-directory: be15_DevEagles_FE
+        run: |
+          if [ -f package-lock.json ]; then
+            echo "Found package-lock.json, using npm ci"
+            npm ci
+          else
+            echo "No package-lock.json found, using npm install"
+            npm install
+          fi
 
       - name: Install Playwright Browsers
-        working-directory: ./be15_DevEagles_FE
+        working-directory: be15_DevEagles_FE
         run: npx playwright install --with-deps
 
+      - name: Build application
+        working-directory: be15_DevEagles_FE
+        run: npm run build
+
       - name: Run Playwright tests
-        working-directory: ./be15_DevEagles_FE
+        working-directory: be15_DevEagles_FE
         run: npx playwright test
 
       - name: Upload Playwright Report
@@ -35,7 +64,7 @@ jobs:
         if: ${{ !cancelled() }}
         with:
           name: playwright-report
-          path: be15_DevEagles_FE/playwright-report/
+          path: ./be15_DevEagles_FE/playwright-report/
           retention-days: 30
 
       - name: Upload Test Results
@@ -43,5 +72,5 @@ jobs:
         if: ${{ !cancelled() }}
         with:
           name: playwright-results
-          path: be15_DevEagles_FE/test-results/
+          path: ./be15_DevEagles_FE/test-results/
           retention-days: 30

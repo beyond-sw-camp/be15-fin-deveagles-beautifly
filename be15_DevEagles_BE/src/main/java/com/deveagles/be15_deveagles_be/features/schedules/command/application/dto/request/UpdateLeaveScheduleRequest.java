@@ -2,9 +2,9 @@ package com.deveagles.be15_deveagles_be.features.schedules.command.application.d
 
 import com.deveagles.be15_deveagles_be.features.schedules.command.domain.aggregate.ScheduleType;
 
-public record UpdateScheduleRequest(
+public record UpdateLeaveScheduleRequest(
     ScheduleType fromType,
     Long fromId,
     ScheduleType toType,
-    CreatePlanRequest planRequest,
-    CreateRegularPlanRequest regularPlanRequest) {}
+    CreateLeaveRequest leaveRequest,
+    CreateRegularLeaveRequest regularLeaveRequest) {}

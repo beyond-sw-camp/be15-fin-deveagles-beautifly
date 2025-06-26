@@ -222,6 +222,7 @@
         @go-back-to-category="goBackToCategory"
         @select-trigger="selectTrigger"
         @select-action="selectAction"
+        @update-action-config="handleActionConfigUpdate"
       />
     </div>
 
@@ -311,6 +312,11 @@
         emit('cancel');
       };
 
+      const handleActionConfigUpdate = ({ field, value }) => {
+        // Update the form data with new action config values
+        formData.actionConfig[field] = value;
+      };
+
       return {
         // State
         formData,
@@ -346,6 +352,7 @@
         formatSendTime,
         onSave,
         onCancel,
+        handleActionConfigUpdate,
       };
     },
   };
@@ -372,7 +379,7 @@
     background: var(--color-neutral-white);
     border-radius: 3px;
     border: 1px solid var(--color-gray-200);
-    box-shadow: var(--shadow-drop);
+    box-shadow: 0 8px 40px -10px rgba(0, 0, 0, 0.08);
   }
 
   .header-info {

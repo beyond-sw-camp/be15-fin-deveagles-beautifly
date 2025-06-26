@@ -6,6 +6,8 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+// TODO: 나중에 지울 파일임
+
 @Service
 @Slf4j
 public class MockMessageQueryService implements CustomerFilterServiceImpl.MessageQueryService {

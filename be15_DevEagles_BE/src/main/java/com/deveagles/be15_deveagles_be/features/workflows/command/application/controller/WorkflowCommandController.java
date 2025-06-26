@@ -25,7 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @Tag(name = "워크플로우 관리", description = "워크플로우 생성, 수정, 삭제 API")
 @RestController
-@RequestMapping("/api/v1/workflows")
+@RequestMapping("/workflows")
 @RequiredArgsConstructor
 @Validated
 @Slf4j
