@@ -69,7 +69,7 @@
   watch(
     () => props.modelValue,
     val => {
-      console.log('🚀 Incoming modelValue:', val); // DEBUG
+      console.log('Incoming modelValue:', val); // DEBUG
       if (val?.primaryItemName) {
         originalName.value = val.primaryItemName;
       }
@@ -84,19 +84,6 @@
   });
 
   const submit = async () => {
-    errors.value.primaryItemName = '';
-
-    if (!form.value.primaryItemId) {
-      console.error('❌ primaryItemId가 undefined입니다:', form.value);
-      emit('toast', '1차 상품 ID가 누락되었습니다.');
-      return;
-    }
-
-    if (!form.value.primaryItemName || form.value.primaryItemName.trim() === '') {
-      errors.value.primaryItemName = '1차 분류명을 입력해주세요.';
-      return;
-    }
-
     try {
       await updatePrimaryItem({
         primaryItemId: form.value.primaryItemId,
@@ -109,7 +96,7 @@
       emit('toast', '1차 상품이 수정되었습니다.');
       emit('close');
     } catch (e) {
-      console.error('🧨 오류:', e);
+      console.error('오류:', e);
       emit('toast', e.response?.data?.message || '1차 상품 수정에 실패했습니다.');
     }
   };
