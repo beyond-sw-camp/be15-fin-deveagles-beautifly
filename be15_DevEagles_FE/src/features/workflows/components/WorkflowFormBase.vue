@@ -222,6 +222,7 @@
         @go-back-to-category="goBackToCategory"
         @select-trigger="selectTrigger"
         @select-action="selectAction"
+        @update-action-config="handleActionConfigUpdate"
       />
     </div>
 
@@ -311,6 +312,11 @@
         emit('cancel');
       };
 
+      const handleActionConfigUpdate = ({ field, value }) => {
+        // Update the form data with new action config values
+        formData.actionConfig[field] = value;
+      };
+
       return {
         // State
         formData,
@@ -346,6 +352,7 @@
         formatSendTime,
         onSave,
         onCancel,
+        handleActionConfigUpdate,
       };
     },
   };

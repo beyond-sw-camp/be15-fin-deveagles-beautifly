@@ -306,17 +306,12 @@
             <label class="config-label">세부 설정</label>
 
             <div v-if="formData.action === 'message-only'" class="config-details">
-              <label class="detail-label">메시지 템플릿 *</label>
-              <select v-model="formData.actionConfig.messageTemplateId" class="config-select">
-                <option value="">템플릿을 선택하세요</option>
-                <option
-                  v-for="option in messageTemplateOptions"
-                  :key="option.value"
-                  :value="option.value"
-                >
-                  {{ option.text }}
-                </option>
-              </select>
+              <CompactTemplateSelector
+                v-model="formData.actionConfig.selectedTemplate"
+                label="메시지 템플릿 *"
+                placeholder="메시지 템플릿을 선택하세요"
+                @template-selected="handleTemplateSelected"
+              />
 
               <label class="detail-label">발송 시간 *</label>
               <PrimeDatePicker
@@ -332,24 +327,21 @@
             </div>
 
             <div v-if="formData.action === 'coupon-message'" class="config-details">
-              <label class="detail-label">쿠폰 선택 *</label>
-              <select v-model="formData.actionConfig.couponId" class="config-select">
-                <option value="">쿠폰을 선택하세요</option>
-                <option v-for="option in couponOptions" :key="option.value" :value="option.value">
-                  {{ option.text }}
-                </option>
-              </select>
-              <label class="detail-label">메시지 템플릿 *</label>
-              <select v-model="formData.actionConfig.messageTemplateId" class="config-select">
-                <option value="">템플릿을 선택하세요</option>
-                <option
-                  v-for="option in messageTemplateOptions"
-                  :key="option.value"
-                  :value="option.value"
-                >
-                  {{ option.text }}
-                </option>
-              </select>
+              <CompactCouponSelector
+                v-model="formData.actionConfig.selectedCoupons"
+                label="쿠폰 선택 *"
+                placeholder="쿠폰을 선택하세요"
+                :multiple="false"
+                :filter-options="{ onlyActive: true }"
+                @coupon-selected="handleCouponSelected"
+              />
+
+              <CompactTemplateSelector
+                v-model="formData.actionConfig.selectedTemplate"
+                label="메시지 템플릿 *"
+                placeholder="메시지 템플릿을 선택하세요"
+                @template-selected="handleTemplateSelected"
+              />
 
               <label class="detail-label">발송 시간 *</label>
               <PrimeDatePicker
@@ -396,6 +388,8 @@
   import BaseButton from '@/components/common/BaseButton.vue';
   import BaseTagSelector from '@/components/common/BaseTagSelector.vue';
   import PrimeDatePicker from '@/components/common/PrimeDatePicker.vue';
+  import { CompactCouponSelector } from '@/features/coupons';
+  import CompactTemplateSelector from '@/components/common/CompactTemplateSelector.vue';
   import {
     triggerCategories,
     actionOptions,
@@ -411,6 +405,8 @@
       BaseButton,
       BaseTagSelector,
       PrimeDatePicker,
+      CompactCouponSelector,
+      CompactTemplateSelector,
     },
     props: {
       show: {
@@ -449,8 +445,32 @@
       'goBackToCategory',
       'selectTrigger',
       'selectAction',
+      'updateActionConfig',
     ],
-    setup() {
+    setup(props, { emit }) {
+      // Event handlers for new compact selectors
+      const handleCouponSelected = coupons => {
+        // Single coupon selection - get first coupon
+        const selectedCoupon = Array.isArray(coupons) && coupons.length > 0 ? coupons[0] : null;
+        if (selectedCoupon) {
+          // Emit to parent instead of direct mutation
+          emit('updateActionConfig', {
+            field: 'couponId',
+            value: selectedCoupon.id || selectedCoupon.value,
+          });
+        }
+      };
+
+      const handleTemplateSelected = template => {
+        if (template) {
+          // Emit to parent instead of direct mutation
+          emit('updateActionConfig', {
+            field: 'messageTemplateId',
+            value: template.value,
+          });
+        }
+      };
+
       return {
         triggerCategories,
         actionOptions,
@@ -458,6 +478,8 @@
         messageTemplateOptions,
         couponOptions,
         customerGradeTagOptions,
+        handleCouponSelected,
+        handleTemplateSelected,
       };
     },
   };
