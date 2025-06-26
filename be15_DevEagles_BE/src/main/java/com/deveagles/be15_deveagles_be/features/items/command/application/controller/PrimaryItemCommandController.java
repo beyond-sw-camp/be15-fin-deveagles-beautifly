@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 @Validated
 @Slf4j
-public class PrimaryItemController {
+public class PrimaryItemCommandController {
 
   private final PrimaryItemCommandService primaryItemServiceCommand;
 
