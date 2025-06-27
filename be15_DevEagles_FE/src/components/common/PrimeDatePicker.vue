@@ -28,8 +28,9 @@
         :step-minute="1"
         :step-second="1"
         fluid
-        @update:model-value="onUpdateModelValue"
         class="prime-datepicker"
+        :base-z-index="baseZIndex"
+        @update:model-value="onUpdateModelValue"
         @date-select="onDateSelect"
         @show="$emit('show')"
         @hide="$emit('hide')"
@@ -159,6 +160,11 @@
       defaultTime: {
         type: String,
         default: '', // 예: '00:00:00' 또는 '23:59:59'
+      },
+      // [수정] z-index를 제어하기 위한 prop 추가
+      baseZIndex: {
+        type: Number,
+        default: 0,
       },
     },
     emits: [

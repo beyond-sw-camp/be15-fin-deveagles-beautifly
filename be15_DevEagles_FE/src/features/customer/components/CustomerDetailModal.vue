@@ -215,7 +215,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 10000; /* CustomerDetailModal은 z-index: 10000으로 유지 */
+    z-index: 10000;
   }
   .modal-container {
     background: #ffffff;
