@@ -6,6 +6,7 @@
     size="md"
     :closable="true"
     :mask-closable="true"
+    :z-index="zIndex"
     @after-leave="resetForm"
   >
     <form
@@ -54,6 +55,7 @@
           placeholder="생일을 선택하세요"
           :disabled="false"
           :error="''"
+          :base-z-index="zIndex + 1"
         />
       </div>
       <div class="form-row">
@@ -138,6 +140,11 @@
   const props = defineProps({
     modelValue: { type: Boolean, default: false },
     customer: { type: Object, default: null },
+    // [기능 추가] z-index prop 추가
+    zIndex: {
+      type: Number,
+      default: 1000,
+    },
   });
   const emit = defineEmits(['update:modelValue', 'update', 'close']);
 
