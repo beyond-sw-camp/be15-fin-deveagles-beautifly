@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import com.deveagles.be15_deveagles_be.features.shops.command.application.dto.request.ShopCreateRequest;
 import com.deveagles.be15_deveagles_be.features.shops.command.application.dto.request.ValidBizNumberRequest;
+import com.deveagles.be15_deveagles_be.features.shops.command.application.service.IndustryRepository;
 import com.deveagles.be15_deveagles_be.features.shops.command.application.service.ShopCommandServiceImpl;
 import com.deveagles.be15_deveagles_be.features.shops.command.domain.aggregate.Shop;
 import com.deveagles.be15_deveagles_be.features.shops.command.repository.ShopRepository;
@@ -22,11 +23,13 @@ public class ShopCommandServiceImplTest {
 
   @Mock private ShopRepository shopRepository;
 
+  @Mock private IndustryRepository industryRepository;
+
   private ShopCommandServiceImpl service;
 
   @BeforeEach
   void setUp() {
-    service = new ShopCommandServiceImpl(shopRepository);
+    service = new ShopCommandServiceImpl(shopRepository, industryRepository);
   }
 
   @Test
