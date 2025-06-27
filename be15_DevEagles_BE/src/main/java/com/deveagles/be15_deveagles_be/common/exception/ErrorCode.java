@@ -76,7 +76,14 @@ public enum ErrorCode implements ErrorCodeType {
   SECONDARY_ITEM_SERVICE_TIME_REQUIRED("81008", "시술의 시술시간을 입력해주세요.", HttpStatus.BAD_REQUEST),
   SECONDARY_ITEM_NOT_FOUND("81009", "2차 상품을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
   ITEMS_SHOP_NOT_FOUND("810010", "샵을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
-  ITEMS_SHOP_ID_REQUIRED("81011", "샵 ID는 필수입니다.", HttpStatus.BAD_REQUEST);
+  ITEMS_SHOP_ID_REQUIRED("81011", "샵 ID는 필수입니다.", HttpStatus.BAD_REQUEST),
+
+  MEMBERSHIP_NAME_REQUIRED("82001", "회원권명을 입력해주세요", HttpStatus.BAD_REQUEST),
+  MEMBERSHIP_PRICE_REQUIRED("82002", "회원권가격을 입력해주세요.", HttpStatus.BAD_REQUEST),
+  MEMBERSHIP_EXPIRATION_PERIOD_REQUIRED("82003", "회원권 유효기간을 입력해주세요.", HttpStatus.BAD_REQUEST),
+  MEMBERSHIP_SESSION_REQUIRED("82004", "횟수를 입력해주세요", HttpStatus.BAD_REQUEST),
+  ;
+
   // 매출 관련 에러 (90000번대)
 
   private final String code;
