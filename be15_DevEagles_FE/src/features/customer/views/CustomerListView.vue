@@ -36,7 +36,7 @@
             @keyup.enter="handleSearch"
           />
         </div>
-        <BaseButton type="primary" size="sm" class="filter-btn" @click="handleSearch">
+        <BaseButton type="primary" size="sm" class="filter-btn" @click="showFilterModal = true">
           <FilterIcon style="margin-right: 4px" />
           필터
         </BaseButton>
@@ -49,6 +49,24 @@
           <SendHorizonalIcon style="margin-right: 4px" :size="18" />
           문자 발송
         </BaseButton>
+      </div>
+    </div>
+
+    <!-- 적용된 필터 표시 영역 -->
+    <div v-if="activeFilterPills.length > 0" class="applied-filters-container">
+      <div class="filter-pills-wrapper">
+        <BaseBadge
+          v-for="pill in activeFilterPills"
+          :key="pill.id"
+          type="primary"
+          pill
+          class="filter-pill-base-badge"
+        >
+          {{ pill.label }}: {{ pill.valueText }}
+          <button class="remove-pill-btn" @click="removeFilter(pill)">
+            <XIcon :size="14" />
+          </button>
+        </BaseBadge>
       </div>
     </div>
 
@@ -181,7 +199,6 @@
 
     <CustomerGradeSettingsDrawer v-model="showGradeSettingsDrawer" />
 
-    <!-- 태그 설정 Drawer 추가 -->
     <CustomerTagSettingsDrawer v-model="showTagSettingsDrawer" />
 
     <CustomerColumnSettingsDrawer
@@ -199,12 +216,19 @@
       @request-edit="handleEditRequest"
     />
 
+    <CustomerFilterModal
+      v-model="showFilterModal"
+      :initial-filters="activeFilters"
+      @apply-filters="handleApplyFilters"
+    />
+
     <BaseConfirm
       v-model="showConfirmDelete"
       title="고객 삭제"
       message="정말 삭제하시겠습니까?"
       confirm-text="삭제"
       confirm-type="error"
+      :z-index="10001"
       @confirm="handleDeleteCustomerConfirmed"
       @cancel="showConfirmDelete = false"
     />
@@ -224,15 +248,36 @@
   import FilterIcon from '@/components/icons/FilterIcon.vue';
   import SortIcon from '@/components/icons/SortIcon.vue';
   import SearchIcon from '@/components/icons/SearchIcon.vue';
-  import { SendHorizonalIcon } from 'lucide-vue-next';
+  import { SendHorizonalIcon, XIcon } from 'lucide-vue-next';
   import CustomerCreateDrawer from '../components/CustomerCreateDrawer.vue';
   import CustomerEditDrawer from '../components/CustomerEditDrawer.vue';
   import CustomerColumnSettingsDrawer from '../components/CustomerColumnSettingsDrawer.vue';
   import CustomerDetailModal from '../components/CustomerDetailModal.vue';
+  import CustomerFilterModal from '../components/CustomerFilterModal.vue';
   import BaseConfirm from '@/components/common/BaseConfirm.vue';
   import BaseToast from '@/components/common/BaseToast.vue';
   import CustomerGradeSettingsDrawer from '../components/CustomerGradeSettingsDrawer.vue';
-  import CustomerTagSettingsDrawer from '../components/CustomerTagSettingsDrawer.vue'; // 추가
+  import CustomerTagSettingsDrawer from '../components/CustomerTagSettingsDrawer.vue';
+
+  const activeFilters = ref({});
+
+  const dummyTags = ref([
+    { tag_id: 1, tag_name: 'VIP' },
+    { tag_id: 2, tag_name: '신규' },
+    { tag_id: 3, tag_name: '컴플레인' },
+    { tag_id: 4, tag_name: '아주아주 긴 태그명 테스트' },
+  ]);
+  const dummyStaff = ref([
+    { id: 1, name: '부재녕' },
+    { id: 2, name: '김담당' },
+    { id: 3, name: '이매니저' },
+  ]);
+  const dummyGrades = ref([
+    { id: 1, name: '일반' },
+    { id: 2, name: 'VIP' },
+    { id: 3, name: 'VVIP' },
+    { id: 4, name: '아주아주 긴 등급명 테스트' },
+  ]);
 
   const dummyData = ref(
     Array.from({ length: 20 }, (_, i) => ({
@@ -253,13 +298,14 @@
         i % 3 !== 0
           ? [
               {
+                tag_id: i % 2 === 0 ? 1 : 4,
                 tag_name: i % 2 === 0 ? 'VIP' : '아주아주 긴 태그명 테스트',
                 color_code: i % 2 === 0 ? '#FFD700' : '#00BFFF',
               },
             ]
           : [],
       customer_grade_name: i % 2 === 0 ? '일반' : '아주아주 긴 등급명 테스트',
-      birthdate: `1990-${String(i + 1).padStart(2, '0')}-15`,
+      birthdate: `1990-${String((i % 12) + 1).padStart(2, '0')}-15`,
       gender: i % 2 === 0 ? '남성' : '여성',
       channel_id: i % 2 === 0 ? 1 : 2,
       acquisition_channel_name: i % 2 === 0 ? '네이버검색' : '지인 추천',
@@ -317,7 +363,9 @@
   const showGradeTagDropdown = ref(false);
   const gradeTagDropdownWrapper = ref(null);
   const showGradeSettingsDrawer = ref(false);
-  const showTagSettingsDrawer = ref(false); // 추가
+  const showTagSettingsDrawer = ref(false);
+
+  const showFilterModal = ref(false);
 
   const openGradeSettingsDrawer = () => {
     showGradeSettingsDrawer.value = true;
@@ -415,27 +463,269 @@
     return sortKey.value === key ? sortOrder.value : '';
   }
 
-  const sortedData = computed(() => {
-    let data = dummyData.value.filter(
-      c =>
-        !search.value ||
-        c.customer_name.includes(search.value) ||
-        c.phone_number.includes(search.value)
-    );
+  const filteredData = computed(() => {
+    let data = [...dummyData.value];
+
+    // 1. 검색어 필터링
+    if (search.value) {
+      data = data.filter(
+        c => c.customer_name.includes(search.value) || c.phone_number.includes(search.value)
+      );
+    }
+
+    const filters = activeFilters.value;
+    const hasActiveFilter = Object.keys(filters).length > 0;
+
+    if (hasActiveFilter) {
+      const checkFunctions = [];
+      const searchType = filters.searchType || 'and';
+
+      // 성별
+      if (filters.gender?.length > 0) {
+        checkFunctions.push(c => filters.gender.includes(c.gender));
+      }
+      // 태그
+      if (filters.tags?.length > 0) {
+        checkFunctions.push(c => c.tags.some(t => filters.tags.includes(t.tag_id)));
+      }
+      // 담당자
+      if (filters.staff?.length > 0) {
+        const staffNames = filters.staff.map(id => dummyStaff.value.find(s => s.id === id)?.name);
+        checkFunctions.push(c => staffNames.includes(c.staff_name));
+      }
+      // 등급
+      if (filters.grades?.length > 0) {
+        const gradeNames = filters.grades.map(id => dummyGrades.value.find(g => g.id === id)?.name);
+        checkFunctions.push(c => gradeNames.includes(c.customer_grade_name));
+      }
+      // 생일 (이번달, 이번주, 오늘)
+      if (filters.birthday?.length > 0) {
+        checkFunctions.push(c => {
+          if (!c.birthdate) return false;
+          const today = new Date();
+          const birthDateThisYear = new Date(
+            today.getFullYear(),
+            parseInt(c.birthdate.substring(5, 7)) - 1,
+            parseInt(c.birthdate.substring(8, 10))
+          );
+
+          if (filters.birthday.includes('today')) {
+            if (
+              birthDateThisYear.getMonth() === today.getMonth() &&
+              birthDateThisYear.getDate() === today.getDate()
+            )
+              return true;
+          }
+          if (filters.birthday.includes('this_month')) {
+            if (birthDateThisYear.getMonth() === today.getMonth()) return true;
+          }
+          if (filters.birthday.includes('this_week')) {
+            const weekStart = new Date(today);
+            weekStart.setDate(weekStart.getDate() - today.getDay());
+            weekStart.setHours(0, 0, 0, 0);
+
+            const weekEnd = new Date(weekStart);
+            weekEnd.setDate(weekEnd.getDate() + 6);
+            weekEnd.setHours(23, 59, 59, 999);
+
+            if (birthDateThisYear >= weekStart && birthDateThisYear <= weekEnd) return true;
+          }
+          return false;
+        });
+      }
+      // 출생연도
+      if (filters.birthYearStart || filters.birthYearEnd) {
+        checkFunctions.push(c => {
+          if (!c.birthdate) return false;
+          const birthYear = parseInt(c.birthdate.substring(0, 4));
+          const start = filters.birthYearStart;
+          const end = filters.birthYearEnd;
+          return (!start || birthYear >= start) && (!end || birthYear <= end);
+        });
+      }
+      // 선불액 구매 내역
+      if (filters.prepaidHistory?.length > 0) {
+        checkFunctions.push(c => {
+          const hasPrepaid = c.customer_prepaid_passes && c.customer_prepaid_passes.length > 0;
+          return (
+            (filters.prepaidHistory.includes('yes') && hasPrepaid) ||
+            (filters.prepaidHistory.includes('no') && !hasPrepaid)
+          );
+        });
+      }
+      // 횟수권 구매 내역
+      if (filters.sessionPassHistory?.length > 0) {
+        checkFunctions.push(c => {
+          const hasSessionPass = c.customer_session_passes && c.customer_session_passes.length > 0;
+          return (
+            (filters.sessionPassHistory.includes('yes') && hasSessionPass) ||
+            (filters.sessionPassHistory.includes('no') && !hasSessionPass)
+          );
+        });
+      }
+      // 사용 가능 선불액
+      if (filters.usablePrepaid?.length > 0) {
+        checkFunctions.push(c => {
+          const hasUsable =
+            c.customer_prepaid_passes &&
+            c.customer_prepaid_passes.some(p => p.remaining_amount > 0);
+          return (
+            (filters.usablePrepaid.includes('yes') && hasUsable) ||
+            (filters.usablePrepaid.includes('no') && !hasUsable)
+          );
+        });
+      }
+      // 사용 가능 횟수권
+      if (filters.usableSessionPass?.length > 0) {
+        checkFunctions.push(c => {
+          const hasUsable =
+            c.customer_session_passes && c.customer_session_passes.some(p => p.remaining_count > 0);
+          return (
+            (filters.usableSessionPass.includes('yes') && hasUsable) ||
+            (filters.usableSessionPass.includes('no') && !hasUsable)
+          );
+        });
+      }
+      // 누적 매출액
+      if (
+        filters.totalRevenue &&
+        (filters.totalRevenue.from != null || filters.totalRevenue.to != null)
+      ) {
+        checkFunctions.push(
+          c =>
+            (filters.totalRevenue.from == null || c.total_revenue >= filters.totalRevenue.from) &&
+            (filters.totalRevenue.to == null || c.total_revenue <= filters.totalRevenue.to)
+        );
+      }
+      // 잔여 선불액
+      if (
+        filters.remainingPrepaid &&
+        (filters.remainingPrepaid.from != null || filters.remainingPrepaid.to != null)
+      ) {
+        checkFunctions.push(
+          c =>
+            (filters.remainingPrepaid.from == null ||
+              c.remaining_amount >= filters.remainingPrepaid.from) &&
+            (filters.remainingPrepaid.to == null ||
+              c.remaining_amount <= filters.remainingPrepaid.to)
+        );
+      }
+      // 방문 횟수
+      if (
+        filters.visitCount &&
+        (filters.visitCount.from != null || filters.visitCount.to != null)
+      ) {
+        checkFunctions.push(
+          c =>
+            (filters.visitCount.from == null || c.visit_count >= filters.visitCount.from) &&
+            (filters.visitCount.to == null || c.visit_count <= filters.visitCount.to)
+        );
+      }
+      // 노쇼 횟수
+      if (
+        filters.noShowCount &&
+        (filters.noShowCount.from != null || filters.noShowCount.to != null)
+      ) {
+        checkFunctions.push(
+          c =>
+            (filters.noShowCount.from == null || c.noshow_count >= filters.noShowCount.from) &&
+            (filters.noShowCount.to == null || c.noshow_count <= filters.noShowCount.to)
+        );
+      }
+      // 최초 등록일
+      if (filters.registrationDate?.mode && filters.registrationDate.mode !== 'none') {
+        checkFunctions.push(c => {
+          if (!c.created_at) return false;
+          const createdAt = new Date(c.created_at);
+          createdAt.setHours(0, 0, 0, 0);
+          const mode = filters.registrationDate.mode;
+          const date1 = filters.registrationDate.date1
+            ? new Date(filters.registrationDate.date1)
+            : null;
+          if (date1) date1.setHours(0, 0, 0, 0);
+          const date2 = filters.registrationDate.date2
+            ? new Date(filters.registrationDate.date2)
+            : null;
+          if (date2) date2.setHours(23, 59, 59, 999);
+          const days = filters.registrationDate.days;
+
+          if (mode === 'before' && date1) return createdAt < date1;
+          if (mode === 'after' && date1) return createdAt > date1;
+          if (mode === 'range' && date1 && date2) return createdAt >= date1 && createdAt <= date2;
+          if (mode === 'within_days' && days !== null) {
+            const daysAgo = new Date();
+            daysAgo.setDate(daysAgo.getDate() - days);
+            daysAgo.setHours(0, 0, 0, 0);
+            return createdAt >= daysAgo;
+          }
+          if (mode === 'days_ago' && days !== null) {
+            const daysAgo = new Date();
+            daysAgo.setDate(daysAgo.getDate() - days);
+            daysAgo.setHours(23, 59, 59, 999);
+            return createdAt <= daysAgo;
+          }
+          return false;
+        });
+      }
+      // 최근 방문일
+      if (filters.recentVisitDate?.mode && filters.recentVisitDate.mode !== 'none') {
+        checkFunctions.push(c => {
+          if (!c.recent_visit_date) return false;
+          const recentVisitDate = new Date(c.recent_visit_date);
+          recentVisitDate.setHours(0, 0, 0, 0);
+          const mode = filters.recentVisitDate.mode;
+          const date1 = filters.recentVisitDate.date1
+            ? new Date(filters.recentVisitDate.date1)
+            : null;
+          if (date1) date1.setHours(0, 0, 0, 0);
+          const date2 = filters.recentVisitDate.date2
+            ? new Date(filters.recentVisitDate.date2)
+            : null;
+          if (date2) date2.setHours(23, 59, 59, 999);
+          const days = filters.recentVisitDate.days;
+
+          if (mode === 'before' && date1) return recentVisitDate < date1;
+          if (mode === 'after' && date1) return recentVisitDate > date1;
+          if (mode === 'range' && date1 && date2)
+            return recentVisitDate >= date1 && recentVisitDate <= date2;
+          if (mode === 'within_days' && days !== null) {
+            const daysAgo = new Date();
+            daysAgo.setDate(daysAgo.getDate() - days);
+            daysAgo.setHours(0, 0, 0, 0);
+            return recentVisitDate >= daysAgo;
+          }
+          if (mode === 'days_ago' && days !== null) {
+            const daysAgo = new Date();
+            daysAgo.setDate(daysAgo.getDate() - days);
+            daysAgo.setHours(23, 59, 59, 999);
+            return recentVisitDate <= daysAgo;
+          }
+          return false;
+        });
+      }
+
+      if (checkFunctions.length > 0) {
+        data = data.filter(customer => {
+          if (searchType === 'and') {
+            return checkFunctions.every(check => check(customer));
+          } else {
+            return checkFunctions.some(check => check(customer));
+          }
+        });
+      }
+    }
+
+    // 정렬 로직은 필터링 후에 적용
     if (sortableKeys.includes(sortKey.value)) {
-      data = [...data].sort((a, b) => {
+      data.sort((a, b) => {
         let aValue = a[sortKey.value];
         let bValue = b[sortKey.value];
         if (sortKey.value === 'recent_visit_date') {
-          aValue = aValue || '';
-          bValue = bValue || '';
           return sortOrder.value === 'asc'
-            ? aValue.localeCompare(bValue)
-            : bValue.localeCompare(aValue);
+            ? (aValue || '').localeCompare(bValue || '')
+            : (bValue || '').localeCompare(aValue || '');
         }
-        if (['visit_count', 'remaining_amount', 'total_revenue'].includes(sortKey.value)) {
-          aValue = Number(aValue);
-          bValue = Number(bValue);
+        if (typeof aValue === 'number') {
           return sortOrder.value === 'asc' ? aValue - bValue : bValue - aValue;
         }
         return sortOrder.value === 'asc'
@@ -443,31 +733,30 @@
           : String(bValue).localeCompare(String(aValue));
       });
     } else {
-      data = [...data].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      data.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
     }
+
     return data;
   });
 
-  const total = computed(() => sortedData.value.length);
+  const total = computed(() => filteredData.value.length);
   const totalPages = computed(() => Math.ceil(total.value / pageSize.value));
   const pagedData = computed(() => {
     const start = (page.value - 1) * pageSize.value;
-    return sortedData.value.slice(start, start + pageSize.value);
+    return filteredData.value.slice(start, start + pageSize.value);
   });
 
   const showDropdown = ref(false);
   const checkboxDropdownRef = ref(null);
 
   const isAllSelected = computed(() => {
-    return selectedIds.value.length === sortedData.value.length && sortedData.value.length > 0;
+    if (filteredData.value.length === 0) return false;
+    return selectedIds.value.length === filteredData.value.length;
   });
   const isPageSelected = computed(() => {
     const pageIds = pagedData.value.map(item => item.customer_id);
-    return (
-      pageIds.length > 0 &&
-      pageIds.every(id => selectedIds.value.includes(id)) &&
-      !isAllSelected.value
-    );
+    if (pageIds.length === 0) return false;
+    return pageIds.every(id => selectedIds.value.includes(id)) && !isAllSelected.value;
   });
 
   function toggleDropdown(e) {
@@ -485,7 +774,7 @@
   }
   function selectAll(mode) {
     if (mode === 'all') {
-      selectedIds.value = sortedData.value.map(item => item.customer_id);
+      selectedIds.value = filteredData.value.map(item => item.customer_id);
     } else {
       const pageIds = pagedData.value.map(item => item.customer_id);
       selectedIds.value = Array.from(new Set([...selectedIds.value, ...pageIds]));
@@ -514,6 +803,12 @@
     page.value = newPage;
   }
   function onSendMessage() {}
+
+  const handleApplyFilters = filters => {
+    activeFilters.value = filters;
+    page.value = 1; // 필터 적용 시 1페이지로 리셋
+    toastRef.value?.success('필터가 적용되었습니다.');
+  };
 
   const acquisitionChannelOptions = [
     { channel_id: 1, channel_name: '네이버검색' },
@@ -555,6 +850,184 @@
     sortOrder.value = 'desc';
     page.value = 1;
   }
+
+  const activeFilterPills = computed(() => {
+    const pills = [];
+    const filters = activeFilters.value;
+
+    const addPill = (key, label, valueText, value) => {
+      if (valueText !== null && valueText !== undefined && valueText !== '') {
+        const idValue = typeof value === 'object' && value !== null ? JSON.stringify(value) : value;
+        pills.push({ id: `${key}_${idValue}`, key, value, label, valueText });
+      }
+    };
+
+    if (filters.gender?.length > 0) {
+      addPill('gender', '성별', filters.gender.join(', '), filters.gender);
+    }
+    if (filters.tags?.length > 0) {
+      const tagNames = filters.tags.map(
+        id => dummyTags.value.find(t => t.tag_id === id)?.tag_name || `ID:${id}`
+      );
+      addPill('tags', '태그', tagNames.join(', '), filters.tags);
+    }
+    if (filters.staff?.length > 0) {
+      const staffNames = filters.staff.map(
+        id => dummyStaff.value.find(s => s.id === id)?.name || `ID:${id}`
+      );
+      addPill('staff', '담당자', staffNames.join(', '), filters.staff);
+    }
+    if (filters.grades?.length > 0) {
+      const gradeNames = filters.grades.map(
+        id => dummyGrades.value.find(g => g.id === id)?.name || `ID:${id}`
+      );
+      addPill('grades', '등급', gradeNames.join(', '), filters.grades);
+    }
+    if (filters.birthday?.length > 0) {
+      const birthdayMap = { today: '오늘', this_week: '이번주', this_month: '이번달' };
+      const birthdayTexts = filters.birthday.map(b => birthdayMap[b] || b);
+      addPill('birthday', '생일', birthdayTexts.join(', '), filters.birthday);
+    }
+    if (filters.birthYearStart || filters.birthYearEnd) {
+      let text = '';
+      if (filters.birthYearStart && filters.birthYearEnd) {
+        text = `${filters.birthYearStart}년 ~ ${filters.birthYearEnd}년`;
+      } else if (filters.birthYearStart) {
+        text = `${filters.birthYearStart}년 이후`;
+      } else if (filters.birthYearEnd) {
+        text = `${filters.birthYearEnd}년 이전`;
+      }
+      addPill('birthYear', '출생연도', text, {
+        start: filters.birthYearStart,
+        end: filters.birthYearEnd,
+      });
+    }
+    if (filters.prepaidHistory?.length > 0) {
+      const textMap = { yes: '있음', no: '없음' };
+      const texts = filters.prepaidHistory.map(h => textMap[h] || h);
+      addPill('prepaidHistory', '선불액 구매내역', texts.join(', '), filters.prepaidHistory);
+    }
+    if (filters.sessionPassHistory?.length > 0) {
+      const textMap = { yes: '있음', no: '없음' };
+      const texts = filters.sessionPassHistory.map(h => textMap[h] || h);
+      addPill(
+        'sessionPassHistory',
+        '횟수권 구매내역',
+        texts.join(', '),
+        filters.sessionPassHistory
+      );
+    }
+    if (filters.usablePrepaid?.length > 0) {
+      const textMap = { yes: '있음', no: '없음' };
+      const texts = filters.usablePrepaid.map(u => textMap[u] || u);
+      addPill('usablePrepaid', '사용가능 선불액', texts.join(', '), filters.usablePrepaid);
+    }
+    if (filters.usableSessionPass?.length > 0) {
+      const textMap = { yes: '있음', no: '없음' };
+      const texts = filters.usableSessionPass.map(u => textMap[u] || u);
+      addPill('usableSessionPass', '사용가능 횟수권', texts.join(', '), filters.usableSessionPass);
+    }
+    if (
+      filters.totalRevenue &&
+      (filters.totalRevenue.from != null || filters.totalRevenue.to != null)
+    ) {
+      let text = '';
+      if (filters.totalRevenue.from != null && filters.totalRevenue.to != null) {
+        text = `${filters.totalRevenue.from.toLocaleString()}원 ~ ${filters.totalRevenue.to.toLocaleString()}원`;
+      } else if (filters.totalRevenue.from != null) {
+        text = `${filters.totalRevenue.from.toLocaleString()}원 이상`;
+      } else if (filters.totalRevenue.to != null) {
+        text = `${filters.totalRevenue.to.toLocaleString()}원 이하`;
+      }
+      addPill('totalRevenue', '누적 매출액', text, filters.totalRevenue);
+    }
+    if (
+      filters.remainingPrepaid &&
+      (filters.remainingPrepaid.from != null || filters.remainingPrepaid.to != null)
+    ) {
+      let text = '';
+      if (filters.remainingPrepaid.from != null && filters.remainingPrepaid.to != null) {
+        text = `${filters.remainingPrepaid.from.toLocaleString()}원 ~ ${filters.remainingPrepaid.to.toLocaleString()}원`;
+      } else if (filters.remainingPrepaid.from != null) {
+        text = `${filters.remainingPrepaid.from.toLocaleString()}원 이상`;
+      } else if (filters.remainingPrepaid.to != null) {
+        text = `${filters.remainingPrepaid.to.toLocaleString()}원 이하`;
+      }
+      addPill('remainingPrepaid', '잔여 선불액', text, filters.remainingPrepaid);
+    }
+    if (filters.visitCount && (filters.visitCount.from != null || filters.visitCount.to != null)) {
+      let text = '';
+      if (filters.visitCount.from != null && filters.visitCount.to != null) {
+        text = `${filters.visitCount.from}회 ~ ${filters.visitCount.to}회`;
+      } else if (filters.visitCount.from != null) {
+        text = `${filters.visitCount.from}회 이상`;
+      } else if (filters.visitCount.to != null) {
+        text = `${filters.visitCount.to}회 이하`;
+      }
+      addPill('visitCount', '방문 횟수', text, filters.visitCount);
+    }
+    if (
+      filters.noShowCount &&
+      (filters.noShowCount.from != null || filters.noShowCount.to != null)
+    ) {
+      let text = '';
+      if (filters.noShowCount.from != null && filters.noShowCount.to != null) {
+        text = `${filters.noShowCount.from}회 ~ ${filters.noShowCount.to}회`;
+      } else if (filters.noShowCount.from != null) {
+        text = `${filters.noShowCount.from}회 이상`;
+      } else if (filters.noShowCount.to != null) {
+        text = `${filters.noShowCount.to}회 이하`;
+      }
+      addPill('noShowCount', '노쇼 횟수', text, filters.noShowCount);
+    }
+
+    const formatDateForDisplay = dateStr => {
+      if (!dateStr) return '';
+      const date = new Date(dateStr);
+      return date.toLocaleDateString('ko-KR', {
+        year: 'numeric',
+        month: 'numeric',
+        day: 'numeric',
+      });
+    };
+    const getDateFilterText = filterObj => {
+      const mode = filterObj.mode;
+      const date1 = filterObj.date1;
+      const date2 = filterObj.date2;
+      const days = filterObj.days;
+
+      if (mode === 'before' && date1) return `${formatDateForDisplay(date1)} 이전`;
+      if (mode === 'after' && date1) return `${formatDateForDisplay(date1)} 이후`;
+      if (mode === 'range' && date1 && date2)
+        return `${formatDateForDisplay(date1)} ~ ${formatDateForDisplay(date2)}`;
+      if (mode === 'within_days' && days !== null) return `최근 ${days}일 이내`;
+      if (mode === 'days_ago' && days !== null) return `${days}일 이상 경과`;
+      return '';
+    };
+
+    if (filters.registrationDate?.mode && filters.registrationDate.mode !== 'none') {
+      const text = getDateFilterText(filters.registrationDate);
+      addPill('registrationDate', '최초 등록일', text, filters.registrationDate);
+    }
+    if (filters.recentVisitDate?.mode && filters.recentVisitDate.mode !== 'none') {
+      const text = getDateFilterText(filters.recentVisitDate);
+      addPill('recentVisitDate', '최근 방문일', text, filters.recentVisitDate);
+    }
+
+    return pills;
+  });
+
+  function removeFilter(pillToRemove) {
+    const { key } = pillToRemove;
+    const currentFilters = { ...activeFilters.value };
+
+    if (key in currentFilters) {
+      delete currentFilters[key];
+    }
+
+    activeFilters.value = currentFilters;
+    page.value = 1;
+  }
 </script>
 
 <style scoped>
@@ -586,7 +1059,9 @@
   .dropdown-menu {
     position: absolute;
     top: 100%;
-    right: 0;
+    left: 0;
+    width: 100%;
+    box-sizing: border-box;
     margin-top: 8px;
     background-color: white;
     border: 1px solid #ddd;
@@ -594,13 +1069,13 @@
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     z-index: 100;
     padding: 0.5rem 0;
-    min-width: 160px;
   }
   .dropdown-item {
     padding: 0.75rem 1rem;
     cursor: pointer;
     font-size: 0.9rem;
     color: #333;
+    text-align: center;
   }
   .dropdown-item:hover {
     background-color: #f5f5f5;
@@ -609,7 +1084,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 18px;
+    margin-bottom: 10px;
     gap: 16px;
   }
   .toolbar-left {
@@ -660,6 +1135,40 @@
     border-color: #364f6b;
     background: #f8fafd;
   }
+  .applied-filters-container {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 18px;
+    flex-wrap: wrap;
+  }
+  .filter-pills-wrapper {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    flex-grow: 1;
+  }
+  .filter-pill-base-badge {
+    display: inline-flex;
+    align-items: center;
+    font-size: 14px;
+    font-weight: 500;
+  }
+  .remove-pill-btn {
+    margin-left: 8px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: inherit;
+    opacity: 0.7;
+  }
+  .remove-pill-btn:hover {
+    opacity: 1;
+  }
   .filter-btn,
   .sms-btn,
   .settings-btn {
@@ -694,11 +1203,14 @@
     font-weight: bold;
     vertical-align: middle;
   }
-
-  /* 테이블 스크롤 래퍼 */
   .table-scroll-wrapper {
     width: 100%;
     overflow-x: auto;
+  }
+  .wide-table :deep(th),
+  .wide-table :deep(td) {
+    padding: 12px 16px;
+    vertical-align: middle;
   }
   .wide-table :deep(.table-container) {
     width: 100%;
@@ -710,7 +1222,6 @@
     width: 100%;
     min-width: 100%;
   }
-
   .single-line-ellipsis {
     white-space: nowrap;
     overflow: hidden;
@@ -766,7 +1277,7 @@
     user-select: none;
     gap: 4px;
     white-space: nowrap;
-    padding: 0 8px;
+    padding: 0;
     height: 42px;
     width: 100%;
     font-size: 15px;
