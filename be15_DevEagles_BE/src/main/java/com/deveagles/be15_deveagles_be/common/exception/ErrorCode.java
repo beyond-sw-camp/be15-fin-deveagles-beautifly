@@ -18,6 +18,10 @@ public enum ErrorCode implements ErrorCodeType {
   DUPLICATE_RESOURCE("00007", "중복된 리소스입니다", HttpStatus.CONFLICT),
   INTERNAL_SERVER_ERROR("00999", "서버 내부 오류가 발생했습니다", HttpStatus.INTERNAL_SERVER_ERROR),
 
+  // 회원 관련 에러 (10000번대)
+  USER_NAME_NOT_FOUND("11001", "존재하지 않는 ID입니다. 다시 입력해주세요.", HttpStatus.NOT_FOUND),
+  USER_INVALID_LOGIN("11002", "잘못된 비밀번호입니다.", HttpStatus.BAD_REQUEST),
+
   // 고객 관련 에러 (30000번대)
   CUSTOMER_NOT_FOUND("30001", "고객을 찾을 수 없습니다", HttpStatus.NOT_FOUND),
   CUSTOMER_PHONE_DUPLICATE("30002", "이미 등록된 전화번호입니다", HttpStatus.CONFLICT),
@@ -82,9 +86,10 @@ public enum ErrorCode implements ErrorCodeType {
   MEMBERSHIP_PRICE_REQUIRED("82002", "회원권가격을 입력해주세요.", HttpStatus.BAD_REQUEST),
   MEMBERSHIP_EXPIRATION_PERIOD_REQUIRED("82003", "회원권 유효기간을 입력해주세요.", HttpStatus.BAD_REQUEST),
   MEMBERSHIP_SESSION_REQUIRED("82004", "횟수를 입력해주세요", HttpStatus.BAD_REQUEST),
-  ;
 
-  // 매출 관련 에러 (90000번대)
+// 매출 관련 에러 (90000번대)
+
+;
 
   private final String code;
   private final String message;
