@@ -26,11 +26,11 @@ public class AuthServiceImpl implements AuthService {
 
     Staff staff =
         userRepository
-            .findStaffByLoginId(request.username())
+            .findStaffByLoginId(request.loginId())
             .orElseThrow(() -> new BusinessException(ErrorCode.USER_NAME_NOT_FOUND));
 
-    if (passwordEncoder.matches(request.password(), staff.getPassword())) {
-      throw new BusinessException(ErrorCode.USER_INVALID_LOGIN);
+    if (!passwordEncoder.matches(request.password(), staff.getPassword())) {
+      throw new BusinessException(ErrorCode.USER_INVALID_PASSWORD);
     }
 
     String accessToken = jwtTokenProvider.createToken(staff.getLoginId());
