@@ -5,7 +5,7 @@
         <div class="custom-modal">
           <div class="modal-header">
             <h2>고객 회원권 상세 조회</h2>
-            <BaseButton class="modal-close" size="sm" icon @click="close">×</BaseButton>
+            <button class="modal-close" @click="close">×</button>
           </div>
 
           <div class="modal-content">
