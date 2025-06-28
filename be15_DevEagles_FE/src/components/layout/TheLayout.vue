@@ -19,7 +19,6 @@
       </button>
     </div>
 
-    <!-- ✅ 채팅 모달 -->
     <ChatModal v-if="isChatOpen" @close="toggleChat" />
   </div>
 </template>
@@ -88,13 +87,22 @@
     color: white;
     border: none;
     border-radius: 9999px;
-    padding: 0.75rem 1rem;
+    height: 48px;
+    width: 48px;
+    padding: 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 0.5rem;
-    height: 44px;
-    transition: width 0.3s ease;
+    overflow: hidden;
+    position: relative;
+    transition:
+      width 0.3s ease,
+      padding 0.3s ease;
+  }
+
+  .chat-inquiry-button:hover {
+    width: 150px;
+    padding: 0 1rem 0 0.75rem;
   }
 
   .chat-icon {

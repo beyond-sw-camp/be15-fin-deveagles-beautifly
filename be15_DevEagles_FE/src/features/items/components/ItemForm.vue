@@ -5,7 +5,7 @@
       <h1 class="page-title">상품 관리</h1>
       <div class="register-wrapper relative">
         <BaseButton class="register-button" @click="toggleRegisterDropdown"> 상품 등록 </BaseButton>
-        <div v-if="showRegisterDropdown" class="dropdown-menu below-left">
+        <div v-if="showRegisterDropdown" ref="registerDropdownRef" class="dropdown-menu below-left">
           <div class="dropdown-item" @click="openPrimaryRegisterModal">1차 상품 등록</div>
           <div class="dropdown-item" @click="openSecondaryRegisterModal">2차 상품 등록</div>
         </div>
@@ -25,15 +25,20 @@
     </div>
 
     <!-- 리스트 -->
-    <div v-for="item in filteredItems" :key="item.primary_item_id" class="card-section">
+    <div v-for="(item, index) in filteredItems" :key="item.primaryItemId" class="card-section">
       <BaseCard>
         <div class="card-title-row">
-          <span>{{ item.primary_item_name }}</span>
+          <span>{{ item.primaryItemName }}</span>
           <div class="text-right relative">
-            <button class="icon-button" @click.stop="toggleDropdown(item.primary_item_id)">
-              ···
-            </button>
-            <div v-if="showDropdownId === item.primary_item_id" class="dropdown-menu below-left">
+            <button class="icon-button" @click.stop="toggleDropdown(index)">···</button>
+            <div
+              v-if="showDropdownIndex === index"
+              :ref="el => setDropdownRef(index, el)"
+              class="dropdown-menu below-left"
+            >
+              <div class="dropdown-item" @click="openSecondaryRegisterModal(item)">
+                2차 상품 등록
+              </div>
               <div class="dropdown-item" @click="openPrimaryEditModal(item)">1차 상품 수정</div>
               <div class="dropdown-item" @click="deletePrimaryItem(item)">1차 상품 삭제</div>
             </div>
@@ -45,16 +50,22 @@
             <div>2차 상품명</div>
             <div class="text-right">가격</div>
             <div class="text-right">시술 시간</div>
+            <div class="text-right">활성화 상태</div>
           </div>
-          <div v-for="sub in item.subItems" :key="sub.secondary_item_id" class="card-row">
+          <div v-for="sub in item.subItems" :key="sub.secondaryItemId" class="card-row">
             <div class="clickable" @click="openSecondaryEditModal(item, sub)">
-              {{ sub.secondary_item_name }}
+              {{ sub.secondaryItemName }}
             </div>
             <div class="text-right clickable" @click="openSecondaryEditModal(item, sub)">
-              {{ formatPrice(sub.secondary_item_price) }}
+              {{ formatPrice(sub.secondaryItemPrice) }}
             </div>
             <div class="text-right clickable" @click="openSecondaryEditModal(item, sub)">
               {{ sub.duration ? sub.duration + '분' : '-' }}
+            </div>
+            <div class="text-right clickable" @click="openSecondaryEditModal(item, sub)">
+              <div class="readonly-toggle" :class="{ active: sub.isActive }">
+                <div class="circle" />
+              </div>
             </div>
           </div>
         </div>
@@ -87,11 +98,14 @@
       :primary-options="primaryOptions"
       @submit="handleSecondaryEdit"
       @close="closeModals"
+      @success="msg => toastRef.value?.success(msg)"
     />
     <PrimaryDeleteModal
       v-if="showPrimaryDeleteModal"
       v-model="showPrimaryDeleteModal"
+      :primary-item-id="selectedProduct?.primaryItemId"
       @confirm="handlePrimaryDelete"
+      @error="msg => toastRef.value?.error(msg)"
     />
 
     <BaseToast ref="toastRef" />
@@ -99,7 +113,7 @@
 </template>
 
 <script setup>
-  import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
+  import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue';
   import BaseButton from '@/components/common/BaseButton.vue';
   import BaseCard from '@/components/common/BaseCard.vue';
   import BaseToast from '@/components/common/BaseToast.vue';
@@ -108,194 +122,95 @@
   import PrimaryEditModal from '@/features/items/components/PrimaryEditModal.vue';
   import SecondaryEditModal from '@/features/items/components/SecondaryEditModal.vue';
   import PrimaryDeleteModal from '@/features/items/components/PrimaryDeleteModal.vue';
+  import { getPrimaryItems, getAllSecondaryItems } from '@/features/items/api/items.js';
 
   const toastRef = ref(null);
+  const showDropdownIndex = ref(null);
+  const dropdownRefsMap = new Map();
+  const registerDropdownRef = ref(null);
+
+  const setDropdownRef = (index, el) => {
+    if (el) dropdownRefsMap.set(index, el);
+    else dropdownRefsMap.delete(index);
+  };
+
+  const toggleDropdown = async index => {
+    showDropdownIndex.value = showDropdownIndex.value === index ? null : index;
+    await nextTick();
+  };
+
+  const handleClickOutside = event => {
+    const dropdownEl = dropdownRefsMap.get(showDropdownIndex.value);
+    const registerEl = registerDropdownRef.value;
+    if (showDropdownIndex.value !== null && dropdownEl && !dropdownEl.contains(event.target)) {
+      showDropdownIndex.value = null;
+    }
+    if (
+      showRegisterDropdown.value &&
+      registerEl &&
+      !registerEl.contains(event.target) &&
+      !event.target.closest('.register-button')
+    ) {
+      showRegisterDropdown.value = false;
+    }
+  };
+
+  const showRegisterDropdown = ref(false);
+  const toggleRegisterDropdown = () => {
+    showRegisterDropdown.value = !showRegisterDropdown.value;
+  };
 
   const activeTab = ref('시술');
-  const showRegisterDropdown = ref(false);
   const showPrimaryRegisterModal = ref(false);
   const showSecondaryRegisterModal = ref(false);
   const showPrimaryEditModal = ref(false);
   const showSecondaryEditModal = ref(false);
   const showPrimaryDeleteModal = ref(false);
-  const showDropdownId = ref(null);
   const selectedProduct = ref(null);
 
-  const items = ref([
-    {
-      primary_item_id: 1,
-      primary_item_name: '펌(남성)',
-      category: 'SERVICE',
-      subItems: [
-        {
-          secondary_item_id: 11,
-          secondary_item_name: '히피펌',
-          secondary_item_price: 158000,
-          duration: 90,
-        },
-        {
-          secondary_item_id: 12,
-          secondary_item_name: '스핀스왈로펌',
-          secondary_item_price: 168000,
-          duration: 80,
-        },
-      ],
-    },
-    {
-      primary_item_id: 2,
-      primary_item_name: '염색',
-      category: 'SERVICE',
-      subItems: [
-        {
-          secondary_item_id: 21,
-          secondary_item_name: '전체염색',
-          secondary_item_price: 120000,
-          duration: 60,
-        },
-        {
-          secondary_item_id: 22,
-          secondary_item_name: '탈색',
-          secondary_item_price: 150000,
-          duration: 70,
-        },
-      ],
-    },
-    {
-      primary_item_id: 3,
-      primary_item_name: '커트',
-      category: 'SERVICE',
-      subItems: [
-        {
-          secondary_item_id: 31,
-          secondary_item_name: '남성커트',
-          secondary_item_price: 25000,
-          duration: 20,
-        },
-        {
-          secondary_item_id: 32,
-          secondary_item_name: '여성커트',
-          secondary_item_price: 30000,
-          duration: 30,
-        },
-      ],
-    },
-    {
-      primary_item_id: 4,
-      primary_item_name: '헤어제품',
-      category: 'PRODUCT',
-      subItems: [
-        { secondary_item_id: 41, secondary_item_name: '샴푸', secondary_item_price: 20000 },
-        { secondary_item_id: 42, secondary_item_name: '트리트먼트', secondary_item_price: 35000 },
-      ],
-    },
-    {
-      primary_item_id: 5,
-      primary_item_name: '스타일링',
-      category: 'SERVICE',
-      subItems: [
-        {
-          secondary_item_id: 51,
-          secondary_item_name: '드라이',
-          secondary_item_price: 15000,
-          duration: 15,
-        },
-        {
-          secondary_item_id: 52,
-          secondary_item_name: '아이롱',
-          secondary_item_price: 20000,
-          duration: 20,
-        },
-      ],
-    },
-    {
-      primary_item_id: 6,
-      primary_item_name: '두피케어',
-      category: 'SERVICE',
-      subItems: [
-        {
-          secondary_item_id: 61,
-          secondary_item_name: '스케일링',
-          secondary_item_price: 40000,
-          duration: 30,
-        },
-        {
-          secondary_item_id: 62,
-          secondary_item_name: '마사지',
-          secondary_item_price: 50000,
-          duration: 35,
-        },
-      ],
-    },
-    {
-      primary_item_id: 7,
-      primary_item_name: '기초화장품',
-      category: 'PRODUCT',
-      subItems: [
-        { secondary_item_id: 71, secondary_item_name: '스킨', secondary_item_price: 18000 },
-        { secondary_item_id: 72, secondary_item_name: '로션', secondary_item_price: 22000 },
-      ],
-    },
-    {
-      primary_item_id: 8,
-      primary_item_name: '메이크업',
-      category: 'SERVICE',
-      subItems: [
-        {
-          secondary_item_id: 81,
-          secondary_item_name: '데일리 메이크업',
-          secondary_item_price: 60000,
-          duration: 45,
-        },
-        {
-          secondary_item_id: 82,
-          secondary_item_name: '혼주 메이크업',
-          secondary_item_price: 100000,
-          duration: 60,
-        },
-      ],
-    },
-    {
-      primary_item_id: 9,
-      primary_item_name: '클렌징',
-      category: 'PRODUCT',
-      subItems: [
-        { secondary_item_id: 91, secondary_item_name: '클렌징폼', secondary_item_price: 15000 },
-        { secondary_item_id: 92, secondary_item_name: '클렌징오일', secondary_item_price: 20000 },
-      ],
-    },
-    {
-      primary_item_id: 10,
-      primary_item_name: '속눈썹',
-      category: 'SERVICE',
-      subItems: [
-        {
-          secondary_item_id: 101,
-          secondary_item_name: '속눈썹 펌',
-          secondary_item_price: 30000,
-          duration: 25,
-        },
-        {
-          secondary_item_id: 102,
-          secondary_item_name: '속눈썹 연장',
-          secondary_item_price: 50000,
-          duration: 40,
-        },
-      ],
-    },
-  ]);
+  const primaryForm = ref({ category: 'SERVICE', primaryItemName: '' });
+  const secondaryForm = ref({ primaryItemId: '', secondaryItemName: '', secondaryItemPrice: '' });
+  const primaryEditForm = ref({ primaryItemId: '', category: '', primaryItemName: '' });
+  const secondaryEditForm = ref({
+    primaryItemId: '',
+    secondaryItemName: '',
+    secondaryItemPrice: '',
+    isActive: '',
+  });
 
-  const primaryForm = ref({ category: 'SERVICE', primaryName: '' });
-  const secondaryForm = ref({ primaryItemId: '', secondaryName: '', price: '' });
-  const primaryEditForm = ref({ category: '', primaryName: '' });
-  const secondaryEditForm = ref({ primaryItemId: '', secondaryName: '', price: '' });
+  const items = ref([]);
 
-  const primaryOptions = computed(() =>
-    items.value.map(item => ({
-      id: item.primary_item_id,
-      name: item.primary_item_name,
-      category: item.category,
-    }))
-  );
+  const fetchPrimaryAndSecondaryItems = async () => {
+    try {
+      const [primaryRes, secondaryRes] = await Promise.all([
+        getPrimaryItems(),
+        getAllSecondaryItems(),
+      ]);
+
+      const secondaryGrouped = secondaryRes.reduce((acc, item) => {
+        if (!acc[item.primaryItemId]) acc[item.primaryItemId] = [];
+        acc[item.primaryItemId].push({
+          secondaryItemId: item.secondaryItemId,
+          secondaryItemName: item.secondaryItemName,
+          secondaryItemPrice: item.secondaryItemPrice,
+          duration: item.timeTaken,
+          isActive: Boolean(item.active),
+        });
+        return acc;
+      }, {});
+
+      items.value = primaryRes.map(item => ({
+        primaryItemId: item.primaryItemId,
+        primaryItemName: item.primaryItemName,
+        category: item.category,
+        subItems: secondaryGrouped[item.primaryItemId] || [],
+      }));
+    } catch (error) {
+      toastRef.value?.error('상품 목록을 불러오지 못했습니다.');
+    }
+  };
+
+  const formatPrice = val => `${val.toLocaleString('ko-KR')} 원`;
 
   const filteredItems = computed(() =>
     items.value.filter(
@@ -303,49 +218,63 @@
     )
   );
 
-  const formatPrice = val => `${val.toLocaleString('ko-KR')} 원`;
-
-  const toggleRegisterDropdown = () => (showRegisterDropdown.value = !showRegisterDropdown.value);
-  const toggleDropdown = id => (showDropdownId.value = showDropdownId.value === id ? null : id);
+  const primaryOptions = computed(() =>
+    items.value.map(item => ({
+      id: item.primaryItemId,
+      name: item.primaryItemName,
+      category: item.category,
+    }))
+  );
 
   const openPrimaryRegisterModal = () => {
     showRegisterDropdown.value = false;
-    showDropdownId.value = null;
-    showRegisterDropdown.value = false;
+    showDropdownIndex.value = null;
     showPrimaryRegisterModal.value = true;
   };
 
-  const openSecondaryRegisterModal = () => {
+  const openSecondaryRegisterModal = item => {
     showRegisterDropdown.value = false;
-    showDropdownId.value = null;
-    showRegisterDropdown.value = false;
+    showDropdownIndex.value = null;
+    secondaryForm.value = {
+      primaryItemId: item.primaryItemId,
+      primaryItemName: item.primaryItemName, // 1차 상품명 전달
+    };
     showSecondaryRegisterModal.value = true;
   };
 
   const openPrimaryEditModal = item => {
-    primaryEditForm.value = { category: item.category, primaryName: item.primary_item_name };
-    selectedProduct.value = item;
-    showDropdownId.value = null;
     showRegisterDropdown.value = false;
+    showDropdownIndex.value = null;
+    primaryEditForm.value = {
+      primaryItemId: item.primaryItemId,
+      category: item.category,
+      primaryItemName: item.primaryItemName,
+    };
+    selectedProduct.value = item;
     showPrimaryEditModal.value = true;
   };
 
   const openSecondaryEditModal = (item, sub) => {
-    secondaryEditForm.value = {
-      primaryItemId: item.primary_item_id,
-      secondaryName: sub.secondary_item_name,
-      price: sub.secondary_item_price,
-    };
-    showDropdownId.value = null;
     showRegisterDropdown.value = false;
+    showDropdownIndex.value = null;
+
+    secondaryEditForm.value = {
+      secondaryItemId: sub.secondaryItemId,
+      primaryItemId: item.primaryItemId,
+      secondaryItemName: sub.secondaryItemName,
+      secondaryItemPrice: sub.secondaryItemPrice,
+      duration: sub.duration ?? null,
+      isActive: sub.isActive ?? true,
+    };
+
     selectedProduct.value = sub;
     showSecondaryEditModal.value = true;
   };
 
   const deletePrimaryItem = item => {
     showRegisterDropdown.value = false;
+    showDropdownIndex.value = null;
     selectedProduct.value = item;
-    showDropdownId.value = null;
     showPrimaryDeleteModal.value = true;
   };
 
@@ -357,72 +286,62 @@
     selectedProduct.value = null;
   };
 
-  const handlePrimarySubmit = form => {
-    console.log('등록된 1차 상품:', form);
+  const handlePrimarySubmit = () => {
     toastRef.value?.success('1차 상품이 등록되었습니다.');
+    fetchPrimaryAndSecondaryItems();
     closeModals();
   };
 
-  const handleSecondarySubmit = form => {
-    console.log('등록된 2차 상품:', form);
+  const handleSecondarySubmit = () => {
     toastRef.value?.success('2차 상품이 등록되었습니다.');
+    fetchPrimaryAndSecondaryItems();
     closeModals();
   };
 
-  const handlePrimaryEdit = form => {
-    console.log('수정된 1차 상품:', form);
-    toastRef.value?.success('1차 상품이 수정되었습니다.');
+  const handlePrimaryEdit = () => {
+    toastRef.value?.warning('1차 상품이 수정되었습니다.');
+    fetchPrimaryAndSecondaryItems();
     closeModals();
   };
 
-  const handleSecondaryEdit = form => {
-    console.log('수정된 2차 상품:', form);
-    toastRef.value?.success('2차 상품이 수정되었습니다.');
+  const handleSecondaryEdit = () => {
+    toastRef.value?.warning('2차 상품이 수정되었습니다.');
+    fetchPrimaryAndSecondaryItems();
     closeModals();
   };
 
   const handlePrimaryDelete = () => {
-    console.log('삭제할 1차 상품:', selectedProduct.value);
     toastRef.value?.success('1차 상품이 삭제되었습니다.');
-    showPrimaryDeleteModal.value = false;
+    fetchPrimaryAndSecondaryItems();
     selectedProduct.value = null;
   };
 
-  const handleClickOutside = event => {
-    if (
-      !event.target.closest('.dropdown-menu') &&
-      !event.target.closest('.register-button') &&
-      !event.target.closest('.icon-button')
-    ) {
-      showDropdownId.value = null;
-      showRegisterDropdown.value = false;
-    }
-  };
+  onMounted(() => {
+    fetchPrimaryAndSecondaryItems();
+    window.addEventListener('mousedown', handleClickOutside);
+  });
 
-  onMounted(() => window.addEventListener('click', handleClickOutside));
-  onBeforeUnmount(() => window.removeEventListener('click', handleClickOutside));
+  onBeforeUnmount(() => {
+    window.removeEventListener('mousedown', handleClickOutside);
+  });
 </script>
 
 <style scoped>
   .item-manage-wrapper {
     padding: 2rem;
   }
-
   .header-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 1.5rem;
   }
-
   .register-wrapper {
     position: relative;
   }
-
   .tab-filter-row {
     margin-bottom: 1rem;
   }
-
   .tab-group {
     display: flex;
     width: 220px;
@@ -430,7 +349,6 @@
     border-radius: 6px;
     overflow: hidden;
   }
-
   .tab {
     flex: 1;
     text-align: center;
@@ -442,59 +360,48 @@
     font-weight: bold;
     border-right: 1px solid #364f6b;
   }
-
   .tab:last-child {
     border-right: none;
   }
-
   .tab.active {
     background-color: #364f6b;
     color: white;
   }
-
   .card-section {
     margin-bottom: 24px;
   }
-
   .card-table {
     width: 100%;
     display: flex;
     flex-direction: column;
   }
-
   .card-row {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
     padding: 12px 8px;
     font-size: 14px;
     border-bottom: 1px solid #eee;
   }
-
   .card-row.header {
     font-weight: bold;
     background-color: #f9f9f9;
   }
-
   .clickable {
     cursor: pointer;
   }
-
   .text-right {
     text-align: right;
   }
-
   .relative {
     position: relative;
     display: inline-block;
   }
-
   .icon-button {
     background: none;
     border: none;
     font-size: 25px;
     cursor: pointer;
   }
-
   .dropdown-menu {
     position: absolute;
     min-width: 120px;
@@ -506,12 +413,10 @@
     z-index: 1000;
     padding: 0;
   }
-
   .dropdown-menu.below-left {
     top: calc(100% + 4px);
     right: 0;
   }
-
   .dropdown-item {
     padding: 10px 16px;
     font-size: 14px;
@@ -520,11 +425,9 @@
     cursor: pointer;
     transition: background-color 0.2s;
   }
-
   .dropdown-item:hover {
     background-color: #f5f5f5;
   }
-
   .card-title-row {
     font-size: 20px;
     font-weight: bold;
@@ -532,5 +435,33 @@
     justify-content: space-between;
     align-items: center;
     margin-bottom: 12px;
+  }
+
+  /* Readonly 토글 */
+  .readonly-toggle {
+    width: 40px;
+    height: 20px;
+    background-color: #ccc;
+    border-radius: 10px;
+    position: relative;
+    transition: background-color 0.3s;
+    pointer-events: none;
+    margin-left: auto;
+  }
+  .readonly-toggle .circle {
+    width: 16px;
+    height: 16px;
+    background-color: white;
+    border-radius: 50%;
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    transition: left 0.3s;
+  }
+  .readonly-toggle.active {
+    background-color: #364f6b;
+  }
+  .readonly-toggle.active .circle {
+    left: 22px;
   }
 </style>

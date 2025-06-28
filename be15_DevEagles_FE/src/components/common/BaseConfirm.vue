@@ -1,5 +1,5 @@
 <template>
-  <BaseModal v-model="show" :title="title" @update:model-value="handleClose">
+  <BaseModal v-model="show" :title="title" :z-index="zIndex" @update:model-value="handleClose">
     <div class="confirm-content">
       <div v-if="icon" class="confirm-icon">
         <component :is="iconComponent" :size="48" />
@@ -67,6 +67,10 @@
         type: String,
         default: 'warning',
         validator: value => ['info', 'success', 'warning', 'error'].includes(value),
+      },
+      zIndex: {
+        type: Number,
+        default: 1000,
       },
     },
     emits: ['update:modelValue', 'confirm', 'cancel'],

@@ -6,7 +6,7 @@
     @update:model-value="$emit('update:modelValue', $event)"
   >
     <div class="confirm-message">
-      <p class="main">정말 삭제하시겠습니까?</p>
+      <p class="main">1차 상품을 삭제하시겠습니까?</p>
       <p class="sub">삭제된 데이터는 복구할 수 없습니다.</p>
     </div>
 
@@ -22,16 +22,27 @@
 <script setup>
   import BaseModal from '@/components/common/BaseModal.vue';
   import BaseButton from '@/components/common/BaseButton.vue';
+  import { deletePrimaryItem } from '@/features/items/api/items';
 
-  defineProps({
+  const props = defineProps({
     modelValue: Boolean,
+    primaryItemId: {
+      type: Number,
+      required: true,
+    },
   });
 
-  const emit = defineEmits(['update:modelValue', 'confirm']);
+  const emit = defineEmits(['update:modelValue', 'confirm', 'error']);
 
-  const handleDelete = () => {
-    emit('confirm');
-    emit('update:modelValue', false);
+  const handleDelete = async () => {
+    try {
+      await deletePrimaryItem(props.primaryItemId);
+      emit('confirm'); // 부모가 성공 메시지 처리
+    } catch (error) {
+      emit('error', error.response?.data?.message || '삭제에 실패했습니다.');
+    } finally {
+      emit('update:modelValue', false);
+    }
   };
 </script>
 

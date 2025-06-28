@@ -8,10 +8,16 @@
 
     <!-- Coupon Table -->
     <BaseCard>
-      <BaseTable :columns="tableColumns" :data="paginatedCoupons" :loading="loading" hover>
+      <BaseTable
+        :columns="tableColumns"
+        :data="paginatedCoupons"
+        :loading="loading"
+        hover
+        @row-click="handleRowClick"
+      >
         <!-- Coupon Name Column -->
         <template #cell-name="{ item }">
-          <div class="item-name clickable" @click="openDetailModal(item)">
+          <div class="item-name">
             {{ item.name }}
           </div>
         </template>
@@ -37,7 +43,7 @@
 
         <!-- Active Status Column -->
         <template #cell-isActive="{ item }">
-          <label class="toggle-switch enhanced">
+          <label class="toggle-switch enhanced" @click.stop>
             <input v-model="item.isActive" type="checkbox" @change="toggleCouponStatus(item)" />
             <span class="slider"></span>
           </label>
@@ -45,7 +51,7 @@
 
         <!-- Actions Column -->
         <template #cell-actions="{ item }">
-          <div class="action-buttons">
+          <div class="action-buttons" @click.stop>
             <div class="tooltip-container">
               <BaseButton
                 :ref="`deleteBtn-${item.id}`"
@@ -81,10 +87,10 @@
       @items-per-page-change="handleItemsPerPageChange"
     />
 
-    <!-- Create Modal -->
-    <BaseModal v-model="showModal" title="쿠폰 생성">
+    <!-- Create Window -->
+    <BaseWindow v-model="showModal" title="쿠폰 생성" :min-height="'650px'">
       <CouponForm @save="handleSaveCoupon" @cancel="closeModal" />
-    </BaseModal>
+    </BaseWindow>
 
     <!-- Detail Modal -->
     <CouponDetailModal v-model="showDetailModal" :coupon-data="selectedCouponForDetail" />
@@ -115,7 +121,7 @@
   import { MESSAGES } from '@/constants/messages';
   import { MOCK_COUPONS } from '@/constants/mockData';
   import BaseButton from '@/components/common/BaseButton.vue';
-  import BaseModal from '@/components/common/BaseModal.vue';
+  import BaseWindow from '@/components/common/BaseWindow.vue';
   import BasePopover from '@/components/common/BasePopover.vue';
   import Pagination from '@/components/common/Pagination.vue';
   import BaseCard from '@/components/common/BaseCard.vue';
@@ -130,7 +136,7 @@
     name: 'CouponList',
     components: {
       BaseButton,
-      BaseModal,
+      BaseWindow,
       BasePopover,
       BasePagination: Pagination,
       BaseCard,
@@ -213,6 +219,11 @@
         showDetailModal.value = true;
       };
 
+      // Row click handler
+      const handleRowClick = (item, event) => {
+        openDetailModal(item);
+      };
+
       return {
         // State
         paginatedCoupons,
@@ -245,6 +256,7 @@
         handlePageChange,
         handleItemsPerPageChange,
         openDetailModal,
+        handleRowClick,
       };
     },
   };
@@ -252,16 +264,4 @@
 
 <style scoped>
   @import '@/assets/css/list-components.css';
-
-  .clickable {
-    cursor: pointer;
-    color: var(--color-primary-500);
-    font-weight: 500;
-    transition: all 0.2s ease;
-  }
-
-  .clickable:hover {
-    color: var(--color-primary-600);
-    text-decoration: underline;
-  }
 </style>

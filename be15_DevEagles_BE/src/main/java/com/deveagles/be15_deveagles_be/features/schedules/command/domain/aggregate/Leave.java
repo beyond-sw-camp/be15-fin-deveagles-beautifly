@@ -5,7 +5,7 @@ import java.time.LocalDate;
 import lombok.*;
 
 @Entity
-@Table(name = "leave")
+@Table(name = "`leave`")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
@@ -31,4 +31,10 @@ public class Leave {
 
   @Column(name = "leave_memo")
   private String leaveMemo;
+
+  public void update(String title, LocalDate date, String memo) {
+    this.leaveTitle = title;
+    this.leaveAt = date;
+    this.leaveMemo = memo;
+  }
 }

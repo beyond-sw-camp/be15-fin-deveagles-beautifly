@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.deveagles.be15_deveagles_be.features.schedules.query.mapper.LeaveQueryMapper">
+
+    <select id="findLeaves" resultType="com.deveagles.be15_deveagles_be.features.schedules.query.dto.response.LeaveListResponse">
+        (
+        SELECT
+        l.leave_id AS id,
+        s.staff_name AS staffName,
+        l.leave_title AS leaveTitle,
+        'leave' AS leaveType,
+        NULL AS repeatRule,
+        l.leave_at AS leaveDate
+        FROM `leave` l
+        JOIN staff s ON l.staff_id = s.staff_id
+        WHERE 1 = 1
+        AND s.shop_id = #{shopId}
+        <if test="leaveType == null or leaveType == 'all' or leaveType == 'leave'">
+            <if test="from != null">
+                AND l.leave_at &gt;= #{from}
+            </if>
+            <if test="to != null">
+                AND l.leave_at &lt;= #{to}
+            </if>
+        </if>
+        <if test="staffId != null">
+            AND l.staff_id = #{staffId}
+        </if>
+        )
+        UNION ALL
+        (
+        SELECT
+        rl.regular_leave_id AS id,
+        s.staff_name AS staffName,
+        rl.regular_leave_title AS leaveTitle,
+        'regular' AS leaveType,
+        CASE
+        WHEN rl.weekly_leave IS NOT NULL THEN CONCAT('매주 ', rl.weekly_leave, ' 반복')
+        WHEN rl.monthly_leave IS NOT NULL THEN CONCAT('매월 ', rl.monthly_leave, '일 반복')
+        ELSE NULL
+        END AS repeatRule,
+        NULL AS leaveDate
+        FROM regular_leave rl
+        JOIN staff s ON rl.staff_id = s.staff_id
+        WHERE 1 = 1
+        AND s.shop_id = #{shopId}
+        <if test="leaveType == null or leaveType == 'all' or leaveType == 'regular'">
+            AND (rl.weekly_leave IS NOT NULL OR rl.monthly_leave IS NOT NULL)
+        </if>
+        <if test="staffId != null">
+            AND rl.staff_id = #{staffId}
+        </if>
+        )
+        ORDER BY
+        leaveType DESC,
+        CASE WHEN leaveType = 'regular' THEN id END ASC,
+        CASE WHEN leaveType = 'leave' THEN leaveDate END ASC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+
+    <select id="countLeaves" resultType="int">
+        SELECT (
+        SELECT COUNT(*)
+        FROM `leave` l
+        JOIN staff s ON l.staff_id = s.staff_id
+        WHERE 1 = 1
+        AND s.shop_id = #{shopId}
+        <if test="leaveType == null or leaveType == 'all' or leaveType == 'leave'">
+            <if test="from != null">
+                AND l.leave_at &gt;= #{from}
+            </if>
+            <if test="to != null">
+                AND l.leave_at &lt;= #{to}
+            </if>
+        </if>
+        <if test="staffId != null">
+            AND l.staff_id = #{staffId}
+        </if>
+        )
+        +
+        (
+        SELECT COUNT(*)
+        FROM regular_leave rl
+        JOIN staff s ON rl.staff_id = s.staff_id
+        WHERE 1 = 1
+        AND s.shop_id = #{shopId}
+        <if test="leaveType == null or leaveType == 'all' or leaveType == 'regular'">
+            AND (rl.weekly_leave IS NOT NULL OR rl.monthly_leave IS NOT NULL)
+        </if>
+        <if test="staffId != null">
+            AND rl.staff_id = #{staffId}
+        </if>
+        )
+    </select>
+
+
+    <!-- 단기 휴무 상세 조회 -->
+    <select id="findLeaveDetailById" resultType="com.deveagles.be15_deveagles_be.features.schedules.query.dto.response.LeaveDetailResponse">
+        SELECT
+            l.leave_id AS leaveId,
+            s.staff_id AS staffId,
+            s.staff_name AS staffName,
+            l.leave_title AS leaveTitle,
+            l.leave_at AS leaveDate,
+            l.leave_memo AS memo,
+            s.shop_id AS shopId
+        FROM `leave` l
+                 JOIN staff s ON l.staff_id = s.staff_id
+        WHERE l.leave_id = #{leaveId}
+    </select>
+
+    <!-- 정기 휴무 상세 조회 -->
+    <select id="findRegularLeaveDetailById" resultType="com.deveagles.be15_deveagles_be.features.schedules.query.dto.response.RegularLeaveDetailResponse">
+        SELECT
+            rl.regular_leave_id AS regularLeaveId,
+            s.staff_id AS staffId,
+            s.staff_name AS staffName,
+            rl.regular_leave_title AS leaveTitle,
+            CASE
+                WHEN rl.weekly_leave IS NOT NULL THEN CONCAT('매주 ', rl.weekly_leave, '요일')
+                WHEN rl.monthly_leave IS NOT NULL THEN CONCAT('매월 ', rl.monthly_leave, '일')
+                ELSE NULL
+                END AS repeatRule,
+            rl.regular_leave_memo AS memo
+        FROM regular_leave rl
+                 JOIN staff s ON rl.staff_id = s.staff_id
+        WHERE rl.regular_leave_id = #{regularLeaveId}
+    </select>
+</mapper>

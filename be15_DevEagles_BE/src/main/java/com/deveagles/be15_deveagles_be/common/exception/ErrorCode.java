@@ -54,12 +54,29 @@ public enum ErrorCode implements ErrorCodeType {
   INVALID_RESERVATION_TIME_RANGE("70001", "예약 시작 시간은 종료 시간보다 빨라야 합니다", HttpStatus.BAD_REQUEST),
   INVALID_LUNCH_TIME_RANGE("70002", "점심시간은 예약 가능 시간 범위 내여야 합니다", HttpStatus.BAD_REQUEST),
   INVALID_LUNCH_TIME_ORDER("70003", "점심시간 시작은 종료보다 빨라야 합니다", HttpStatus.BAD_REQUEST),
+  RESERVATION_SETTING_ALREADY_EXISTS("70004", "이미 예약 설정이 존재합니다", HttpStatus.BAD_REQUEST),
+  // 일정 삭제 관련 에러 (72000번대)
+  PLAN_NOT_FOUND("72001", "단기 일정이 존재하지 않습니다", HttpStatus.NOT_FOUND),
+  REGULAR_PLAN_NOT_FOUND("72002", "정기 일정이 존재하지 않습니다", HttpStatus.NOT_FOUND),
+  // 휴무 삭제 관련 에러 (73000번대)
+  LEAVE_NOT_FOUND("73001", "단기 휴무가 존재하지 않습니다", HttpStatus.NOT_FOUND),
+  REGULAR_LEAVE_NOT_FOUND("73002", "정기 휴무가 존재하지 않습니다", HttpStatus.NOT_FOUND),
+  // 정기 일정,휴무 관련 에러 (74000번대)
+  INVALID_SCHEDULE_TYPE("74001", "유효하지 않은 스케줄 타입입니다", HttpStatus.BAD_REQUEST),
+  INVALID_SCHEDULE_REPEAT_TYPE("74002", "정기 스케줄은 요일 또는 월 중 하나만 설정해야 합니다", HttpStatus.BAD_REQUEST),
 
   // 상품, 회원권 관련 에러 (상품 :81000번대, 회원권: 82000번대)
-  PRIMARY_ITEM_NAME_REQUIRED("81001", "1차 분류명은 필수입니다", HttpStatus.BAD_REQUEST),
-  PRIMARY_ITEM_CATEGORY_REQUIRED("81002", "카테고리는 필수입니다", HttpStatus.BAD_REQUEST),
-  INVALID_PRIMARY_ITEM_INPUT("81003", "잘못된 1차 상품 입력값입니다", HttpStatus.BAD_REQUEST);
-
+  PRIMARY_ITEM_NAME_REQUIRED("81001", "1차 상품명을 입력해주세요.", HttpStatus.BAD_REQUEST),
+  PRIMARY_ITEM_CATEGORY_REQUIRED("81002", "카테고리를 선택해주세요.", HttpStatus.BAD_REQUEST),
+  INVALID_PRIMARY_ITEM_INPUT("81003", "잘못된 1차 상품 입력값입니다", HttpStatus.BAD_REQUEST),
+  PRIMARY_ITEM_NOT_FOUND("81004", "1차 상품을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+  SECONDARY_ITEM_NAME_REQUIRED("81005", "2차 상품명을 입력해주세요.", HttpStatus.BAD_REQUEST),
+  SECONDARY_ITEM_PRICE_REQUIRED("81006", "2차 상품의 가격을 입력해주세요.", HttpStatus.BAD_REQUEST),
+  INVALID_SECONDARY_ITEM_INPUT("81007", "잘못된 2차 상품 입력값입니다.", HttpStatus.BAD_REQUEST),
+  SECONDARY_ITEM_SERVICE_TIME_REQUIRED("81008", "시술의 시술시간을 입력해주세요.", HttpStatus.BAD_REQUEST),
+  SECONDARY_ITEM_NOT_FOUND("81009", "2차 상품을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+  ITEMS_SHOP_NOT_FOUND("810010", "샵을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+  ITEMS_SHOP_ID_REQUIRED("81011", "샵 ID는 필수입니다.", HttpStatus.BAD_REQUEST);
   // 매출 관련 에러 (90000번대)
 
   private final String code;

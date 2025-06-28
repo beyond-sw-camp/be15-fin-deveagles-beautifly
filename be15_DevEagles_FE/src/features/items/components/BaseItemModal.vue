@@ -21,8 +21,26 @@
 </template>
 
 <script setup>
-  defineProps({
+  import { onMounted, onBeforeUnmount } from 'vue';
+
+  const props = defineProps({
     title: String,
+  });
+
+  const emit = defineEmits(['close']);
+
+  const handleKeyDown = e => {
+    if (e.key === 'Escape') {
+      emit('close');
+    }
+  };
+
+  onMounted(() => {
+    window.addEventListener('keydown', handleKeyDown);
+  });
+
+  onBeforeUnmount(() => {
+    window.removeEventListener('keydown', handleKeyDown);
   });
 </script>
 

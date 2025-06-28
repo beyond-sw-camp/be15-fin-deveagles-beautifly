@@ -1,5 +1,7 @@
 package com.deveagles.be15_deveagles_be.features.schedules.command.application.service;
 
+import com.deveagles.be15_deveagles_be.common.exception.BusinessException;
+import com.deveagles.be15_deveagles_be.common.exception.ErrorCode;
 import com.deveagles.be15_deveagles_be.features.schedules.command.domain.aggregate.ReservationSetting;
 import com.deveagles.be15_deveagles_be.features.schedules.command.domain.aggregate.ReservationSettingId;
 import com.deveagles.be15_deveagles_be.features.schedules.command.domain.repository.ReservationSettingRepository;
@@ -17,7 +19,7 @@ public class ReservationSettingInitializer {
   public void initDefault(Long shopId) {
     List<ReservationSetting> existing = reservationSettingRepository.findAllByShopId(shopId);
     if (!existing.isEmpty()) {
-      throw new IllegalStateException("이미 예약 설정이 존재합니다.");
+      throw new BusinessException(ErrorCode.RESERVATION_SETTING_ALREADY_EXISTS);
     }
 
     for (int day = 0; day <= 6; day++) {

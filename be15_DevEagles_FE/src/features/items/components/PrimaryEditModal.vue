@@ -16,7 +16,12 @@
     <!-- 1차 분류명 -->
     <div class="form-group">
       <label>1차 분류명</label>
-      <BaseForm v-model="form.primaryName" type="text" placeholder="1차 분류명" />
+      <BaseForm
+        v-model="form.primaryItemName"
+        type="text"
+        :placeholder="originalName || '1차 분류명'"
+        :error="errors.primaryItemName"
+      />
     </div>
 
     <!-- 하단 버튼 -->
@@ -38,7 +43,8 @@
 </template>
 
 <script setup>
-  import { computed, ref } from 'vue';
+  import { computed, ref, watch } from 'vue';
+  import { updatePrimaryItem } from '@/features/items/api/items.js';
   import BaseItemModal from './BaseItemModal.vue';
   import BaseForm from '@/components/common/BaseForm.vue';
   import BaseButton from '@/components/common/BaseButton.vue';
@@ -58,11 +64,41 @@
     set: val => emit('update:modelValue', val),
   });
 
+  const originalName = ref('');
+
+  watch(
+    () => props.modelValue,
+    val => {
+      console.log('Incoming modelValue:', val); // DEBUG
+      if (val?.primaryItemName) {
+        originalName.value = val.primaryItemName;
+      }
+    },
+    { immediate: true }
+  );
+
   const showDeleteModal = ref(false);
 
-  const submit = () => {
-    emit('submit', form.value);
-    emit('toast', '1차 상품이 수정되었습니다.');
+  const errors = ref({
+    primaryItemName: '',
+  });
+
+  const submit = async () => {
+    try {
+      await updatePrimaryItem({
+        primaryItemId: form.value.primaryItemId,
+        shopId: 1,
+        category: form.value.category,
+        primaryItemName: form.value.primaryItemName.trim(),
+      });
+
+      emit('submit', form.value);
+      emit('toast', '1차 상품이 수정되었습니다.');
+      emit('close');
+    } catch (e) {
+      console.error('오류:', e);
+      emit('toast', e.response?.data?.message || '1차 상품 수정에 실패했습니다.');
+    }
   };
 
   const handleDelete = () => {
@@ -81,8 +117,6 @@
   label {
     margin-bottom: 4px;
   }
-
-  /* 버튼 정렬 */
   .footer-buttons {
     display: flex;
     justify-content: space-between;

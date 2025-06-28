@@ -32,45 +32,46 @@
       clearable
     />
 
-    <!-- 대상 고객 -->
-    <BaseForm
-      id="targetAudience"
-      v-model="formData.targetAudience"
-      label="대상 고객*"
-      type="select"
-      placeholder="대상 고객을 선택하세요"
-      :options="targetAudienceOptions"
-      :error="errors.targetAudience"
-      required
-    />
-
-    <!-- 캠페인 상태 -->
-    <BaseForm
-      id="status"
-      v-model="formData.status"
-      label="캠페인 상태*"
-      type="select"
-      placeholder="캠페인 상태를 선택하세요"
-      :options="statusOptions"
-      :error="errors.status"
-      required
-    />
+    <!-- 대상 고객 등급 & 대상 고객 태그 (2열) -->
+    <div class="form-row">
+      <BaseForm
+        id="targetGrade"
+        v-model="formData.targetGrade"
+        label="대상 고객 등급*"
+        type="select"
+        placeholder="대상 고객 등급을 선택하세요"
+        :options="targetGradeOptions"
+        :error="errors.targetGrade"
+        required
+      />
+      <BaseForm
+        id="targetTag"
+        v-model="formData.targetTag"
+        label="대상 고객 태그"
+        type="select"
+        placeholder="대상 고객 태그를 선택하세요"
+        :options="targetTagOptions"
+        :error="errors.targetTag"
+      />
+    </div>
 
     <!-- 활성화 여부 -->
     <div class="form-group">
       <label class="form-label">활성화 설정</label>
       <div class="checkbox-wrapper">
-        <label class="checkbox">
-          <input v-model="formData.isActive" type="checkbox" />
-          <span>캠페인을 즉시 활성화</span>
-        </label>
+        <div class="checkbox">
+          <input id="isActive" v-model="formData.isActive" type="checkbox" />
+          <label for="isActive">캠페인을 즉시 활성화</label>
+        </div>
       </div>
     </div>
 
     <!-- 버튼들 -->
     <div class="form-actions">
-      <BaseButton type="secondary" outline style="flex: 1" @click="handleCancel"> 취소 </BaseButton>
-      <BaseButton type="primary" style="flex: 1" @click="handleSubmit"> 저장 </BaseButton>
+      <BaseButton type="secondary" outline style="flex: 1" html-type="button" @click="handleCancel">
+        취소
+      </BaseButton>
+      <BaseButton type="primary" style="flex: 1" html-type="submit"> 저장 </BaseButton>
     </div>
   </form>
 </template>
@@ -96,26 +97,28 @@
           description: '',
           startDate: '',
           endDate: '',
-          targetAudience: '',
-          status: 'draft',
+          targetGrade: '',
+          targetTag: '',
           isActive: false,
         },
         errors: {},
 
         // 옵션 데이터
-        targetAudienceOptions: [
-          { value: 'all', text: '전체 고객' },
-          { value: 'new', text: '신규 고객' },
-          { value: 'existing', text: '기존 고객' },
-          { value: 'vip', text: 'VIP 고객' },
-          { value: 'inactive', text: '비활성 고객' },
+        targetGradeOptions: [
+          { value: 'bronze', text: '브론즈' },
+          { value: 'silver', text: '실버' },
+          { value: 'gold', text: '골드' },
+          { value: 'platinum', text: '플래티넘' },
+          { value: 'diamond', text: '다이아몬드' },
+          { value: 'vip', text: 'VIP' },
         ],
-        statusOptions: [
-          { value: 'draft', text: '임시저장' },
-          { value: 'scheduled', text: '예정' },
-          { value: 'active', text: '진행중' },
-          { value: 'completed', text: '완료' },
-          { value: 'cancelled', text: '취소' },
+        targetTagOptions: [
+          { value: 'new_customer', text: '신규 고객' },
+          { value: 'loyal_customer', text: '단골 고객' },
+          { value: 'inactive_customer', text: '비활성 고객' },
+          { value: 'high_spender', text: '고액 결제 고객' },
+          { value: 'frequent_visitor', text: '방문 빈도 높은 고객' },
+          { value: 'birthday_month', text: '생일월 고객' },
         ],
       };
     },
@@ -166,12 +169,8 @@
           this.errors.dateRange = '캠페인 기간 선택은 필수입니다.';
         }
 
-        if (!this.formData.targetAudience) {
-          this.errors.targetAudience = '대상 고객 선택은 필수입니다.';
-        }
-
-        if (!this.formData.status) {
-          this.errors.status = '캠페인 상태 선택은 필수입니다.';
+        if (!this.formData.targetGrade) {
+          this.errors.targetGrade = '대상 고객 등급 선택은 필수입니다.';
         }
 
         // 날짜 유효성 검사
@@ -183,15 +182,13 @@
             this.errors.dateRange = '종료일은 시작일보다 늦어야 합니다.';
           }
 
-          // 시작일이 과거인지 확인 (draft 상태가 아닌 경우)
-          if (this.formData.status !== 'draft') {
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            startDate.setHours(0, 0, 0, 0);
+          // 시작일이 과거인지 확인
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          startDate.setHours(0, 0, 0, 0);
 
-            if (startDate < today) {
-              this.errors.dateRange = '시작일은 오늘 이후여야 합니다.';
-            }
+          if (startDate < today) {
+            this.errors.dateRange = '시작일은 오늘 이후여야 합니다.';
           }
         }
 
@@ -218,8 +215,8 @@
           description: '',
           startDate: '',
           endDate: '',
-          targetAudience: '',
-          status: 'draft',
+          targetGrade: '',
+          targetTag: '',
           isActive: false,
         };
         this.errors = {};
@@ -232,6 +229,12 @@
   .campaign-form {
     display: flex;
     flex-direction: column;
+    gap: 1rem;
+  }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     gap: 1.5rem;
   }
 
@@ -257,7 +260,6 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    cursor: pointer;
     font-size: 14px;
     color: var(--color-gray-700);
   }
@@ -266,6 +268,14 @@
     width: auto;
     margin: 0;
     accent-color: var(--color-primary-main);
+    cursor: pointer;
+  }
+
+  .checkbox label {
+    cursor: pointer;
+    margin: 0;
+    font-size: 14px;
+    color: var(--color-gray-700);
   }
 
   .form-actions {
@@ -275,6 +285,11 @@
   }
 
   @media (max-width: 768px) {
+    .form-row {
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
+
     .form-actions {
       flex-direction: column;
     }

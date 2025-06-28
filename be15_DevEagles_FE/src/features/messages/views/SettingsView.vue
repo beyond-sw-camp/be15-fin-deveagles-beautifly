@@ -1,103 +1,3 @@
-<template>
-  <section class="settings-page">
-    <BaseCard class="card-wrapper shadow-drop">
-      <div class="setting-header">
-        <h2 class="page-title">문자 설정</h2>
-        <p class="page-sub">서비스 이용에 필요한 기본 정보를 설정하세요.</p>
-      </div>
-
-      <div class="setting-group">
-        <!-- 발신 번호 -->
-        <div class="setting-item">
-          <div class="setting-status-row">
-            <h3 class="setting-title with-underline">발신 번호</h3>
-            <div class="status-controls fixed-width">
-              <span class="status-chip error" :class="{ error: !sender }">
-                {{ sender || '미등록' }}
-              </span>
-              <BaseButton class="action-button sm" type="primary" @click="showSenderModal = true">
-                번호 등록
-              </BaseButton>
-            </div>
-          </div>
-          <div class="setting-info">
-            <p class="setting-description text-sub">
-              문자 서비스를 이용하기 위해 발신 번호를 입력해주세요.
-            </p>
-            <p class="setting-description text-sub">
-              문자 또는 알림톡 발신 시 사용될 기본 번호입니다.
-            </p>
-          </div>
-        </div>
-
-        <hr class="section-divider" />
-
-        <!-- 알림톡 신청 -->
-        <div class="setting-item">
-          <div class="setting-status-row">
-            <h3 class="setting-title with-underline">알림톡 신청</h3>
-            <div class="status-controls fixed-width">
-              <span class="status-chip" :class="useAlimtalk ? 'success' : 'error'">
-                {{ useAlimtalk ? '신청 완료' : '미신청' }}
-              </span>
-              <BaseButton
-                class="action-button sm"
-                type="primary"
-                :disabled="useAlimtalk"
-                @click="showAlimtalkModal = true"
-              >
-                알림톡 신청
-              </BaseButton>
-            </div>
-          </div>
-          <div class="setting-info">
-            <p class="setting-description text-sub">
-              알림톡 발송을 위해 카카오 발신 프로필이 필요합니다.
-            </p>
-          </div>
-        </div>
-
-        <hr class="section-divider" />
-
-        <!-- 문자 포인트 -->
-        <div class="setting-item no-border">
-          <div class="setting-status-row">
-            <h3 class="setting-title with-underline">문자 포인트</h3>
-            <div class="status-controls fixed-width">
-              <span class="status-chip neutral"> {{ messagePoints.toLocaleString() }}P </span>
-              <BaseButton class="action-button sm" type="primary" @click="showChargeModal = true">
-                포인트 충전
-              </BaseButton>
-            </div>
-          </div>
-          <div class="setting-info">
-            <p class="setting-description text-sub">
-              문자 또는 알림톡 발송 시 포인트가 차감됩니다.
-            </p>
-          </div>
-        </div>
-      </div>
-    </BaseCard>
-
-    <!-- 모달들 -->
-    <SenderInfoModal v-model="showSenderModal" @confirm="confirmSender" />
-
-    <AlimtalkConfirmModal
-      v-model="showAlimtalkModal"
-      @confirm="confirmAlimtalk"
-      @close="showAlimtalkModal = false"
-    />
-
-    <PointChargeModal
-      v-model="showChargeModal"
-      @confirm="handleConfirmCharge"
-      @close="showChargeModal = false"
-    />
-
-    <BaseToast ref="toastRef" />
-  </section>
-</template>
-
 <script setup>
   import { ref } from 'vue';
   import BaseCard from '@/components/common/BaseCard.vue';
@@ -106,6 +6,7 @@
   import SenderInfoModal from '@/features/messages/components/modal/SenderInfoModal.vue';
   import AlimtalkConfirmModal from '@/features/messages/components/modal/AlimtalkConfirmModal.vue';
   import PointChargeModal from '@/features/messages/components/modal/PointChargeModal.vue';
+  import AutoSendSettingModal from '@/features/messages/components/modal/AutoSendSettingModal.vue';
 
   const sender = ref('');
   const useAlimtalk = ref(false);
@@ -114,24 +15,66 @@
   const showSenderModal = ref(false);
   const showAlimtalkModal = ref(false);
   const showChargeModal = ref(false);
+  const showAutoSendModal = ref(false);
 
   const toastRef = ref();
 
+  const autoSendItems = ref([
+    {
+      label: '신규 고객 등록',
+      messages: [
+        {
+          message: '환영합니다 고객님',
+          enabled: true,
+          type: '알림톡',
+          sendTime: 'immediate',
+        },
+      ],
+    },
+    {
+      label: '예약 등록',
+      messages: [
+        {
+          message: '예약이 등록되었습니다',
+          enabled: false,
+          type: '알림톡',
+          sendTime: '1min',
+        },
+      ],
+    },
+    {
+      label: '횟수권 차감',
+      messages: [
+        {
+          message: '횟수권이 차감되었습니다',
+          enabled: true,
+          type: 'SMS',
+          sendTime: 'immediate',
+        },
+      ],
+    },
+    {
+      label: '선불권 차감',
+      messages: [
+        {
+          message: '선불권이 사용되었습니다',
+          enabled: false,
+          type: 'SMS',
+          sendTime: '5min',
+        },
+      ],
+    },
+  ]);
+
   function confirmSender(number) {
     sender.value = number;
-    toastRef.value?.addToast({
-      message: '발신 번호가 등록되었습니다.',
-      type: 'success',
-    });
+    toastRef.value?.addToast({ message: '발신 번호가 등록되었습니다.', type: 'success' });
     showSenderModal.value = false;
   }
 
   function confirmAlimtalk() {
     useAlimtalk.value = true;
-    toastRef.value?.addToast({
-      message: '알림톡 신청이 완료되었습니다.',
-      type: 'success',
-    });
+    toastRef.value?.addToast({ message: '알림톡 신청이 완료되었습니다.', type: 'success' });
     showAlimtalkModal.value = false;
   }
 
@@ -144,6 +87,97 @@
     showChargeModal.value = false;
   }
 </script>
+
+<template>
+  <section class="settings-page">
+    <BaseCard class="card-wrapper shadow-drop">
+      <div class="setting-header">
+        <h2 class="page-title">문자 설정</h2>
+        <p class="page-sub">서비스 이용에 필요한 기본 정보를 설정하세요.</p>
+      </div>
+
+      <div class="setting-group">
+        <!-- 발신 번호 -->
+        <div class="setting-item">
+          <div class="setting-status-row">
+            <div class="setting-title-group">
+              <h3 class="setting-title with-underline">발신 번호</h3>
+              <span class="status-chip" :class="sender ? 'success' : 'error'">
+                {{ sender || '미등록' }}
+              </span>
+            </div>
+            <BaseButton class="action-button sm" type="primary" @click="showSenderModal = true"
+              >번호 등록</BaseButton
+            >
+          </div>
+          <div class="setting-info">
+            <p class="setting-description text-sub">
+              문자 또는 알림톡 발신 시 사용될 기본 번호입니다.
+            </p>
+          </div>
+        </div>
+
+        <hr class="section-divider" />
+
+        <!-- 알림톡 신청 -->
+        <div class="setting-item">
+          <div class="setting-status-row">
+            <div class="setting-title-group">
+              <h3 class="setting-title with-underline">알림톡 신청</h3>
+              <span class="status-chip" :class="useAlimtalk ? 'success' : 'error'">
+                {{ useAlimtalk ? '신청 완료' : '미신청' }}
+              </span>
+            </div>
+            <BaseButton
+              class="action-button sm"
+              type="primary"
+              :disabled="useAlimtalk"
+              @click="showAlimtalkModal = true"
+            >
+              알림톡 신청
+            </BaseButton>
+          </div>
+        </div>
+
+        <hr class="section-divider" />
+
+        <!-- 문자 포인트 -->
+        <div class="setting-item">
+          <div class="setting-status-row">
+            <div class="setting-title-group">
+              <h3 class="setting-title with-underline">문자 포인트</h3>
+              <span class="status-chip neutral">{{ messagePoints.toLocaleString() }}P</span>
+            </div>
+            <BaseButton class="action-button sm" type="primary" @click="showChargeModal = true"
+              >포인트 충전</BaseButton
+            >
+          </div>
+        </div>
+
+        <hr class="section-divider" />
+
+        <!-- 자동 발신 설정 -->
+        <div class="setting-item no-border">
+          <div class="setting-status-row">
+            <div class="setting-title-group">
+              <h3 class="setting-title with-underline">자동 발신 설정</h3>
+            </div>
+            <BaseButton class="action-button sm" type="primary" @click="showAutoSendModal = true"
+              >설정 변경</BaseButton
+            >
+          </div>
+        </div>
+      </div>
+    </BaseCard>
+
+    <!-- 모달 및 토스트 -->
+    <SenderInfoModal v-model="showSenderModal" @confirm="confirmSender" />
+    <AlimtalkConfirmModal v-model="showAlimtalkModal" @confirm="confirmAlimtalk" />
+    <PointChargeModal v-model="showChargeModal" @confirm="handleConfirmCharge" />
+    <AutoSendSettingModal v-model="showAutoSendModal" v-model:items="autoSendItems" />
+    <BaseToast ref="toastRef" />
+  </section>
+</template>
 
 <style scoped>
   @import '@/assets/base.css';
@@ -197,8 +231,8 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    flex-wrap: nowrap;
-    gap: 1rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
   }
 
   .setting-title.with-underline {
@@ -210,15 +244,12 @@
     flex-shrink: 0;
   }
 
-  .status-controls {
+  .setting-title-group {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-  }
-
-  .status-controls.fixed-width {
-    min-width: 200px;
-    justify-content: flex-end;
+    flex-grow: 1;
+    min-width: 0;
   }
 
   .status-chip {
@@ -227,6 +258,7 @@
     font-size: 12px;
     border-radius: 9999px;
     font-weight: 500;
+    white-space: nowrap;
   }
 
   .status-chip.success {
@@ -245,11 +277,13 @@
   }
 
   .action-button.sm {
-    min-width: auto;
     padding: 6px 12px;
     font-size: 13px;
-    height: auto;
     line-height: 1.2;
+    white-space: nowrap;
+    height: auto;
+    flex-shrink: 0;
+    min-width: 100px;
   }
 
   .section-divider {

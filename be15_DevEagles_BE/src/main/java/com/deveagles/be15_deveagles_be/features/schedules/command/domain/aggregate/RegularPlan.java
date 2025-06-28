@@ -41,4 +41,19 @@ public class RegularPlan {
 
   @Column(name = "regular_plan_end_at", nullable = false)
   private LocalTime regularPlanEndAt;
+
+  public void update(
+      String title,
+      Integer monthlyPlan,
+      DayOfWeekEnum weeklyPlan,
+      String memo,
+      LocalTime start,
+      LocalTime end) {
+    this.regularPlanTitle = title;
+    this.monthlyPlan = monthlyPlan;
+    this.weeklyPlan = weeklyPlan;
+    this.regularPlanMemo = memo;
+    this.regularPlanStartAt = start;
+    this.regularPlanEndAt = end;
+  }
 }
