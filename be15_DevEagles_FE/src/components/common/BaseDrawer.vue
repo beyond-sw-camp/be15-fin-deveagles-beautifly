@@ -1,7 +1,12 @@
 <template>
   <Teleport to="body">
     <transition name="drawer-fade">
-      <div v-if="modelValue" class="drawer-backdrop" @click.self="closeDrawer">
+      <div
+        v-if="modelValue"
+        class="drawer-backdrop"
+        :style="{ zIndex: zIndex }"
+        @click.self="closeDrawer"
+      >
         <transition name="drawer-slide">
           <div v-if="modelValue" :class="['drawer', `drawer-${position}`, `drawer-${size}`]">
             <!-- Drawer Header -->
@@ -64,6 +69,11 @@
         type: Boolean,
         default: false,
       },
+      // [기능 추가] z-index를 외부에서 제어하기 위한 prop
+      zIndex: {
+        type: Number,
+        default: 1000,
+      },
     },
     emits: ['update:modelValue', 'close'],
     mounted() {
@@ -99,7 +109,7 @@
     right: 0;
     bottom: 0;
     background-color: rgba(0, 0, 0, 0.5);
-    z-index: 1000;
+    /* z-index는 이제 style 바인딩으로 제어됩니다. */
     display: flex;
   }
 
@@ -109,6 +119,7 @@
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    position: relative; /* z-index가 backdrop 위에 적용되도록 */
   }
 
   /* Position Styles */
