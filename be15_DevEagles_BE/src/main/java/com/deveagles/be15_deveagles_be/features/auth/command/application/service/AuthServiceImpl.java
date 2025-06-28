@@ -2,7 +2,9 @@ package com.deveagles.be15_deveagles_be.features.auth.command.application.servic
 
 import com.deveagles.be15_deveagles_be.common.exception.BusinessException;
 import com.deveagles.be15_deveagles_be.common.exception.ErrorCode;
+import com.deveagles.be15_deveagles_be.common.jwt.JwtTokenProvider;
 import com.deveagles.be15_deveagles_be.features.auth.command.application.dto.request.LoginRequest;
+import com.deveagles.be15_deveagles_be.features.auth.command.application.dto.response.TokenResponse;
 import com.deveagles.be15_deveagles_be.features.users.command.domain.aggregate.Staff;
 import com.deveagles.be15_deveagles_be.features.users.command.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -16,9 +18,11 @@ import org.springframework.stereotype.Service;
 public class AuthServiceImpl implements AuthService {
   private final UserRepository userRepository;
   private final PasswordEncoder passwordEncoder;
+  private final JwtTokenProvider jwtTokenProvider;
+  private final RefreshTokenService refreshTokenService;
 
   @Override
-  public void login(LoginRequest request) {
+  public TokenResponse login(LoginRequest request) {
 
     Staff staff =
         userRepository
@@ -29,7 +33,11 @@ public class AuthServiceImpl implements AuthService {
       throw new BusinessException(ErrorCode.USER_INVALID_LOGIN);
     }
 
-    // todo : 토큰 발급
+    String accessToken = jwtTokenProvider.createToken(staff.getLoginId());
+    String refreshToken = jwtTokenProvider.createRefreshToken(staff.getLoginId());
 
+    refreshTokenService.saveRefreshToken(staff.getLoginId(), refreshToken);
+
+    return TokenResponse.builder().accessToken(accessToken).refreshToken(refreshToken).build();
   }
 }

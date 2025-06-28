@@ -1,8 +1,9 @@
 package com.deveagles.be15_deveagles_be.features.auth.command.application.service;
 
 import com.deveagles.be15_deveagles_be.features.auth.command.application.dto.request.LoginRequest;
+import com.deveagles.be15_deveagles_be.features.auth.command.application.dto.response.TokenResponse;
 import jakarta.validation.Valid;
 
 public interface AuthService {
-  void login(@Valid LoginRequest request);
+  TokenResponse login(@Valid LoginRequest request);
 }

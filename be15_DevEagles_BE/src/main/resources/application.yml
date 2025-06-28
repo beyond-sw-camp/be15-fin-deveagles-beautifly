@@ -45,6 +45,12 @@ spring:
     connection-timeout: ${ES_CONNECTION_TIMEOUT:10s}
     socket-timeout: ${ES_SOCKET_TIMEOUT:30s}
 
+  data:
+    # Redis 설정
+    redis:
+      host: localhost
+      port: 6379
+
 # 서버 설정
 server:
   port: ${SERVER_PORT:8080}
@@ -222,3 +228,9 @@ server:
     include-stacktrace: never
     include-message: never
     include-binding-errors: never
+
+# jwt 토큰 설정
+jwt:
+  secret: ${JWT_SECRET}
+  expiration: 1800000
+  refresh-expiration: 604800000
