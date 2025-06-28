@@ -7,7 +7,7 @@
           <h2 class="title">회원권 관리</h2>
         </div>
         <div class="actions">
-          <BaseButton class="close-button" @click="close">&times;</BaseButton>
+          <Button class="close-button" @click="close">&times;</Button>
         </div>
       </div>
 
@@ -80,27 +80,59 @@
         @close="closeEditModal"
         @toast="msg => toastRef.value?.success(msg)"
       />
-      <!-- ✅ Toast 컴포넌트 추가 -->
+      <!-- 컴포넌트 추가 -->
       <BaseToast ref="toastRef" />
     </div>
   </div>
 </template>
 
 <script setup>
-  import { ref } from 'vue';
+  import { ref, onMounted } from 'vue';
   import BaseCard from '@/components/common/BaseCard.vue';
   import BaseButton from '@/components/common/BaseButton.vue';
   import BaseToast from '@/components/common/BaseToast.vue';
   import MembershipRegistModal from '@/features/membership/components/MembershipRegistModal.vue';
   import MembershipEditModal from '@/features/membership/components/MembershipEditModal.vue';
 
+  import { getPrepaidPass, getSessionPass } from '@/features/membership/api/membership'; //
+
   const emit = defineEmits(['close']);
   const close = () => emit('close');
 
-  const toastRef = ref(null); // ✅ Toast ref
+  const toastRef = ref(null);
 
-  const prepaidList = ref([{ id: 1, name: '선불권', charge: 1100000, price: 1000000 }]);
-  const countList = ref([{ id: 2, name: '(상품) 시술 10회 이용권', count: 10, price: 150000 }]);
+  const prepaidList = ref([]);
+  const countList = ref([]);
+
+  const fetchMemberships = async () => {
+    try {
+      const prepaid = await getPrepaidPass();
+      prepaidList.value = prepaid.map(item => ({
+        id: item.prepaidPassId,
+        name: item.prepaidPassName,
+        charge: item.prepaidPassPrice + (item.bonus ?? 0),
+        price: item.prepaidPassPrice,
+        ...item,
+      }));
+
+      const session = await getSessionPass();
+      countList.value = session.map(item => ({
+        id: item.sessionPassId,
+        name: item.sessionPassName,
+        count: item.session,
+        price: item.sessionPassPrice,
+        ...item,
+      }));
+    } catch (err) {
+      console.error('회원권 조회 실패:', err);
+      toastRef.value?.error('회원권 목록 조회에 실패했습니다.');
+    }
+  };
+
+  onMounted(() => {
+    fetchMemberships();
+  });
+
   const formatPrice = val => `${val.toLocaleString('ko-KR')} 원`;
 
   const showRegistModal = ref(false);
@@ -123,11 +155,11 @@
   };
   const handleRegistSubmit = form => {
     console.log('등록된 데이터:', form);
-    toastRef.value?.success('회원권이 등록되었습니다.'); // ✅ Toast 메시지
+    toastRef.value?.success('회원권이 등록되었습니다.');
     closeRegistModal();
+    fetchMemberships(); // 등록 후 목록 다시 불러오기
   };
 
-  // 수정 모달 제어
   const showEditModal = ref(false);
   const openEditModal = item => {
     membershipForm.value = {
@@ -142,11 +174,11 @@
   };
   const handleEditSubmit = form => {
     console.log('수정된 데이터:', form);
-    toastRef.value?.success('회원권이 수정되었습니다.'); // ✅ Toast 메시지
+    toastRef.value?.success('회원권이 수정되었습니다.');
     closeEditModal();
+    fetchMemberships(); // 수정 후 목록 다시 불러오기
   };
 
-  // 공통 form 상태
   const membershipForm = ref({});
 </script>
 

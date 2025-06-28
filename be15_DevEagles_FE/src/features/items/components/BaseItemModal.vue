@@ -70,7 +70,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 24px;
+    padding: 22px;
     border-bottom: 1px solid #eee;
   }
   .title {
