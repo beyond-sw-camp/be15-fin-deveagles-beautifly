@@ -6,6 +6,7 @@ const exceptToken = [
   { method: 'post', url: '/valid-email' },
   { method: 'post', url: '/valid-biz' },
   { method: 'get', url: '/get-industry' },
+  { method: 'post', url: '/auth/login' },
 ];
 
 export const signUp = params => api.post(`/users`, params);
@@ -17,3 +18,5 @@ export const validEmail = params => api.post(`/valid-email`, params);
 export const validBizNumber = params => api.post(`/valid-biz`, params);
 
 export const getIndustry = () => api.get(`/get-industry`);
+
+export const login = params => api.post(`/auth/login`, params);
