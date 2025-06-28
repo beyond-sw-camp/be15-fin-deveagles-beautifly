@@ -7,8 +7,8 @@ import lombok.Builder;
 @Builder
 public record ShopCreateRequest(
     @NotBlank(message = "상점명은 필수 입력값입니다.") String shopName,
-    String address,
-    String detailAddress,
+    @NotNull(message = "매장 주소는 필수 입력값입니다.") String address,
+    @NotNull(message = "매장 상세주소는 필수 입력값입니다.") String detailAddress,
     @NotNull(message = "업종은 필수 입력값입니다.") Long industryId,
     String phoneNumber,
     String businessNumber,

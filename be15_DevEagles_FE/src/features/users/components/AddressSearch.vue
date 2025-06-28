@@ -2,62 +2,54 @@
   <div>
     <div class="label-row">
       <label for="address">매장 주소</label>
+      <span v-if="isRequired('address')" class="required">*</span>
     </div>
     <div class="address-row">
       <BaseForm
-        id="address"
-        v-model="localModel.base"
-        class="address-input"
+        :model-value="props.address"
+        :error="props.errorAddress"
         placeholder="주소 검색"
-        readonly
+        @update:model-value="val => emit('update:address', val)"
+        @keydown.enter="$emit('blur')"
+        @blur="$emit('validate:address')"
       />
       <BaseButton class="search-button" @click="openAddressSearch">주소 검색</BaseButton>
     </div>
 
-    <BaseForm v-model="localModel.detail" placeholder="상세 주소를 입력해주세요." />
+    <BaseForm
+      :model-value="props.detailAddress"
+      :error="props.errorDetail"
+      placeholder="상세 주소 입력"
+      @update:model-value="val => emit('update:detailAddress', val)"
+      @blur="$emit('validate:detailAddress')"
+    />
   </div>
 </template>
 
 <script setup>
-  import { reactive, watch } from 'vue';
   import BaseForm from '@/components/common/BaseForm.vue';
   import BaseButton from '@/components/common/BaseButton.vue';
 
   const props = defineProps({
-    modelValue: {
-      type: Object,
-      default: () => ({ base: '', detail: '' }),
-    },
+    address: String,
+    detailAddress: String,
+    isRequired: Function,
+    errorAddress: String,
+    errorDetail: String,
   });
 
-  const emit = defineEmits(['update:modelValue']);
-
-  const localModel = reactive({
-    base: props.modelValue.base,
-    detail: props.modelValue.detail,
-  });
-
-  // 상위 데이터 바인딩
-  watch(
-    () => props.modelValue,
-    val => {
-      localModel.base = val.base;
-      localModel.detail = val.detail;
-    },
-    { immediate: true, deep: true }
-  );
-
-  // 변동 데이터 바인딩
-  watch(
-    () => ({ ...localModel }),
-    val => emit('update:modelValue', val),
-    { deep: true }
-  );
+  const emit = defineEmits([
+    'update:address',
+    'update:detailAddress',
+    'validate:address',
+    'validate:detailAddress',
+  ]);
 
   const openAddressSearch = () => {
     new window.daum.Postcode({
       oncomplete: data => {
-        localModel.base = data.roadAddress || data.jibunAddress || '';
+        const roadAddr = data.roadAddress || data.jibunAddress || '';
+        emit('update:address', roadAddr); // ✅ 부모에게 전달!
       },
     }).open();
   };
@@ -90,5 +82,9 @@
     font-size: 15px;
     font-weight: 600;
     color: #111;
+  }
+  .required {
+    color: red;
+    margin-left: 4px;
   }
 </style>
