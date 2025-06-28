@@ -3,6 +3,7 @@ package com.deveagles.be15_deveagles_be.features.shops.command.application.servi
 import com.deveagles.be15_deveagles_be.features.schedules.command.application.service.ReservationSettingInitializer;
 import com.deveagles.be15_deveagles_be.features.shops.command.application.dto.request.ShopCreateRequest;
 import com.deveagles.be15_deveagles_be.features.shops.command.application.dto.request.ValidBizNumberRequest;
+import com.deveagles.be15_deveagles_be.features.shops.command.application.dto.response.GetIndustryResponse;
 import com.deveagles.be15_deveagles_be.features.shops.command.domain.aggregate.Shop;
 import com.deveagles.be15_deveagles_be.features.shops.command.repository.ShopRepository;
 import java.util.Optional;
@@ -16,6 +17,7 @@ import org.springframework.stereotype.Service;
 public class ShopCommandServiceImpl implements ShopCommandService {
 
   private final ShopRepository shopRepository;
+  private final IndustryRepository industryRepository;
   private final ReservationSettingInitializer reservationSettingInitializer;
 
   @Override
@@ -52,5 +54,11 @@ public class ShopCommandServiceImpl implements ShopCommandService {
     shop.setOwner(ownerId);
 
     shopRepository.save(shop);
+  }
+
+  @Override
+  public GetIndustryResponse getIndustry() {
+
+    return GetIndustryResponse.builder().industryList(industryRepository.findAll()).build();
   }
 }

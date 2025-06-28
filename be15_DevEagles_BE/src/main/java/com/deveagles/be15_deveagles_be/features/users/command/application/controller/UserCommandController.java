@@ -38,7 +38,7 @@ public class UserCommandController {
     return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(null));
   }
 
-  @GetMapping("/valid-id")
+  @PostMapping("/valid-id")
   public ResponseEntity<ApiResponse<Boolean>> validLoginId(
       @RequestBody @Valid ValidCheckRequest validRequest) {
 
@@ -47,7 +47,7 @@ public class UserCommandController {
     return ResponseEntity.status(HttpStatus.OK).body(ApiResponse.success(is_valid));
   }
 
-  @GetMapping("/valid-email")
+  @PostMapping("/valid-email")
   public ResponseEntity<ApiResponse<Boolean>> validEmail(
       @RequestBody @Valid ValidCheckRequest validRequest) {
 
