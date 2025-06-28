@@ -32,8 +32,9 @@ public class ShopCommandServiceImplTest {
 
   @BeforeEach
   void setUp() {
-    service = new ShopCommandServiceImpl(shopRepository, industryRepository);
-    service = new ShopCommandServiceImpl(shopRepository, reservationSettingInitializer);
+    service =
+        new ShopCommandServiceImpl(
+            shopRepository, industryRepository, reservationSettingInitializer);
   }
 
   @Test
