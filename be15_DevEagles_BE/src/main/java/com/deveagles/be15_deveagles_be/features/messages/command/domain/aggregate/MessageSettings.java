@@ -12,10 +12,6 @@ import lombok.*;
 public class MessageSettings {
 
   @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
-  @Column(name = "message_settings_id")
-  private Long id;
-
   @Column(name = "shop_id", nullable = false)
   private Long shopId;
 
@@ -28,17 +24,18 @@ public class MessageSettings {
   @Column(name = "point", nullable = false)
   private Long point;
 
-  public void usePoint(long used) {
-    if (this.point < used) {
-      throw new IllegalStateException("문자 포인트가 부족합니다. 현재 잔여: " + this.point);
-    }
-    this.point -= used;
+  public void update(String senderNumber, Boolean canAlimtalk) {
+    if (senderNumber != null) this.senderNumber = senderNumber;
+    if (canAlimtalk != null) this.canAlimtalk = canAlimtalk;
   }
 
   public void addPoint(long added) {
-    if (added <= 0) {
-      throw new IllegalArgumentException("추가할 포인트는 0보다 커야 합니다.");
-    }
+    if (added <= 0) throw new IllegalArgumentException("포인트는 0보다 커야 합니다.");
     this.point += added;
+  }
+
+  public void usePoint(long used) {
+    if (this.point < used) throw new IllegalStateException("포인트 부족");
+    this.point -= used;
   }
 }
