@@ -1,6 +1,7 @@
 package com.deveagles.be15_deveagles_be.features.users.command.application.controller;
 
 import com.deveagles.be15_deveagles_be.common.dto.ApiResponse;
+import com.deveagles.be15_deveagles_be.features.messages.command.application.service.MessageSettingsCommandService;
 import com.deveagles.be15_deveagles_be.features.shops.command.application.service.ShopCommandService;
 import com.deveagles.be15_deveagles_be.features.shops.command.domain.aggregate.Shop;
 import com.deveagles.be15_deveagles_be.features.users.command.application.dto.request.GetAccountRequest;
@@ -28,6 +29,7 @@ public class UserCommandController {
 
   private final UserCommandService userCommandService;
   private final ShopCommandService shopCommandService;
+  private final MessageSettingsCommandService messageSettingsCommandService;
 
   @Transactional
   @PostMapping("/users")
@@ -37,6 +39,7 @@ public class UserCommandController {
     Shop shop = shopCommandService.shopRegist(request.shop());
     Staff staff = userCommandService.userRegist(request.user(), shop.getShopId());
     shopCommandService.patchOwnerId(shop, staff.getStaffId());
+    messageSettingsCommandService.createDefault(shop.getShopId());
 
     return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(null));
   }
