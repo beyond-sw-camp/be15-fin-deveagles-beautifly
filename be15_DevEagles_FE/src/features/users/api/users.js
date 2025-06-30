@@ -20,3 +20,7 @@ export const validBizNumber = params => api.post(`/valid-biz`, params);
 export const getIndustry = () => api.get(`/get-industry`);
 
 export const login = params => api.post(`/auth/login`, params);
+
+export const getAccount = params => api.post(`/account`, params);
+
+export const patchAccount = params => api.patch(`/account`, params);
