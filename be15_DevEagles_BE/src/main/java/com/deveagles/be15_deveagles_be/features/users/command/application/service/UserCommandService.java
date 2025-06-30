@@ -1,7 +1,10 @@
 package com.deveagles.be15_deveagles_be.features.users.command.application.service;
 
+import com.deveagles.be15_deveagles_be.features.users.command.application.dto.request.GetAccountRequest;
+import com.deveagles.be15_deveagles_be.features.users.command.application.dto.request.PatchAccountRequest;
 import com.deveagles.be15_deveagles_be.features.users.command.application.dto.request.UserCreateRequest;
 import com.deveagles.be15_deveagles_be.features.users.command.application.dto.request.ValidCheckRequest;
+import com.deveagles.be15_deveagles_be.features.users.command.application.dto.response.AccountResponse;
 import com.deveagles.be15_deveagles_be.features.users.command.domain.aggregate.Staff;
 import jakarta.validation.Valid;
 
@@ -11,4 +14,8 @@ public interface UserCommandService {
   Boolean validCheckId(@Valid ValidCheckRequest validRequest);
 
   Boolean validCheckEmail(@Valid ValidCheckRequest validRequest);
+
+  AccountResponse getAccount(@Valid GetAccountRequest accountRequest);
+
+  AccountResponse patchAccount(@Valid PatchAccountRequest accountRequest);
 }

@@ -5,24 +5,60 @@
     <div class="profile-card-vertical">
       <div class="form-fields">
         <div class="label-row">
-          <label for="email">회원 아이디(이메일 주소)</label>
+          <label for="email">아이디</label>
         </div>
-        <BaseForm id="email" v-model="user.email" type="email" />
+        <BaseForm id="loginId" v-model="staff.loginId" type="loginId" disabled />
+
+        <div class="label-row">
+          <label for="email">이메일 주소</label>
+        </div>
+        <BaseForm
+          id="email"
+          v-model="staff.email"
+          type="email"
+          :error="errors.email"
+          @blur="emailChecked"
+          @focus="clearError('email')"
+        />
+
+        <div class="label-row">
+          <label for="phoneNumber"> 전화번호 </label>
+          <p class="inform-rule">'-' 제외, 빈 값 입력 시 변경사항이 저장되지 않습니다.</p>
+        </div>
+        <BaseForm
+          id="phoneNumber"
+          v-model="staff.phoneNumber"
+          type="text"
+          :error="errors.phoneNumber"
+          @blur="phoneChecked"
+          @focus="clearError('phoneNumber')"
+        />
 
         <div class="label-row">
           <label for="newPassword">변경할 비밀번호</label>
+          <p class="inform-rule">특수문자, 영문자, 숫자를 포함한 8자리 이상</p>
         </div>
-        <BaseForm id="newPassword" v-model="user.newPassword" type="password" />
+        <BaseForm
+          id="newPassword"
+          v-model="staff.newPassword"
+          type="password"
+          :error="errors.password"
+          @blur="passwordChecked"
+          @focus="clearError('password')"
+        />
 
         <div class="label-row">
           <label for="confirmPassword">비밀번호 확인</label>
         </div>
-        <BaseForm id="confirmPassword" v-model="user.confirmPassword" type="password" />
-
-        <div class="label-row">
-          <label>알림 설정</label>
-          <BaseToggleSwitch v-model="user.notification" />
-        </div>
+        <BaseForm
+          id="checkPwd"
+          v-model="staff.checkPwd"
+          type="password"
+          placeholder="비밀번호를 한 번 더 입력해주세요."
+          :error="errors.checkPwd"
+          @blur="checkPwdChecked"
+          @focus="clearError('checkPwd')"
+        />
 
         <div class="button-row">
           <BaseButton class="edit-button" type="primary" @click="handleEdit">
@@ -31,34 +67,197 @@
         </div>
       </div>
     </div>
+    <BaseToast ref="toastRef" />
   </div>
 </template>
 <script setup>
   import { onMounted, ref } from 'vue';
   import BaseForm from '@/components/common/BaseForm.vue';
   import BaseButton from '@/components/common/BaseButton.vue';
-  import BaseToggleSwitch from '@/components/common/BaseToggleSwitch.vue';
+  import { getAccount, patchAccount, validEmail } from '@/features/users/api/users.js';
+  import BaseToast from '@/components/common/BaseToast.vue';
+  import { useRouter } from 'vue-router';
 
+  const router = useRouter();
+
+  const toastRef = ref();
   const isLoading = ref(true);
-  const user = ref({
+
+  const originalStaff = ref({});
+  const staff = ref({
+    loginId: '',
     email: '',
     newPassword: '',
-    confirmPassword: '',
-    notification: '',
+    checkPwd: '',
+    phoneNumber: '',
   });
 
-  onMounted(() => {
-    user.value = {
-      email: 'eagles@example.com',
-      newPassword: '',
-      confirmPassword: '',
-      notification: true,
+  const errors = ref({
+    email: '',
+    password: '',
+  });
+
+  const emailCheckPassed = ref(false);
+  const passwordPassed = ref(false);
+  const checkPwdPassed = ref(false);
+  const phonePassed = ref(false);
+
+  onMounted(async () => {
+    // todo : userStore.staffId;
+
+    const staffId = 1;
+
+    try {
+      const res = await getAccount({ staffId });
+      const { loginId, email, phoneNumber } = res.data.data;
+
+      originalStaff.value = { email, phoneNumber };
+      staff.value = {
+        loginId,
+        email,
+        phoneNumber,
+        newPassword: '',
+        checkPwd: '',
+      };
+    } catch (err) {
+      handleError(err);
+    } finally {
+      isLoading.value = false;
+    }
+  });
+
+  const handleEdit = async () => {
+    // todo : userStore.staffId;
+    const staffId = 1;
+
+    const params = {
+      staffId,
+      email: staff.value.email !== originalStaff.value.email ? staff.value.email : '',
+      phoneNumber:
+        staff.value.phoneNumber !== originalStaff.value.phoneNumber
+          ? staff.value.phoneNumber
+          : originalStaff.value.phoneNumber,
+      password: staff.value.newPassword ? staff.value.newPassword : '',
     };
-    isLoading.value = false;
-  });
 
-  const handleEdit = () => {
-    // todo 변경사항 저장 로직
+    if (staff.value.newPassword && staff.value.newPassword !== staff.value.checkPwd) {
+      toastRef.value?.error?.('비밀번호가 일치하지 않습니다.');
+      return;
+    } else if (!staff.value.newPassword) {
+      staff.value.checkPwd = '';
+    }
+
+    try {
+      await patchAccount(params);
+      toastRef.value?.success?.('변경사항이 저장되었습니다.');
+      originalStaff.value.email = staff.value.email;
+      originalStaff.value.phoneNumber = staff.value.phoneNumber;
+      staff.value.newPassword = '';
+      staff.value.checkPwd = '';
+    } catch (err) {
+      handleError(err);
+    }
+  };
+
+  const handleError = err => {
+    const res = err.response?.data;
+    if (!res || !res.message) {
+      toastRef.value?.error?.('존재하지 않는 회원입니다');
+      return;
+    }
+    toastRef.value?.error?.(res.message);
+  };
+
+  const clearError = field => {
+    errors.value[field] = '';
+  };
+
+  const emailChecked = async () => {
+    if (!staff.value.email || staff.value.email === originalStaff.value.email) return;
+
+    const checkItem = staff.value.email?.trim();
+    const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(checkItem);
+    if (!isValidEmail) {
+      errors.value.email = '올바른 이메일 형식을 입력해주세요.';
+      emailCheckPassed.value = false;
+      return;
+    }
+
+    try {
+      const res = await validEmail({ checkItem });
+      if (res.data.data === true) {
+        errors.value.email = '';
+        emailCheckPassed.value = true;
+      } else {
+        errors.value.email = '이미 사용 중인 이메일입니다.';
+        emailCheckPassed.value = false;
+      }
+    } catch (err) {
+      errors.value.email = '중복 확인 중 오류가 발생했습니다.';
+      emailCheckPassed.value = false;
+    }
+  };
+
+  const passwordChecked = () => {
+    if (!staff.value.newPassword) return;
+    const password = staff.value.newPassword;
+
+    const isValidPwd =
+      /^(?=.*[A-Za-z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\\[\]{};':"\\|,.<>/?]).{8,}$/.test(password);
+    if (!isValidPwd) {
+      errors.value.password = '올바른 비밀번호 형식을 입력해주세요.';
+      passwordPassed.value = true;
+      return;
+    }
+    errors.value.password = '';
+    passwordPassed.value = true;
+  };
+
+  const checkPwdChecked = () => {
+    if (!staff.value.newPassword) {
+      clearError('checkPwd');
+      return;
+    }
+
+    const checkPwd = staff.value.checkPwd?.trim();
+    const password = staff.value.newPassword;
+
+    if (!checkPwd) {
+      errors.value.checkPwd = '비밀번호를 한 번 더 입력해주세요.';
+      checkPwdPassed.value = false;
+      return;
+    }
+
+    if (checkPwd !== password) {
+      errors.value.checkPwd = '비밀번호가 일치하지 않습니다.';
+      checkPwdPassed.value = false;
+      return;
+    }
+    errors.value.checkPwd = '';
+    checkPwdPassed.value = true;
+  };
+
+  const phoneChecked = () => {
+    if (!staff.value.phoneNumber || staff.value.phoneNumber === originalStaff.value.phoneNumber)
+      return;
+
+    const phoneNumber = staff.value.phoneNumber;
+
+    const isValidPhone = /^[0-9]+$/.test(phoneNumber);
+
+    if (!isValidPhone) {
+      errors.value.phoneNumber = '올바른 전화번호 형식을 입력해주세요.';
+      phonePassed.value = false;
+      return;
+    }
+
+    if (phoneNumber.length === 11) {
+      errors.value.phoneNumber = '';
+      phonePassed.value = true;
+    } else {
+      errors.value.phoneNumber = '전화번호는 11자리 숫자만 입력 가능합니다.';
+      phonePassed.value = false;
+    }
   };
 </script>
 <style scoped>
@@ -100,37 +299,10 @@
     max-width: 800px;
     margin: 0 auto;
   }
-
-  .toggle-switch input[type='radio'] {
-    display: none;
-  }
-
-  /* 스위치 스타일 공통 */
-  .toggle-switch label {
-    position: relative;
-    display: inline-block;
-    width: 48px;
-    height: 24px;
-    background-color: #ccc;
-    border-radius: 50px;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-  }
-  .toggle-switch label::after {
-    content: '';
-    position: absolute;
-    width: 18px;
-    height: 18px;
-    top: 3px;
-    left: 3px;
-    background-color: white;
-    border-radius: 50%;
-    transition: left 0.3s ease;
-  }
-  .toggle-switch input[type='radio']:checked + label {
-    background-color: #3fc1c9;
-  }
-  .toggle-switch input[type='radio']:checked + label::after {
-    left: 27px;
+  .inform-rule {
+    font-size: 12px;
+    font-weight: normal;
+    color: var(--color-gray-500);
+    margin-left: 8px;
   }
 </style>
