@@ -1,10 +1,14 @@
 package com.deveagles.be15_deveagles_be.features.users.command.application.controller;
 
 import com.deveagles.be15_deveagles_be.common.dto.ApiResponse;
+import com.deveagles.be15_deveagles_be.features.messages.command.application.service.MessageSettingsCommandService;
 import com.deveagles.be15_deveagles_be.features.shops.command.application.service.ShopCommandService;
 import com.deveagles.be15_deveagles_be.features.shops.command.domain.aggregate.Shop;
+import com.deveagles.be15_deveagles_be.features.users.command.application.dto.request.GetAccountRequest;
+import com.deveagles.be15_deveagles_be.features.users.command.application.dto.request.PatchAccountRequest;
 import com.deveagles.be15_deveagles_be.features.users.command.application.dto.request.ShopAndUserCreateRequest;
 import com.deveagles.be15_deveagles_be.features.users.command.application.dto.request.ValidCheckRequest;
+import com.deveagles.be15_deveagles_be.features.users.command.application.dto.response.AccountResponse;
 import com.deveagles.be15_deveagles_be.features.users.command.application.service.UserCommandService;
 import com.deveagles.be15_deveagles_be.features.users.command.domain.aggregate.Staff;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -25,6 +29,7 @@ public class UserCommandController {
 
   private final UserCommandService userCommandService;
   private final ShopCommandService shopCommandService;
+  private final MessageSettingsCommandService messageSettingsCommandService;
 
   @Transactional
   @PostMapping("/users")
@@ -34,6 +39,7 @@ public class UserCommandController {
     Shop shop = shopCommandService.shopRegist(request.shop());
     Staff staff = userCommandService.userRegist(request.user(), shop.getShopId());
     shopCommandService.patchOwnerId(shop, staff.getStaffId());
+    messageSettingsCommandService.createDefault(shop.getShopId());
 
     return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(null));
   }
@@ -54,5 +60,23 @@ public class UserCommandController {
     Boolean is_valid = userCommandService.validCheckEmail(validRequest);
 
     return ResponseEntity.ok().body(ApiResponse.success(is_valid));
+  }
+
+  @PostMapping("/account")
+  public ResponseEntity<ApiResponse<AccountResponse>> getAccount(
+      @RequestBody @Valid GetAccountRequest accountRequest) {
+
+    AccountResponse response = userCommandService.getAccount(accountRequest);
+
+    return ResponseEntity.ok().body(ApiResponse.success(response));
+  }
+
+  @PatchMapping("/account")
+  public ResponseEntity<ApiResponse<AccountResponse>> patchAccount(
+      @RequestBody @Valid PatchAccountRequest accountRequest) {
+
+    AccountResponse response = userCommandService.patchAccount(accountRequest);
+
+    return ResponseEntity.ok().body(ApiResponse.success(response));
   }
 }

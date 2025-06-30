@@ -21,6 +21,7 @@ public enum ErrorCode implements ErrorCodeType {
   // 회원 관련 에러 (10000번대)
   USER_NAME_NOT_FOUND("11001", "존재하지 않는 ID입니다. 다시 입력해주세요.", HttpStatus.NOT_FOUND),
   USER_INVALID_PASSWORD("11002", "잘못된 비밀번호입니다.", HttpStatus.BAD_REQUEST),
+  USER_NOT_FOUND("11003", "존재하지 않는 회원입니다.", HttpStatus.NOT_FOUND),
 
   // 고객 관련 에러 (30000번대)
   CUSTOMER_NOT_FOUND("30001", "고객을 찾을 수 없습니다", HttpStatus.NOT_FOUND),
@@ -29,6 +30,12 @@ public enum ErrorCode implements ErrorCodeType {
   CUSTOMER_ACCESS_DENIED("30004", "해당 고객에 대한 접근 권한이 없습니다", HttpStatus.FORBIDDEN),
   CUSTOMER_INVALID_PHONE_NUMBER("30005", "유효하지 않은 전화번호 형식입니다", HttpStatus.BAD_REQUEST),
   CUSTOMER_INVALID_BIRTHDATE("30006", "유효하지 않은 생년월일입니다", HttpStatus.BAD_REQUEST),
+
+  // 메시지 관련 에러 (40000번대)
+  MESSAGE_SETTINGS_ALREADY_EXISTS("40001", "이미 메시지 설정이 존재합니다.", HttpStatus.BAD_REQUEST),
+  MESSAGE_SETTINGS_NOT_FOUND("40002", "해당 매장의 메시지 설정이 존재하지 않습니다.", HttpStatus.NOT_FOUND),
+  MESSAGE_INVALID_SENDER_NUMBER("40003", "유효하지 않은 발신 번호입니다.", HttpStatus.BAD_REQUEST),
+  MESSAGE_INSUFFICIENT_POINTS("40004", "메시지를 발송할 포인트가 부족합니다.", HttpStatus.BAD_REQUEST),
 
   // 쿠폰 관련 에러 (50000번대)
   COUPON_NOT_FOUND("50001", "쿠폰을 찾을 수 없습니다", HttpStatus.NOT_FOUND),
