@@ -2,7 +2,7 @@ package com.deveagles.be15_deveagles_be.features.membership.command.application.
 
 import com.deveagles.be15_deveagles_be.common.exception.BusinessException;
 import com.deveagles.be15_deveagles_be.common.exception.ErrorCode;
-import com.deveagles.be15_deveagles_be.features.membership.command.application.dto.request.PrepaidPassRegistRequest;
+import com.deveagles.be15_deveagles_be.features.membership.command.application.dto.request.PrepaidPassRequest;
 import com.deveagles.be15_deveagles_be.features.membership.command.application.service.PrepaidPassCommandService;
 import com.deveagles.be15_deveagles_be.features.membership.command.domain.aggregate.PrepaidPass;
 import com.deveagles.be15_deveagles_be.features.membership.command.domain.repository.PrepaidPassRepository;
@@ -21,7 +21,7 @@ public class PrepaidPassCommandServiceImpl implements PrepaidPassCommandService 
   private final ShopRepository shopRepository;
 
   @Override
-  public void registPrepaidPass(PrepaidPassRegistRequest request) {
+  public void registPrepaidPass(PrepaidPassRequest request) {
 
     if (request.getShopId() == null) {
       throw new BusinessException(ErrorCode.ITEMS_SHOP_NOT_FOUND);

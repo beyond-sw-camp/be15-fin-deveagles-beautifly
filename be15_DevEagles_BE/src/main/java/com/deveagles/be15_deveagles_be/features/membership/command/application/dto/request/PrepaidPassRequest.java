@@ -9,7 +9,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
-public class PrepaidPassRegistRequest {
+public class PrepaidPassRequest {
 
   @NotNull(message = "shopId는 필수입니다.") private Long shopId;
 

@@ -6,7 +6,7 @@ import static org.mockito.Mockito.*;
 
 import com.deveagles.be15_deveagles_be.common.exception.BusinessException;
 import com.deveagles.be15_deveagles_be.common.exception.ErrorCode;
-import com.deveagles.be15_deveagles_be.features.membership.command.application.dto.request.SessionPassRegistRequest;
+import com.deveagles.be15_deveagles_be.features.membership.command.application.dto.request.SessionPassRequest;
 import com.deveagles.be15_deveagles_be.features.membership.command.domain.aggregate.SessionPass;
 import com.deveagles.be15_deveagles_be.features.membership.command.domain.repository.SessionPassRepository;
 import com.deveagles.be15_deveagles_be.features.shops.command.domain.aggregate.Shop;
@@ -33,7 +33,7 @@ class SessionPassCommandServiceImplTest {
   @DisplayName("성공: 횟수권 등록")
   void registSessionPass_success() {
     // given
-    SessionPassRegistRequest request = new SessionPassRegistRequest();
+    SessionPassRequest request = new SessionPassRequest();
     request.setShopId(1L);
     request.setSessionPassName("컷트 10회권");
     request.setSessionPassPrice(150000);
@@ -56,7 +56,7 @@ class SessionPassCommandServiceImplTest {
   @Test
   @DisplayName("실패: shopId 없음")
   void registSessionPass_fail_nullShopId() {
-    SessionPassRegistRequest request = new SessionPassRegistRequest();
+    SessionPassRequest request = new SessionPassRequest();
     assertThatThrownBy(() -> service.registSessionPass(request))
         .isInstanceOf(BusinessException.class)
         .hasMessageContaining(ErrorCode.ITEMS_SHOP_ID_REQUIRED.getMessage());
@@ -65,7 +65,7 @@ class SessionPassCommandServiceImplTest {
   @Test
   @DisplayName("실패: 이름 없음")
   void registSessionPass_fail_blankName() {
-    SessionPassRegistRequest request = new SessionPassRegistRequest();
+    SessionPassRequest request = new SessionPassRequest();
     request.setShopId(1L);
     request.setSessionPassName(" ");
 
@@ -77,7 +77,7 @@ class SessionPassCommandServiceImplTest {
   @Test
   @DisplayName("실패: 가격 없음")
   void registSessionPass_fail_priceMissing() {
-    SessionPassRegistRequest request = new SessionPassRegistRequest();
+    SessionPassRequest request = new SessionPassRequest();
     request.setShopId(1L);
     request.setSessionPassName("PT");
     request.setSessionPassPrice(null);
@@ -90,7 +90,7 @@ class SessionPassCommandServiceImplTest {
   @Test
   @DisplayName("실패: 유효기간 없음")
   void registSessionPass_fail_expirationMissing() {
-    SessionPassRegistRequest request = new SessionPassRegistRequest();
+    SessionPassRequest request = new SessionPassRequest();
     request.setShopId(1L);
     request.setSessionPassName("PT");
     request.setSessionPassPrice(100000);
@@ -104,7 +104,7 @@ class SessionPassCommandServiceImplTest {
   @Test
   @DisplayName("실패: 횟수 없음")
   void registSessionPass_fail_sessionMissing() {
-    SessionPassRegistRequest request = new SessionPassRegistRequest();
+    SessionPassRequest request = new SessionPassRequest();
     request.setShopId(1L);
     request.setSessionPassName("커트");
     request.setSessionPassPrice(100000);
