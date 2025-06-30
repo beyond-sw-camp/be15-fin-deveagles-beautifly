@@ -11,8 +11,10 @@ import router from './routes';
 // PrimeVue imports
 import PrimeVue from 'primevue/config';
 import Aura from '@primevue/themes/aura';
+import { createPinia } from 'pinia';
 
 const app = createApp(App);
+const pinia = createPinia();
 
 app.use(router);
 app.use(PrimeVue, {
@@ -96,4 +98,5 @@ app.use(PrimeVue, {
   },
 });
 
+app.use(pinia);
 app.mount('#app');

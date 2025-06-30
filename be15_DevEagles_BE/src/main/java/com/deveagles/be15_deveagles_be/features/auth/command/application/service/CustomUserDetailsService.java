@@ -28,10 +28,14 @@ public class CustomUserDetailsService implements UserDetailsService {
             .orElseThrow(() -> new BusinessException(ErrorCode.USER_NAME_NOT_FOUND));
 
     return CustomUser.builder()
+        .shopId(staff.getShopId())
         .userId(staff.getStaffId())
         .username(staff.getLoginId())
         .password(staff.getPassword())
         .staffStatus(staff.getStaffStatus())
+        .staffName(staff.getStaffName())
+        .grade(staff.getGrade())
+        .profileUrl(staff.getProfileUrl())
         .build();
   }
 }
