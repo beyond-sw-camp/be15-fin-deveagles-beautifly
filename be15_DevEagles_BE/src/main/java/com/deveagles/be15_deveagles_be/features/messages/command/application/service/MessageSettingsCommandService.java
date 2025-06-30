@@ -3,7 +3,7 @@ package com.deveagles.be15_deveagles_be.features.messages.command.application.se
 import com.deveagles.be15_deveagles_be.features.messages.command.application.dto.request.MessageSettingRequest;
 import com.deveagles.be15_deveagles_be.features.messages.command.application.dto.response.MessageSettingResponse;
 
-public interface MessageSettingsService {
+public interface MessageSettingsCommandService {
   Long createDefault(Long shopId);
 
   MessageSettingResponse loadSettings(Long shopId);

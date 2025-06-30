@@ -4,7 +4,7 @@ import com.deveagles.be15_deveagles_be.common.exception.BusinessException;
 import com.deveagles.be15_deveagles_be.common.exception.ErrorCode;
 import com.deveagles.be15_deveagles_be.features.messages.command.application.dto.request.MessageSettingRequest;
 import com.deveagles.be15_deveagles_be.features.messages.command.application.dto.response.MessageSettingResponse;
-import com.deveagles.be15_deveagles_be.features.messages.command.application.service.MessageSettingsService;
+import com.deveagles.be15_deveagles_be.features.messages.command.application.service.MessageSettingsCommandService;
 import com.deveagles.be15_deveagles_be.features.messages.command.domain.aggregate.MessageSettings;
 import com.deveagles.be15_deveagles_be.features.messages.command.domain.repository.MessageSettingRepository;
 import lombok.RequiredArgsConstructor;
@@ -14,7 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 @Service
 @RequiredArgsConstructor
-public class MessageSettingsServiceImpl implements MessageSettingsService {
+public class MessageSettingsCommandServiceImpl implements MessageSettingsCommandService {
   private final MessageSettingRepository messageSettingRepository;
 
   @Override

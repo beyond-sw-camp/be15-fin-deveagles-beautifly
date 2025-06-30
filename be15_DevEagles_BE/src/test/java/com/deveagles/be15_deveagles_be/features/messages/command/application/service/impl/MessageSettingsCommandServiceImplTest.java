@@ -19,9 +19,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("MessageSettingsService 단위 테스트")
-class MessageSettingsServiceImplTest {
+class MessageSettingsCommandServiceImplTest {
 
-  @InjectMocks private MessageSettingsServiceImpl messageSettingsService;
+  @InjectMocks private MessageSettingsCommandServiceImpl messageSettingsService;
 
   @Mock private MessageSettingRepository messageSettingRepository;
 
