@@ -2,6 +2,7 @@ package com.deveagles.be15_deveagles_be.features.shops.command.application.servi
 
 import com.deveagles.be15_deveagles_be.features.shops.command.application.dto.request.ShopCreateRequest;
 import com.deveagles.be15_deveagles_be.features.shops.command.application.dto.request.ValidBizNumberRequest;
+import com.deveagles.be15_deveagles_be.features.shops.command.application.dto.response.GetIndustryResponse;
 import com.deveagles.be15_deveagles_be.features.shops.command.domain.aggregate.Shop;
 
 public interface ShopCommandService {
@@ -10,4 +11,6 @@ public interface ShopCommandService {
   Boolean validCheckBizNumber(ValidBizNumberRequest validRequest);
 
   void patchOwnerId(Shop shop, Long staffId);
+
+  GetIndustryResponse getIndustry();
 }

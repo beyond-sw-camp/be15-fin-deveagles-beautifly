@@ -193,6 +193,7 @@
     <CustomerEditDrawer
       v-model="showEditDrawer"
       :customer="selectedCustomerEdit"
+      :z-index="10002"
       @update="handleUpdateCustomer"
       @close="showEditDrawer = false"
     />
@@ -399,12 +400,21 @@
   function handleEditRequest(customer) {
     selectedCustomerEdit.value = customer;
     showEditDrawer.value = true;
-    showDetailModal.value = false;
+    // showDetailModal.value = false; // [수정] 상세 모달이 닫히지 않도록 이 줄을 삭제
   }
 
   function handleUpdateCustomer(updatedCustomer) {
     const idx = dummyData.value.findIndex(c => c.customer_id === updatedCustomer.customer_id);
-    if (idx !== -1) dummyData.value[idx] = { ...updatedCustomer };
+    if (idx !== -1) {
+      dummyData.value[idx] = { ...dummyData.value[idx], ...updatedCustomer };
+      // [기능 추가] 상세 모달이 열려있다면, 그 내용도 실시간으로 갱신
+      if (
+        selectedCustomer.value &&
+        selectedCustomer.value.customer_id === updatedCustomer.customer_id
+      ) {
+        selectedCustomer.value = dummyData.value[idx];
+      }
+    }
     toastRef.value?.success('고객 수정 완료');
     showEditDrawer.value = false;
   }

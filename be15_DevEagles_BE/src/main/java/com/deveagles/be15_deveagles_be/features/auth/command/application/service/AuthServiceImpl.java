@@ -1,0 +1,43 @@
+package com.deveagles.be15_deveagles_be.features.auth.command.application.service;
+
+import com.deveagles.be15_deveagles_be.common.exception.BusinessException;
+import com.deveagles.be15_deveagles_be.common.exception.ErrorCode;
+import com.deveagles.be15_deveagles_be.common.jwt.JwtTokenProvider;
+import com.deveagles.be15_deveagles_be.features.auth.command.application.dto.request.LoginRequest;
+import com.deveagles.be15_deveagles_be.features.auth.command.application.dto.response.TokenResponse;
+import com.deveagles.be15_deveagles_be.features.users.command.domain.aggregate.Staff;
+import com.deveagles.be15_deveagles_be.features.users.command.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class AuthServiceImpl implements AuthService {
+  private final UserRepository userRepository;
+  private final PasswordEncoder passwordEncoder;
+  private final JwtTokenProvider jwtTokenProvider;
+  private final RefreshTokenService refreshTokenService;
+
+  @Override
+  public TokenResponse login(LoginRequest request) {
+
+    Staff staff =
+        userRepository
+            .findStaffByLoginId(request.loginId())
+            .orElseThrow(() -> new BusinessException(ErrorCode.USER_NAME_NOT_FOUND));
+
+    if (!passwordEncoder.matches(request.password(), staff.getPassword())) {
+      throw new BusinessException(ErrorCode.USER_INVALID_PASSWORD);
+    }
+
+    String accessToken = jwtTokenProvider.createToken(staff.getLoginId());
+    String refreshToken = jwtTokenProvider.createRefreshToken(staff.getLoginId());
+
+    refreshTokenService.saveRefreshToken(staff.getLoginId(), refreshToken);
+
+    return TokenResponse.builder().accessToken(accessToken).refreshToken(refreshToken).build();
+  }
+}

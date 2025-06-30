@@ -1,14 +1,15 @@
 <template>
   <div class="login-container input-reset-scope">
-    <form :class="['login-vbox', { shake }]" @submit.prevent="fetchUser">
+    <form :class="['login-box', { shake }]" @submit.prevent="fetchUser">
       <img :src="Logo" alt="로고" class="logo" />
 
       <BaseForm
-        v-model="params.username"
+        v-model="params.loginId"
         label="아이디"
         type="text"
         placeholder="아이디를 입력해주세요."
-        @focus="errorMessage = ''"
+        :error="errors.loginId"
+        @focus="clearError('loginId')"
       />
 
       <BaseForm
@@ -16,8 +17,8 @@
         label="비밀번호"
         type="password"
         placeholder="비밀번호를 입력해주세요."
-        :error="errorMessage"
-        @focus="errorMessage = ''"
+        :error="errors.password"
+        @focus="clearError('password')"
       />
 
       <div class="login-links">
@@ -54,6 +55,8 @@
   <!-- 비밀번호 찾기 -->
   <FindPwdModal v-model="showFindPwdModal" @submit="onFindPwdSubmit" />
   <FindPwdResModal v-model:show="showFindPwdResModal" :found-user-pwd="foundUserPwd" />
+
+  <BaseToast ref="toastRef" />
 </template>
 <script setup lang="ts">
   import { useRouter } from 'vue-router';
@@ -66,15 +69,26 @@
   import FindIdResModal from '@/features/users/components/FindIdResModal.vue';
   import FindPwdModal from '@/features/users/components/FindPwdModal.vue';
   import FindPwdResModal from '@/features/users/components/FindPwdResModal.vue';
+  import { login } from '@/features/users/api/users.js';
+  import BaseToast from '@/components/common/BaseToast.vue';
 
   const router = useRouter();
   //const authStore = useAuthStore();
+  const toastRef = ref();
   const params = ref({
-    username: '',
+    loginId: '',
     password: '',
   });
 
-  const errorMessage = ref('');
+  const errors = ref({
+    loginId: '',
+    password: '',
+  });
+
+  const clearError = field => {
+    errors.value[field] = '';
+  };
+
   const shake = ref(false);
   const showVerifyModal = ref(false);
   const showFindIdModal = ref(false);
@@ -97,9 +111,32 @@
     showFindPwdResModal.value = true;
   };
 
-  const fetchUser = () => {
-    // login api 호출
-    // try - catch => 아이디 / 비밀번호 분기해서 에러 띄우기
+  const fetchUser = async () => {
+    try {
+      const { data } = await login(params.value);
+      toastRef.value?.success?.('로그인 성공!');
+      router.push('/');
+    } catch (err) {
+      shake.value = true;
+
+      const res = err.response?.data;
+      if (!res) {
+        toastRef.value?.error?.('로그인 중 오류가 발생했습니다.');
+        return;
+      }
+      if (!res.message) {
+        toastRef.value?.error?.('존재하지 않는 회원입니다.');
+      } else {
+        if (res.errorCode === '11001') {
+          errors.value.loginId = res.message;
+          params.value.password = '';
+          params.value.loginId = '';
+        } else if (res.errorCode === '11002') {
+          errors.value.password = res.message;
+          params.value.password = '';
+        }
+      }
+    }
   };
 
   const goVerifyEmail = () => {
@@ -155,12 +192,6 @@
     display: flex;
     justify-content: space-between;
     gap: 12px;
-  }
-
-  .input-reset-scope :deep(.input-error) {
-    border-color: inherit !important;
-    background-color: inherit !important;
-    box-shadow: none !important;
   }
 
   .modal-text {

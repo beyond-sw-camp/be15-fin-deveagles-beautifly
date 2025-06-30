@@ -1,0 +1,13 @@
+package com.deveagles.be15_deveagles_be.features.shops.command.application.dto.response;
+
+import com.deveagles.be15_deveagles_be.features.shops.command.domain.aggregate.Industry;
+import java.util.List;
+import lombok.Builder;
+import lombok.Getter;
+
+@Getter
+@Builder
+public class GetIndustryResponse {
+
+  private final List<Industry> industryList;
+}

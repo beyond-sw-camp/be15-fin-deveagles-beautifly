@@ -25,8 +25,8 @@ public class PrepaidPass {
   @Column(name = "prepaid_pass_name", length = 100, nullable = false)
   private String prepaidPassName;
 
-  @Column(name = "price", nullable = false)
-  private Integer price;
+  @Column(name = "prepaid_pass_price", nullable = false)
+  private Integer prepaidPassPrice;
 
   @Column(name = "expiration_period", nullable = false)
   private Integer expirationPeriod;

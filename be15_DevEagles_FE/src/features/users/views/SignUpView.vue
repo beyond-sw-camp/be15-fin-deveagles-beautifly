@@ -3,8 +3,7 @@
     <div class="signup-box">
       <component
         :is="currentStep === 'user' ? EnrollUserForm : EnrollStoreForm"
-        v-if="form[currentStep]"
-        :ref="currentStep === 'user' ? 'userForm' : 'storeForm'"
+        ref="stepForm"
         v-model="form[currentStep]"
         :is-required="isRequired"
       />
@@ -38,6 +37,18 @@
       </div>
     </template>
   </BaseModal>
+
+  <BaseModal v-model="showUserConfirmModal" title="회원 정보를 확인해주세요">
+    <template #default>
+      <p>입력하신 회원 정보는 저장 후 수정할 수 없습니다. 다음 단계로 진행할까요?</p>
+    </template>
+    <template #footer>
+      <BaseButton @click="showUserConfirmModal = false">취소</BaseButton>
+      <BaseButton type="primary" @click="confirmUserAndGoNext"> 다음으로 </BaseButton>
+    </template>
+  </BaseModal>
+
+  <BaseToast ref="toastRef" />
 </template>
 <script setup>
   import { ref } from 'vue';
@@ -46,68 +57,89 @@
   import BaseModal from '@/components/common/BaseModal.vue';
   import BaseButton from '@/components/common/BaseButton.vue';
   import EnrollStoreForm from '@/features/users/components/EnrollStoreForm.vue';
+  import { signUp } from '@/features/users/api/users.js';
+  import BaseToast from '@/components/common/BaseToast.vue';
+  import { useRouter } from 'vue-router';
 
   const form = ref({
     user: {
+      loginId: '',
       email: '',
       password: '',
-      checkPwd: '',
-      userName: '',
+      staffName: '',
       phoneNumber: '',
     },
-    store: {
-      storeName: '',
-      address: {
-        base: '',
-        detail: '',
-      },
-      category: '',
-      storePhone: '',
-      bizNumber: '',
+    shop: {
+      shopName: '',
+      address: '',
+      detailAddress: '',
+      industryId: '',
+      phoneNumber: '',
+      businessNumber: '',
     },
   });
 
   const isRequired = fieldName => {
     return [
+      'loginId',
       'email',
       'password',
       'checkPwd',
-      'userName',
+      'staffName',
       'phoneNumber',
-      'storeName',
-      'category',
+      'shopName',
+      'industryId',
+      'address',
     ].includes(fieldName);
   };
+
+  const router = useRouter();
 
   const currentStep = ref('user');
   const showConfirmModal = ref(false);
 
-  const userForm = ref();
-  const storeForm = ref();
+  const stepForm = ref();
+  const toastRef = ref();
 
-  const goToNext = () => {
-    console.log('클릭');
-    if (userForm.value?.validate()) {
-      currentStep.value = 'store';
-    } else {
-      //
+  const showUserConfirmModal = ref(false);
+
+  const goToNext = async () => {
+    const isValid = await stepForm.value?.validate?.();
+    if (!isValid) {
+      toastRef.value?.error?.('입력 정보를 다시 확인해주세요.');
+      return;
     }
+    showUserConfirmModal.value = true;
   };
 
-  const handleSubmit = () => {
-    if (!storeForm.value?.validate()) return;
+  const confirmUserAndGoNext = () => {
+    showUserConfirmModal.value = false;
+    currentStep.value = 'shop';
+  };
+
+  const handleSubmit = async () => {
+    const isValid = await stepForm.value?.validate?.();
+    if (!isValid) {
+      toastRef.value?.error?.('입력 정보를 다시 확인해주세요.');
+      return;
+    }
     showConfirmModal.value = true;
   };
 
-  const submit = () => {
+  const submit = async () => {
     showConfirmModal.value = false;
     const payload = {
       user: { ...form.value.user },
-      store: { ...form.value.store },
+      shop: { ...form.value.shop },
     };
 
-    //todo : api 연결
-    console.log('회원가입 요청 payload:', payload);
+    try {
+      const res = await signUp(payload);
+      toastRef.value?.success?.('회원가입이 완료되었습니다.');
+      router.push('/login');
+    } catch (err) {
+      toastRef.value?.error?.('회원가입 중 오류가 발생했습니다.');
+    }
   };
 </script>
 <style scoped>
