@@ -6,4 +6,6 @@ public interface PrepaidPassCommandService {
   void registPrepaidPass(PrepaidPassRequest request);
 
   void updatePrepaidPass(Long prepaidPassId, PrepaidPassRequest request);
+
+  void deletePrepaidPass(Long id);
 }

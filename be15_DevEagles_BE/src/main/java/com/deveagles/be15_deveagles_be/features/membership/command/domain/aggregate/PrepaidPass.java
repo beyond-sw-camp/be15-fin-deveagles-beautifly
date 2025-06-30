@@ -64,4 +64,8 @@ public class PrepaidPass {
     this.prepaidPassMemo = prepaidPassMemo;
     this.modifiedAt = LocalDateTime.now();
   }
+
+  public void setDeletedAt() {
+    this.deletedAt = LocalDateTime.now();
+  }
 }

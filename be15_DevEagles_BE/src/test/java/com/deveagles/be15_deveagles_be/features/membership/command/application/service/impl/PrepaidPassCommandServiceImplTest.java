@@ -255,4 +255,37 @@ class PrepaidPassCommandServiceImplTest {
 
     assertEquals(ErrorCode.PREPAIDPASS_NOT_FOUND, ex.getErrorCode());
   }
+
+  @Test
+  @DisplayName("성공: 선불권 삭제 수행")
+  void deletePrepaidPass_success() {
+    Long id = 1L;
+    PrepaidPass pass =
+        PrepaidPass.builder()
+            .prepaidPassId(id)
+            .prepaidPassName("여름 이벤트권")
+            .prepaidPassPrice(50000)
+            .expirationPeriod(90)
+            .build();
+
+    when(prepaidPassRepository.findById(id)).thenReturn(Optional.of(pass));
+
+    prepaidPassCommandService.deletePrepaidPass(id);
+
+    assertNotNull(pass.getDeletedAt());
+    verify(prepaidPassRepository).save(pass);
+  }
+
+  @Test
+  @DisplayName("실패: 삭제 시 존재하지 않는 ID일 경우 예외 발생")
+  void deletePrepaidPass_notFound_throwsException() {
+    Long id = 999L;
+    when(prepaidPassRepository.findById(id)).thenReturn(Optional.empty());
+
+    BusinessException exception =
+        assertThrows(
+            BusinessException.class, () -> prepaidPassCommandService.deletePrepaidPass(id));
+
+    assertEquals(ErrorCode.PREPAIDPASS_NOT_FOUND, exception.getErrorCode());
+  }
 }

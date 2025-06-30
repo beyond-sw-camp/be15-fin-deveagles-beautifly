@@ -89,4 +89,15 @@ public class PrepaidPassCommandServiceImpl implements PrepaidPassCommandService 
 
     prepaidPassRepository.save(prepaidPass);
   }
+
+  @Override
+  public void deletePrepaidPass(Long id) {
+    PrepaidPass prepaidPass =
+        prepaidPassRepository
+            .findById(id)
+            .orElseThrow(() -> new BusinessException(ErrorCode.PREPAIDPASS_NOT_FOUND));
+
+    prepaidPass.setDeletedAt();
+    prepaidPassRepository.save(prepaidPass);
+  }
 }

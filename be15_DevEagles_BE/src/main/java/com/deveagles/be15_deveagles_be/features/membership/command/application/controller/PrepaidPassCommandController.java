@@ -36,4 +36,11 @@ public class PrepaidPassCommandController {
     prepaidPassCommandService.updatePrepaidPass(prepaidPassId, request);
     return ResponseEntity.ok(ApiResponse.success(null));
   }
+
+  @Operation(summary = "선불권 삭제", description = "선불권을 soft delete 합니다.")
+  @DeleteMapping("/{prepaidPassId}")
+  public ResponseEntity<ApiResponse<Void>> deletePrepaidPass(@PathVariable Long prepaidPassId) {
+    prepaidPassCommandService.deletePrepaidPass(prepaidPassId);
+    return ResponseEntity.ok(ApiResponse.success(null));
+  }
 }
