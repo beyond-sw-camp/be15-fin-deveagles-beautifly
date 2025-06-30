@@ -6,6 +6,7 @@ import static org.mockito.Mockito.*;
 import com.deveagles.be15_deveagles_be.common.exception.BusinessException;
 import com.deveagles.be15_deveagles_be.common.exception.ErrorCode;
 import com.deveagles.be15_deveagles_be.features.membership.command.application.dto.request.PrepaidPassRequest;
+import com.deveagles.be15_deveagles_be.features.membership.command.domain.aggregate.ExpirationPeriodType;
 import com.deveagles.be15_deveagles_be.features.membership.command.domain.aggregate.PrepaidPass;
 import com.deveagles.be15_deveagles_be.features.membership.command.domain.repository.PrepaidPassRepository;
 import com.deveagles.be15_deveagles_be.features.shops.command.domain.aggregate.Shop;
@@ -37,6 +38,7 @@ class PrepaidPassCommandServiceImplTest {
     request.setPrepaidPassName("10만원권");
     request.setPrepaidPassPrice(100000);
     request.setExpirationPeriod(180);
+    request.setExpirationPeriodType(ExpirationPeriodType.DAY); // 추가
 
     when(shopRepository.findById(1L)).thenReturn(Optional.of(Shop.builder().shopId(1L).build()));
 
@@ -52,6 +54,7 @@ class PrepaidPassCommandServiceImplTest {
     request.setPrepaidPassName("10만원권");
     request.setPrepaidPassPrice(100000);
     request.setExpirationPeriod(180);
+    request.setExpirationPeriodType(ExpirationPeriodType.DAY); // 추가
 
     BusinessException exception =
         assertThrows(
@@ -68,6 +71,7 @@ class PrepaidPassCommandServiceImplTest {
     request.setPrepaidPassName("10만원권");
     request.setPrepaidPassPrice(100000);
     request.setExpirationPeriod(180);
+    request.setExpirationPeriodType(ExpirationPeriodType.MONTH); // 추가
 
     when(shopRepository.findById(99L)).thenReturn(Optional.empty());
 
@@ -86,6 +90,7 @@ class PrepaidPassCommandServiceImplTest {
     request.setPrepaidPassName(" ");
     request.setPrepaidPassPrice(100000);
     request.setExpirationPeriod(180);
+    request.setExpirationPeriodType(ExpirationPeriodType.WEEK); // 추가
 
     BusinessException exception =
         assertThrows(
@@ -100,8 +105,9 @@ class PrepaidPassCommandServiceImplTest {
     PrepaidPassRequest request = new PrepaidPassRequest();
     request.setShopId(1L);
     request.setPrepaidPassName("10만원권");
-    request.setPrepaidPassPrice(0);
+    request.setPrepaidPassPrice(0); // invalid
     request.setExpirationPeriod(180);
+    request.setExpirationPeriodType(ExpirationPeriodType.DAY); // 추가
 
     BusinessException exception =
         assertThrows(
@@ -117,13 +123,31 @@ class PrepaidPassCommandServiceImplTest {
     request.setShopId(1L);
     request.setPrepaidPassName("10만원권");
     request.setPrepaidPassPrice(100000);
-    request.setExpirationPeriod(0);
+    request.setExpirationPeriod(0); // invalid
+    request.setExpirationPeriodType(ExpirationPeriodType.DAY);
 
     BusinessException exception =
         assertThrows(
             BusinessException.class, () -> prepaidPassCommandService.registPrepaidPass(request));
 
     assertEquals(ErrorCode.MEMBERSHIP_EXPIRATION_PERIOD_REQUIRED, exception.getErrorCode());
+  }
+
+  @Test
+  @DisplayName("실패: 유효기간 단위가 null인 경우")
+  void registerPrepaidPass_missingExpirationPeriodType_throwsException() {
+    PrepaidPassRequest request = new PrepaidPassRequest();
+    request.setShopId(1L);
+    request.setPrepaidPassName("10만원권");
+    request.setPrepaidPassPrice(100000);
+    request.setExpirationPeriod(180);
+    request.setExpirationPeriodType(null);
+
+    BusinessException exception =
+        assertThrows(
+            BusinessException.class, () -> prepaidPassCommandService.registPrepaidPass(request));
+
+    assertEquals(ErrorCode.MEMBERSHIP_EXPIRATION_PERIOD_TYPE_REQUIRED, exception.getErrorCode());
   }
 
   @Test
@@ -135,6 +159,7 @@ class PrepaidPassCommandServiceImplTest {
     request.setPrepaidPassName("여름 할인권");
     request.setPrepaidPassPrice(50000);
     request.setExpirationPeriod(90);
+    request.setExpirationPeriodType(ExpirationPeriodType.DAY);
     request.setBonus(5);
     request.setDiscountRate(10);
     request.setPrepaidPassMemo("이벤트 중");
@@ -146,7 +171,8 @@ class PrepaidPassCommandServiceImplTest {
 
     prepaidPassCommandService.updatePrepaidPass(id, request);
 
-    verify(existing).updatePrepaidPass("여름 할인권", 50000, 90, 5, 10, "이벤트 중");
+    verify(existing)
+        .updatePrepaidPass("여름 할인권", 50000, 90, ExpirationPeriodType.DAY, 5, 10, "이벤트 중");
     verify(prepaidPassRepository).save(existing);
   }
 
@@ -157,7 +183,7 @@ class PrepaidPassCommandServiceImplTest {
     request.setPrepaidPassName("여름 할인권");
     request.setPrepaidPassPrice(50000);
     request.setExpirationPeriod(90);
-
+    request.setExpirationPeriodType(ExpirationPeriodType.DAY);
     BusinessException ex =
         assertThrows(
             BusinessException.class,
@@ -174,6 +200,7 @@ class PrepaidPassCommandServiceImplTest {
     request.setPrepaidPassName(" ");
     request.setPrepaidPassPrice(50000);
     request.setExpirationPeriod(90);
+    request.setExpirationPeriodType(ExpirationPeriodType.DAY);
 
     BusinessException ex =
         assertThrows(
@@ -189,8 +216,9 @@ class PrepaidPassCommandServiceImplTest {
     PrepaidPassRequest request = new PrepaidPassRequest();
     request.setShopId(1L);
     request.setPrepaidPassName("이름");
-    request.setPrepaidPassPrice(0); // 또는 null
+    request.setPrepaidPassPrice(0);
     request.setExpirationPeriod(90);
+    request.setExpirationPeriodType(ExpirationPeriodType.DAY);
 
     BusinessException ex =
         assertThrows(
@@ -207,7 +235,8 @@ class PrepaidPassCommandServiceImplTest {
     request.setShopId(1L);
     request.setPrepaidPassName("이름");
     request.setPrepaidPassPrice(50000);
-    request.setExpirationPeriod(0); // 또는 null
+    request.setExpirationPeriod(0); // 잘못된 값
+    request.setExpirationPeriodType(ExpirationPeriodType.MONTH);
 
     BusinessException ex =
         assertThrows(
@@ -218,6 +247,24 @@ class PrepaidPassCommandServiceImplTest {
   }
 
   @Test
+  @DisplayName("실패: 유효기간 단위가 null인 경우")
+  void updatePrepaidPass_invalidExpirationPeriodType() {
+    PrepaidPassRequest request = new PrepaidPassRequest();
+    request.setShopId(1L);
+    request.setPrepaidPassName("이름");
+    request.setPrepaidPassPrice(50000);
+    request.setExpirationPeriod(90);
+    // request.setExpirationPeriodType(null); // 생략 상태
+
+    BusinessException ex =
+        assertThrows(
+            BusinessException.class,
+            () -> prepaidPassCommandService.updatePrepaidPass(1L, request));
+
+    assertEquals(ErrorCode.MEMBERSHIP_EXPIRATION_PERIOD_TYPE_REQUIRED, ex.getErrorCode());
+  }
+
+  @Test
   @DisplayName("실패: 존재하지 않는 shopId")
   void updatePrepaidPass_shopNotFound() {
     PrepaidPassRequest request = new PrepaidPassRequest();
@@ -225,6 +272,7 @@ class PrepaidPassCommandServiceImplTest {
     request.setPrepaidPassName("이름");
     request.setPrepaidPassPrice(50000);
     request.setExpirationPeriod(90);
+    request.setExpirationPeriodType(ExpirationPeriodType.MONTH);
 
     when(shopRepository.existsById(99L)).thenReturn(false);
 
@@ -244,6 +292,7 @@ class PrepaidPassCommandServiceImplTest {
     request.setPrepaidPassName("이름");
     request.setPrepaidPassPrice(50000);
     request.setExpirationPeriod(90);
+    request.setExpirationPeriodType(ExpirationPeriodType.WEEK);
 
     when(shopRepository.existsById(1L)).thenReturn(true);
     when(prepaidPassRepository.findById(1L)).thenReturn(Optional.empty());

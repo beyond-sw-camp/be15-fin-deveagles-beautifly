@@ -10,6 +10,7 @@ import static org.mockito.Mockito.*;
 import com.deveagles.be15_deveagles_be.common.exception.BusinessException;
 import com.deveagles.be15_deveagles_be.common.exception.ErrorCode;
 import com.deveagles.be15_deveagles_be.features.membership.command.application.dto.request.SessionPassRequest;
+import com.deveagles.be15_deveagles_be.features.membership.command.domain.aggregate.ExpirationPeriodType;
 import com.deveagles.be15_deveagles_be.features.membership.command.domain.aggregate.SessionPass;
 import com.deveagles.be15_deveagles_be.features.membership.command.domain.repository.SessionPassRepository;
 import com.deveagles.be15_deveagles_be.features.shops.command.domain.aggregate.Shop;
@@ -35,7 +36,6 @@ class SessionPassCommandServiceImplTest {
   @Test
   @DisplayName("성공: 횟수권 등록")
   void registSessionPass_success() {
-    // given
     SessionPassRequest request = new SessionPassRequest();
     request.setShopId(1L);
     request.setSessionPassName("컷트 10회권");
@@ -45,14 +45,13 @@ class SessionPassCommandServiceImplTest {
     request.setBonus(1);
     request.setDiscountRate(10);
     request.setSessionPassMemo("커트커트");
+    request.setExpirationPeriodType(ExpirationPeriodType.DAY); // 추가
 
     Shop shop = Shop.builder().shopId(1L).shopName("마이샵").build();
     when(shopRepository.findById(1L)).thenReturn(Optional.of(shop));
 
-    // when
     service.registSessionPass(request);
 
-    // then
     verify(sessionPassRepository, times(1)).save(any(SessionPass.class));
   }
 
@@ -60,6 +59,12 @@ class SessionPassCommandServiceImplTest {
   @DisplayName("실패: shopId 없음")
   void registSessionPass_fail_nullShopId() {
     SessionPassRequest request = new SessionPassRequest();
+    request.setSessionPassName("10회권");
+    request.setSessionPassPrice(100000);
+    request.setExpirationPeriod(90);
+    request.setSession(10);
+    request.setExpirationPeriodType(ExpirationPeriodType.DAY); // 추가
+
     assertThatThrownBy(() -> service.registSessionPass(request))
         .isInstanceOf(BusinessException.class)
         .hasMessageContaining(ErrorCode.ITEMS_SHOP_ID_REQUIRED.getMessage());
@@ -71,6 +76,10 @@ class SessionPassCommandServiceImplTest {
     SessionPassRequest request = new SessionPassRequest();
     request.setShopId(1L);
     request.setSessionPassName(" ");
+    request.setSessionPassPrice(100000);
+    request.setExpirationPeriod(90);
+    request.setSession(10);
+    request.setExpirationPeriodType(ExpirationPeriodType.DAY); // 추가
 
     assertThatThrownBy(() -> service.registSessionPass(request))
         .isInstanceOf(BusinessException.class)
@@ -84,6 +93,9 @@ class SessionPassCommandServiceImplTest {
     request.setShopId(1L);
     request.setSessionPassName("PT");
     request.setSessionPassPrice(null);
+    request.setExpirationPeriod(90);
+    request.setSession(10);
+    request.setExpirationPeriodType(ExpirationPeriodType.MONTH); // 추가
 
     assertThatThrownBy(() -> service.registSessionPass(request))
         .isInstanceOf(BusinessException.class)
@@ -98,6 +110,8 @@ class SessionPassCommandServiceImplTest {
     request.setSessionPassName("PT");
     request.setSessionPassPrice(100000);
     request.setExpirationPeriod(null);
+    request.setSession(10);
+    request.setExpirationPeriodType(ExpirationPeriodType.WEEK); // 추가
 
     assertThatThrownBy(() -> service.registSessionPass(request))
         .isInstanceOf(BusinessException.class)
@@ -113,10 +127,27 @@ class SessionPassCommandServiceImplTest {
     request.setSessionPassPrice(100000);
     request.setExpirationPeriod(30);
     request.setSession(null);
+    request.setExpirationPeriodType(ExpirationPeriodType.DAY); // 추가
 
     assertThatThrownBy(() -> service.registSessionPass(request))
         .isInstanceOf(BusinessException.class)
         .hasMessageContaining(ErrorCode.MEMBERSHIP_SESSION_REQUIRED.getMessage());
+  }
+
+  @Test
+  @DisplayName("실패: 유효기간 단위가 null인 경우")
+  void registSessionPass_fail_expirationPeriodTypeMissing() {
+    SessionPassRequest request = new SessionPassRequest();
+    request.setShopId(1L);
+    request.setSessionPassName("커트 10회");
+    request.setSessionPassPrice(100000);
+    request.setExpirationPeriod(90);
+    request.setSession(10);
+    request.setExpirationPeriodType(null); // 핵심!
+
+    assertThatThrownBy(() -> service.registSessionPass(request))
+        .isInstanceOf(BusinessException.class)
+        .hasMessageContaining(ErrorCode.MEMBERSHIP_EXPIRATION_PERIOD_TYPE_REQUIRED.getMessage());
   }
 
   @Test
@@ -129,6 +160,7 @@ class SessionPassCommandServiceImplTest {
     request.setSessionPassPrice(80000);
     request.setSession(10);
     request.setExpirationPeriod(90);
+    request.setExpirationPeriodType(ExpirationPeriodType.DAY);
     request.setBonus(2);
     request.setDiscountRate(15);
     request.setSessionPassMemo("10회 + 2회 보너스");
@@ -140,7 +172,9 @@ class SessionPassCommandServiceImplTest {
 
     service.updateSessionPass(id, request);
 
-    verify(existing).updateSessionPass("여름 이벤트권", 80000, 10, 90, 2, 15, "10회 + 2회 보너스");
+    verify(existing)
+        .updateSessionPass(
+            "여름 이벤트권", 80000, 10, 90, ExpirationPeriodType.DAY, 2, 15, "10회 + 2회 보너스");
     verify(sessionPassRepository).save(existing);
   }
 
@@ -151,6 +185,7 @@ class SessionPassCommandServiceImplTest {
     request.setSessionPassName("이벤트권");
     request.setSessionPassPrice(80000);
     request.setExpirationPeriod(90);
+    request.setExpirationPeriodType(ExpirationPeriodType.DAY);
     request.setSession(10);
 
     BusinessException ex =
@@ -167,6 +202,7 @@ class SessionPassCommandServiceImplTest {
     request.setSessionPassName(" ");
     request.setSessionPassPrice(80000);
     request.setExpirationPeriod(90);
+    request.setExpirationPeriodType(ExpirationPeriodType.DAY);
     request.setSession(10);
 
     BusinessException ex =
@@ -183,6 +219,7 @@ class SessionPassCommandServiceImplTest {
     request.setSessionPassName("이벤트권");
     request.setSessionPassPrice(0);
     request.setExpirationPeriod(90);
+    request.setExpirationPeriodType(ExpirationPeriodType.DAY);
     request.setSession(10);
 
     BusinessException ex =
@@ -199,12 +236,47 @@ class SessionPassCommandServiceImplTest {
     request.setSessionPassName("이벤트권");
     request.setSessionPassPrice(80000);
     request.setExpirationPeriod(0);
+    request.setExpirationPeriodType(ExpirationPeriodType.WEEK);
     request.setSession(10);
 
     BusinessException ex =
         assertThrows(BusinessException.class, () -> service.updateSessionPass(1L, request));
 
     assertEquals(ErrorCode.MEMBERSHIP_EXPIRATION_PERIOD_REQUIRED, ex.getErrorCode());
+  }
+
+  @Test
+  @DisplayName("실패: 유효기간 단위가 null인 경우")
+  void updateSessionPass_nullExpirationPeriodType() {
+    SessionPassRequest request = new SessionPassRequest();
+    request.setShopId(1L);
+    request.setSessionPassName("이벤트권");
+    request.setSessionPassPrice(80000);
+    request.setExpirationPeriod(90);
+    request.setSession(10);
+    // expirationPeriodType 미설정
+
+    BusinessException ex =
+        assertThrows(BusinessException.class, () -> service.updateSessionPass(1L, request));
+
+    assertEquals(ErrorCode.MEMBERSHIP_EXPIRATION_PERIOD_TYPE_REQUIRED, ex.getErrorCode());
+  }
+
+  @Test
+  @DisplayName("실패: session이 null 또는 0 이하")
+  void updateSessionPass_invalidSession() {
+    SessionPassRequest request = new SessionPassRequest();
+    request.setShopId(1L);
+    request.setSessionPassName("이름");
+    request.setSessionPassPrice(80000);
+    request.setExpirationPeriod(90);
+    request.setExpirationPeriodType(ExpirationPeriodType.MONTH);
+    request.setSession(0);
+
+    BusinessException ex =
+        assertThrows(BusinessException.class, () -> service.updateSessionPass(1L, request));
+
+    assertEquals(ErrorCode.MEMBERSHIP_SESSION_REQUIRED, ex.getErrorCode());
   }
 
   @Test
@@ -215,6 +287,7 @@ class SessionPassCommandServiceImplTest {
     request.setSessionPassName("이벤트권");
     request.setSessionPassPrice(80000);
     request.setExpirationPeriod(90);
+    request.setExpirationPeriodType(ExpirationPeriodType.MONTH);
     request.setSession(10);
 
     when(shopRepository.existsById(99L)).thenReturn(false);
@@ -226,22 +299,6 @@ class SessionPassCommandServiceImplTest {
   }
 
   @Test
-  @DisplayName("실패: session이 null 또는 0 이하")
-  void updateSessionPass_invalidSession() {
-    SessionPassRequest request = new SessionPassRequest();
-    request.setShopId(1L);
-    request.setSessionPassName("이름");
-    request.setSessionPassPrice(80000);
-    request.setExpirationPeriod(90);
-    request.setSession(0); // 또는 null
-
-    BusinessException ex =
-        assertThrows(BusinessException.class, () -> service.updateSessionPass(1L, request));
-
-    assertEquals(ErrorCode.MEMBERSHIP_SESSION_REQUIRED, ex.getErrorCode());
-  }
-
-  @Test
   @DisplayName("실패: 존재하지 않는 sessionPass ID")
   void updateSessionPass_notFound() {
     SessionPassRequest request = new SessionPassRequest();
@@ -249,6 +306,7 @@ class SessionPassCommandServiceImplTest {
     request.setSessionPassName("이벤트권");
     request.setSessionPassPrice(80000);
     request.setExpirationPeriod(90);
+    request.setExpirationPeriodType(ExpirationPeriodType.MONTH);
     request.setSession(10);
 
     when(shopRepository.existsById(1L)).thenReturn(true);

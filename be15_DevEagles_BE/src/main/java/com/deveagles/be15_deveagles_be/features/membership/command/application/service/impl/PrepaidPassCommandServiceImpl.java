@@ -35,6 +35,9 @@ public class PrepaidPassCommandServiceImpl implements PrepaidPassCommandService 
     if (Objects.isNull(request.getExpirationPeriod()) || request.getExpirationPeriod() <= 0) {
       throw new BusinessException(ErrorCode.MEMBERSHIP_EXPIRATION_PERIOD_REQUIRED);
     }
+    if (Objects.isNull(request.getExpirationPeriodType())) {
+      throw new BusinessException(ErrorCode.MEMBERSHIP_EXPIRATION_PERIOD_TYPE_REQUIRED);
+    }
 
     Shop shop =
         shopRepository
@@ -46,6 +49,7 @@ public class PrepaidPassCommandServiceImpl implements PrepaidPassCommandService 
             .prepaidPassName(request.getPrepaidPassName())
             .prepaidPassPrice(request.getPrepaidPassPrice())
             .expirationPeriod(request.getExpirationPeriod())
+            .expirationPeriodType(request.getExpirationPeriodType())
             .bonus(request.getBonus())
             .discountRate(request.getDiscountRate())
             .prepaidPassMemo(request.getPrepaidPassMemo())
@@ -68,6 +72,9 @@ public class PrepaidPassCommandServiceImpl implements PrepaidPassCommandService 
     if (Objects.isNull(request.getExpirationPeriod()) || request.getExpirationPeriod() <= 0) {
       throw new BusinessException(ErrorCode.MEMBERSHIP_EXPIRATION_PERIOD_REQUIRED);
     }
+    if (Objects.isNull(request.getExpirationPeriodType())) {
+      throw new BusinessException(ErrorCode.MEMBERSHIP_EXPIRATION_PERIOD_TYPE_REQUIRED);
+    }
 
     boolean shopExists = shopRepository.existsById(request.getShopId());
     if (!shopExists) {
@@ -83,6 +90,7 @@ public class PrepaidPassCommandServiceImpl implements PrepaidPassCommandService 
         request.getPrepaidPassName(),
         request.getPrepaidPassPrice(),
         request.getExpirationPeriod(),
+        request.getExpirationPeriodType(),
         request.getBonus(),
         request.getDiscountRate(),
         request.getPrepaidPassMemo());

@@ -9,6 +9,7 @@ import com.deveagles.be15_deveagles_be.features.membership.command.domain.reposi
 import com.deveagles.be15_deveagles_be.features.shops.command.domain.aggregate.Shop;
 import com.deveagles.be15_deveagles_be.features.shops.command.repository.ShopRepository;
 import java.time.LocalDateTime;
+import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -37,6 +38,9 @@ public class SessionPassCommandServiceImpl implements SessionPassCommandService 
     if (request.getSession() == null || request.getSession() <= 0) {
       throw new BusinessException(ErrorCode.MEMBERSHIP_SESSION_REQUIRED);
     }
+    if (Objects.isNull(request.getExpirationPeriodType())) {
+      throw new BusinessException(ErrorCode.MEMBERSHIP_EXPIRATION_PERIOD_TYPE_REQUIRED);
+    }
 
     Shop shop =
         shopRepository
@@ -50,6 +54,7 @@ public class SessionPassCommandServiceImpl implements SessionPassCommandService 
             .sessionPassPrice(request.getSessionPassPrice())
             .session(request.getSession())
             .expirationPeriod(request.getExpirationPeriod())
+            .expirationPeriodType(request.getExpirationPeriodType())
             .bonus(request.getBonus())
             .discountRate(request.getDiscountRate())
             .sessionPassMemo(request.getSessionPassMemo())
@@ -75,6 +80,9 @@ public class SessionPassCommandServiceImpl implements SessionPassCommandService 
     if (request.getSession() == null || request.getSession() <= 0) {
       throw new BusinessException(ErrorCode.MEMBERSHIP_SESSION_REQUIRED);
     }
+    if (Objects.isNull(request.getExpirationPeriodType())) {
+      throw new BusinessException(ErrorCode.MEMBERSHIP_EXPIRATION_PERIOD_TYPE_REQUIRED);
+    }
 
     boolean shopExists = shopRepository.existsById(request.getShopId());
     if (!shopExists) {
@@ -91,6 +99,7 @@ public class SessionPassCommandServiceImpl implements SessionPassCommandService 
         request.getSessionPassPrice(),
         request.getSession(),
         request.getExpirationPeriod(),
+        request.getExpirationPeriodType(),
         request.getBonus(),
         request.getDiscountRate(),
         request.getSessionPassMemo());
