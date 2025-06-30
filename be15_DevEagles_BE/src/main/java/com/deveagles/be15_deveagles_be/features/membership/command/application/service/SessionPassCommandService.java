@@ -4,4 +4,6 @@ import com.deveagles.be15_deveagles_be.features.membership.command.application.d
 
 public interface SessionPassCommandService {
   void registSessionPass(SessionPassRequest request);
+
+  void updateSessionPass(Long sessionPassId, SessionPassRequest request);
 }

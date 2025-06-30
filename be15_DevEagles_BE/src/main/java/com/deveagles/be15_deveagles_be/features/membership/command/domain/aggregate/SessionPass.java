@@ -51,4 +51,22 @@ public class SessionPass {
 
   @Column(name = "deleted_at")
   private LocalDateTime deletedAt;
+
+  public void updateSessionPass(
+      String SessionPassName,
+      Integer SessionPassPrice,
+      Integer Session,
+      Integer expirationPeriod,
+      Integer bonus,
+      Integer discountRate,
+      String sessionPassMemo) {
+    this.sessionPassName = SessionPassName;
+    this.sessionPassPrice = SessionPassPrice;
+    this.session = Session;
+    this.expirationPeriod = expirationPeriod;
+    this.bonus = bonus;
+    this.discountRate = discountRate;
+    this.sessionPassMemo = sessionPassMemo;
+    this.modifiedAt = LocalDateTime.now();
+  }
 }

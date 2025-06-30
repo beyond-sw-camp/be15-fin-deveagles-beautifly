@@ -9,10 +9,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "횟수권", description = "횟수권 API")
 @RestController
@@ -29,6 +26,14 @@ public class SessionPassCommandController {
   public ResponseEntity<ApiResponse<Void>> registerSessionPass(
       @RequestBody SessionPassRequest request) {
     sessionPassCommandService.registSessionPass(request);
+    return ResponseEntity.ok(ApiResponse.success(null));
+  }
+
+  @Operation(summary = "횟수권 수정", description = "횟수권을 수정합니다.")
+  @PutMapping("/{sessionPassId}")
+  public ResponseEntity<ApiResponse<Void>> updateSessionPass(
+      @PathVariable Long sessionPassId, @RequestBody SessionPassRequest request) {
+    sessionPassCommandService.updateSessionPass(sessionPassId, request);
     return ResponseEntity.ok(ApiResponse.success(null));
   }
 }

@@ -59,4 +59,42 @@ public class SessionPassCommandServiceImpl implements SessionPassCommandService 
 
     sessionPassRepository.save(sessionPass);
   }
+
+  @Override
+  public void updateSessionPass(Long sessionPassId, SessionPassRequest request) {
+
+    if (request.getSessionPassName() == null || request.getSessionPassName().isBlank()) {
+      throw new BusinessException(ErrorCode.MEMBERSHIP_NAME_REQUIRED);
+    }
+    if (request.getSessionPassPrice() == null || request.getSessionPassPrice() <= 0) {
+      throw new BusinessException(ErrorCode.MEMBERSHIP_PRICE_REQUIRED);
+    }
+    if (request.getExpirationPeriod() == null || request.getExpirationPeriod() <= 0) {
+      throw new BusinessException(ErrorCode.MEMBERSHIP_EXPIRATION_PERIOD_REQUIRED);
+    }
+    if (request.getSession() == null || request.getSession() <= 0) {
+      throw new BusinessException(ErrorCode.MEMBERSHIP_SESSION_REQUIRED);
+    }
+
+    boolean shopExists = shopRepository.existsById(request.getShopId());
+    if (!shopExists) {
+      throw new BusinessException(ErrorCode.ITEMS_SHOP_NOT_FOUND);
+    }
+    SessionPass sessionPass =
+        sessionPassRepository
+            .findById(sessionPassId)
+            .orElseThrow(() -> new BusinessException(ErrorCode.SESSIONPASS_NOT_FOUND));
+
+    // 필드 수정
+    sessionPass.updateSessionPass(
+        request.getSessionPassName(),
+        request.getSessionPassPrice(),
+        request.getSession(),
+        request.getExpirationPeriod(),
+        request.getBonus(),
+        request.getDiscountRate(),
+        request.getSessionPassMemo());
+
+    sessionPassRepository.save(sessionPass);
+  }
 }
