@@ -34,6 +34,10 @@ public class SessionPass {
   @Column(name = "expiration_period", nullable = false)
   private Integer expirationPeriod;
 
+  @Enumerated(EnumType.STRING)
+  @Column(name = "expiration_period_type", nullable = false)
+  private ExpirationPeriodType expirationPeriodType;
+
   @Column(name = "bonus")
   private Integer bonus;
 
@@ -51,4 +55,28 @@ public class SessionPass {
 
   @Column(name = "deleted_at")
   private LocalDateTime deletedAt;
+
+  public void updateSessionPass(
+      String SessionPassName,
+      Integer SessionPassPrice,
+      Integer Session,
+      Integer expirationPeriod,
+      ExpirationPeriodType expirationPeriodType,
+      Integer bonus,
+      Integer discountRate,
+      String sessionPassMemo) {
+    this.sessionPassName = SessionPassName;
+    this.sessionPassPrice = SessionPassPrice;
+    this.session = Session;
+    this.expirationPeriod = expirationPeriod;
+    this.expirationPeriodType = expirationPeriodType;
+    this.bonus = bonus;
+    this.discountRate = discountRate;
+    this.sessionPassMemo = sessionPassMemo;
+    this.modifiedAt = LocalDateTime.now();
+  }
+
+  public void setDeletedAt() {
+    this.deletedAt = LocalDateTime.now();
+  }
 }

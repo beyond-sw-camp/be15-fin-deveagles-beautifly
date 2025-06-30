@@ -2,9 +2,12 @@ package com.deveagles.be15_deveagles_be.features.membership.command.domain.repos
 
 import com.deveagles.be15_deveagles_be.features.membership.command.domain.aggregate.SessionPass;
 import java.util.List;
+import java.util.Optional;
 
 public interface SessionPassRepository {
   SessionPass save(SessionPass sessionPass);
 
   List<SessionPass> findAllByDeletedAtIsNull();
+
+  Optional<SessionPass> findById(Long sessionPassId);
 }

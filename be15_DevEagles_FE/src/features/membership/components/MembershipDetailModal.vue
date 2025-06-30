@@ -79,6 +79,7 @@
         @submit="handleEditSubmit"
         @close="closeEditModal"
         @toast="msg => toastRef.value?.success(msg)"
+        @delete="handleDelete"
       />
       <!-- 컴포넌트 추가 -->
       <BaseToast ref="toastRef" />
@@ -177,6 +178,16 @@
     toastRef.value?.success('회원권이 수정되었습니다.');
     closeEditModal();
     fetchMemberships(); // 수정 후 목록 다시 불러오기
+  };
+  const handleDelete = deletedItem => {
+    if (deletedItem.type === 'PREPAID') {
+      prepaidList.value = prepaidList.value.filter(item => item.id !== deletedItem.id);
+    } else if (deletedItem.type === 'COUNT' || deletedItem.type === 'SESSION') {
+      countList.value = countList.value.filter(item => item.id !== deletedItem.id);
+    }
+
+    toastRef.value?.success('회원권이 삭제되었습니다.');
+    showEditModal.value = false;
   };
 
   const membershipForm = ref({});
