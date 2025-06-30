@@ -91,11 +91,6 @@ public class Staff {
     this.grade = grade;
   }
 
-  public void setAccount(String email, String encodedPassword) {
-    this.email = email;
-    this.password = encodedPassword;
-  }
-
   public void setEncodedPassword(String encodedPassword) {
     this.password = encodedPassword;
   }
@@ -121,5 +116,13 @@ public class Staff {
     this.leftDate = leftDate;
     this.staffDescription = staffDescription;
     this.colorCode = colorCode;
+  }
+
+  public void patchEmail(String email) {
+    this.email = email;
+  }
+
+  public void patchPhoneNumber(String phoneNumber) {
+    this.phoneNumber = phoneNumber;
   }
 }
