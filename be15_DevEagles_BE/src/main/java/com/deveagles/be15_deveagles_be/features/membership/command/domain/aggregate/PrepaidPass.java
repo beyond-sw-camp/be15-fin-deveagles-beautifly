@@ -48,4 +48,20 @@ public class PrepaidPass {
 
   @Column(name = "deleted_at")
   private LocalDateTime deletedAt;
+
+  public void updatePrepaidPass(
+      String prepaidPassName,
+      Integer prepaidPassPrice,
+      Integer expirationPeriod,
+      Integer bonus,
+      Integer discountRate,
+      String prepaidPassMemo) {
+    this.prepaidPassName = prepaidPassName;
+    this.prepaidPassPrice = prepaidPassPrice;
+    this.expirationPeriod = expirationPeriod;
+    this.bonus = bonus;
+    this.discountRate = discountRate;
+    this.prepaidPassMemo = prepaidPassMemo;
+    this.modifiedAt = LocalDateTime.now();
+  }
 }

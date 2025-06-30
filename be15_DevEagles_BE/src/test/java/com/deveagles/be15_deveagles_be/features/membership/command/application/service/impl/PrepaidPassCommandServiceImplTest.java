@@ -125,4 +125,134 @@ class PrepaidPassCommandServiceImplTest {
 
     assertEquals(ErrorCode.MEMBERSHIP_EXPIRATION_PERIOD_REQUIRED, exception.getErrorCode());
   }
+
+  @Test
+  @DisplayName("성공: 유효한 선불권 수정 요청")
+  void updatePrepaidPass_success() {
+    Long id = 1L;
+    PrepaidPassRequest request = new PrepaidPassRequest();
+    request.setShopId(1L);
+    request.setPrepaidPassName("여름 할인권");
+    request.setPrepaidPassPrice(50000);
+    request.setExpirationPeriod(90);
+    request.setBonus(5);
+    request.setDiscountRate(10);
+    request.setPrepaidPassMemo("이벤트 중");
+
+    PrepaidPass existing = mock(PrepaidPass.class);
+
+    when(shopRepository.existsById(1L)).thenReturn(true);
+    when(prepaidPassRepository.findById(id)).thenReturn(Optional.of(existing));
+
+    prepaidPassCommandService.updatePrepaidPass(id, request);
+
+    verify(existing).updatePrepaidPass("여름 할인권", 50000, 90, 5, 10, "이벤트 중");
+    verify(prepaidPassRepository).save(existing);
+  }
+
+  @Test
+  @DisplayName("실패: shopId가 null인 경우")
+  void updatePrepaidPass_missingShopId() {
+    PrepaidPassRequest request = new PrepaidPassRequest();
+    request.setPrepaidPassName("여름 할인권");
+    request.setPrepaidPassPrice(50000);
+    request.setExpirationPeriod(90);
+
+    BusinessException ex =
+        assertThrows(
+            BusinessException.class,
+            () -> prepaidPassCommandService.updatePrepaidPass(1L, request));
+
+    assertEquals(ErrorCode.ITEMS_SHOP_NOT_FOUND, ex.getErrorCode());
+  }
+
+  @Test
+  @DisplayName("실패: 이름이 null 또는 빈 문자열")
+  void updatePrepaidPass_blankName() {
+    PrepaidPassRequest request = new PrepaidPassRequest();
+    request.setShopId(1L);
+    request.setPrepaidPassName(" ");
+    request.setPrepaidPassPrice(50000);
+    request.setExpirationPeriod(90);
+
+    BusinessException ex =
+        assertThrows(
+            BusinessException.class,
+            () -> prepaidPassCommandService.updatePrepaidPass(1L, request));
+
+    assertEquals(ErrorCode.MEMBERSHIP_NAME_REQUIRED, ex.getErrorCode());
+  }
+
+  @Test
+  @DisplayName("실패: 가격이 null 또는 0 이하")
+  void updatePrepaidPass_invalidPrice() {
+    PrepaidPassRequest request = new PrepaidPassRequest();
+    request.setShopId(1L);
+    request.setPrepaidPassName("이름");
+    request.setPrepaidPassPrice(0); // 또는 null
+    request.setExpirationPeriod(90);
+
+    BusinessException ex =
+        assertThrows(
+            BusinessException.class,
+            () -> prepaidPassCommandService.updatePrepaidPass(1L, request));
+
+    assertEquals(ErrorCode.MEMBERSHIP_PRICE_REQUIRED, ex.getErrorCode());
+  }
+
+  @Test
+  @DisplayName("실패: 유효기간이 null 또는 0 이하")
+  void updatePrepaidPass_invalidExpirationPeriod() {
+    PrepaidPassRequest request = new PrepaidPassRequest();
+    request.setShopId(1L);
+    request.setPrepaidPassName("이름");
+    request.setPrepaidPassPrice(50000);
+    request.setExpirationPeriod(0); // 또는 null
+
+    BusinessException ex =
+        assertThrows(
+            BusinessException.class,
+            () -> prepaidPassCommandService.updatePrepaidPass(1L, request));
+
+    assertEquals(ErrorCode.MEMBERSHIP_EXPIRATION_PERIOD_REQUIRED, ex.getErrorCode());
+  }
+
+  @Test
+  @DisplayName("실패: 존재하지 않는 shopId")
+  void updatePrepaidPass_shopNotFound() {
+    PrepaidPassRequest request = new PrepaidPassRequest();
+    request.setShopId(99L);
+    request.setPrepaidPassName("이름");
+    request.setPrepaidPassPrice(50000);
+    request.setExpirationPeriod(90);
+
+    when(shopRepository.existsById(99L)).thenReturn(false);
+
+    BusinessException ex =
+        assertThrows(
+            BusinessException.class,
+            () -> prepaidPassCommandService.updatePrepaidPass(1L, request));
+
+    assertEquals(ErrorCode.ITEMS_SHOP_NOT_FOUND, ex.getErrorCode());
+  }
+
+  @Test
+  @DisplayName("실패: 존재하지 않는 선불권 ID")
+  void updatePrepaidPass_passNotFound() {
+    PrepaidPassRequest request = new PrepaidPassRequest();
+    request.setShopId(1L);
+    request.setPrepaidPassName("이름");
+    request.setPrepaidPassPrice(50000);
+    request.setExpirationPeriod(90);
+
+    when(shopRepository.existsById(1L)).thenReturn(true);
+    when(prepaidPassRepository.findById(1L)).thenReturn(Optional.empty());
+
+    BusinessException ex =
+        assertThrows(
+            BusinessException.class,
+            () -> prepaidPassCommandService.updatePrepaidPass(1L, request));
+
+    assertEquals(ErrorCode.PREPAIDPASS_NOT_FOUND, ex.getErrorCode());
+  }
 }

@@ -4,4 +4,6 @@ import com.deveagles.be15_deveagles_be.features.membership.command.application.d
 
 public interface PrepaidPassCommandService {
   void registPrepaidPass(PrepaidPassRequest request);
+
+  void updatePrepaidPass(Long prepaidPassId, PrepaidPassRequest request);
 }

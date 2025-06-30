@@ -55,4 +55,38 @@ public class PrepaidPassCommandServiceImpl implements PrepaidPassCommandService 
 
     prepaidPassRepository.save(prepaidPass);
   }
+
+  @Override
+  public void updatePrepaidPass(Long prepaidPassId, PrepaidPassRequest request) {
+
+    if (Objects.isNull(request.getPrepaidPassName()) || request.getPrepaidPassName().isBlank()) {
+      throw new BusinessException(ErrorCode.MEMBERSHIP_NAME_REQUIRED);
+    }
+    if (Objects.isNull(request.getPrepaidPassPrice()) || request.getPrepaidPassPrice() <= 0) {
+      throw new BusinessException(ErrorCode.MEMBERSHIP_PRICE_REQUIRED);
+    }
+    if (Objects.isNull(request.getExpirationPeriod()) || request.getExpirationPeriod() <= 0) {
+      throw new BusinessException(ErrorCode.MEMBERSHIP_EXPIRATION_PERIOD_REQUIRED);
+    }
+
+    boolean shopExists = shopRepository.existsById(request.getShopId());
+    if (!shopExists) {
+      throw new BusinessException(ErrorCode.ITEMS_SHOP_NOT_FOUND);
+    }
+    PrepaidPass prepaidPass =
+        prepaidPassRepository
+            .findById(prepaidPassId)
+            .orElseThrow(() -> new BusinessException(ErrorCode.PREPAIDPASS_NOT_FOUND));
+
+    // 필드 수정
+    prepaidPass.updatePrepaidPass(
+        request.getPrepaidPassName(),
+        request.getPrepaidPassPrice(),
+        request.getExpirationPeriod(),
+        request.getBonus(),
+        request.getDiscountRate(),
+        request.getPrepaidPassMemo());
+
+    prepaidPassRepository.save(prepaidPass);
+  }
 }
