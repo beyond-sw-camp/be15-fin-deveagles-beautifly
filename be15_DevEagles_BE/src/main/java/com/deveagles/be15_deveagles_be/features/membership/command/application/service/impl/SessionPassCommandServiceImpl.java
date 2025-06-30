@@ -2,7 +2,7 @@ package com.deveagles.be15_deveagles_be.features.membership.command.application.
 
 import com.deveagles.be15_deveagles_be.common.exception.BusinessException;
 import com.deveagles.be15_deveagles_be.common.exception.ErrorCode;
-import com.deveagles.be15_deveagles_be.features.membership.command.application.dto.request.SessionPassRequest;
+import com.deveagles.be15_deveagles_be.features.membership.command.application.dto.request.SessionPassRegistRequest;
 import com.deveagles.be15_deveagles_be.features.membership.command.application.service.SessionPassCommandService;
 import com.deveagles.be15_deveagles_be.features.membership.command.domain.aggregate.SessionPass;
 import com.deveagles.be15_deveagles_be.features.membership.command.domain.repository.SessionPassRepository;
@@ -20,7 +20,7 @@ public class SessionPassCommandServiceImpl implements SessionPassCommandService 
   private final ShopRepository shopRepository;
 
   @Override
-  public void registSessionPass(SessionPassRequest request) {
+  public void registSessionPass(SessionPassRegistRequest request) {
 
     if (request.getShopId() == null) {
       throw new BusinessException(ErrorCode.ITEMS_SHOP_ID_REQUIRED);

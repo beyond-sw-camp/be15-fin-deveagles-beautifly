@@ -5,7 +5,7 @@ import static org.mockito.Mockito.*;
 
 import com.deveagles.be15_deveagles_be.common.exception.BusinessException;
 import com.deveagles.be15_deveagles_be.common.exception.ErrorCode;
-import com.deveagles.be15_deveagles_be.features.membership.command.application.dto.request.PrepaidPassRequest;
+import com.deveagles.be15_deveagles_be.features.membership.command.application.dto.request.PrepaidPassRegistRequest;
 import com.deveagles.be15_deveagles_be.features.membership.command.domain.aggregate.PrepaidPass;
 import com.deveagles.be15_deveagles_be.features.membership.command.domain.repository.PrepaidPassRepository;
 import com.deveagles.be15_deveagles_be.features.shops.command.domain.aggregate.Shop;
@@ -32,7 +32,7 @@ class PrepaidPassCommandServiceImplTest {
   @Test
   @DisplayName("성공: 유효한 선불권 등록 요청")
   void registerPrepaidPass_success() {
-    PrepaidPassRequest request = new PrepaidPassRequest();
+    PrepaidPassRegistRequest request = new PrepaidPassRegistRequest();
     request.setShopId(1L);
     request.setPrepaidPassName("10만원권");
     request.setPrepaidPassPrice(100000);
@@ -48,7 +48,7 @@ class PrepaidPassCommandServiceImplTest {
   @Test
   @DisplayName("실패: shopId가 null인 경우")
   void registerPrepaidPass_missingShopId_throwsException() {
-    PrepaidPassRequest request = new PrepaidPassRequest();
+    PrepaidPassRegistRequest request = new PrepaidPassRegistRequest();
     request.setPrepaidPassName("10만원권");
     request.setPrepaidPassPrice(100000);
     request.setExpirationPeriod(180);
@@ -63,7 +63,7 @@ class PrepaidPassCommandServiceImplTest {
   @Test
   @DisplayName("실패: shop이 존재하지 않는 경우")
   void registerPrepaidPass_shopNotFound_throwsException() {
-    PrepaidPassRequest request = new PrepaidPassRequest();
+    PrepaidPassRegistRequest request = new PrepaidPassRegistRequest();
     request.setShopId(99L);
     request.setPrepaidPassName("10만원권");
     request.setPrepaidPassPrice(100000);
@@ -81,7 +81,7 @@ class PrepaidPassCommandServiceImplTest {
   @Test
   @DisplayName("실패: 선불권명이 null 또는 blank인 경우")
   void registerPrepaidPass_blankName_throwsException() {
-    PrepaidPassRequest request = new PrepaidPassRequest();
+    PrepaidPassRegistRequest request = new PrepaidPassRegistRequest();
     request.setShopId(1L);
     request.setPrepaidPassName(" ");
     request.setPrepaidPassPrice(100000);
@@ -97,7 +97,7 @@ class PrepaidPassCommandServiceImplTest {
   @Test
   @DisplayName("실패: 가격이 null이거나 0 이하인 경우")
   void registerPrepaidPass_invalidPrice_throwsException() {
-    PrepaidPassRequest request = new PrepaidPassRequest();
+    PrepaidPassRegistRequest request = new PrepaidPassRegistRequest();
     request.setShopId(1L);
     request.setPrepaidPassName("10만원권");
     request.setPrepaidPassPrice(0);
@@ -113,7 +113,7 @@ class PrepaidPassCommandServiceImplTest {
   @Test
   @DisplayName("실패: 유효기간이 null이거나 0 이하인 경우")
   void registerPrepaidPass_invalidPeriod_throwsException() {
-    PrepaidPassRequest request = new PrepaidPassRequest();
+    PrepaidPassRegistRequest request = new PrepaidPassRegistRequest();
     request.setShopId(1L);
     request.setPrepaidPassName("10만원권");
     request.setPrepaidPassPrice(100000);

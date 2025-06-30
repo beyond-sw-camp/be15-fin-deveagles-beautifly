@@ -1,7 +1,7 @@
 package com.deveagles.be15_deveagles_be.features.membership.command.application.controller;
 
 import com.deveagles.be15_deveagles_be.common.dto.ApiResponse;
-import com.deveagles.be15_deveagles_be.features.membership.command.application.dto.request.SessionPassRequest;
+import com.deveagles.be15_deveagles_be.features.membership.command.application.dto.request.SessionPassRegistRequest;
 import com.deveagles.be15_deveagles_be.features.membership.command.application.service.SessionPassCommandService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -27,7 +27,7 @@ public class SessionPassCommandController {
   @Operation(summary = "횟수권 등록", description = "횟수권을 등록합니다.")
   @PostMapping
   public ResponseEntity<ApiResponse<Void>> registerSessionPass(
-      @RequestBody SessionPassRequest request) {
+      @RequestBody SessionPassRegistRequest request) {
     sessionPassCommandService.registSessionPass(request);
     return ResponseEntity.ok(ApiResponse.success(null));
   }

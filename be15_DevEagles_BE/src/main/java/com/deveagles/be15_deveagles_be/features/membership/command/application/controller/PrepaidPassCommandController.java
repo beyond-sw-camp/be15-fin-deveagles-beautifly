@@ -1,7 +1,7 @@
 package com.deveagles.be15_deveagles_be.features.membership.command.application.controller;
 
 import com.deveagles.be15_deveagles_be.common.dto.ApiResponse;
-import com.deveagles.be15_deveagles_be.features.membership.command.application.dto.request.PrepaidPassRequest;
+import com.deveagles.be15_deveagles_be.features.membership.command.application.dto.request.PrepaidPassRegistRequest;
 import com.deveagles.be15_deveagles_be.features.membership.command.application.service.PrepaidPassCommandService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -27,7 +27,7 @@ public class PrepaidPassCommandController {
   @Operation(summary = "선불권 등록", description = "선불권을 등록합니다.")
   @PostMapping
   public ResponseEntity<ApiResponse<Void>> registerPrepaidPass(
-      @RequestBody PrepaidPassRequest request) {
+      @RequestBody PrepaidPassRegistRequest request) {
     prepaidPassCommandService.registPrepaidPass(request);
     return ResponseEntity.ok(ApiResponse.success(null));
   }
