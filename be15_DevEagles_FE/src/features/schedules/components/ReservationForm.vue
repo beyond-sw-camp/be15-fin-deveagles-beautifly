@@ -202,15 +202,19 @@
   }
 
   .input-time {
-    width: 110px;
+    width: 130px;
   }
 
   .small-width {
-    width: 100px !important;
+    width: 130px !important;
   }
 
   .big-width {
     width: 160px !important;
+  }
+
+  :deep(.p-datepicker-input) {
+    padding-right: 38px !important;
   }
 
   .row textarea {

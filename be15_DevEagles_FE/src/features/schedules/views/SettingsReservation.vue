@@ -48,7 +48,6 @@
                 v-model="availableTimes[day].start"
                 :time-only="true"
                 :show-time="true"
-                :show-icon="false"
                 hour-format="24"
                 placeholder="시작"
                 :manual-input="true"
@@ -58,7 +57,6 @@
                 v-model="availableTimes[day].end"
                 :time-only="true"
                 :show-time="true"
-                :show-icon="false"
                 hour-format="24"
                 placeholder="마감"
                 :manual-input="true"
@@ -71,7 +69,6 @@
                   v-model="lunchTimes[day].start"
                   :time-only="true"
                   :show-time="true"
-                  :show-icon="false"
                   hour-format="24"
                   placeholder="점심 시작"
                   :manual-input="true"
@@ -81,7 +78,6 @@
                   v-model="lunchTimes[day].end"
                   :time-only="true"
                   :show-time="true"
-                  :show-icon="false"
                   hour-format="24"
                   placeholder="점심 마감"
                   :manual-input="true"
@@ -262,5 +258,9 @@
     background-color: #f9fafb;
     min-height: 100vh;
     padding: 40px 0;
+  }
+  :deep(.p-datepicker-input) {
+    padding-left: 12px !important;
+    padding-right: 60px !important;
   }
 </style>

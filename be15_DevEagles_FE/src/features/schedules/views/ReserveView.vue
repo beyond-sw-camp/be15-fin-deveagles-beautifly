@@ -71,8 +71,8 @@
           <div class="time-grid">
             <BaseButton
               v-for="t in times.pm"
-              :key="t"
-              :outline="form.time !== t"
+              :key="'pm-' + t"
+              :class="['btn', form.time === t ? 'btn-primary' : 'btn-outline btn-primary']"
               @click="selectTime(t)"
             >
               {{ t }}
@@ -87,7 +87,7 @@
             <BaseButton
               v-for="menu in menus"
               :key="menu"
-              :outline="form.menu !== menu"
+              :class="[form.menu === menu ? 'btn btn-primary' : 'btn btn-outline btn-primary']"
               @click="selectMenu(menu)"
             >
               {{ menu }}
@@ -162,7 +162,7 @@
   const menus = ['커트', '펌', '클리닉', '컬러'];
 
   const serviceOptionsMap = {
-    커트: ['남성 커트', '여성 커트', '샴푸', '(미취학) 아동컷', '병지 커트'],
+    커트: ['남성 커트', '여성 커트', '샴푸', '(미취학) 아동컷', '레이어드 커트'],
     펌: ['베이직 펌', '볼륨 펌'],
     클리닉: ['모발 케어', '두피 케어'],
     컬러: ['전체 염색', '부분 염색'],
@@ -237,6 +237,20 @@
 </script>
 
 <style scoped>
+  .btn-outline.btn-primary {
+    background: transparent;
+    border: 1px solid var(--color-primary-main);
+    color: var(--color-primary-main);
+  }
+
+  .btn-outline.btn-primary:hover {
+    background: var(--color-primary-50);
+  }
+
+  .btn-outline.btn-primary:active {
+    background: var(--color-primary-100);
+  }
+
   .page-wrapper {
     padding: 32px 40px;
     background-color: var(--color-gray-50);

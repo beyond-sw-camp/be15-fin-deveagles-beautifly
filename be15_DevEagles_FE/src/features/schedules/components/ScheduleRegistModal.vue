@@ -139,4 +139,18 @@
     gap: 8px;
     margin-bottom: 24px;
   }
+
+  .btn-outline.btn-primary {
+    background: transparent;
+    border: 1px solid var(--color-primary-main);
+    color: var(--color-primary-main);
+  }
+
+  .btn-outline.btn-primary:hover {
+    background: var(--color-primary-50);
+  }
+
+  .btn-outline.btn-primary:active {
+    background: var(--color-primary-100);
+  }
 </style>
