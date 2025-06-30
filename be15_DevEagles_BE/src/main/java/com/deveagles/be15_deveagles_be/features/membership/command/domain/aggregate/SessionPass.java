@@ -69,4 +69,8 @@ public class SessionPass {
     this.sessionPassMemo = sessionPassMemo;
     this.modifiedAt = LocalDateTime.now();
   }
+
+  public void setDeletedAt() {
+    this.deletedAt = LocalDateTime.now();
+  }
 }

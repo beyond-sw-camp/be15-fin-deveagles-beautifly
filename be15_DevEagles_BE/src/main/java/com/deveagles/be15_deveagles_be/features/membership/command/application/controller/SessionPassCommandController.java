@@ -36,4 +36,11 @@ public class SessionPassCommandController {
     sessionPassCommandService.updateSessionPass(sessionPassId, request);
     return ResponseEntity.ok(ApiResponse.success(null));
   }
+
+  @Operation(summary = "횟수권 삭제", description = "횟수권을 soft delete 합니다.")
+  @DeleteMapping("/{sessionPassId}")
+  public ResponseEntity<ApiResponse<Void>> deleteSessionPass(@PathVariable Long sessionPassId) {
+    sessionPassCommandService.deleteSessionPass(sessionPassId);
+    return ResponseEntity.ok(ApiResponse.success(null));
+  }
 }

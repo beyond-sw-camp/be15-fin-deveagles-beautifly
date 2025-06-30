@@ -6,4 +6,6 @@ public interface SessionPassCommandService {
   void registSessionPass(SessionPassRequest request);
 
   void updateSessionPass(Long sessionPassId, SessionPassRequest request);
+
+  void deleteSessionPass(Long id);
 }

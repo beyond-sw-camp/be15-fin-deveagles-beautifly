@@ -1,6 +1,7 @@
 package com.deveagles.be15_deveagles_be.features.membership.command.application.service.impl;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.hibernate.validator.internal.util.Contracts.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -255,6 +256,39 @@ class SessionPassCommandServiceImplTest {
 
     BusinessException ex =
         assertThrows(BusinessException.class, () -> service.updateSessionPass(1L, request));
+
+    assertEquals(ErrorCode.SESSIONPASS_NOT_FOUND, ex.getErrorCode());
+  }
+
+  @Test
+  @DisplayName("성공: 횟수권 삭제 수행")
+  void deleteSessionPass_success() {
+    Long id = 1L;
+    SessionPass sessionPass =
+        SessionPass.builder()
+            .sessionPassId(id)
+            .sessionPassName("10회 이용권")
+            .sessionPassPrice(80000)
+            .expirationPeriod(90)
+            .session(10)
+            .build();
+
+    when(sessionPassRepository.findById(id)).thenReturn(Optional.of(sessionPass));
+
+    service.deleteSessionPass(id);
+
+    assertNotNull(sessionPass.getDeletedAt(), "삭제 시간이 설정되어야 합니다");
+    verify(sessionPassRepository).save(sessionPass);
+  }
+
+  @Test
+  @DisplayName("실패: 존재하지 않는 ID로 삭제 요청 시 예외 발생")
+  void deleteSessionPass_notFound_throwsException() {
+    Long id = 999L;
+    when(sessionPassRepository.findById(id)).thenReturn(Optional.empty());
+
+    BusinessException ex =
+        assertThrows(BusinessException.class, () -> service.deleteSessionPass(id));
 
     assertEquals(ErrorCode.SESSIONPASS_NOT_FOUND, ex.getErrorCode());
   }

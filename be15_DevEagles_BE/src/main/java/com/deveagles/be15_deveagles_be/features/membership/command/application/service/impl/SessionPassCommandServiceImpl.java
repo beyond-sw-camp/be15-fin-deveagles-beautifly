@@ -97,4 +97,15 @@ public class SessionPassCommandServiceImpl implements SessionPassCommandService 
 
     sessionPassRepository.save(sessionPass);
   }
+
+  @Override
+  public void deleteSessionPass(Long id) {
+    SessionPass sessionPass =
+        sessionPassRepository
+            .findById(id)
+            .orElseThrow(() -> new BusinessException(ErrorCode.SESSIONPASS_NOT_FOUND));
+
+    sessionPass.setDeletedAt();
+    sessionPassRepository.save(sessionPass);
+  }
 }
