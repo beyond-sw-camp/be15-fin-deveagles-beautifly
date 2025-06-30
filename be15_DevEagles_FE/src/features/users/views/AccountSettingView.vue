@@ -42,6 +42,7 @@
           id="newPassword"
           v-model="staff.newPassword"
           type="password"
+          placeholder="변경할 비밀번호를 입력해주세요."
           :error="errors.password"
           @blur="passwordChecked"
           @focus="clearError('password')"
@@ -76,9 +77,9 @@
   import BaseButton from '@/components/common/BaseButton.vue';
   import { getAccount, patchAccount, validEmail } from '@/features/users/api/users.js';
   import BaseToast from '@/components/common/BaseToast.vue';
-  import { useRouter } from 'vue-router';
+  import { useAuthStore } from '@/store/auth.js';
 
-  const router = useRouter();
+  const authStore = useAuthStore();
 
   const toastRef = ref();
   const isLoading = ref(true);
@@ -103,17 +104,15 @@
   const phonePassed = ref(false);
 
   onMounted(async () => {
-    // todo : userStore.staffId;
-
-    const staffId = 1;
+    const staffId = authStore.userId;
 
     try {
       const res = await getAccount({ staffId });
-      const { loginId, email, phoneNumber } = res.data.data;
+      const { email, phoneNumber } = res.data.data;
 
       originalStaff.value = { email, phoneNumber };
       staff.value = {
-        loginId,
+        loginId: authStore.username,
         email,
         phoneNumber,
         newPassword: '',

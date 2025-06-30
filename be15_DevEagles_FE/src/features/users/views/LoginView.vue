@@ -71,9 +71,10 @@
   import FindPwdResModal from '@/features/users/components/FindPwdResModal.vue';
   import { login } from '@/features/users/api/users.js';
   import BaseToast from '@/components/common/BaseToast.vue';
+  import { useAuthStore } from '@/store/auth.js';
 
   const router = useRouter();
-  //const authStore = useAuthStore();
+  const authStore = useAuthStore();
   const toastRef = ref();
   const params = ref({
     loginId: '',
@@ -113,7 +114,10 @@
 
   const fetchUser = async () => {
     try {
-      const { data } = await login(params.value);
+      const res = await login(params.value);
+
+      await authStore.setAuth(res.data.data.accessToken);
+
       toastRef.value?.success?.('로그인 성공!');
       router.push('/');
     } catch (err) {

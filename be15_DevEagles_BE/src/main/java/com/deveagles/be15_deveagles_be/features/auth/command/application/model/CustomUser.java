@@ -11,10 +11,14 @@ import org.springframework.security.core.userdetails.UserDetails;
 @Builder
 public class CustomUser implements UserDetails {
 
+  private final Long shopId;
   private final Long userId;
   private final String username;
   private final String password;
   private final StaffStatus staffStatus;
+  private final String staffName;
+  private final String grade;
+  private final String profileUrl;
   private final Collection<? extends GrantedAuthority> authorities;
 
   @Override
