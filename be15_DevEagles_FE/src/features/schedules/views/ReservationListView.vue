@@ -87,10 +87,6 @@
           </span>
         </template>
 
-        <template #cell-prepaidUsed="{ value }">
-          <div class="text-center">{{ value ? '○' : '×' }}</div>
-        </template>
-
         <template #cell-actions="{ item }">
           <div class="action-buttons">
             <BaseButton
@@ -211,7 +207,6 @@
       phone: '010-2222-2221',
       date: '2025-06-08T14:00:00',
       status: '예약 대기',
-      prepaidUsed: true,
       duration: '03:00',
     },
     {
@@ -222,7 +217,6 @@
       phone: '010-2222-2222',
       date: '2025-06-09T11:00:00',
       status: '예약 확정',
-      prepaidUsed: false,
       duration: '03:00',
     },
     {
@@ -233,7 +227,6 @@
       phone: '010-2222-2223',
       date: '2025-06-10T15:00:00',
       status: '노쇼',
-      prepaidUsed: false,
       duration: '03:00',
     },
   ]);
@@ -244,7 +237,6 @@
     { key: 'staff', title: '담당자', width: '100px' },
     { key: 'date', title: '예약 날짜', width: '160px' },
     { key: 'status', title: '예약 상태', width: '140px' },
-    { key: 'prepaidUsed', title: '선불권 사용 여부', width: '140px' },
     { key: 'actions', title: '예약 상태 변경', width: '200px' },
   ];
 
