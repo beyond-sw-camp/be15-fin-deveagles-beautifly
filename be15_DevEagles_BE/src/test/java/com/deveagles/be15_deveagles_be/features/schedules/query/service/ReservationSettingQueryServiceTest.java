@@ -3,8 +3,11 @@ package com.deveagles.be15_deveagles_be.features.schedules.query.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
+import com.deveagles.be15_deveagles_be.common.exception.BusinessException;
+import com.deveagles.be15_deveagles_be.features.schedules.query.dto.response.CustomerReservationSettingResponse;
 import com.deveagles.be15_deveagles_be.features.schedules.query.dto.response.ReservationSettingResponse;
 import com.deveagles.be15_deveagles_be.features.schedules.query.mapper.ReservationSettingMapper;
+import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
@@ -48,5 +51,50 @@ class ReservationSettingQueryServiceTest {
     assertThat(result.get(0).getShopId()).isEqualTo(shopId);
 
     verify(reservationSettingMapper, times(1)).findSettingsWithUnitByShopId(shopId);
+  }
+
+  @Test
+  @DisplayName("shopId와 날짜로 고객 예약 설정을 조회할 수 있다")
+  void shopId와_날짜로_고객_예약설정을_조회할수있다() {
+    // given
+    Long shopId = 1L;
+    LocalDate date = LocalDate.of(2025, 7, 1); // 화요일
+    int dayOfWeek = date.getDayOfWeek().getValue(); // 2
+
+    CustomerReservationSettingResponse expectedResponse =
+        new CustomerReservationSettingResponse(
+            LocalTime.of(9, 0), LocalTime.of(18, 0), LocalTime.of(12, 0), LocalTime.of(13, 0), 30);
+
+    when(reservationSettingMapper.findCustomerReservationSetting(shopId, dayOfWeek))
+        .thenReturn(expectedResponse);
+
+    // when
+    CustomerReservationSettingResponse result =
+        reservationSettingQueryService.getReservationSetting(shopId, date);
+
+    // then
+    assertThat(result).isNotNull();
+    assertThat(result.availableStartTime()).isEqualTo(LocalTime.of(9, 0));
+    assertThat(result.availableEndTime()).isEqualTo(LocalTime.of(18, 0));
+    assertThat(result.lunchStartTime()).isEqualTo(LocalTime.of(12, 0));
+    assertThat(result.lunchEndTime()).isEqualTo(LocalTime.of(13, 0));
+    assertThat(result.reservationTerm()).isEqualTo(30);
+
+    verify(reservationSettingMapper, times(1)).findCustomerReservationSetting(shopId, dayOfWeek);
+  }
+
+  @Test
+  @DisplayName("shopId로 예약 설정이 없으면 예외가 발생한다")
+  void 예약설정이_없으면_예외를_던진다() {
+    // given
+    Long shopId = 1L;
+    when(reservationSettingMapper.findSettingsWithUnitByShopId(shopId))
+        .thenReturn(List.of()); // 빈 리스트 반환
+
+    // when & then
+    org.junit.jupiter.api.Assertions.assertThrows(
+        BusinessException.class,
+        () -> reservationSettingQueryService.getReservationSettings(shopId),
+        "예약 설정이 없을 경우 예외가 발생해야 함");
   }
 }
