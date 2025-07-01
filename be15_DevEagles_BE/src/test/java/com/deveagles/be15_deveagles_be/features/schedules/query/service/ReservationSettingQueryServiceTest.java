@@ -3,6 +3,7 @@ package com.deveagles.be15_deveagles_be.features.schedules.query.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
+import com.deveagles.be15_deveagles_be.common.exception.BusinessException;
 import com.deveagles.be15_deveagles_be.features.schedules.query.dto.response.CustomerReservationSettingResponse;
 import com.deveagles.be15_deveagles_be.features.schedules.query.dto.response.ReservationSettingResponse;
 import com.deveagles.be15_deveagles_be.features.schedules.query.mapper.ReservationSettingMapper;
@@ -80,5 +81,20 @@ class ReservationSettingQueryServiceTest {
     assertThat(result.reservationTerm()).isEqualTo(30);
 
     verify(reservationSettingMapper, times(1)).findCustomerReservationSetting(shopId, dayOfWeek);
+  }
+
+  @Test
+  @DisplayName("shopId로 예약 설정이 없으면 예외가 발생한다")
+  void 예약설정이_없으면_예외를_던진다() {
+    // given
+    Long shopId = 1L;
+    when(reservationSettingMapper.findSettingsWithUnitByShopId(shopId))
+        .thenReturn(List.of()); // 빈 리스트 반환
+
+    // when & then
+    org.junit.jupiter.api.Assertions.assertThrows(
+        BusinessException.class,
+        () -> reservationSettingQueryService.getReservationSettings(shopId),
+        "예약 설정이 없을 경우 예외가 발생해야 함");
   }
 }
