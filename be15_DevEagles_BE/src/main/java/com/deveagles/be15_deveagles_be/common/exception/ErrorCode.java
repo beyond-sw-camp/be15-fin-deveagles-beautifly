@@ -93,7 +93,10 @@ public enum ErrorCode implements ErrorCodeType {
   MEMBERSHIP_PRICE_REQUIRED("82002", "회원권가격을 입력해주세요.", HttpStatus.BAD_REQUEST),
   MEMBERSHIP_EXPIRATION_PERIOD_REQUIRED("82003", "회원권 유효기간을 입력해주세요.", HttpStatus.BAD_REQUEST),
   MEMBERSHIP_SESSION_REQUIRED("82004", "횟수를 입력해주세요", HttpStatus.BAD_REQUEST),
-
+  PREPAIDPASS_NOT_FOUND("82005", "선불권을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+  SESSIONPASS_NOT_FOUND("82006", "횟수권을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+  MEMBERSHIP_EXPIRATION_PERIOD_TYPE_REQUIRED(
+      "82007", "회원권 유효기간 단위를 입력해주세요.", HttpStatus.BAD_REQUEST),
 // 매출 관련 에러 (90000번대)
 
 ;

@@ -109,8 +109,8 @@
             <span class="avatar-text">{{ userInitial }}</span>
           </span>
           <span class="user-info">
-            <span class="user-name">{{ userName }}</span>
-            <span class="user-role">{{ userRole }}</span>
+            <span class="user-name">{{ staffName }}</span>
+            <span class="user-role">{{ grade }}</span>
           </span>
           <ChevronDownIcon :size="12" class="dropdown-arrow" :class="{ rotated: showUserMenu }" />
         </button>
@@ -123,8 +123,8 @@
                   <span class="avatar-text">{{ userInitial }}</span>
                 </div>
                 <div class="user-details">
-                  <div class="user-name">{{ userName }}</div>
-                  <div class="user-uid">{{ userUID }}</div>
+                  <div class="user-name">{{ staffName }}</div>
+                  <div class="user-uid">{{ username }}</div>
                 </div>
               </div>
             </div>
@@ -180,6 +180,8 @@
     BarChartIcon,
   } from '../icons/index.js';
   import NotificationList from '@/features/notifications/components/NotificationList.vue';
+  import { useAuthStore } from '@/store/auth.js';
+  import { storeToRefs } from 'pinia';
 
   const userMenuRef = ref(null);
   const searchInputRef = ref(null);
@@ -194,12 +196,11 @@
   const isSearchFocused = ref(false);
 
   // 사용자 정보
-  const userName = ref('관리자');
-  const userUID = ref('deveagles');
-  const userRole = ref('매장 사장');
+  const authStore = useAuthStore();
+  const { staffName, username, grade } = storeToRefs(authStore);
 
   const userInitial = computed(() => {
-    return userName.value.charAt(0).toUpperCase();
+    return staffName.value.charAt(0).toUpperCase();
   });
 
   // 검색 관련

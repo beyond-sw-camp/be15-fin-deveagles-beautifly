@@ -6,4 +6,6 @@ import jakarta.validation.Valid;
 
 public interface AuthService {
   TokenResponse login(@Valid LoginRequest request);
+
+  TokenResponse refreshToken(String refreshToken);
 }

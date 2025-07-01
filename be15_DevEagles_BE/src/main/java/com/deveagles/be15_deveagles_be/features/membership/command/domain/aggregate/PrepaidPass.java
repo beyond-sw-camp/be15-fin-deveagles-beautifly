@@ -31,6 +31,10 @@ public class PrepaidPass {
   @Column(name = "expiration_period", nullable = false)
   private Integer expirationPeriod;
 
+  @Enumerated(EnumType.STRING)
+  @Column(name = "expiration_period_type", nullable = false)
+  private ExpirationPeriodType expirationPeriodType;
+
   @Column(name = "bonus")
   private Integer bonus;
 
@@ -48,4 +52,26 @@ public class PrepaidPass {
 
   @Column(name = "deleted_at")
   private LocalDateTime deletedAt;
+
+  public void updatePrepaidPass(
+      String prepaidPassName,
+      Integer prepaidPassPrice,
+      Integer expirationPeriod,
+      ExpirationPeriodType expirationPeriodType,
+      Integer bonus,
+      Integer discountRate,
+      String prepaidPassMemo) {
+    this.prepaidPassName = prepaidPassName;
+    this.prepaidPassPrice = prepaidPassPrice;
+    this.expirationPeriod = expirationPeriod;
+    this.expirationPeriodType = expirationPeriodType;
+    this.bonus = bonus;
+    this.discountRate = discountRate;
+    this.prepaidPassMemo = prepaidPassMemo;
+    this.modifiedAt = LocalDateTime.now();
+  }
+
+  public void setDeletedAt() {
+    this.deletedAt = LocalDateTime.now();
+  }
 }

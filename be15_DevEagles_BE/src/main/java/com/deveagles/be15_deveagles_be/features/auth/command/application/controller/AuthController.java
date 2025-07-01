@@ -11,12 +11,10 @@ import java.time.Duration;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @Slf4j
 @RestController
@@ -35,6 +33,17 @@ public class AuthController {
     TokenResponse response = authService.login(request);
 
     return buildTokenResponse(response);
+  }
+
+  @Operation(summary = "RefreshToken 재발급", description = "accessToken 만료 시 자동으로 Token을 재발급합니다.")
+  @PostMapping("/refresh")
+  public ResponseEntity<ApiResponse<TokenResponse>> refreshToken(
+      @CookieValue(name = "refreshToken", required = false) String refreshToken) {
+    if (refreshToken == null) {
+      return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+    }
+    TokenResponse tokenResponse = authService.refreshToken(refreshToken);
+    return buildTokenResponse(tokenResponse);
   }
 
   private ResponseEntity<ApiResponse<TokenResponse>> buildTokenResponse(TokenResponse response) {
