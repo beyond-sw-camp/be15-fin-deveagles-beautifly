@@ -8,6 +8,7 @@ import com.deveagles.be15_deveagles_be.features.users.command.application.dto.re
 import com.deveagles.be15_deveagles_be.features.users.command.application.dto.request.ValidCheckRequest;
 import com.deveagles.be15_deveagles_be.features.users.command.application.dto.response.AccountResponse;
 import com.deveagles.be15_deveagles_be.features.users.command.domain.aggregate.Staff;
+import com.deveagles.be15_deveagles_be.features.users.command.domain.aggregate.StaffStatus;
 import com.deveagles.be15_deveagles_be.features.users.command.repository.UserRepository;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
@@ -37,6 +38,8 @@ public class UserCommandServiceImpl implements UserCommandService {
             .email(request.email())
             .shopId(shopId)
             .phoneNumber(request.phoneNumber())
+            .colorCode("#364f6b")
+            .staffStatus(StaffStatus.STAFF)
             .build();
 
     return userRepository.save(staff);
