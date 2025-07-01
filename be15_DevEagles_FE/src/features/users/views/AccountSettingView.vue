@@ -2,7 +2,7 @@
   <div class="mypage-container">
     <div v-if="isLoading">로딩 중 ...</div>
 
-    <div class="profile-card-vertical">
+    <div v-else class="profile-card-vertical">
       <div class="form-fields">
         <div class="label-row">
           <label for="email">아이디</label>

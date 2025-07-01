@@ -112,6 +112,18 @@ jwt:
   expiration: 1800000
   refresh-expiration: 604800000
 
+# AWS 설정
+cloud:
+  aws:
+    s3:
+      bucket: ${BUCKET}
+    region:
+      static: ap-northeast-2
+    stack:
+      auto: false
+    credentials:
+      access-key: ${ACCESSKEY}
+      secret-key: ${SECRETKEY}
 ---
 # 개발 환경 설정
 spring:
