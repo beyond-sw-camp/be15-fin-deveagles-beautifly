@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.deveagles.be15_deveagles_be.features.schedules.query.mapper.ReservationQueryMapper">
+
+    <resultMap id="BookedTimeMap" type="string">
+        <result column="time" property=""/>
+    </resultMap>
+
+    <select id="findBookedTimes"
+            resultType="com.deveagles.be15_deveagles_be.features.schedules.query.dto.response.BookedTimeDto">
+        SELECT
+            DATE_FORMAT(reservation_start_at, '%H:%i') AS time
+        FROM reservation
+        WHERE staff_id = #{req.staffId}
+          AND shop_id = #{req.shopId}
+          AND DATE(reservation_start_at) = #{req.from}
+          AND deleted_at IS NULL
+        ORDER BY reservation_start_at
+    </select>
+
+
+</mapper>
+
