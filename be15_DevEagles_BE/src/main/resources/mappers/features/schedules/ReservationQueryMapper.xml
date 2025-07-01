@@ -15,7 +15,6 @@
             DATE_FORMAT(reservation_start_at, '%H:%i') AS time
         FROM reservation
         WHERE staff_id = #{req.staffId}
-          AND shop_id = #{req.shopId}
           AND DATE(reservation_start_at) = #{req.from}
           AND deleted_at IS NULL
         ORDER BY reservation_start_at

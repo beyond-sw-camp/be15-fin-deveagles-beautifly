@@ -20,9 +20,8 @@ public class ReservationQueryController {
   @GetMapping("/staff/{staffId}/available-times")
   public ResponseEntity<ApiResponse<BookedTimeResponse>> getBookedTimes(
       @PathVariable Long staffId,
-      @RequestParam Long shopId,
       @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
-    BookedTimeRequest request = new BookedTimeRequest(staffId, shopId, date);
+    BookedTimeRequest request = new BookedTimeRequest(staffId, date);
     BookedTimeResponse data = reservationQueryService.getBookedTimes(request);
     return ResponseEntity.ok(ApiResponse.success(data));
   }
