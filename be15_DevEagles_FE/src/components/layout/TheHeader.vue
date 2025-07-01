@@ -139,7 +139,7 @@
                 <span>계정 설정</span>
               </router-link>
               <div class="dropdown-divider"></div>
-              <button class="dropdown-item" @click="logout">
+              <button class="dropdown-item" @click="handleLogout">
                 <svg
                   width="16"
                   height="16"
@@ -182,6 +182,10 @@
   import NotificationList from '@/features/notifications/components/NotificationList.vue';
   import { useAuthStore } from '@/store/auth.js';
   import { storeToRefs } from 'pinia';
+  import { useRouter } from 'vue-router';
+  import { logout } from '@/features/users/api/users.js';
+
+  const router = useRouter();
 
   const userMenuRef = ref(null);
   const searchInputRef = ref(null);
@@ -274,9 +278,17 @@
     }
   };
 
-  const logout = () => {
-    console.log('로그아웃');
-    showUserMenu.value = false;
+  const handleLogout = async () => {
+    try {
+      await logout();
+      console.log('[Header] 서버 로그아웃 완료');
+    } catch (err) {
+      console.warn(`[Header] 서버 로그아웃 실패 : ${err}`);
+    } finally {
+      authStore.clearAuth();
+      console.log('[Header] 인증 정보 삭제 완료');
+      router.push('/login');
+    }
   };
 
   onMounted(() => {

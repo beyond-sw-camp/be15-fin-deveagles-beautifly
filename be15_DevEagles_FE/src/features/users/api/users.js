@@ -1,4 +1,5 @@
 import api from '@/plugins/axios.js';
+import { useAuthStore } from '@/store/auth.js';
 
 const exceptToken = [
   { method: 'post', url: '/users' },
@@ -8,6 +9,26 @@ const exceptToken = [
   { method: 'get', url: '/get-industry' },
   { method: 'post', url: '/auth/login' },
 ];
+
+api.interceptors.request.use(
+  config => {
+    const authStore = useAuthStore();
+    const token = authStore.accessToken;
+
+    const shouldSkipToken = exceptToken.some(
+      pattern => pattern.method === config.method && new RegExp(pattern.url).test(config.url)
+    );
+
+    if (token && !shouldSkipToken) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+
+    return config;
+  },
+  error => {
+    return Promise.reject(error);
+  }
+);
 
 export const signUp = params => api.post(`/users`, params);
 
@@ -24,3 +45,5 @@ export const login = params => api.post(`/auth/login`, params);
 export const getAccount = params => api.post(`/account`, params);
 
 export const patchAccount = params => api.patch(`/account`, params);
+
+export const logout = () => api.post(`/auth/logout`);
