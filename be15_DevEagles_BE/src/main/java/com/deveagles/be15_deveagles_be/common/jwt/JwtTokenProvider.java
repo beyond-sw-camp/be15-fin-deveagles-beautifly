@@ -11,6 +11,7 @@ import jakarta.annotation.PostConstruct;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 import javax.crypto.SecretKey;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -65,6 +66,7 @@ public class JwtTokenProvider {
     map.put("grade", staff.getGrade());
     map.put("profileUrl", staff.getProfileUrl());
     map.put("userStatus", staff.getStaffStatus().toString());
+    map.put("jti", UUID.randomUUID().toString());
 
     return Jwts.builder()
         .subject(username)
@@ -95,6 +97,7 @@ public class JwtTokenProvider {
     map.put("grade", staff.getGrade());
     map.put("profileUrl", staff.getProfileUrl());
     map.put("userStatus", staff.getStaffStatus().toString());
+    map.put("jti", UUID.randomUUID().toString());
 
     return Jwts.builder()
         .subject(username)

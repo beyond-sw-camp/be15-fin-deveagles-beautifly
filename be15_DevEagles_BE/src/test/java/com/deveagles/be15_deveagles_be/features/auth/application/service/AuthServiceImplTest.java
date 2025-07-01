@@ -14,6 +14,7 @@ import com.deveagles.be15_deveagles_be.features.auth.command.application.service
 import com.deveagles.be15_deveagles_be.features.auth.command.application.service.RefreshTokenService;
 import com.deveagles.be15_deveagles_be.features.users.command.domain.aggregate.Staff;
 import com.deveagles.be15_deveagles_be.features.users.command.repository.UserRepository;
+import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.BeforeEach;
@@ -175,5 +176,30 @@ public class AuthServiceImplTest {
     BusinessException ex =
         assertThrows(BusinessException.class, () -> authService.refreshToken(token));
     assertEquals(ErrorCode.USER_NAME_NOT_FOUND, ex.getErrorCode());
+  }
+
+  @Test
+  @DisplayName("logout: 리프레시 삭제 및 액세스 토큰 블랙리스트 처리")
+  void logout_성공() {
+    // given
+    String refreshToken = "refreshToken123";
+    String accessToken = "accessToken123";
+    String username = "user01";
+    long remainMillis = 300000L; // 5분
+
+    Mockito.when(jwtTokenProvider.validateToken(refreshToken)).thenReturn(true);
+    Mockito.when(jwtTokenProvider.getUsernameFromJWT(refreshToken)).thenReturn(username);
+    Mockito.when(jwtTokenProvider.getRemainingExpiration(accessToken)).thenReturn(remainMillis);
+
+    // when
+    authService.logout(refreshToken, accessToken);
+
+    // then
+    Mockito.verify(jwtTokenProvider).validateToken(refreshToken);
+    Mockito.verify(jwtTokenProvider).getUsernameFromJWT(refreshToken);
+    Mockito.verify(refreshTokenService).deleteRefreshToken(username);
+    Mockito.verify(jwtTokenProvider).getRemainingExpiration(accessToken);
+    Mockito.verify(valueOperations)
+        .set("BL:" + accessToken, "logout", Duration.ofMillis(remainMillis));
   }
 }

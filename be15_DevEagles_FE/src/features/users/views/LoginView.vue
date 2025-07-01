@@ -60,7 +60,7 @@
 </template>
 <script setup lang="ts">
   import { useRouter } from 'vue-router';
-  import { ref } from 'vue';
+  import { onMounted, ref } from 'vue';
   import BaseForm from '@/components/common/BaseForm.vue';
   import BaseButton from '@/components/common/BaseButton.vue';
   import BaseModal from '@/components/common/BaseModal.vue';
@@ -151,6 +151,10 @@
   const goToSignup = () => {
     router.push('/sign-up');
   };
+
+  onMounted(() => {
+    localStorage.removeItem('accessToken');
+  });
 </script>
 <style scoped>
   .login-container {
