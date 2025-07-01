@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
+import api from '@/plugins/axios.js';
 
 function decodeJwtPayload(token) {
   const payload = token.split('.')[1];
@@ -31,7 +32,6 @@ export const useAuthStore = defineStore('auth', () => {
     accessToken.value = at;
     try {
       const payload = decodeJwtPayload(at);
-      console.log('payload', payload);
       shopId.value = payload.shopId;
       userId.value = payload.userId;
       username.value = payload.username;
@@ -49,6 +49,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   function clearAuth() {
     // 인증 정보 삭제
+    accessToken.value = null;
     shopId.value = null;
     userId.value = null;
     username.value = null;
@@ -58,8 +59,7 @@ export const useAuthStore = defineStore('auth', () => {
     userStatus.value = null;
 
     localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
-
+    delete api.defaults.headers.common['Authorization'];
     console.log('[Auth] 인증 정보 삭제 완료');
   }
 

@@ -27,7 +27,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
       throws ServletException, IOException {
 
     String token = getJwtFromRequest(request);
-    log.info("## user login -> token: {}", token);
+    log.info("[AUTH_FILTER] 요청 헤더 토큰: {}", token);
     try {
       if (StringUtils.hasText(token) && jwtTokenProvider.validateToken(token)) {
 
