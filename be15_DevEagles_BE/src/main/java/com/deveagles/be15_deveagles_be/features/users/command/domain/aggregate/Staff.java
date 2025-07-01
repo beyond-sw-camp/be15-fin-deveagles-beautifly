@@ -49,7 +49,7 @@ public class Staff {
   private String staffDescription;
 
   @Column(name = "color_code", nullable = false)
-  private String colorCode = "#364f6b";
+  private String colorCode;
 
   @Column(name = "profile_url")
   private String profileUrl;

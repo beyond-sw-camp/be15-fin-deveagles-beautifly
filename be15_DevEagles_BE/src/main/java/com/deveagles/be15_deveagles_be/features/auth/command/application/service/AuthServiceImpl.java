@@ -7,6 +7,7 @@ import com.deveagles.be15_deveagles_be.features.auth.command.application.dto.req
 import com.deveagles.be15_deveagles_be.features.auth.command.application.dto.response.TokenResponse;
 import com.deveagles.be15_deveagles_be.features.users.command.domain.aggregate.Staff;
 import com.deveagles.be15_deveagles_be.features.users.command.repository.UserRepository;
+import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -84,5 +85,17 @@ public class AuthServiceImpl implements AuthService {
         .accessToken(newAccessToken)
         .refreshToken(newRefreshToken)
         .build();
+  }
+
+  @Override
+  public void logout(String refreshToken, String accessToken) {
+
+    // 토큰 검증
+    jwtTokenProvider.validateToken(refreshToken);
+    String username = jwtTokenProvider.getUsernameFromJWT(refreshToken);
+    refreshTokenService.deleteRefreshToken(username);
+
+    long remainTime = jwtTokenProvider.getRemainingExpiration(accessToken);
+    redisTemplate.opsForValue().set("BL:" + accessToken, "logout", Duration.ofMillis(remainTime));
   }
 }
