@@ -3,8 +3,8 @@ package com.deveagles.be15_deveagles_be.features.schedules.command.application.s
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-import com.deveagles.be15_deveagles_be.features.customers.command.domain.aggregate.Customer;
-import com.deveagles.be15_deveagles_be.features.customers.command.domain.repository.CustomerRepository;
+import com.deveagles.be15_deveagles_be.features.customers.query.dto.response.CustomerIdResponse;
+import com.deveagles.be15_deveagles_be.features.customers.query.service.CustomerQueryService;
 import com.deveagles.be15_deveagles_be.features.schedules.command.application.dto.request.CreateReservationRequest;
 import com.deveagles.be15_deveagles_be.features.schedules.command.domain.aggregate.Reservation;
 import com.deveagles.be15_deveagles_be.features.schedules.command.domain.aggregate.ReservationDetail;
@@ -25,7 +25,7 @@ class ReservationServiceTest {
 
   @Mock private ReservationDetailRepository reservationDetailRepository;
 
-  @Mock private CustomerRepository customerRepository;
+  @Mock private CustomerQueryService customerQueryService;
 
   @InjectMocks private ReservationService reservationService;
 
@@ -53,22 +53,13 @@ class ReservationServiceTest {
   void createReservationWithExistingCustomer() {
     // given
     CreateReservationRequest request = buildRequest();
-    Customer customer =
-        Customer.builder()
-            .customerName("김하늘")
-            .phoneNumber("01012345678")
-            .shopId(1L)
-            .staffId(2L)
-            .customerGradeId(1L)
-            .birthdate(LocalDateTime.now().toLocalDate())
-            .channelId(1L)
-            .build();
 
-    // customerId 직접 세팅 (Builder에 id 포함 안 되어 있다면 reflection 등으로 강제할 수도 있음)
-    ReflectionTestUtils.setField(customer, "id", 99L);
+    // customerQueryService가 반환할 DTO
+    CustomerIdResponse customerIdResponse = new CustomerIdResponse(99L);
 
-    when(customerRepository.findByPhoneNumberAndShopId("01012345678", 1L))
-        .thenReturn(Optional.of(customer));
+    when(customerQueryService.findCustomerIdByPhoneNumber("01012345678", 1L))
+        .thenReturn(Optional.of(customerIdResponse));
+
     when(reservationRepository.save(any(Reservation.class)))
         .thenAnswer(
             invocation -> {
@@ -82,7 +73,7 @@ class ReservationServiceTest {
 
     // then
     assertThat(resultId).isEqualTo(123L);
-    verify(reservationRepository, times(1)).save(any(Reservation.class));
+    verify(reservationRepository).save(any(Reservation.class));
     verify(reservationDetailRepository, times(2)).save(any(ReservationDetail.class));
   }
 
@@ -92,8 +83,9 @@ class ReservationServiceTest {
     // given
     CreateReservationRequest request = buildRequest();
 
-    when(customerRepository.findByPhoneNumberAndShopId("01012345678", 1L))
+    when(customerQueryService.findCustomerIdByPhoneNumber("01012345678", 1L))
         .thenReturn(Optional.empty());
+
     when(reservationRepository.save(any(Reservation.class)))
         .thenAnswer(
             invocation -> {
@@ -107,7 +99,7 @@ class ReservationServiceTest {
 
     // then
     assertThat(resultId).isEqualTo(456L);
-    verify(reservationRepository, times(1)).save(any(Reservation.class));
+    verify(reservationRepository).save(any(Reservation.class));
     verify(reservationDetailRepository, times(2)).save(any(ReservationDetail.class));
   }
 }

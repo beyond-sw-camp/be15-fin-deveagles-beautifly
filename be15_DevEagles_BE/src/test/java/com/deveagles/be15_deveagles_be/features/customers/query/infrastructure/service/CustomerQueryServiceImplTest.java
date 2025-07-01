@@ -11,11 +11,7 @@ import com.deveagles.be15_deveagles_be.features.customers.command.domain.aggrega
 import com.deveagles.be15_deveagles_be.features.customers.command.domain.repository.CustomerRepository;
 import com.deveagles.be15_deveagles_be.features.customers.command.infrastructure.repository.CustomerElasticsearchRepository;
 import com.deveagles.be15_deveagles_be.features.customers.command.infrastructure.repository.CustomerJpaRepository;
-import com.deveagles.be15_deveagles_be.features.customers.query.dto.response.CustomerDetailResponse;
-import com.deveagles.be15_deveagles_be.features.customers.query.dto.response.CustomerDocument;
-import com.deveagles.be15_deveagles_be.features.customers.query.dto.response.CustomerListResponse;
-import com.deveagles.be15_deveagles_be.features.customers.query.dto.response.CustomerResponse;
-import com.deveagles.be15_deveagles_be.features.customers.query.dto.response.CustomerSearchResult;
+import com.deveagles.be15_deveagles_be.features.customers.query.dto.response.*;
 import com.deveagles.be15_deveagles_be.features.customers.query.repository.CustomerDetailQueryRepository;
 import com.deveagles.be15_deveagles_be.features.customers.query.repository.CustomerListQueryRepository;
 import com.querydsl.core.Tuple;
@@ -442,5 +438,29 @@ class CustomerQueryServiceImplTest {
         .gender("M")
         .deletedAt(null)
         .build();
+  }
+
+  @Test
+  @DisplayName("전화번호로 고객 ID 조회 성공")
+  void findCustomerIdByPhoneNumber_Success() {
+    // given
+    String phoneNumber = "01012345678";
+    Long shopId = 1L;
+    Customer customer = createTestCustomer();
+
+    given(customerJpaRepository.findByPhoneNumberAndShopIdAndDeletedAtIsNull(phoneNumber, shopId))
+        .willReturn(Optional.of(customer));
+
+    // when
+    Optional<CustomerIdResponse> response =
+        customerQueryService.findCustomerIdByPhoneNumber(phoneNumber, shopId);
+
+    // then
+    assertThat(response).isPresent();
+    assertThat(response.get().id()).isEqualTo(customer.getId());
+
+    then(customerJpaRepository)
+        .should()
+        .findByPhoneNumberAndShopIdAndDeletedAtIsNull(phoneNumber, shopId);
   }
 }
