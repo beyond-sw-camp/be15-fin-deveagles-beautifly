@@ -1,5 +1,6 @@
 <template>
   <BaseItemModal title="회원권 등록" @close="$emit('close')" @submit="submit">
+    <!-- 타입 선택 -->
     <div class="form-group">
       <label>선불권/횟수권 선택</label>
       <BaseForm
@@ -12,21 +13,30 @@
       />
     </div>
 
+    <!-- 이름 -->
     <div class="form-group">
       <label>선불권/횟수권 명</label>
-      <BaseForm v-model="form.name" placeholder="선불권/횟수권 이름을 입력하세요." />
+      <BaseForm v-model="form.name" placeholder="이름을 입력하세요." />
     </div>
 
+    <!-- 횟수 (SESSION만 노출) -->
     <div v-if="form.type === 'SESSION'" class="form-group">
       <label>횟수</label>
-      <BaseForm v-model="form.session" type="number" placeholder="횟수를 입력하세요." />
+      <BaseForm v-model.number="form.session" type="number" placeholder="횟수를 입력하세요." />
     </div>
 
+    <!-- 가격 -->
     <div class="form-group">
       <label>가격</label>
-      <BaseForm v-model="form.price" type="number" step="100" placeholder="가격을 입력하세요." />
+      <BaseForm
+        v-model.number="form.price"
+        type="number"
+        step="100"
+        placeholder="가격을 입력하세요."
+      />
     </div>
 
+    <!-- 제공 혜택 -->
     <div class="form-group">
       <label>제공 혜택</label>
       <BaseForm
@@ -40,6 +50,7 @@
       />
     </div>
 
+    <!-- 할인율 -->
     <div v-if="form.bonusType === 'DISSESSION_RATE'" class="form-group">
       <label>할인율 및 할인금액</label>
       <div class="expire-input-wrapper">
@@ -59,16 +70,18 @@
       </div>
     </div>
 
+    <!-- 추가 제공량 -->
     <div v-if="form.bonusType === 'EXTRA_BONUS'" class="form-group">
       <label>추가 제공량</label>
-      <BaseForm v-model="form.extraCount" placeholder="추가 제공량을 입력하세요." />
+      <BaseForm v-model.number="form.extraCount" type="number" placeholder="제공량을 입력하세요." />
     </div>
 
+    <!-- 유효기간 -->
     <div class="form-group">
       <label>유효기간</label>
       <div class="expire-input-wrapper">
         <BaseForm
-          v-model="form.expireValue"
+          v-model.number="form.expireValue"
           type="number"
           placeholder="기간을 입력하세요."
           class="expire-value"
@@ -87,9 +100,10 @@
       </div>
     </div>
 
+    <!-- 메모 -->
     <div class="form-group">
       <label>메모</label>
-      <BaseForm v-model="form.memo" placeholder="메모" />
+      <BaseForm v-model="form.memo" placeholder="메모를 입력하세요." />
     </div>
 
     <template #footer>
@@ -133,17 +147,15 @@
     { immediate: true, deep: true }
   );
 
-  // 할인율 옵션
   const dissessionRateOptions = Array.from({ length: 10 }, (_, i) => ({
     value: (i + 1) * 5,
     text: `${(i + 1) * 5}%`,
   }));
 
-  // 할인 금액 계산
   const formattedDissessionAmount = computed(() => {
     if (!form.value.price || !form.value.dissessionRate) return '0';
-    const dissession = Math.floor((form.value.price * form.value.dissessionRate) / 100);
-    return dissession.toLocaleString();
+    const amount = Math.floor((form.value.price * form.value.dissessionRate) / 100);
+    return amount.toLocaleString();
   });
 
   onMounted(() => {
@@ -153,41 +165,39 @@
     }
   });
 
-  // 등록 처리
   const submit = async () => {
     try {
-      const period = Number(form.value.expireValue);
-      const unit = form.value.expireUnit;
-      let expirationPeriod = 0;
+      const expirationPeriod = Number(form.value.expireValue);
+      const expirationPeriodType = form.value.expireUnit;
 
-      if (unit === 'DAY') expirationPeriod = period * 1;
-      else if (unit === 'WEEK') expirationPeriod = period * 7;
-      else if (unit === 'MONTH') expirationPeriod = period * 30;
-      else if (unit === 'YEAR') expirationPeriod = period * 365;
-
-      const basePayload = {
-        shopId: 1, // 실제 shopId로 교체하세요
-        expirationPeriod,
-        bonus: form.value.bonusType === 'EXTRA_BONUS' ? form.value.extraCount : null,
-        discountRate: form.value.bonusType === 'DISSESSION_RATE' ? form.value.dissessionRate : null,
-        prepaidPassMemo: form.value.memo,
-        sessionPassMemo: form.value.memo,
-      };
+      const bonus = form.value.bonusType === 'EXTRA_BONUS' ? form.value.extraCount : null;
+      const discountRate =
+        form.value.bonusType === 'DISSESSION_RATE' ? form.value.dissessionRate : null;
 
       if (form.value.type === 'PREPAID') {
         await registerPrepaidPass({
-          ...basePayload,
+          shopId: 1, // 실제 shopId 적용
           prepaidPassId: null,
           prepaidPassName: form.value.name,
           prepaidPassPrice: form.value.price,
+          expirationPeriod,
+          expirationPeriodType, // 그대로 전달
+          bonus,
+          discountRate,
+          prepaidPassMemo: form.value.memo,
         });
       } else if (form.value.type === 'SESSION') {
         await registerSessionPass({
-          ...basePayload,
+          shopId: 1,
           sessionPassId: null,
           sessionPassName: form.value.name,
           sessionPassPrice: form.value.price,
           session: form.value.session,
+          expirationPeriod,
+          expirationPeriodType,
+          bonus,
+          discountRate,
+          sessionPassMemo: form.value.memo,
         });
       } else {
         throw new Error('회원권 종류를 선택해주세요.');

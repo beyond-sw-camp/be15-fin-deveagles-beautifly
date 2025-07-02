@@ -1,4 +1,12 @@
-<script setup></script>
+<script setup>
+  import { useAuthStore } from '@/store/auth.js';
+  import { onMounted } from 'vue';
+
+  onMounted(async () => {
+    const authStore = useAuthStore();
+    await authStore.initAuth(); // ✅ accessToken 복구
+  });
+</script>
 
 <template>
   <div id="app">

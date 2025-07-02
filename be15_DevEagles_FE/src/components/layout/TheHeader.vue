@@ -109,8 +109,8 @@
             <span class="avatar-text">{{ userInitial }}</span>
           </span>
           <span class="user-info">
-            <span class="user-name">{{ userName }}</span>
-            <span class="user-role">{{ userRole }}</span>
+            <span class="user-name">{{ staffName }}</span>
+            <span class="user-role">{{ grade }}</span>
           </span>
           <ChevronDownIcon :size="12" class="dropdown-arrow" :class="{ rotated: showUserMenu }" />
         </button>
@@ -123,8 +123,8 @@
                   <span class="avatar-text">{{ userInitial }}</span>
                 </div>
                 <div class="user-details">
-                  <div class="user-name">{{ userName }}</div>
-                  <div class="user-uid">{{ userUID }}</div>
+                  <div class="user-name">{{ staffName }}</div>
+                  <div class="user-uid">{{ username }}</div>
                 </div>
               </div>
             </div>
@@ -139,7 +139,7 @@
                 <span>계정 설정</span>
               </router-link>
               <div class="dropdown-divider"></div>
-              <button class="dropdown-item" @click="logout">
+              <button class="dropdown-item" @click="handleLogout">
                 <svg
                   width="16"
                   height="16"
@@ -180,6 +180,12 @@
     BarChartIcon,
   } from '../icons/index.js';
   import NotificationList from '@/features/notifications/components/NotificationList.vue';
+  import { useAuthStore } from '@/store/auth.js';
+  import { storeToRefs } from 'pinia';
+  import { useRouter } from 'vue-router';
+  import { logout } from '@/features/users/api/users.js';
+
+  const router = useRouter();
 
   const userMenuRef = ref(null);
   const searchInputRef = ref(null);
@@ -194,12 +200,11 @@
   const isSearchFocused = ref(false);
 
   // 사용자 정보
-  const userName = ref('관리자');
-  const userUID = ref('deveagles');
-  const userRole = ref('매장 사장');
+  const authStore = useAuthStore();
+  const { staffName, username, grade } = storeToRefs(authStore);
 
   const userInitial = computed(() => {
-    return userName.value.charAt(0).toUpperCase();
+    return staffName.value.charAt(0).toUpperCase();
   });
 
   // 검색 관련
@@ -273,9 +278,17 @@
     }
   };
 
-  const logout = () => {
-    console.log('로그아웃');
-    showUserMenu.value = false;
+  const handleLogout = async () => {
+    try {
+      await logout();
+      console.log('[Header] 서버 로그아웃 완료');
+    } catch (err) {
+      console.warn(`[Header] 서버 로그아웃 실패 : ${err}`);
+    } finally {
+      authStore.clearAuth();
+      console.log('[Header] 인증 정보 삭제 완료');
+      router.push('/login');
+    }
   };
 
   onMounted(() => {

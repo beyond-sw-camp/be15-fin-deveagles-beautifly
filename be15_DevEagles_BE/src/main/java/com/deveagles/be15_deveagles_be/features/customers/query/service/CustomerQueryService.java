@@ -3,10 +3,7 @@ package com.deveagles.be15_deveagles_be.features.customers.query.service;
 import com.deveagles.be15_deveagles_be.common.dto.PagedResult;
 import com.deveagles.be15_deveagles_be.features.customers.command.application.dto.response.TagResponse;
 import com.deveagles.be15_deveagles_be.features.customers.query.dto.request.CustomerSearchQuery;
-import com.deveagles.be15_deveagles_be.features.customers.query.dto.response.CustomerDetailResponse;
-import com.deveagles.be15_deveagles_be.features.customers.query.dto.response.CustomerListResponse;
-import com.deveagles.be15_deveagles_be.features.customers.query.dto.response.CustomerResponse;
-import com.deveagles.be15_deveagles_be.features.customers.query.dto.response.CustomerSearchResult;
+import com.deveagles.be15_deveagles_be.features.customers.query.dto.response.*;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
@@ -49,4 +46,6 @@ public interface CustomerQueryService {
   void reindexAllCustomers(Long shopId);
 
   String getCustomerPhoneNumber(Long customerId);
+
+  Optional<CustomerIdResponse> findCustomerIdByPhoneNumber(String phoneNumber, Long shopId);
 }

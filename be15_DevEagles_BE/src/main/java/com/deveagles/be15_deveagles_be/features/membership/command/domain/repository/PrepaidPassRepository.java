@@ -2,9 +2,12 @@ package com.deveagles.be15_deveagles_be.features.membership.command.domain.repos
 
 import com.deveagles.be15_deveagles_be.features.membership.command.domain.aggregate.PrepaidPass;
 import java.util.List;
+import java.util.Optional;
 
 public interface PrepaidPassRepository {
   PrepaidPass save(PrepaidPass prepaidPass);
 
   List<PrepaidPass> findAllByDeletedAtIsNull();
+
+  Optional<PrepaidPass> findById(Long prepaidPassId);
 }

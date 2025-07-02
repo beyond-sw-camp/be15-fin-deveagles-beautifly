@@ -49,7 +49,7 @@ public class Staff {
   private String staffDescription;
 
   @Column(name = "color_code", nullable = false)
-  private String colorCode = "#364f6b";
+  private String colorCode;
 
   @Column(name = "profile_url")
   private String profileUrl;
@@ -86,12 +86,6 @@ public class Staff {
     this.modifiedAt = LocalDateTime.now();
   }
 
-  public void setProfile(String profileUrl, String staffName, String grade) {
-    this.profileUrl = profileUrl;
-    this.staffName = staffName;
-    this.grade = grade;
-  }
-
   public void setEncodedPassword(String encodedPassword) {
     this.password = encodedPassword;
   }
@@ -125,5 +119,25 @@ public class Staff {
 
   public void patchPhoneNumber(String phoneNumber) {
     this.phoneNumber = phoneNumber;
+  }
+
+  public void patchName(String staffName) {
+    this.staffName = staffName;
+  }
+
+  public void patchGrade(String grade) {
+    this.grade = grade;
+  }
+
+  public void patchProfileUrl(String profileUrl) {
+    this.profileUrl = profileUrl;
+  }
+
+  public void patchColorCode(String colorCode) {
+    this.colorCode = colorCode;
+  }
+
+  public void patchDescription(String staffDescription) {
+    this.staffDescription = staffDescription;
   }
 }

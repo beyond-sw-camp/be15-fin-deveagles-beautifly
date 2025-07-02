@@ -15,11 +15,7 @@ import com.deveagles.be15_deveagles_be.features.customers.command.domain.reposit
 import com.deveagles.be15_deveagles_be.features.customers.command.infrastructure.repository.CustomerElasticsearchRepository;
 import com.deveagles.be15_deveagles_be.features.customers.command.infrastructure.repository.CustomerJpaRepository;
 import com.deveagles.be15_deveagles_be.features.customers.query.dto.request.CustomerSearchQuery;
-import com.deveagles.be15_deveagles_be.features.customers.query.dto.response.CustomerDetailResponse;
-import com.deveagles.be15_deveagles_be.features.customers.query.dto.response.CustomerDocument;
-import com.deveagles.be15_deveagles_be.features.customers.query.dto.response.CustomerListResponse;
-import com.deveagles.be15_deveagles_be.features.customers.query.dto.response.CustomerResponse;
-import com.deveagles.be15_deveagles_be.features.customers.query.dto.response.CustomerSearchResult;
+import com.deveagles.be15_deveagles_be.features.customers.query.dto.response.*;
 import com.deveagles.be15_deveagles_be.features.customers.query.repository.CustomerDetailQueryRepository;
 import com.deveagles.be15_deveagles_be.features.customers.query.repository.CustomerListQueryRepository;
 import com.deveagles.be15_deveagles_be.features.customers.query.service.CustomerQueryService;
@@ -229,6 +225,13 @@ public class CustomerQueryServiceImpl implements CustomerQueryService {
     } catch (Exception e) {
       log.error("고객 데이터 재인덱싱 실패: shopId={}, error={}", shopId, e.getMessage());
     }
+  }
+
+  @Override
+  public Optional<CustomerIdResponse> findCustomerIdByPhoneNumber(String phoneNumber, Long shopId) {
+    return customerJpaRepository
+        .findByPhoneNumberAndShopIdAndDeletedAtIsNull(phoneNumber, shopId)
+        .map(customer -> new CustomerIdResponse(customer.getId()));
   }
 
   private CustomerDocument createCustomerDocumentWithGradeName(Customer customer) {

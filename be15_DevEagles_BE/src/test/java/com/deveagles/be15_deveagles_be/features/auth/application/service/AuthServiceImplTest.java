@@ -14,13 +14,19 @@ import com.deveagles.be15_deveagles_be.features.auth.command.application.service
 import com.deveagles.be15_deveagles_be.features.auth.command.application.service.RefreshTokenService;
 import com.deveagles.be15_deveagles_be.features.users.command.domain.aggregate.Staff;
 import com.deveagles.be15_deveagles_be.features.users.command.repository.UserRepository;
+import java.time.Duration;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 @ExtendWith(MockitoExtension.class)
@@ -35,12 +41,18 @@ public class AuthServiceImplTest {
 
   @Mock private RefreshTokenService refreshTokenService;
 
+  @Mock private RedisTemplate<String, String> redisTemplate;
+
+  @Mock private ValueOperations<String, String> valueOperations;
+
   private AuthServiceImpl authService;
 
   @BeforeEach
   void setUp() {
     authService =
-        new AuthServiceImpl(userRepository, passwordEncoder, jwtTokenProvider, refreshTokenService);
+        new AuthServiceImpl(
+            userRepository, passwordEncoder, jwtTokenProvider, refreshTokenService, redisTemplate);
+    Mockito.when(redisTemplate.opsForValue()).thenReturn(valueOperations);
   }
 
   @Test
@@ -91,5 +103,103 @@ public class AuthServiceImplTest {
     // when & then
     BusinessException ex = assertThrows(BusinessException.class, () -> authService.login(request));
     assertEquals(ErrorCode.USER_INVALID_PASSWORD, ex.getErrorCode());
+  }
+
+  @Test
+  @DisplayName("refreshToken: 토큰 재발급 성공")
+  void refreshToken_성공() {
+    // given
+    String oldRefreshToken = "oldRefreshToken";
+    String username = "user01";
+    String redisKey = "RT:" + username;
+    String newAccessToken = "newAccessToken";
+    String newRefreshToken = "newRefreshToken";
+
+    Staff staff = Staff.builder().loginId(username).build();
+
+    Mockito.when(jwtTokenProvider.validateToken(oldRefreshToken)).thenReturn(true);
+    Mockito.when(jwtTokenProvider.getUsernameFromJWT(oldRefreshToken)).thenReturn(username);
+    Mockito.when(valueOperations.get(redisKey)).thenReturn(oldRefreshToken);
+    Mockito.when(userRepository.findStaffByLoginId(username)).thenReturn(Optional.of(staff));
+    Mockito.when(jwtTokenProvider.createToken(username)).thenReturn(newAccessToken);
+    Mockito.when(jwtTokenProvider.createRefreshToken(username)).thenReturn(newRefreshToken);
+    Mockito.when(jwtTokenProvider.getRefreshExpiration()).thenReturn(600000L); // 10분
+    // when
+    TokenResponse response = authService.refreshToken(oldRefreshToken);
+
+    // then
+    assertEquals(newAccessToken, response.getAccessToken());
+    assertEquals(newRefreshToken, response.getRefreshToken());
+    Mockito.verify(valueOperations).set(redisKey, newRefreshToken, 600000L, TimeUnit.MILLISECONDS);
+  }
+
+  @Test
+  @DisplayName("refreshToken: Redis에 저장된 토큰이 null이면 예외 발생")
+  void refreshToken_저장토큰없음_예외() {
+    String token = "fakeToken";
+    String username = "userX";
+    String redisKey = "RT:" + username;
+
+    Mockito.when(jwtTokenProvider.validateToken(token)).thenReturn(true);
+    Mockito.when(jwtTokenProvider.getUsernameFromJWT(token)).thenReturn(username);
+    Mockito.when(valueOperations.get(redisKey)).thenReturn(null);
+
+    assertThrows(BadCredentialsException.class, () -> authService.refreshToken(token));
+  }
+
+  @Test
+  @DisplayName("refreshToken: 저장된 토큰과 다르면 예외 발생")
+  void refreshToken_불일치_예외() {
+    String token = "tokenA";
+    String username = "userX";
+    String redisKey = "RT:" + username;
+
+    Mockito.when(jwtTokenProvider.validateToken(token)).thenReturn(true);
+    Mockito.when(jwtTokenProvider.getUsernameFromJWT(token)).thenReturn(username);
+    Mockito.when(valueOperations.get(redisKey)).thenReturn("tokenB"); // 불일치
+
+    assertThrows(BadCredentialsException.class, () -> authService.refreshToken(token));
+  }
+
+  @Test
+  @DisplayName("refreshToken: 유저 정보가 없으면 예외 발생")
+  void refreshToken_유저없음_예외() {
+    String token = "validToken";
+    String username = "ghost";
+    String redisKey = "RT:" + username;
+
+    Mockito.when(jwtTokenProvider.validateToken(token)).thenReturn(true);
+    Mockito.when(jwtTokenProvider.getUsernameFromJWT(token)).thenReturn(username);
+    Mockito.when(valueOperations.get(redisKey)).thenReturn(token);
+    Mockito.when(userRepository.findStaffByLoginId(username)).thenReturn(Optional.empty());
+
+    BusinessException ex =
+        assertThrows(BusinessException.class, () -> authService.refreshToken(token));
+    assertEquals(ErrorCode.USER_NAME_NOT_FOUND, ex.getErrorCode());
+  }
+
+  @Test
+  @DisplayName("logout: 리프레시 삭제 및 액세스 토큰 블랙리스트 처리")
+  void logout_성공() {
+    // given
+    String refreshToken = "refreshToken123";
+    String accessToken = "accessToken123";
+    String username = "user01";
+    long remainMillis = 300000L; // 5분
+
+    Mockito.when(jwtTokenProvider.validateToken(refreshToken)).thenReturn(true);
+    Mockito.when(jwtTokenProvider.getUsernameFromJWT(refreshToken)).thenReturn(username);
+    Mockito.when(jwtTokenProvider.getRemainingExpiration(accessToken)).thenReturn(remainMillis);
+
+    // when
+    authService.logout(refreshToken, accessToken);
+
+    // then
+    Mockito.verify(jwtTokenProvider).validateToken(refreshToken);
+    Mockito.verify(jwtTokenProvider).getUsernameFromJWT(refreshToken);
+    Mockito.verify(refreshTokenService).deleteRefreshToken(username);
+    Mockito.verify(jwtTokenProvider).getRemainingExpiration(accessToken);
+    Mockito.verify(valueOperations)
+        .set("BL:" + accessToken, "logout", Duration.ofMillis(remainMillis));
   }
 }

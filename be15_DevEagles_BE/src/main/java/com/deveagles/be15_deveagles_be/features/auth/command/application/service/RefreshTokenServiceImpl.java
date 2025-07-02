@@ -24,4 +24,9 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
     ValueOperations<String, String> values = redisTemplate.opsForValue();
     values.set("RT:" + username, refreshToken, Duration.ofMillis(jwtRefreshExpiration));
   }
+
+  @Override
+  public void deleteRefreshToken(String username) {
+    redisTemplate.delete("RT:" + username);
+  }
 }

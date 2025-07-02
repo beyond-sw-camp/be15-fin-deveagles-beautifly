@@ -16,6 +16,7 @@ public enum ErrorCode implements ErrorCodeType {
   ACCESS_DENIED("00005", "접근 권한이 없습니다", HttpStatus.FORBIDDEN),
   RESOURCE_NOT_FOUND("00006", "요청한 리소스를 찾을 수 없습니다", HttpStatus.NOT_FOUND),
   DUPLICATE_RESOURCE("00007", "중복된 리소스입니다", HttpStatus.CONFLICT),
+  FILE_SAVE_ERROR("00008", "파일 저장에 실패했습니다", HttpStatus.INTERNAL_SERVER_ERROR),
   INTERNAL_SERVER_ERROR("00999", "서버 내부 오류가 발생했습니다", HttpStatus.INTERNAL_SERVER_ERROR),
 
   // 회원 관련 에러 (10000번대)
@@ -71,6 +72,8 @@ public enum ErrorCode implements ErrorCodeType {
   INVALID_LUNCH_TIME_RANGE("70002", "점심시간은 예약 가능 시간 범위 내여야 합니다", HttpStatus.BAD_REQUEST),
   INVALID_LUNCH_TIME_ORDER("70003", "점심시간 시작은 종료보다 빨라야 합니다", HttpStatus.BAD_REQUEST),
   RESERVATION_SETTING_ALREADY_EXISTS("70004", "이미 예약 설정이 존재합니다", HttpStatus.BAD_REQUEST),
+  SHOP_NOT_FOUND("70005", "매장을 찾을 수 없습니다", HttpStatus.NOT_FOUND),
+  RESERVATION_SETTING_NOT_FOUND("70006", "예약 설정이 존재하지 않습니다.", HttpStatus.NOT_FOUND),
   // 일정 삭제 관련 에러 (72000번대)
   PLAN_NOT_FOUND("72001", "단기 일정이 존재하지 않습니다", HttpStatus.NOT_FOUND),
   REGULAR_PLAN_NOT_FOUND("72002", "정기 일정이 존재하지 않습니다", HttpStatus.NOT_FOUND),
@@ -98,7 +101,10 @@ public enum ErrorCode implements ErrorCodeType {
   MEMBERSHIP_PRICE_REQUIRED("82002", "회원권가격을 입력해주세요.", HttpStatus.BAD_REQUEST),
   MEMBERSHIP_EXPIRATION_PERIOD_REQUIRED("82003", "회원권 유효기간을 입력해주세요.", HttpStatus.BAD_REQUEST),
   MEMBERSHIP_SESSION_REQUIRED("82004", "횟수를 입력해주세요", HttpStatus.BAD_REQUEST),
-
+  PREPAIDPASS_NOT_FOUND("82005", "선불권을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+  SESSIONPASS_NOT_FOUND("82006", "횟수권을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+  MEMBERSHIP_EXPIRATION_PERIOD_TYPE_REQUIRED(
+      "82007", "회원권 유효기간 단위를 입력해주세요.", HttpStatus.BAD_REQUEST),
 // 매출 관련 에러 (90000번대)
 
 ;
