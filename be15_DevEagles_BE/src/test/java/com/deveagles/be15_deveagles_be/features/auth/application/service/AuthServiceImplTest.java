@@ -52,7 +52,6 @@ public class AuthServiceImplTest {
     authService =
         new AuthServiceImpl(
             userRepository, passwordEncoder, jwtTokenProvider, refreshTokenService, redisTemplate);
-    Mockito.when(redisTemplate.opsForValue()).thenReturn(valueOperations);
   }
 
   @Test
@@ -108,6 +107,7 @@ public class AuthServiceImplTest {
   @Test
   @DisplayName("refreshToken: 토큰 재발급 성공")
   void refreshToken_성공() {
+
     // given
     String oldRefreshToken = "oldRefreshToken";
     String username = "user01";
@@ -117,6 +117,7 @@ public class AuthServiceImplTest {
 
     Staff staff = Staff.builder().loginId(username).build();
 
+    Mockito.when(redisTemplate.opsForValue()).thenReturn(valueOperations);
     Mockito.when(jwtTokenProvider.validateToken(oldRefreshToken)).thenReturn(true);
     Mockito.when(jwtTokenProvider.getUsernameFromJWT(oldRefreshToken)).thenReturn(username);
     Mockito.when(valueOperations.get(redisKey)).thenReturn(oldRefreshToken);
@@ -139,7 +140,7 @@ public class AuthServiceImplTest {
     String token = "fakeToken";
     String username = "userX";
     String redisKey = "RT:" + username;
-
+    Mockito.when(redisTemplate.opsForValue()).thenReturn(valueOperations);
     Mockito.when(jwtTokenProvider.validateToken(token)).thenReturn(true);
     Mockito.when(jwtTokenProvider.getUsernameFromJWT(token)).thenReturn(username);
     Mockito.when(valueOperations.get(redisKey)).thenReturn(null);
@@ -153,7 +154,7 @@ public class AuthServiceImplTest {
     String token = "tokenA";
     String username = "userX";
     String redisKey = "RT:" + username;
-
+    Mockito.when(redisTemplate.opsForValue()).thenReturn(valueOperations);
     Mockito.when(jwtTokenProvider.validateToken(token)).thenReturn(true);
     Mockito.when(jwtTokenProvider.getUsernameFromJWT(token)).thenReturn(username);
     Mockito.when(valueOperations.get(redisKey)).thenReturn("tokenB"); // 불일치
@@ -167,7 +168,7 @@ public class AuthServiceImplTest {
     String token = "validToken";
     String username = "ghost";
     String redisKey = "RT:" + username;
-
+    Mockito.when(redisTemplate.opsForValue()).thenReturn(valueOperations);
     Mockito.when(jwtTokenProvider.validateToken(token)).thenReturn(true);
     Mockito.when(jwtTokenProvider.getUsernameFromJWT(token)).thenReturn(username);
     Mockito.when(valueOperations.get(redisKey)).thenReturn(token);
@@ -186,7 +187,7 @@ public class AuthServiceImplTest {
     String accessToken = "accessToken123";
     String username = "user01";
     long remainMillis = 300000L; // 5분
-
+    Mockito.when(redisTemplate.opsForValue()).thenReturn(valueOperations);
     Mockito.when(jwtTokenProvider.validateToken(refreshToken)).thenReturn(true);
     Mockito.when(jwtTokenProvider.getUsernameFromJWT(refreshToken)).thenReturn(username);
     Mockito.when(jwtTokenProvider.getRemainingExpiration(accessToken)).thenReturn(remainMillis);
