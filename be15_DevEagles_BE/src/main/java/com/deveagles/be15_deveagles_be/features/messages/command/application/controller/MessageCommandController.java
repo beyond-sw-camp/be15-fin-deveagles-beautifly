@@ -5,6 +5,7 @@ import com.deveagles.be15_deveagles_be.features.messages.command.application.dto
 import com.deveagles.be15_deveagles_be.features.messages.command.application.dto.response.SmsResponse;
 import com.deveagles.be15_deveagles_be.features.messages.command.application.service.MessageCommandService;
 import jakarta.validation.Valid;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -20,8 +21,9 @@ public class MessageCommandController {
   private final MessageCommandService messageCommandService;
 
   @PostMapping
-  public ResponseEntity<ApiResponse<SmsResponse>> sendSms(@RequestBody @Valid SmsRequest request) {
-    SmsResponse response = messageCommandService.sendSms(request);
+  public ResponseEntity<ApiResponse<List<SmsResponse>>> sendSms(
+      @RequestBody @Valid SmsRequest request) {
+    List<SmsResponse> response = messageCommandService.sendSms(request);
     return ResponseEntity.ok(ApiResponse.success(response));
   }
 }

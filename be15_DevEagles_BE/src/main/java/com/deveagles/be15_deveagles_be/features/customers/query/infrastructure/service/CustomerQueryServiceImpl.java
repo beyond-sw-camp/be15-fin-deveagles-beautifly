@@ -355,11 +355,13 @@ public class CustomerQueryServiceImpl implements CustomerQueryService {
   }
 
   @Override
-  public String getCustomerPhoneNumber(Long customerId) {
-    Customer customer =
-        customerRepository
-            .findById(customerId)
-            .orElseThrow(() -> new BusinessException(ErrorCode.CUSTOMER_NOT_FOUND));
-    return customer.getPhoneNumber();
+  public List<String> getCustomerPhoneNumbers(List<Long> customerIds) {
+    List<Customer> customers = customerJpaRepository.findAllById(customerIds);
+
+    if (customers.size() != customerIds.size()) {
+      throw new BusinessException(ErrorCode.CUSTOMER_NOT_FOUND);
+    }
+
+    return customers.stream().map(Customer::getPhoneNumber).toList();
   }
 }

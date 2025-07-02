@@ -1,10 +1,14 @@
 package com.deveagles.be15_deveagles_be.features.messages.command.infrastructure;
 
+import com.deveagles.be15_deveagles_be.features.messages.command.application.dto.SmsSendUnit;
 import jakarta.annotation.PostConstruct;
+import java.util.List;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import net.nurigo.sdk.NurigoApp;
+import net.nurigo.sdk.message.model.FailedMessage;
 import net.nurigo.sdk.message.model.Message;
-import net.nurigo.sdk.message.request.SingleMessageSendingRequest;
+import net.nurigo.sdk.message.response.MultipleDetailMessageSentResponse;
 import net.nurigo.sdk.message.service.DefaultMessageService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -27,23 +31,34 @@ public class CoolSmsClient {
         NurigoApp.INSTANCE.initialize(apiKey, apiSecret, "https://api.coolsms.co.kr");
   }
 
-  public void sendSms(String from, String to, String text) {
-    Message message = new Message();
-    message.setFrom(from);
-    message.setTo(to);
-    message.setText(text);
+  public List<String> sendMany(String sender, String content, List<SmsSendUnit> units) {
+    List<Message> messages =
+        units.stream()
+            .map(
+                unit -> {
+                  Message message = new Message();
+                  message.setFrom(sender);
+                  message.setTo(unit.phoneNumber());
+                  message.setText(content);
+                  return message;
+                })
+            .toList();
 
     try {
-      messageService.sendOne(new SingleMessageSendingRequest(message));
+      MultipleDetailMessageSentResponse response = messageService.send(messages, false, true);
 
+      if (!response.getFailedMessageList().isEmpty()) {
+        return response.getFailedMessageList().stream()
+            .map(FailedMessage::getTo)
+            .collect(Collectors.toList());
+      }
+
+      return List.of(); // 전체 성공
     } catch (Exception e) {
-      throw new RuntimeException("문자 발송 실패", e);
-    }
-  }
+      log.error("단체 메시지 전송 중 예외 발생", e);
 
-  // 간단한 마스킹 함수
-  private String mask(String key) {
-    if (key.length() <= 4) return "****";
-    return key.substring(0, 2) + "****" + key.substring(key.length() - 2);
+      // 전체 실패한 것으로 간주
+      return messages.stream().map(Message::getTo).collect(Collectors.toList());
+    }
   }
 }
