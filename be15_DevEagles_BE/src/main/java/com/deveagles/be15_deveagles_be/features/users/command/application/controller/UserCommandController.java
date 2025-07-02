@@ -24,7 +24,7 @@ import org.springframework.web.multipart.MultipartFile;
 @Slf4j
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/v1/user")
+@RequestMapping("/user")
 @Tag(name = "회원-직원", description = "회원(직원) 관련 API")
 public class UserCommandController {
 

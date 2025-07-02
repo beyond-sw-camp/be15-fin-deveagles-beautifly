@@ -59,6 +59,8 @@ server:
       enabled: false
     include-stacktrace: never
     include-message: never
+  servlet:
+    context-path: /api/v1
 
 # 액추에이터 설정 (운영 모니터링 : Cloudwatch 연결시 스프링 프로필 prod로 변경할 시 적용됨)
 management:
