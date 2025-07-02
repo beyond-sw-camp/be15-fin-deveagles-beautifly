@@ -6,6 +6,8 @@ import com.deveagles.be15_deveagles_be.features.schedules.query.dto.response.Pla
 import com.deveagles.be15_deveagles_be.features.schedules.query.dto.response.PlanListResponse;
 import com.deveagles.be15_deveagles_be.features.schedules.query.dto.response.RegularPlanDetailResponse;
 import com.deveagles.be15_deveagles_be.features.schedules.query.service.PlanQueryService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -15,20 +17,21 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/schedules/plans")
+@RequestMapping("/api/v1/schedules/plans")
 @RequiredArgsConstructor
+@Tag(name = "일정 조회", description = "직원 단기/정기 일정 상세 및 목록 조회 API")
 public class PlanQueryController {
 
   private final PlanQueryService planQueryService;
 
-  // 단기 일정 상세 조회
+  @Operation(summary = "단기 일정 상세 조회", description = "단기 일정 ID로 상세 정보를 조회합니다.")
   @GetMapping("/{planId}")
   public ResponseEntity<ApiResponse<PlanDetailResponse>> getPlanDetail(@PathVariable Long planId) {
     PlanDetailResponse response = planQueryService.getPlanDetail(planId);
     return ResponseEntity.ok(ApiResponse.success(response));
   }
 
-  // 정기 일정 상세 조회
+  @Operation(summary = "정기 일정 상세 조회", description = "정기 일정 ID로 상세 정보를 조회합니다.")
   @GetMapping("/regular/{regularPlanId}")
   public ResponseEntity<ApiResponse<RegularPlanDetailResponse>> getRegularPlanDetail(
       @PathVariable Long regularPlanId) {
@@ -36,7 +39,7 @@ public class PlanQueryController {
     return ResponseEntity.ok(ApiResponse.success(response));
   }
 
-  // 단기/정기 일정 목록 조회
+  @Operation(summary = "일정 목록 조회", description = "단기/정기 일정을 통합하여 조회합니다. 필터: 담당자, 일정 타입, 기간, 페이징")
   @GetMapping
   public ResponseEntity<ApiResponse<PagedResponse<PlanListResponse>>> getPlanList(
       @RequestParam(required = false) Long staffId,

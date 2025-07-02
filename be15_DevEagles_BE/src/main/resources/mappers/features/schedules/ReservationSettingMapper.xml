@@ -21,5 +21,17 @@
           AND rs.deleted_at IS NULL
         ORDER BY rs.available_day ASC
     </select>
-
+    <select id="findCustomerReservationSetting"
+            resultType="com.deveagles.be15_deveagles_be.features.schedules.query.dto.response.CustomerReservationSettingResponse">
+        SELECT
+            rs.available_start_time     AS availableStartTime,
+            rs.available_end_time       AS availableEndTime,
+            rs.lunch_start_time         AS lunchStartTime,
+            rs.lunch_end_time           AS lunchEndTime,
+            s.reservation_term          AS reservationTerm
+        FROM reservation_setting rs
+                 JOIN shop s ON rs.shop_id = s.shop_id
+        WHERE rs.shop_id = #{shopId}
+          AND rs.available_day = #{dayOfWeek}
+    </select>
 </mapper>

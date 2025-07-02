@@ -5,5 +5,6 @@ public enum ReservationStatusName {
   PENDING,
   NO_SHOW,
   CBC,
-  CBS
+  CBS,
+  PAID
 }
