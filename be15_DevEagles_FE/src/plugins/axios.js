@@ -11,11 +11,6 @@ const api = axios.create({
 
 // 토큰 갱신 함수
 async function refreshUserToken() {
-  const refreshToken = localStorage.getItem('refreshToken');
-  if (!refreshToken) {
-    return Promise.reject(new Error('리프레시 토큰이 없습니다.'));
-  }
-
   return axios.post(
     `${import.meta.env.VITE_API_BASE_URL}/auth/refresh`,
     {},
