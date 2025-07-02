@@ -1,29 +1,36 @@
 <template>
   <div class="mypage-container">
     <div v-if="isLoading">로딩 중 ...</div>
-    <div class="profile-card-vertical">
+    <div v-else class="profile-card-vertical">
       <div class="form-fields">
-        <ProfileUpload v-model:model-value="profilePreview" />
+        <div class="profile-section">
+          <ProfileUpload v-model="profilePreview" v-model:file="profileFile" />
+
+          <div class="color-picker-inline">
+            <PickColors v-model:value="staff.colorCode" class="color-picker" />
+
+            <div class="tooltip-wrapper">
+              <InfoTooltipIcon />
+              <div class="tooltip-bubble">대표 색상을 변경할 수 있어요</div>
+            </div>
+          </div>
+        </div>
 
         <div class="label-row">
           <label for="userName">이름</label>
         </div>
-        <BaseForm id="userName" v-model="user.userName" type="text" />
+        <BaseForm id="userName" v-model="staff.staffName" type="text" />
 
         <div class="label-row">
           <label for="grade">직급</label>
         </div>
-        <BaseForm
-          id="grade"
-          v-model="user.grade"
-          type="select"
-          :options="[
-            { value: '1', text: '사장' },
-            { value: '2', text: '수석 디자이너' },
-            { value: '3', text: '디자이너' },
-            { value: '4', text: '수습' },
-          ]"
-        />
+        <BaseForm id="grade" v-model="staff.grade" type="text" />
+
+        <div class="label-row">
+          <label for="grade">메모</label>
+        </div>
+        <BaseForm v-model="staff.description" type="textarea" :rows="4" />
+
         <div class="button-row">
           <BaseButton class="edit-button" type="primary" @click="handleEdit">
             변경사항 저장
@@ -31,6 +38,7 @@
         </div>
       </div>
     </div>
+    <BaseToast ref="toastRef" />
   </div>
 </template>
 <script setup>
@@ -38,26 +46,87 @@
   import BaseForm from '@/components/common/BaseForm.vue';
   import BaseButton from '@/components/common/BaseButton.vue';
   import { onMounted, ref } from 'vue';
+  import PickColors from 'vue-pick-colors';
+  import { getProfile, patchProfile } from '@/features/users/api/users.js';
+  import { useAuthStore } from '@/store/auth.js';
+  import BaseToast from '@/components/common/BaseToast.vue';
+  import InfoTooltipIcon from '@/components/icons/InfoTooltipIcon.vue';
 
+  const authStore = useAuthStore();
+  const toastRef = ref();
   const isLoading = ref(true);
-  const user = ref({
-    userName: '',
+  const originalStaff = ref({});
+  const staff = ref({
+    staffName: '',
     grade: '',
-    thumbnailUrl: '',
+    profileUrl: '',
+    colorCode: '',
+    description: '',
+  });
+  const profilePreview = ref(staff.value.profileUrl || '');
+  const profileFile = ref(null);
+
+  onMounted(async () => {
+    try {
+      const res = await getProfile();
+      const { profileUrl, colorCode, description } = res.data.data;
+      profilePreview.value = profileUrl;
+      originalStaff.value = { profileUrl, colorCode, description };
+      staff.value = {
+        staffName: authStore.staffName,
+        grade: authStore.grade,
+        profileUrl,
+        colorCode,
+        description,
+      };
+    } catch (err) {
+      handleError(err);
+    } finally {
+      isLoading.value = false;
+    }
   });
 
-  const profilePreview = ref(user.value.thumbnailUrl || '');
-
-  onMounted(() => {
-    user.value = {
-      userName: '김이글',
-      grade: '1',
-      thumbnailUrl: '',
+  const handleEdit = async () => {
+    const request = {
+      staffName: staff.value.staffName,
+      grade: staff.value.grade,
+      description: staff.value.description,
+      colorCode: staff.value.colorCode,
     };
-    isLoading.value = false;
-  });
 
-  const handleEdit = () => {};
+    const formData = new FormData();
+    formData.append(
+      'profileRequest',
+      new Blob([JSON.stringify(request)], { type: 'application/json' })
+    );
+
+    if (profileFile.value !== null) {
+      formData.append('profile', profileFile.value);
+    } else if (!profilePreview.value) {
+      const emptyFile = new File([''], 'delete.png', { type: 'image/png' });
+      formData.append('profile', emptyFile);
+    }
+
+    try {
+      console.log('file:', profileFile.value);
+      console.log('profileRequest:', formData.get('profileRequest'));
+      console.log('profile:', formData.get('profile'));
+
+      await patchProfile(formData);
+      toastRef.value?.success?.('프로필이 성공적으로 수정되었어요!');
+    } catch (err) {
+      handleError(err);
+    }
+  };
+
+  const handleError = err => {
+    const res = err.response?.data;
+    if (!res || !res.message) {
+      toastRef.value?.error?.('존재하지 않는 회원입니다');
+      return;
+    }
+    toastRef.value?.error?.(res.message);
+  };
 </script>
 <style scoped>
   .profile-card-vertical {
@@ -97,5 +166,57 @@
     padding: 40px 20px;
     max-width: 800px;
     margin: 0 auto;
+  }
+
+  .profile-section {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .color-picker {
+    margin-top: 4px;
+    z-index: 10;
+  }
+  .color-picker-inline {
+    display: flex;
+    align-items: center;
+    gap: 0;
+  }
+
+  .tooltip-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    margin-left: 0px;
+    transform: translateX(-0.5px);
+  }
+
+  .tooltip-icon {
+    width: 16px;
+    height: 16px;
+    color: #9ca3af;
+    cursor: default;
+  }
+
+  .tooltip-bubble {
+    position: absolute;
+    bottom: 125%;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #333;
+    color: white;
+    padding: 6px 8px;
+    border-radius: 6px;
+    font-size: 12px;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+    z-index: 10;
+  }
+
+  .tooltip-wrapper:hover .tooltip-bubble {
+    opacity: 1;
+    pointer-events: auto;
   }
 </style>

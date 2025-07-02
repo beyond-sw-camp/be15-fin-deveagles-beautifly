@@ -16,6 +16,7 @@ public enum ErrorCode implements ErrorCodeType {
   ACCESS_DENIED("00005", "접근 권한이 없습니다", HttpStatus.FORBIDDEN),
   RESOURCE_NOT_FOUND("00006", "요청한 리소스를 찾을 수 없습니다", HttpStatus.NOT_FOUND),
   DUPLICATE_RESOURCE("00007", "중복된 리소스입니다", HttpStatus.CONFLICT),
+  FILE_SAVE_ERROR("00008", "파일 저장에 실패했습니다", HttpStatus.INTERNAL_SERVER_ERROR),
   INTERNAL_SERVER_ERROR("00999", "서버 내부 오류가 발생했습니다", HttpStatus.INTERNAL_SERVER_ERROR),
 
   // 회원 관련 에러 (10000번대)

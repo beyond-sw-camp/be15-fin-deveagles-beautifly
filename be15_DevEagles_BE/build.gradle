@@ -76,6 +76,9 @@ dependencies {
 
     // HATEOAS
     implementation 'org.springframework.boot:spring-boot-starter-hateoas'
+
+    // S3
+    implementation("com.amazonaws:aws-java-sdk-s3:1.12.783")
 }
 
 tasks.named('test') {

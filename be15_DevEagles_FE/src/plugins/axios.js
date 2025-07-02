@@ -4,7 +4,7 @@ import { useAuthStore } from '@/store/auth.js';
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL,
-  headers: { 'Content-Type': 'application/json' },
+  headers: {},
   // HttpOnly Cookie 사용하실 경우
   withCredentials: true,
 });
