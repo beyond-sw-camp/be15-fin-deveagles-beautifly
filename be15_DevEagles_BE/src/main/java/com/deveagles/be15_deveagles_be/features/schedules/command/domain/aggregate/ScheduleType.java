@@ -4,5 +4,6 @@ public enum ScheduleType {
   PLAN,
   REGULAR,
   LEAVE,
-  REGULAR_LEAVE
+  REGULAR_LEAVE,
+  RESERVATION
 }

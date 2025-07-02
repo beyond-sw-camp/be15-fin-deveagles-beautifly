@@ -33,7 +33,11 @@
       </button>
     </div>
     <div class="calendar-wrapper">
-      <ScheduleCalendar :schedules="calendarEvents" @click-schedule="handleClickSchedule" />
+      <ScheduleCalendar
+        :schedules="calendarEvents"
+        @change-date-range="handleChangeDateRange"
+        @click-schedule="handleClickSchedule"
+      />
     </div>
     <ReservationDetailModal
       v-if="modalType === 'reservation'"
@@ -56,112 +60,137 @@
 </template>
 
 <script setup>
-  import { ref, computed } from 'vue';
+  import { ref, computed, watch, onMounted } from 'vue';
   import ScheduleCalendar from '@/features/schedules/components/ScheduleCalendar.vue';
   import LeaveDetailModal from '@/features/schedules/components/LeaveDetailModal.vue';
   import PlanDetailModal from '@/features/schedules/components/PlanDetailModal.vue';
   import ReservationDetailModal from '@/features/schedules/components/ReservationDetailModal.vue';
   import ScheduleRegistModal from '@/features/schedules/components/ScheduleRegistModal.vue';
+  import { getCalendarSchedules } from '@/features/schedules/api/schedules';
+  import { useAuthStore } from '@/store/auth';
 
-  const staffColors = {
-    최민수: 'var(--color-primary-main)',
-    김민지: 'var(--color-success-200)',
-    이채은: 'var(--color-secondary-100)',
-  };
+  const authStore = useAuthStore();
+  const shopId = computed(() => authStore.shopId);
+  const staffId = computed(() => authStore.userId);
 
   const searchText = ref('');
   const selectedService = ref('');
   const selectedStaff = ref('');
   const selectedType = ref('');
 
-  const schedules = ref([
-    {
-      id: 1,
-      title: '김민지 고객 - 커트',
-      start: '2025-06-17T10:00:00',
-      end: '2025-06-17T11:00:00',
-      type: 'reservation',
-      service: '커트',
-      staff: '최민수',
-      customer: '김민지',
-      phone: '010-1234-5678',
-      status: '예약 확정',
-      note: '첫 방문 고객',
-      memo: '고객 요청사항 없음',
-      date: '2025-06-17',
-      startTime: '10:00',
-      endTime: '11:00',
-      timeRange: '오전 10:00 - 오전 11:00',
-      duration: '01:00',
-    },
-    {
-      id: 2,
-      title: '워크샵',
-      start: '2025-06-18T10:00:00',
-      end: '2025-06-18T16:00:00',
-      type: 'event',
-      staff: '이채은',
-      date: '2025-06-17',
-      timeRange: '오후 01:00 - 오후 04:00',
-      duration: '03:00',
-      memo: '외부 미팅 장소',
-      repeat: 'none',
-    },
-    {
-      id: 3,
-      title: '개인 사유로 휴무',
-      start: '2025-06-19',
-      end: '2025-06-20',
-      type: 'leave',
-      staff: '김민지',
-      service: '',
-      customer: '',
-      status: '',
-      memo: '사전 공지 완료',
-      repeat: 'none',
-      date: '2025-06-19',
-    },
-  ]);
-
+  const schedules = ref([]);
   const selectedReservation = ref(null);
   const isModalOpen = ref(false);
   const modalType = ref('');
+  const handleClickScheduleRegist = ref(false);
 
+  const searchParams = ref({ from: '', to: '' });
+
+  // 날짜를 LocalDateTime 포맷으로 변환하는 유틸 함수
+  const formatToLocalDateTime = date => {
+    const yyyy = date.getFullYear();
+    const MM = String(date.getMonth() + 1).padStart(2, '0');
+    const dd = String(date.getDate()).padStart(2, '0');
+    const hh = String(date.getHours()).padStart(2, '0');
+    const mm = String(date.getMinutes()).padStart(2, '0');
+    const ss = String(date.getSeconds()).padStart(2, '0');
+    return `${yyyy}-${MM}-${dd}T${hh}:${mm}:${ss}`;
+  };
+
+  const handleChangeDateRange = ({ from, to }) => {
+    if (!searchParams.value) return;
+    searchParams.value.from = formatToLocalDateTime(new Date(from));
+    searchParams.value.to = formatToLocalDateTime(new Date(to));
+    fetchSchedules();
+  };
+
+  // selectedType.value 값 → 서버 전송용 값으로 변환
+  const getScheduleTypeParam = () => {
+    switch (selectedType.value) {
+      case 'reservation':
+        return 'RESERVATION';
+      case 'event':
+        return 'PLAN_OR_REGULAR';
+      case 'leave':
+        return 'LEAVE_OR_REGULAR';
+      default:
+        return null;
+    }
+  };
+
+  // 일정 상세 클릭 시
   const handleClickSchedule = id => {
     const target = schedules.value.find(item => String(item.id) === String(id));
     if (target) {
       selectedReservation.value = target;
       isModalOpen.value = true;
 
-      if (target.type === 'reservation') modalType.value = 'reservation';
-      else if (['leave', 'regular_leave'].includes(target.type)) modalType.value = 'leave';
-      else if (['event', 'regular_event'].includes(target.type)) modalType.value = 'plan';
+      if (target.scheduleType === 'RESERVATION') modalType.value = 'reservation';
+      else if (target.scheduleType === 'LEAVE') modalType.value = 'leave';
+      else if (target.scheduleType === 'PLAN') modalType.value = 'plan';
     }
   };
 
-  const handleClickScheduleRegist = ref(false);
+  // 일정 조회 API 호출
+  const fetchSchedules = async () => {
+    try {
+      const { from, to, customerKeyword, itemKeyword, staffId, scheduleType } = searchParams.value;
+
+      schedules.value = await getCalendarSchedules({
+        from,
+        to,
+        customerKeyword,
+        itemKeyword,
+        staffId,
+        scheduleType,
+      });
+    } catch (err) {
+      console.error('일정 조회 실패', err);
+    }
+  };
+
+  // 필터 변경 시 일정 재조회
+  watch(
+    [
+      searchText,
+      selectedService,
+      selectedStaff,
+      selectedType,
+      () => searchParams.value.from,
+      () => searchParams.value.to,
+    ],
+    fetchSchedules
+  );
+
+  // 최초 로딩 시 일정 조회
+  onMounted(() => {
+    const today = new Date();
+    const firstDay = new Date(today.getFullYear(), today.getMonth(), 1, 0, 0, 0);
+    const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59);
+
+    searchParams.value.from = formatToLocalDateTime(firstDay); // ex: "2025-07-01T00:00:00"
+    searchParams.value.to = formatToLocalDateTime(lastDay); // ex: "2025-07-31T23:59:59"
+    console.log('[params]', searchParams.value);
+    fetchSchedules();
+  });
 
   const calendarEvents = computed(() =>
-    schedules.value.map(item => {
-      const isLeave = item.type === 'leave';
-      const isAllDay = isLeave;
-
-      return {
-        id: item.id,
-        title: item.title,
-        start: item.start,
-        end: item.end,
-        allDay: isAllDay,
-        backgroundColor: staffColors[item.staff] || 'var(--color-gray-300)',
-        textColor: 'var(--color-text-primary)',
-        type: item.type,
-        status: item.status,
-        staff: item.staff,
-        customer: item.customer,
-        service: item.service,
-        memo: item.memo,
-      };
-    })
+    schedules.value.map(item => ({
+      id: item.id,
+      title: item.title,
+      start: item.startAt,
+      end: item.endAt,
+      allDay: item.scheduleType === 'LEAVE',
+      backgroundColor: item.staffColor || 'var(--color-gray-300)',
+      textColor: 'var(--color-text-primary)',
+      type: item.scheduleType.toLowerCase(),
+      status: item.status,
+      staffName: item.staffName,
+      customer: item.customerName,
+      service: item.items,
+      memo: item.memo,
+      staffColor: item.staffColor,
+    }))
   );
 </script>
 
@@ -172,12 +201,15 @@
     border-radius: 12px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
   }
+
   .container {
     padding: 14px;
   }
+
   .page-header {
     margin-bottom: 32px;
   }
+
   .filter-bar {
     display: flex;
     align-items: center;
@@ -185,12 +217,15 @@
     margin-bottom: 32px;
     justify-content: flex-end;
   }
+
   .input-search {
     width: 240px;
   }
+
   .input-select {
     width: 160px;
   }
+
   .schedule-btn {
     flex-shrink: 0;
   }

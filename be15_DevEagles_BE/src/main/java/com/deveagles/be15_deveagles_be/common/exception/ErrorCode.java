@@ -77,6 +77,7 @@ public enum ErrorCode implements ErrorCodeType {
   // 정기 일정,휴무 관련 에러 (74000번대)
   INVALID_SCHEDULE_TYPE("74001", "유효하지 않은 스케줄 타입입니다", HttpStatus.BAD_REQUEST),
   INVALID_SCHEDULE_REPEAT_TYPE("74002", "정기 스케줄은 요일 또는 월 중 하나만 설정해야 합니다", HttpStatus.BAD_REQUEST),
+  INVALID_DAY_OF_WEEK("74003", "유효하지 않은 요일입니다", HttpStatus.BAD_REQUEST),
 
   // 상품, 회원권 관련 에러 (상품 :81000번대, 회원권: 82000번대)
   PRIMARY_ITEM_NAME_REQUIRED("81001", "1차 상품명을 입력해주세요.", HttpStatus.BAD_REQUEST),

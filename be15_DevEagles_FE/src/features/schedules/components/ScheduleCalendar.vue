@@ -1,5 +1,5 @@
 <script setup>
-  import { defineProps, watch, ref, nextTick } from 'vue';
+  import { watch, ref, nextTick } from 'vue';
   import FullCalendar from '@fullcalendar/vue3';
   import interactionPlugin from '@fullcalendar/interaction';
   import resourceTimeGridPlugin from '@fullcalendar/resource-timegrid';
@@ -8,6 +8,7 @@
   import koLocale from '@fullcalendar/core/locales/ko';
   import tippy from 'tippy.js';
   import 'tippy.js/dist/tippy.css';
+  import dayjs from 'dayjs';
 
   const calendarRef = ref(null);
 
@@ -18,19 +19,30 @@
     },
   });
 
-  const emit = defineEmits(['clickSchedule']);
+  const emit = defineEmits(['clickSchedule', 'change-date-range']);
 
-  const staffColors = {
-    최민수: 'var(--color-primary-main)',
-    김민지: 'var(--color-success-200)',
-    이채은: 'var(--color-secondary-100)',
-  };
+  function extractDateRangeFromView(view) {
+    const start = dayjs(view.currentStart).format('YYYY-MM-DD');
+    const end = dayjs(view.currentEnd).subtract(1, 'day').format('YYYY-MM-DD');
+    return { from: start, to: end };
+  }
 
   const statusColors = {
-    '예약 확정': 'var(--color-success-100)',
-    '예약 대기': 'var(--color-warning-200)',
+    CONFIRMED: 'var(--color-success-100)',
+    PENDING: 'var(--color-warning-200)',
+    PAID: 'var(--color-primary-50)',
+    NO_SHOW: 'var(--color-error-300)',
+    CBC: 'var(--color-error-300)',
+    CBS: 'var(--color-error-300)',
   };
-
+  const statusLabels = {
+    CONFIRMED: '예약 확정',
+    PENDING: '예약 대기',
+    NO_SHOW: '노쇼',
+    CBC: '예약 취소(고객)',
+    CBS: '예약 취소(샵)',
+    PAID: '결제 완료',
+  };
   const calendarOptions = ref({
     plugins: [interactionPlugin, resourceTimeGridPlugin, dayGridPlugin, timeGridPlugin],
     initialView: 'dayGridMonth',
@@ -84,12 +96,13 @@
 
     eventDidMount(info) {
       const { event, el, view } = info;
-      const { type, status, staff, customer, service, timeRange, memo } = event.extendedProps;
+      const { type, status, staffName, customer, service, timeRange, memo, staffColor } =
+        event.extendedProps;
       const viewType = view.type;
-      const borderColor = staffColors[staff?.trim()] || 'var(--color-gray-500)';
+      const borderColor = staffColor || 'var(--color-gray-500)';
       const bgColor =
         type === 'reservation'
-          ? statusColors[status] || 'var(--color-gray-200)'
+          ? statusColors[status] || 'var(--color-info-50)'
           : type === 'leave'
             ? 'rgba(220, 38, 38, 0.3)'
             : 'var(--color-neutral-white)';
@@ -99,12 +112,12 @@
 
       if (box) {
         box.style.backgroundColor = bgColor;
-        if (type === 'event') {
+        if (type === 'plan' || type === 'regular_plan') {
           box.style.border = `2px solid ${borderColor}`;
         }
       }
 
-      if (bar && (type === 'reservation' || type === 'leave')) {
+      if (bar && (type === 'reservation' || type === 'leave' || type === 'regular_leave')) {
         bar.style.backgroundColor = borderColor;
         if (viewType === 'dayGridMonth') {
           nextTick(() => {
@@ -121,18 +134,25 @@
 
       if (type === 'reservation') {
         tooltipLines.push(
+          staffName && `🙋 담당자: ${staffName}`,
           customer && `👤 고객: ${customer}`,
           service && `💈 시술: ${service}`,
+          status && `📌 예약 상태: ${statusLabels[status] || status}`,
           (timeRange || fallbackTimeRange) && `🕒 시간: ${timeRange || fallbackTimeRange}`,
           memo && `📝 메모: ${memo}`
         );
-      } else if (type === 'event') {
+      } else if (type === 'plan' || type === 'regular_plan') {
         tooltipLines.push(
+          staffName && `🙋 담당자: ${staffName}`,
           (timeRange || fallbackTimeRange) && `🕒 시간: ${timeRange || fallbackTimeRange}`,
           memo && `📝 메모: ${memo}`
         );
-      } else if (type === 'leave') {
-        tooltipLines.push(`📅 종일 휴무`, memo && `📝 메모: ${memo}`);
+      } else if (type === 'leave' || type === 'regular_leave') {
+        tooltipLines.push(
+          staffName && `🙋 담당자: ${staffName}`,
+          `📅 종일 휴무`,
+          memo && `📝 메모: ${memo}`
+        );
       }
 
       const tooltip = tooltipLines.filter(Boolean).join('<br/>');
@@ -164,9 +184,13 @@
     updateResources(viewType);
     updateEvents(viewType);
   };
+  calendarOptions.value.datesSet = arg => {
+    const { from, to } = extractDateRangeFromView(arg.view);
+    emit('change-date-range', { from, to });
+  };
 
   function updateResources(viewType) {
-    const staffsFromData = props.schedules.map(s => s.staff?.trim() || '미지정');
+    const staffsFromData = props.schedules.map(s => s.staffName?.trim() || '미지정');
     const seen = new Set();
     const uniqueStaffs = [];
     for (const staff of staffsFromData) {
@@ -198,15 +222,16 @@
         extendedProps: {
           type: item.type,
           status: item.status,
-          staff: item.staff,
+          staffName: item.staffName,
           customer: item.customer,
           service: item.service,
           timeRange: item.timeRange,
           memo: item.memo,
+          staffColor: item.staffColor,
         },
       };
       if (viewType === 'resourceTimeGridDay') {
-        baseEvent.resourceId = item.staff?.trim() || '미지정';
+        baseEvent.resourceId = item.staffName?.trim() || '미지정';
       }
       return baseEvent;
     });
