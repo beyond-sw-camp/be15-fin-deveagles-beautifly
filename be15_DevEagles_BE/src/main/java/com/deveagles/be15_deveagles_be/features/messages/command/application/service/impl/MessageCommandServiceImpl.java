@@ -6,23 +6,22 @@ import static com.deveagles.be15_deveagles_be.features.messages.command.domain.a
 import com.deveagles.be15_deveagles_be.common.exception.BusinessException;
 import com.deveagles.be15_deveagles_be.common.exception.ErrorCode;
 import com.deveagles.be15_deveagles_be.features.customers.query.service.CustomerQueryService;
-import com.deveagles.be15_deveagles_be.features.messages.command.application.dto.SmsGroupSendEvent;
 import com.deveagles.be15_deveagles_be.features.messages.command.application.dto.SmsSendUnit;
 import com.deveagles.be15_deveagles_be.features.messages.command.application.dto.request.SmsRequest;
-import com.deveagles.be15_deveagles_be.features.messages.command.application.dto.response.SmsResponse;
+import com.deveagles.be15_deveagles_be.features.messages.command.application.dto.response.MessageSendResult;
 import com.deveagles.be15_deveagles_be.features.messages.command.application.service.MessageCommandService;
 import com.deveagles.be15_deveagles_be.features.messages.command.domain.aggregate.MessageSendingType;
 import com.deveagles.be15_deveagles_be.features.messages.command.domain.aggregate.MessageSettings;
 import com.deveagles.be15_deveagles_be.features.messages.command.domain.aggregate.Sms;
 import com.deveagles.be15_deveagles_be.features.messages.command.domain.repository.MessageSettingRepository;
 import com.deveagles.be15_deveagles_be.features.messages.command.domain.repository.SmsRepository;
+import com.deveagles.be15_deveagles_be.features.messages.command.infrastructure.CoolSmsClient;
 import com.deveagles.be15_deveagles_be.features.shops.command.application.service.ShopCommandService;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.IntStream;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,12 +32,12 @@ public class MessageCommandServiceImpl implements MessageCommandService {
   private final ShopCommandService shopCommandService;
   private final CustomerQueryService customerQueryService;
   private final MessageSettingRepository messageSettingRepository;
-  private final ApplicationEventPublisher eventPublisher;
+  private final CoolSmsClient coolSmsClient;
   private final SmsRepository smsRepository;
 
   @Override
   @Transactional
-  public List<SmsResponse> sendSms(SmsRequest smsRequest) {
+  public List<MessageSendResult> sendSms(SmsRequest smsRequest) {
     LocalDateTime now = LocalDateTime.now();
     LocalDateTime scheduledAt = resolveScheduledAt(smsRequest, now);
 
@@ -79,19 +78,28 @@ public class MessageCommandServiceImpl implements MessageCommandService {
 
     List<Sms> saved = smsRepository.saveAll(smsList);
 
-    // 7. 즉시 발송이면 이벤트 발행
+    // 6. 즉시 발송이면 이벤트 발행
     if (!isReservation) {
       List<SmsSendUnit> units =
           IntStream.range(0, saved.size())
               .mapToObj(i -> new SmsSendUnit(saved.get(i).getMessageId(), phoneNumbers.get(i)))
               .toList();
 
-      eventPublisher.publishEvent(
-          new SmsGroupSendEvent(senderNumber, smsRequest.messageContent(), units));
+      List<MessageSendResult> results =
+          coolSmsClient.sendMany(senderNumber, smsRequest.messageContent(), units);
+
+      List<Long> failedIds =
+          results.stream().filter(r -> !r.success()).map(MessageSendResult::messageId).toList();
+
+      if (!failedIds.isEmpty()) {
+        markSmsAsFailed(failedIds);
+      }
+
+      return results;
     }
 
-    // 8. 응답 반환
-    return saved.stream().map(SmsResponse::from).toList();
+    // 7. (지금은 실행되지 않음)
+    return List.of(); // 예약 발송 처리 안 하므로 빈 응답
   }
 
   @Override

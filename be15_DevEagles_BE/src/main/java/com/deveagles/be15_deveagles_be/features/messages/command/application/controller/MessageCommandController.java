@@ -2,7 +2,7 @@ package com.deveagles.be15_deveagles_be.features.messages.command.application.co
 
 import com.deveagles.be15_deveagles_be.common.dto.ApiResponse;
 import com.deveagles.be15_deveagles_be.features.messages.command.application.dto.request.SmsRequest;
-import com.deveagles.be15_deveagles_be.features.messages.command.application.dto.response.SmsResponse;
+import com.deveagles.be15_deveagles_be.features.messages.command.application.dto.response.MessageSendResult;
 import com.deveagles.be15_deveagles_be.features.messages.command.application.service.MessageCommandService;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -20,10 +20,11 @@ public class MessageCommandController {
 
   private final MessageCommandService messageCommandService;
 
-  @PostMapping
-  public ResponseEntity<ApiResponse<List<SmsResponse>>> sendSms(
+  @PostMapping("/send")
+  public ResponseEntity<ApiResponse<List<MessageSendResult>>> sendSms(
       @RequestBody @Valid SmsRequest request) {
-    List<SmsResponse> response = messageCommandService.sendSms(request);
-    return ResponseEntity.ok(ApiResponse.success(response));
+
+    List<MessageSendResult> resultList = messageCommandService.sendSms(request);
+    return ResponseEntity.ok(ApiResponse.success(resultList));
   }
 }

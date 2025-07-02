@@ -1,9 +1,9 @@
 package com.deveagles.be15_deveagles_be.features.messages.command.infrastructure;
 
 import com.deveagles.be15_deveagles_be.features.messages.command.application.dto.SmsSendUnit;
+import com.deveagles.be15_deveagles_be.features.messages.command.application.dto.response.MessageSendResult;
 import jakarta.annotation.PostConstruct;
 import java.util.List;
-import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import net.nurigo.sdk.NurigoApp;
 import net.nurigo.sdk.message.model.FailedMessage;
@@ -31,7 +31,7 @@ public class CoolSmsClient {
         NurigoApp.INSTANCE.initialize(apiKey, apiSecret, "https://api.coolsms.co.kr");
   }
 
-  public List<String> sendMany(String sender, String content, List<SmsSendUnit> units) {
+  public List<MessageSendResult> sendMany(String sender, String content, List<SmsSendUnit> units) {
     List<Message> messages =
         units.stream()
             .map(
@@ -45,20 +45,31 @@ public class CoolSmsClient {
             .toList();
 
     try {
+      // 동기 호출
       MultipleDetailMessageSentResponse response = messageService.send(messages, false, true);
 
-      if (!response.getFailedMessageList().isEmpty()) {
-        return response.getFailedMessageList().stream()
-            .map(FailedMessage::getTo)
-            .collect(Collectors.toList());
-      }
+      // 실패한 번호 리스트 추출
+      List<String> failedNumbers =
+          response.getFailedMessageList().stream().map(FailedMessage::getTo).toList();
 
-      return List.of(); // 전체 성공
+      // 각 유닛에 대해 결과 생성
+      return units.stream()
+          .map(
+              unit -> {
+                boolean isSuccess = !failedNumbers.contains(unit.phoneNumber());
+                return new MessageSendResult(
+                    isSuccess, isSuccess ? "발송 성공" : "발송 실패", unit.messageId());
+              })
+          .toList();
+
     } catch (Exception e) {
-      log.error("단체 메시지 전송 중 예외 발생", e);
+      log.error("CoolSMS sendMany 예외", e);
+      String message = e.getMessage() != null ? e.getMessage() : "알 수 없는 예외 발생";
 
-      // 전체 실패한 것으로 간주
-      return messages.stream().map(Message::getTo).collect(Collectors.toList());
+      // 예외 시 모든 메시지를 실패 처리
+      return units.stream()
+          .map(unit -> new MessageSendResult(false, "예외 발생: " + message, unit.messageId()))
+          .toList();
     }
   }
 }
