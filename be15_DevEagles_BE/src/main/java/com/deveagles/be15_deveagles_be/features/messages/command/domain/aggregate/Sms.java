@@ -62,6 +62,10 @@ public class Sms {
   @Column(name = "tag_id")
   private Long tagId;
 
+  @Enumerated(EnumType.STRING)
+  @Column(name = "message_kind", nullable = false)
+  private MessageKind messageKind;
+
   public void markAsSent() {
     this.sentAt = LocalDateTime.now();
     this.messageDeliveryStatus = MessageDeliveryStatus.SENT;

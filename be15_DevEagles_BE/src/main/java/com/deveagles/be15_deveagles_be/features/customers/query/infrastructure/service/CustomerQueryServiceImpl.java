@@ -350,4 +350,13 @@ public class CustomerQueryServiceImpl implements CustomerQueryService {
       default -> "customerName.keyword";
     };
   }
+
+  @Override
+  public String getCustomerPhoneNumber(Long customerId) {
+    Customer customer =
+        customerRepository
+            .findById(customerId)
+            .orElseThrow(() -> new BusinessException(ErrorCode.CUSTOMER_NOT_FOUND));
+    return customer.getPhoneNumber();
+  }
 }

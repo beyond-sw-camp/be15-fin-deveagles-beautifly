@@ -47,4 +47,6 @@ public interface CustomerQueryService {
   void syncCustomerToElasticsearch(Long customerId);
 
   void reindexAllCustomers(Long shopId);
+
+  String getCustomerPhoneNumber(Long customerId);
 }

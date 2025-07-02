@@ -13,4 +13,6 @@ public interface ShopCommandService {
   void patchOwnerId(Shop shop, Long staffId);
 
   GetIndustryResponse getIndustry();
+
+  void validateShopExists(Long shopId);
 }
