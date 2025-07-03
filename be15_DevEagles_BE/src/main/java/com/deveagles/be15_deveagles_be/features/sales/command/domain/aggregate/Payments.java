@@ -5,24 +5,27 @@ import java.time.LocalDateTime;
 import lombok.*;
 
 @Entity
-@Table(name = "payment")
+@Table(name = "payments")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
-public class Payment {
+public class Payments {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  @Column(name = "payment_id")
-  private Long paymentId;
+  @Column(name = "payments_id")
+  private Long paymentsId;
 
   @Column(name = "sales_id", nullable = false)
   private Long salesId;
 
   @Enumerated(EnumType.STRING)
-  @Column(name = "payment_method")
-  private PaymentMethod paymentMethod;
+  @Column(name = "payments_method")
+  private PaymentsMethod paymentsMethod;
+
+  @Column(name = "amount")
+  private Integer amount;
 
   @Column(name = "created_at", nullable = false)
   private LocalDateTime createdAt;
