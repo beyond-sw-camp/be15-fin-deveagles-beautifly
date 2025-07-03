@@ -1,8 +1,5 @@
 package com.deveagles.be15_deveagles_be.features.messages.command.application.service.impl;
 
-import static com.deveagles.be15_deveagles_be.features.messages.command.domain.aggregate.MessageDeliveryStatus.PENDING;
-import static com.deveagles.be15_deveagles_be.features.messages.command.domain.aggregate.MessageDeliveryStatus.SENT;
-
 import com.deveagles.be15_deveagles_be.common.exception.BusinessException;
 import com.deveagles.be15_deveagles_be.common.exception.ErrorCode;
 import com.deveagles.be15_deveagles_be.features.customers.query.service.CustomerQueryService;
@@ -10,6 +7,7 @@ import com.deveagles.be15_deveagles_be.features.messages.command.application.dto
 import com.deveagles.be15_deveagles_be.features.messages.command.application.dto.request.SmsRequest;
 import com.deveagles.be15_deveagles_be.features.messages.command.application.dto.response.MessageSendResult;
 import com.deveagles.be15_deveagles_be.features.messages.command.application.service.MessageCommandService;
+import com.deveagles.be15_deveagles_be.features.messages.command.domain.aggregate.MessageDeliveryStatus;
 import com.deveagles.be15_deveagles_be.features.messages.command.domain.aggregate.MessageSendingType;
 import com.deveagles.be15_deveagles_be.features.messages.command.domain.aggregate.MessageSettings;
 import com.deveagles.be15_deveagles_be.features.messages.command.domain.aggregate.Sms;
@@ -40,13 +38,15 @@ public class MessageCommandServiceImpl implements MessageCommandService {
   public List<MessageSendResult> sendSms(SmsRequest smsRequest) {
     LocalDateTime now = LocalDateTime.now();
     LocalDateTime scheduledAt = resolveScheduledAt(smsRequest, now);
+    boolean isReservation = smsRequest.messageSendingType() == MessageSendingType.RESERVATION;
 
-    // 1. 유효성 검증
     shopCommandService.validateShopExists(smsRequest.shopId());
-
-    // 2. 고객 번호 조회
+    // 2. 고객 ID 원본 리스트
     List<Long> customerIds = smsRequest.customerIds();
-    List<String> phoneNumbers = customerQueryService.getCustomerPhoneNumbers(customerIds);
+
+    // 3. 중복 제거된 ID로 전화번호 조회 (성공/실패 여부 판단용)
+    List<Long> distinctCustomerIds = customerIds.stream().distinct().toList();
+    List<String> phoneNumbers = customerQueryService.getCustomerPhoneNumbers(distinctCustomerIds);
     // 3. 메시지 설정 조회
     MessageSettings settings =
         messageSettingRepository
@@ -54,24 +54,27 @@ public class MessageCommandServiceImpl implements MessageCommandService {
             .orElseThrow(() -> new BusinessException(ErrorCode.MESSAGE_SETTINGS_NOT_FOUND));
     String senderNumber = settings.getSenderNumber();
 
-    // 4. 예약 여부 확인
-    boolean isReservation = smsRequest.messageSendingType() == MessageSendingType.RESERVATION;
-
     // 5. 즉시 전송 처리
     List<Sms> smsList =
-        IntStream.range(0, customerIds.size())
+        IntStream.range(0, distinctCustomerIds.size())
             .mapToObj(
                 i ->
                     Sms.builder()
                         .shopId(smsRequest.shopId())
-                        .customerId(customerIds.get(i))
+                        .customerId(distinctCustomerIds.get(i))
                         .messageContent(smsRequest.messageContent())
                         .messageKind(smsRequest.messageKind())
                         .messageType(smsRequest.messageType())
                         .messageSendingType(smsRequest.messageSendingType())
-                        .messageDeliveryStatus(isReservation ? PENDING : SENT)
+                        .messageDeliveryStatus(
+                            isReservation
+                                ? MessageDeliveryStatus.PENDING
+                                : MessageDeliveryStatus.SENT)
                         .scheduledAt(scheduledAt)
                         .templateId(smsRequest.templateId())
+                        .hasLink(Boolean.TRUE.equals(smsRequest.hasLink()))
+                        .customerGradeId(smsRequest.customerGradeId())
+                        .tagId(smsRequest.tagId())
                         .sentAt(now)
                         .build())
             .toList();
@@ -98,8 +101,10 @@ public class MessageCommandServiceImpl implements MessageCommandService {
       return results;
     }
 
-    // 7. (지금은 실행되지 않음)
-    return List.of(); // 예약 발송 처리 안 하므로 빈 응답
+    // 7. 예약 발송이면 등록 완료 결과 반환
+    return saved.stream()
+        .map(s -> new MessageSendResult(true, "예약 등록 완료", s.getMessageId()))
+        .toList();
   }
 
   @Override
@@ -108,6 +113,14 @@ public class MessageCommandServiceImpl implements MessageCommandService {
     List<Sms> failedMessages = smsRepository.findAllById(smsIds);
     failedMessages.forEach(Sms::markAsFailed);
     smsRepository.saveAll(failedMessages);
+  }
+
+  @Override
+  @Transactional(propagation = Propagation.REQUIRES_NEW)
+  public void markSmsAsSent(Collection<Long> smsIds) {
+    List<Sms> sentMessages = smsRepository.findAllById(smsIds);
+    sentMessages.forEach(Sms::markAsSent);
+    smsRepository.saveAll(sentMessages);
   }
 
   private LocalDateTime resolveScheduledAt(SmsRequest request, LocalDateTime now) {
