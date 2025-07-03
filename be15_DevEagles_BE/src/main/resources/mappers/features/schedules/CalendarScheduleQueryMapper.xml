@@ -184,4 +184,48 @@
             </otherwise>
         </choose>
     </select>
+
+    <select id="findRegularSchedules"
+            resultType="com.deveagles.be15_deveagles_be.features.schedules.query.dto.response.CalendarRegularResponse">
+        <choose>
+
+            <!-- 정기 일정 조회 -->
+            <when test="request.scheduleType == 'REGULAR_PLAN'">
+                SELECT
+                rp.regular_plan_id       AS id,
+                'REGULAR_PLAN'           AS scheduleType,
+                rp.regular_plan_title    AS title,
+                s.staff_name             AS staffName,
+                rp.regular_plan_memo     AS memo,
+                s.staff_color            AS staffColor,
+                rp.weekly_plan           AS weeklyRepeatDay,
+                rp.monthly_plan          AS monthlyRepeatDay,
+                TIME_FORMAT(rp.regular_plan_start_at, '%H:%i:%s') AS startTime,
+                TIME_FORMAT(rp.regular_plan_end_at, '%H:%i:%s')   AS endTime
+                FROM regular_plan rp
+                JOIN staff s ON rp.staff_id = s.staff_id
+                WHERE s.shop_id = #{shopId}
+            </when>
+
+            <!-- 정기 휴무 조회 -->
+            <when test="request.scheduleType == 'REGULAR_LEAVE'">
+                SELECT
+                rl.regular_leave_id      AS id,
+                'REGULAR_LEAVE'          AS scheduleType,
+                rl.regular_leave_title   AS title,
+                s.staff_name             AS staffName,
+                rl.regular_leave_memo    AS memo,
+                s.staff_color            AS staffColor,
+                rl.weekly_leave          AS weeklyRepeatDay,
+                rl.monthly_leave         AS monthlyRepeatDay,
+                NULL                     AS startTime,
+                NULL                     AS endTime
+                FROM regular_leave rl
+                JOIN staff s ON rl.staff_id = s.staff_id
+                WHERE s.shop_id = #{shopId}
+            </when>
+
+        </choose>
+    </select>
+
 </mapper>
