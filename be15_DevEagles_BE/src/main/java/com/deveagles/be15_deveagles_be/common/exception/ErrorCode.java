@@ -16,6 +16,7 @@ public enum ErrorCode implements ErrorCodeType {
   ACCESS_DENIED("00005", "접근 권한이 없습니다", HttpStatus.FORBIDDEN),
   RESOURCE_NOT_FOUND("00006", "요청한 리소스를 찾을 수 없습니다", HttpStatus.NOT_FOUND),
   DUPLICATE_RESOURCE("00007", "중복된 리소스입니다", HttpStatus.CONFLICT),
+  FILE_SAVE_ERROR("00008", "파일 저장에 실패했습니다", HttpStatus.INTERNAL_SERVER_ERROR),
   INTERNAL_SERVER_ERROR("00999", "서버 내부 오류가 발생했습니다", HttpStatus.INTERNAL_SERVER_ERROR),
 
   // 회원 관련 에러 (10000번대)
@@ -23,6 +24,8 @@ public enum ErrorCode implements ErrorCodeType {
   USER_INVALID_PASSWORD("11002", "잘못된 비밀번호입니다.", HttpStatus.BAD_REQUEST),
   USER_NOT_FOUND("11003", "존재하지 않는 회원입니다.", HttpStatus.NOT_FOUND),
 
+  // 매장 관련 에러 (20000번대)
+  SHOP_NOT_FOUNT("20001", "매장이 존재하지 않습니다.", HttpStatus.NOT_FOUND),
   // 고객 관련 에러 (30000번대)
   CUSTOMER_NOT_FOUND("30001", "고객을 찾을 수 없습니다", HttpStatus.NOT_FOUND),
   CUSTOMER_PHONE_DUPLICATE("30002", "이미 등록된 전화번호입니다", HttpStatus.CONFLICT),
@@ -36,7 +39,10 @@ public enum ErrorCode implements ErrorCodeType {
   MESSAGE_SETTINGS_NOT_FOUND("40002", "해당 매장의 메시지 설정이 존재하지 않습니다.", HttpStatus.NOT_FOUND),
   MESSAGE_INVALID_SENDER_NUMBER("40003", "유효하지 않은 발신 번호입니다.", HttpStatus.BAD_REQUEST),
   MESSAGE_INSUFFICIENT_POINTS("40004", "메시지를 발송할 포인트가 부족합니다.", HttpStatus.BAD_REQUEST),
-
+  SCHEDULE_TIME_REQUIRED_FOR_RESERVATION(
+      "40005", "예약 메시지일 경우에는 예약 시간이 필요합니다.", HttpStatus.BAD_REQUEST),
+  SCHEDULE_TIME_NOT_ALLOWED_FOR_IMMEDIATE(
+      "40006", "즉시 메시지일 경우에는 예약 시간이 없습니다.", HttpStatus.BAD_REQUEST),
   // 쿠폰 관련 에러 (50000번대)
   COUPON_NOT_FOUND("50001", "쿠폰을 찾을 수 없습니다", HttpStatus.NOT_FOUND),
   COUPON_CODE_DUPLICATE("50002", "이미 존재하는 쿠폰 코드입니다", HttpStatus.CONFLICT),

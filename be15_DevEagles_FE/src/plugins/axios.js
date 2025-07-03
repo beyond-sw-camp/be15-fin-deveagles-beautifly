@@ -4,18 +4,13 @@ import { useAuthStore } from '@/store/auth.js';
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL,
-  headers: { 'Content-Type': 'application/json' },
+  headers: {},
   // HttpOnly Cookie 사용하실 경우
   withCredentials: true,
 });
 
 // 토큰 갱신 함수
 async function refreshUserToken() {
-  const refreshToken = localStorage.getItem('refreshToken');
-  if (!refreshToken) {
-    return Promise.reject(new Error('리프레시 토큰이 없습니다.'));
-  }
-
   return axios.post(
     `${import.meta.env.VITE_API_BASE_URL}/auth/refresh`,
     {},

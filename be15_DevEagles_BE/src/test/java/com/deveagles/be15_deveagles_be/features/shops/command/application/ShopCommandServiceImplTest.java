@@ -2,6 +2,8 @@ package com.deveagles.be15_deveagles_be.features.shops.command.application;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import com.deveagles.be15_deveagles_be.common.exception.BusinessException;
+import com.deveagles.be15_deveagles_be.common.exception.ErrorCode;
 import com.deveagles.be15_deveagles_be.features.schedules.command.application.service.ReservationSettingInitializer;
 import com.deveagles.be15_deveagles_be.features.shops.command.application.dto.request.ShopCreateRequest;
 import com.deveagles.be15_deveagles_be.features.shops.command.application.dto.request.ValidBizNumberRequest;
@@ -121,5 +123,30 @@ public class ShopCommandServiceImplTest {
     // then
     assertEquals(ownerId, shop.getOwnerId());
     Mockito.verify(shopRepository).save(shop);
+  }
+
+  @Test
+  @DisplayName("validateShopExists: 존재하는 shopId일 경우 예외 없이 통과")
+  void 존재하는_shopId_예외없음() {
+    // given
+    Long validShopId = 1L;
+    Mockito.when(shopRepository.existsById(validShopId)).thenReturn(true);
+
+    // when & then
+    assertDoesNotThrow(() -> service.validateShopExists(validShopId));
+  }
+
+  @Test
+  @DisplayName("validateShopExists: 존재하지 않는 shopId일 경우 예외 발생")
+  void 존재하지않는_shopId_예외발생() {
+    // given
+    Long invalidShopId = 999L;
+    Mockito.when(shopRepository.existsById(invalidShopId)).thenReturn(false);
+
+    // when & then
+    BusinessException exception =
+        assertThrows(BusinessException.class, () -> service.validateShopExists(invalidShopId));
+
+    assertEquals(ErrorCode.SHOP_NOT_FOUNT, exception.getErrorCode());
   }
 }

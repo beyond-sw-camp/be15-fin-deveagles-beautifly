@@ -1,5 +1,7 @@
 package com.deveagles.be15_deveagles_be.features.shops.command.application.service;
 
+import com.deveagles.be15_deveagles_be.common.exception.BusinessException;
+import com.deveagles.be15_deveagles_be.common.exception.ErrorCode;
 import com.deveagles.be15_deveagles_be.features.schedules.command.application.service.ReservationSettingInitializer;
 import com.deveagles.be15_deveagles_be.features.shops.command.application.dto.request.ShopCreateRequest;
 import com.deveagles.be15_deveagles_be.features.shops.command.application.dto.request.ValidBizNumberRequest;
@@ -60,5 +62,11 @@ public class ShopCommandServiceImpl implements ShopCommandService {
   public GetIndustryResponse getIndustry() {
 
     return GetIndustryResponse.builder().industryList(industryRepository.findAll()).build();
+  }
+
+  public void validateShopExists(Long shopId) {
+    if (!shopRepository.existsById(shopId)) {
+      throw new BusinessException(ErrorCode.SHOP_NOT_FOUNT);
+    }
   }
 }
