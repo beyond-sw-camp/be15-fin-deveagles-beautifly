@@ -26,7 +26,9 @@
         <option value="">스케줄</option>
         <option value="reservation">예약</option>
         <option value="leave">휴무</option>
-        <option value="event">일정</option>
+        <option value="plan">일정</option>
+        <option value="regular_leave">정기 휴무</option>
+        <option value="regular_plan">정기 일정</option>
       </select>
       <button class="btn btn-primary schedule-btn" @click="handleClickScheduleRegist = true">
         스케줄 등록
@@ -66,7 +68,7 @@
   import PlanDetailModal from '@/features/schedules/components/PlanDetailModal.vue';
   import ReservationDetailModal from '@/features/schedules/components/ReservationDetailModal.vue';
   import ScheduleRegistModal from '@/features/schedules/components/ScheduleRegistModal.vue';
-  import { getCalendarSchedules } from '@/features/schedules/api/schedules';
+  import { getCalendarSchedules, getRegularSchedules } from '@/features/schedules/api/schedules';
   import { useAuthStore } from '@/store/auth';
 
   const authStore = useAuthStore();
@@ -77,8 +79,9 @@
   const selectedService = ref('');
   const selectedStaff = ref('');
   const selectedType = ref('');
+  const schedules = ref([]); // 일반 일정 + 예약 + 휴무
+  const regularSchedules = ref([]); // 정기 일정 + 정기 휴무
 
-  const schedules = ref([]);
   const selectedReservation = ref(null);
   const isModalOpen = ref(false);
   const modalType = ref('');
@@ -109,12 +112,38 @@
     switch (selectedType.value) {
       case 'reservation':
         return 'RESERVATION';
-      case 'event':
-        return 'PLAN_OR_REGULAR';
+      case 'plan':
+        return 'PLAN';
       case 'leave':
-        return 'LEAVE_OR_REGULAR';
+        return 'LEAVE';
+      case 'regular_plan':
+        return 'REGULAR_PLAN';
+      case 'regular_leave':
+        return 'REGULAR_LEAVE';
       default:
         return null;
+    }
+  };
+  const fetchRegularSchedules = async () => {
+    try {
+      const { from, to } = searchParams.value;
+
+      const [regularPlan, regularLeave] = await Promise.all([
+        getRegularSchedules({
+          from: from?.split('T')[0],
+          to: to?.split('T')[0],
+          scheduleType: 'REGULAR_PLAN',
+        }),
+        getRegularSchedules({
+          from: from?.split('T')[0],
+          to: to?.split('T')[0],
+          scheduleType: 'REGULAR_LEAVE',
+        }),
+      ]);
+
+      regularSchedules.value = [...regularPlan, ...regularLeave];
+    } catch (error) {
+      console.error('정기 일정/휴무 조회 실패', error);
     }
   };
 
@@ -128,22 +157,28 @@
       if (target.scheduleType === 'RESERVATION') modalType.value = 'reservation';
       else if (target.scheduleType === 'LEAVE') modalType.value = 'leave';
       else if (target.scheduleType === 'PLAN') modalType.value = 'plan';
+      else if (target.scheduleType === 'REGULAR_PLAN') modalType.value = 'regular_plan';
+      else if (target.scheduleType === 'REGULAR_LEAVE') modalType.value = 'regular_leave';
     }
   };
 
   // 일정 조회 API 호출
   const fetchSchedules = async () => {
     try {
-      const { from, to, customerKeyword, itemKeyword, staffId, scheduleType } = searchParams.value;
+      const { from, to } = searchParams.value;
+      const scheduleType = getScheduleTypeParam();
 
       schedules.value = await getCalendarSchedules({
         from,
         to,
-        customerKeyword,
-        itemKeyword,
-        staffId,
+        customerKeyword: searchText.value,
+        itemKeyword: selectedService.value,
+        staffId: selectedStaff.value,
         scheduleType,
       });
+
+      // 항상 정기 일정/휴무도 함께 조회
+      await fetchRegularSchedules();
     } catch (err) {
       console.error('일정 조회 실패', err);
     }
@@ -159,7 +194,9 @@
       () => searchParams.value.from,
       () => searchParams.value.to,
     ],
-    fetchSchedules
+    () => {
+      fetchSchedules();
+    }
   );
 
   // 최초 로딩 시 일정 조회
@@ -168,30 +205,46 @@
     const firstDay = new Date(today.getFullYear(), today.getMonth(), 1, 0, 0, 0);
     const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59);
 
-    searchParams.value.from = formatToLocalDateTime(firstDay); // ex: "2025-07-01T00:00:00"
-    searchParams.value.to = formatToLocalDateTime(lastDay); // ex: "2025-07-31T23:59:59"
-    console.log('[params]', searchParams.value);
+    searchParams.value.from = formatToLocalDateTime(firstDay);
+    searchParams.value.to = formatToLocalDateTime(lastDay);
+
     fetchSchedules();
   });
 
-  const calendarEvents = computed(() =>
-    schedules.value.map(item => ({
+  const calendarEvents = computed(() => {
+    const normalEvents = schedules.value.map(item => ({
       id: item.id,
       title: item.title,
       start: item.startAt,
       end: item.endAt,
-      allDay: item.scheduleType === 'LEAVE',
+      allDay: item.scheduleType === 'LEAVE' || item.scheduleType === 'REGULAR_LEAVE',
       backgroundColor: item.staffColor || 'var(--color-gray-300)',
       textColor: 'var(--color-text-primary)',
-      type: item.scheduleType.toLowerCase(),
+      type: item.scheduleType.toLowerCase(), // RESERVATION → 'reservation', PLAN → 'plan' 등
       status: item.status,
       staffName: item.staffName,
       customer: item.customerName,
       service: item.items,
       memo: item.memo,
       staffColor: item.staffColor,
-    }))
-  );
+    }));
+
+    const regularEvents = regularSchedules.value.map(item => ({
+      id: item.id,
+      title: item.title,
+      start: item.startAt,
+      end: item.endAt,
+      allDay: item.scheduleType === 'REGULAR_LEAVE',
+      backgroundColor: item.staffColor || 'var(--color-gray-200)',
+      textColor: 'var(--color-text-primary)',
+      type: item.scheduleType.toLowerCase(),
+      staffName: item.staffName,
+      memo: item.memo,
+      staffColor: item.staffColor,
+    }));
+
+    return [...normalEvents, ...regularEvents];
+  });
 </script>
 
 <style scoped>

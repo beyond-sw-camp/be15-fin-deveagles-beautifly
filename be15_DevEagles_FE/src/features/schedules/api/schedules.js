@@ -22,3 +22,8 @@ export const getCalendarSchedules = async ({
 
   return response.data.data;
 };
+
+export const getRegularSchedules = async params => {
+  const response = await api.get('/schedules/calendar/regular', { params });
+  return response.data.data;
+};
