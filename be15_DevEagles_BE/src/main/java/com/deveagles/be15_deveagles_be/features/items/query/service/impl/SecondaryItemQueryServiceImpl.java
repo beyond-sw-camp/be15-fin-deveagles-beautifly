@@ -16,8 +16,14 @@ public class SecondaryItemQueryServiceImpl implements SecondaryItemQueryService 
   private final SecondaryItemRepository secondaryItemRepository;
 
   @Override
-  public List<SecondaryItemResponse> getAllSecondaryItems() {
-    List<SecondaryItem> items = secondaryItemRepository.findAllByDeletedAtIsNull();
+  public List<SecondaryItemResponse> getAllSecondaryItems(Long shopId) {
+    List<SecondaryItem> items = secondaryItemRepository.findAllByShopId(shopId);
+    return items.stream().map(SecondaryItemResponse::from).collect(Collectors.toList());
+  }
+
+  @Override
+  public List<SecondaryItemResponse> getActiveSecondaryItems(Long shopId) {
+    List<SecondaryItem> items = secondaryItemRepository.findAllByShopIdAndIsActiveTrue(shopId);
     return items.stream().map(SecondaryItemResponse::from).collect(Collectors.toList());
   }
 }

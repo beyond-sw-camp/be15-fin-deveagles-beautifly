@@ -16,8 +16,8 @@ public class PrimaryItemQueryServiceImpl implements PrimaryItemQueryService {
   private final PrimaryItemRepository primaryItemRepository;
 
   @Override
-  public List<PrimaryItemResponse> getAllPrimaryItems() {
-    List<PrimaryItem> items = primaryItemRepository.findAllByDeletedAtIsNull();
+  public List<PrimaryItemResponse> getAllPrimaryItems(Long shopId) {
+    List<PrimaryItem> items = primaryItemRepository.findAllByShopId(shopId);
     return items.stream().map(PrimaryItemResponse::from).collect(Collectors.toList());
   }
 }
