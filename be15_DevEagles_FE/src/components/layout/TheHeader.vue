@@ -204,7 +204,7 @@
   const { staffName, username, grade } = storeToRefs(authStore);
 
   const userInitial = computed(() => {
-    return staffName.value.charAt(0).toUpperCase();
+    return staffName.value ? staffName.value.charAt(0).toUpperCase() : 'U';
   });
 
   // 검색 관련

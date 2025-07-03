@@ -41,6 +41,10 @@
         type: String,
         default: '300px',
       },
+      beforeClose: {
+        type: Function,
+        default: null,
+      },
     },
     emits: ['update:modelValue', 'close'],
     computed: {
@@ -78,6 +82,14 @@
     },
     methods: {
       closeWindow() {
+        // beforeClose 콜백이 있으면 실행하고 결과에 따라 닫기 결정
+        if (this.beforeClose) {
+          const canClose = this.beforeClose();
+          if (!canClose) {
+            return; // false면 모달을 닫지 않음
+          }
+        }
+
         this.$emit('update:modelValue', false);
         this.$emit('close');
       },

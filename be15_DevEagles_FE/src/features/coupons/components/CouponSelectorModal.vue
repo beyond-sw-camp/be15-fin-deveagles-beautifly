@@ -85,10 +85,13 @@
 
 <script>
   import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
-  import { MOCK_COUPONS } from '@/constants/mockData';
+  import { createLogger } from '@/plugins/logger.js';
+  import couponsAPI from '../api/coupons.js';
   import BaseButton from '@/components/common/BaseButton.vue';
   import BaseBadge from '@/components/common/BaseBadge.vue';
   import PlusIcon from '@/components/icons/PlusIcon.vue';
+
+  const logger = createLogger('CouponSelectorModal');
 
   export default {
     name: 'CouponSelectorModal',
@@ -120,7 +123,8 @@
       // State
       const searchText = ref('');
       const localSelectedCoupons = ref([]);
-      const coupons = ref(MOCK_COUPONS);
+      const coupons = ref([]);
+      const loading = ref(false);
 
       // Computed
       const filteredCoupons = computed(() => {
@@ -239,6 +243,28 @@
         }
       };
 
+      // API Methods
+      const loadCoupons = async () => {
+        try {
+          loading.value = true;
+          logger.info('쿠폰 선택 모달에서 쿠폰 목록 로드 시작');
+
+          const response = await couponsAPI.getCoupons({
+            page: 0,
+            size: 100, // 선택 모달에서는 많은 데이터 로드
+            isActive: props.filterOptions.onlyActive ? true : undefined,
+          });
+
+          coupons.value = response.content;
+          logger.info('쿠폰 목록 로드 완료', { count: response.content.length });
+        } catch (error) {
+          logger.error('쿠폰 목록 로드 실패', error);
+          coupons.value = [];
+        } finally {
+          loading.value = false;
+        }
+      };
+
       const handleKeyDown = event => {
         if (event.key === 'Escape') {
           handleClose();
@@ -247,6 +273,7 @@
 
       onMounted(() => {
         document.addEventListener('keydown', handleKeyDown);
+        loadCoupons();
       });
 
       onUnmounted(() => {
@@ -258,6 +285,7 @@
         searchText,
         localSelectedCoupons,
         coupons,
+        loading,
 
         // Computed
         filteredCoupons,
@@ -274,6 +302,7 @@
         handleCreate,
         handleClose,
         formatDate,
+        loadCoupons,
       };
     },
   };
