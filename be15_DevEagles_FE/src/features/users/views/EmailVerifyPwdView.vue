@@ -18,6 +18,7 @@
   import { useRoute, useRouter } from 'vue-router';
   import Logo from '/src/images/logo_name_navy.png';
   import BaseButton from '@/components/common/BaseButton.vue';
+  import { verifyPwd } from '@/features/users/api/users.js';
 
   const route = useRoute();
   const router = useRouter();
@@ -27,14 +28,14 @@
   const code = route.query.code;
 
   const verifyEmail = async () => {
-    /*try {
-      await verifyEmailCode({ email, authCode: code });
+    try {
+      await verifyPwd({ email, authCode: code });
       message.value = '✅ 인증이 완료되었습니다!';
       verified.value = true;
     } catch (error) {
       console.error('인증 실패: ', error);
       message.value = '❌ 인증에 실패했습니다. 다시 시도해주세요.';
-    }*/
+    }
     verified.value = true;
   };
 

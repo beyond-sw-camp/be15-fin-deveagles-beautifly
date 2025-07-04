@@ -19,6 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 @Slf4j
@@ -34,6 +35,7 @@ public class UserCommandServiceImpl implements UserCommandService {
   private String bucket;
 
   @Override
+  @Transactional
   public Staff userRegist(UserCreateRequest request, Long shopId) {
 
     Staff staff =
@@ -46,13 +48,14 @@ public class UserCommandServiceImpl implements UserCommandService {
             .shopId(shopId)
             .phoneNumber(request.phoneNumber())
             .colorCode("#364f6b")
-            .staffStatus(StaffStatus.STAFF)
+            .staffStatus(StaffStatus.OWNER)
             .build();
 
     return userRepository.save(staff);
   }
 
   @Override
+  @Transactional
   public Boolean validCheckId(ValidCheckRequest validRequest) {
 
     Optional<Staff> findStaff = userRepository.findStaffByLoginId(validRequest.checkItem());
@@ -62,6 +65,7 @@ public class UserCommandServiceImpl implements UserCommandService {
   }
 
   @Override
+  @Transactional
   public Boolean validCheckEmail(ValidCheckRequest validRequest) {
     Optional<Staff> findStaff = userRepository.findStaffByEmail(validRequest.checkItem());
 
@@ -70,6 +74,7 @@ public class UserCommandServiceImpl implements UserCommandService {
   }
 
   @Override
+  @Transactional
   public AccountResponse getAccount(GetAccountRequest request) {
 
     Staff findStaff = findStaffByStaffId(request.staffId());
@@ -78,6 +83,7 @@ public class UserCommandServiceImpl implements UserCommandService {
   }
 
   @Override
+  @Transactional
   public AccountResponse patchAccount(PatchAccountRequest request) {
 
     Staff findStaff = findStaffByStaffId(request.staffId());
@@ -93,6 +99,7 @@ public class UserCommandServiceImpl implements UserCommandService {
   }
 
   @Override
+  @Transactional
   public ProfileResponse getProfile(CustomUser customUser) {
 
     Staff findStaff = findStaffByStaffId(customUser.getUserId());
@@ -101,6 +108,7 @@ public class UserCommandServiceImpl implements UserCommandService {
   }
 
   @Override
+  @Transactional
   public ProfileResponse patchProfile(
       Long staffId, PatchProfileRequest request, MultipartFile profile) {
 
@@ -121,6 +129,20 @@ public class UserCommandServiceImpl implements UserCommandService {
     if (!request.grade().isEmpty()) findStaff.patchGrade(request.grade());
 
     return buildProfileResponse(userRepository.save(findStaff));
+  }
+
+  @Override
+  @Transactional
+  public void patchPaassword(PatchPasswordRequest request) {
+
+    Staff staff =
+        userRepository
+            .findStaffByEmail(request.email())
+            .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+    staff.setEncodedPassword(passwordEncoder.encode(request.password()));
+
+    userRepository.save(staff);
   }
 
   private Staff findStaffByStaffId(Long staffId) {

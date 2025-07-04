@@ -2,18 +2,23 @@ package com.deveagles.be15_deveagles_be.features.auth.application.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.deveagles.be15_deveagles_be.common.exception.BusinessException;
 import com.deveagles.be15_deveagles_be.common.exception.ErrorCode;
 import com.deveagles.be15_deveagles_be.common.jwt.JwtTokenProvider;
+import com.deveagles.be15_deveagles_be.features.auth.command.application.dto.request.CheckEmailRequest;
+import com.deveagles.be15_deveagles_be.features.auth.command.application.dto.request.EmailVerifyRequest;
 import com.deveagles.be15_deveagles_be.features.auth.command.application.dto.request.LoginRequest;
 import com.deveagles.be15_deveagles_be.features.auth.command.application.dto.response.TokenResponse;
 import com.deveagles.be15_deveagles_be.features.auth.command.application.service.AuthServiceImpl;
+import com.deveagles.be15_deveagles_be.features.auth.command.application.service.MailService;
 import com.deveagles.be15_deveagles_be.features.auth.command.application.service.RefreshTokenService;
 import com.deveagles.be15_deveagles_be.features.users.command.domain.aggregate.Staff;
 import com.deveagles.be15_deveagles_be.features.users.command.repository.UserRepository;
+import jakarta.mail.MessagingException;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -45,13 +50,20 @@ public class AuthServiceImplTest {
 
   @Mock private ValueOperations<String, String> valueOperations;
 
+  @Mock private MailService mailService;
+
   private AuthServiceImpl authService;
 
   @BeforeEach
   void setUp() {
     authService =
         new AuthServiceImpl(
-            userRepository, passwordEncoder, jwtTokenProvider, refreshTokenService, redisTemplate);
+            userRepository,
+            passwordEncoder,
+            jwtTokenProvider,
+            refreshTokenService,
+            redisTemplate,
+            mailService);
   }
 
   @Test
@@ -202,5 +214,115 @@ public class AuthServiceImplTest {
     Mockito.verify(jwtTokenProvider).getRemainingExpiration(accessToken);
     Mockito.verify(valueOperations)
         .set("BL:" + accessToken, "logout", Duration.ofMillis(remainMillis));
+  }
+
+  @Test
+  @DisplayName("sendPatchPwdEmail: 이메일 전송 성공")
+  void sendPatchPwdEmail_성공() throws Exception {
+    // given
+    String email = "test@example.com";
+    String name = "홍길동";
+    CheckEmailRequest request = new CheckEmailRequest(email, name);
+
+    Mockito.when(userRepository.findStaffForGetPwd(name, email))
+        .thenReturn(Optional.of(Staff.builder().build()));
+    Mockito.when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+    Mockito.when(valueOperations.get(email)).thenReturn(null); // 중복 발송 X
+
+    // when
+    authService.sendPatchPwdEmail(request);
+
+    // then
+    Mockito.verify(mailService).sendFindPwdEmail(eq(email), anyString());
+    Mockito.verify(valueOperations).set(eq(email), anyString(), any(Duration.class));
+  }
+
+  @Test
+  @DisplayName("sendPatchPwdEmail: 유저 정보가 없으면 예외 발생")
+  void sendPatchPwdEmail_유저없음_예외() {
+    // given
+    String email = "ghost@example.com";
+    CheckEmailRequest request = new CheckEmailRequest(email, "고스트");
+
+    Mockito.when(userRepository.findStaffForGetPwd("고스트", email)).thenReturn(Optional.empty());
+
+    // when & then
+    BusinessException ex =
+        assertThrows(BusinessException.class, () -> authService.sendPatchPwdEmail(request));
+    assertEquals(ErrorCode.USER_NOT_FOUND, ex.getErrorCode());
+  }
+
+  @Test
+  @DisplayName("sendPatchPwdEmail: 이미 인증 코드가 있으면 예외 발생")
+  void sendPatchPwdEmail_중복_예외() {
+    // given
+    String email = "test@example.com";
+    CheckEmailRequest request = new CheckEmailRequest(email, "홍길동");
+
+    Mockito.when(userRepository.findStaffForGetPwd("홍길동", email))
+        .thenReturn(Optional.of(Staff.builder().build()));
+    Mockito.when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+    Mockito.when(valueOperations.get(email)).thenReturn("123456"); // 이미 있음
+
+    // when & then
+    BusinessException ex =
+        assertThrows(BusinessException.class, () -> authService.sendPatchPwdEmail(request));
+    assertEquals(ErrorCode.DUPLICATE_SEND_AUTH_EXCEPTION, ex.getErrorCode());
+  }
+
+  @Test
+  @DisplayName("sendPatchPwdEmail: 이메일 전송 실패 시 예외 발생")
+  void sendPatchPwdEmail_이메일전송실패_예외() throws Exception {
+    // given
+    String email = "fail@example.com";
+    CheckEmailRequest request = new CheckEmailRequest(email, "홍길동");
+
+    Mockito.when(userRepository.findStaffForGetPwd("홍길동", email))
+        .thenReturn(Optional.of(Staff.builder().build()));
+    Mockito.when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+    Mockito.when(valueOperations.get(email)).thenReturn(null);
+
+    Mockito.doThrow(MessagingException.class)
+        .when(mailService)
+        .sendFindPwdEmail(eq(email), anyString());
+
+    // when & then
+    BusinessException ex =
+        assertThrows(BusinessException.class, () -> authService.sendPatchPwdEmail(request));
+    assertEquals(ErrorCode.SEND_EMAIL_FAILURE_EXCEPTION, ex.getErrorCode());
+  }
+
+  @Test
+  @DisplayName("verifyAuthCode: 인증 코드 일치 시 통과")
+  void verifyAuthCode_성공() {
+    // given
+    String email = "test@example.com";
+    String authCode = "ABC123";
+    EmailVerifyRequest request = new EmailVerifyRequest(email, authCode);
+
+    Mockito.when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+    Mockito.when(valueOperations.get(email)).thenReturn(authCode);
+
+    // when
+    authService.verifyAuthCode(request);
+
+    // then
+    Mockito.verify(redisTemplate).delete(authCode);
+  }
+
+  @Test
+  @DisplayName("verifyAuthCode: 인증 코드 불일치 시 예외 발생")
+  void verifyAuthCode_불일치_예외() {
+    // given
+    String email = "test@example.com";
+    EmailVerifyRequest request = new EmailVerifyRequest(email, "XYZ999");
+
+    Mockito.when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+    Mockito.when(valueOperations.get(email)).thenReturn("ABC123");
+
+    // when & then
+    BusinessException ex =
+        assertThrows(BusinessException.class, () -> authService.verifyAuthCode(request));
+    assertEquals(ErrorCode.INVALID_AUTH_CODE, ex.getErrorCode());
   }
 }

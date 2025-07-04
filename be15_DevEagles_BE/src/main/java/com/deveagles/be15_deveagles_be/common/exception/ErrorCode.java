@@ -17,12 +17,16 @@ public enum ErrorCode implements ErrorCodeType {
   RESOURCE_NOT_FOUND("00006", "요청한 리소스를 찾을 수 없습니다", HttpStatus.NOT_FOUND),
   DUPLICATE_RESOURCE("00007", "중복된 리소스입니다", HttpStatus.CONFLICT),
   FILE_SAVE_ERROR("00008", "파일 저장에 실패했습니다", HttpStatus.INTERNAL_SERVER_ERROR),
+  SEND_EMAIL_FAILURE_EXCEPTION("00009", "이메일 전송을 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
   INTERNAL_SERVER_ERROR("00999", "서버 내부 오류가 발생했습니다", HttpStatus.INTERNAL_SERVER_ERROR),
 
   // 회원 관련 에러 (10000번대)
   USER_NAME_NOT_FOUND("11001", "존재하지 않는 ID입니다. 다시 입력해주세요.", HttpStatus.NOT_FOUND),
   USER_INVALID_PASSWORD("11002", "잘못된 비밀번호입니다.", HttpStatus.BAD_REQUEST),
   USER_NOT_FOUND("11003", "존재하지 않는 회원입니다.", HttpStatus.NOT_FOUND),
+  DUPLICATE_SEND_AUTH_EXCEPTION(
+      "11004", "이미 인증 메일을 발송했습니다. 잠시 후 다시 시도해주세요.", HttpStatus.BAD_REQUEST),
+  INVALID_AUTH_CODE("11005", "유효한 인증이 아닙니다.", HttpStatus.BAD_REQUEST),
 
   // 매장 관련 에러 (20000번대)
   SHOP_NOT_FOUNT("20001", "매장이 존재하지 않습니다.", HttpStatus.NOT_FOUND),
