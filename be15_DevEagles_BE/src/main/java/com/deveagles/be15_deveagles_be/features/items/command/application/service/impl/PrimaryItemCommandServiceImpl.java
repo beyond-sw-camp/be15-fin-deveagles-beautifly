@@ -5,10 +5,13 @@ import com.deveagles.be15_deveagles_be.common.exception.ErrorCode;
 import com.deveagles.be15_deveagles_be.features.items.command.application.dto.request.PrimaryItemRequest;
 import com.deveagles.be15_deveagles_be.features.items.command.application.service.PrimaryItemCommandService;
 import com.deveagles.be15_deveagles_be.features.items.command.domain.aggregate.PrimaryItem;
+import com.deveagles.be15_deveagles_be.features.items.command.domain.aggregate.SecondaryItem;
 import com.deveagles.be15_deveagles_be.features.items.command.domain.repository.PrimaryItemRepository;
+import com.deveagles.be15_deveagles_be.features.items.command.domain.repository.SecondaryItemRepository;
 import com.deveagles.be15_deveagles_be.features.shops.command.domain.aggregate.Shop;
 import com.deveagles.be15_deveagles_be.features.shops.command.repository.ShopRepository;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -18,6 +21,7 @@ import org.springframework.stereotype.Service;
 public class PrimaryItemCommandServiceImpl implements PrimaryItemCommandService {
 
   private final PrimaryItemRepository primaryItemRepository;
+  private final SecondaryItemRepository secondaryItemRepository;
   private final ShopRepository shopRepository;
 
   @Override
@@ -96,11 +100,22 @@ public class PrimaryItemCommandServiceImpl implements PrimaryItemCommandService 
 
   @Override
   public void deletePrimaryItem(Long id) {
+    // 1. PrimaryItem 조회
     PrimaryItem item =
         primaryItemRepository
             .findById(id)
             .orElseThrow(() -> new BusinessException(ErrorCode.PRIMARY_ITEM_NOT_FOUND));
 
+    // 2. 연관된 SecondaryItem 리스트 조회
+    List<SecondaryItem> secondaryItems = secondaryItemRepository.findByPrimaryItemId(id);
+
+    // 3. SecondaryItem soft delete
+    for (SecondaryItem secondaryItem : secondaryItems) {
+      secondaryItem.setDeletedAt();
+      secondaryItemRepository.save(secondaryItem);
+    }
+
+    // 4. PrimaryItem soft delete
     item.setDeletedAt();
     primaryItemRepository.save(item);
   }

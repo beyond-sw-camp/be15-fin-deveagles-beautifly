@@ -2,9 +2,10 @@ package com.deveagles.be15_deveagles_be.features.messages.command.application.co
 
 import com.deveagles.be15_deveagles_be.common.dto.ApiResponse;
 import com.deveagles.be15_deveagles_be.features.messages.command.application.dto.request.SmsRequest;
-import com.deveagles.be15_deveagles_be.features.messages.command.application.dto.response.SmsResponse;
+import com.deveagles.be15_deveagles_be.features.messages.command.application.dto.response.MessageSendResult;
 import com.deveagles.be15_deveagles_be.features.messages.command.application.service.MessageCommandService;
 import jakarta.validation.Valid;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -14,14 +15,16 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/v1/message")
+@RequestMapping("/message")
 public class MessageCommandController {
 
   private final MessageCommandService messageCommandService;
 
-  @PostMapping
-  public ResponseEntity<ApiResponse<SmsResponse>> sendSms(@RequestBody @Valid SmsRequest request) {
-    SmsResponse response = messageCommandService.sendSms(request);
-    return ResponseEntity.ok(ApiResponse.success(response));
+  @PostMapping("/send")
+  public ResponseEntity<ApiResponse<List<MessageSendResult>>> sendSms(
+      @RequestBody @Valid SmsRequest request) {
+
+    List<MessageSendResult> resultList = messageCommandService.sendSms(request);
+    return ResponseEntity.ok(ApiResponse.success(resultList));
   }
 }

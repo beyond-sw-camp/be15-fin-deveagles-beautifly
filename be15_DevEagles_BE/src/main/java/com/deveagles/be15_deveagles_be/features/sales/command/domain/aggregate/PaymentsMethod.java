@@ -1,6 +1,6 @@
 package com.deveagles.be15_deveagles_be.features.sales.command.domain.aggregate;
 
-public enum PaymentMethod {
+public enum PaymentsMethod {
   CARD,
   CASH,
   NAVER_PAY,

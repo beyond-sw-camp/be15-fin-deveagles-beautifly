@@ -109,9 +109,15 @@ public enum ErrorCode implements ErrorCodeType {
   SESSIONPASS_NOT_FOUND("82006", "횟수권을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
   MEMBERSHIP_EXPIRATION_PERIOD_TYPE_REQUIRED(
       "82007", "회원권 유효기간 단위를 입력해주세요.", HttpStatus.BAD_REQUEST),
-// 매출 관련 에러 (90000번대)
 
-;
+  // 매출 관련 에러 (90000번대)
+
+  SALES_RETAILPRICE_REQUIRED("90001", "매출정가를 입력해주세요.", HttpStatus.BAD_REQUEST),
+  SALES_TOTALAMOUNT_REQUIRED("90002", "결제금액을 입력해주세요.", HttpStatus.BAD_REQUEST),
+  SALES_SALESDATE_REQUIRED("90003", "매출일시를 입력해수제요.", HttpStatus.BAD_REQUEST),
+  SALES_PAYMENTMETHOD_REQUIRED("90004", "결제수단을 입력해주세요.", HttpStatus.BAD_REQUEST),
+  SALES_PAYMENTSAMOUNT_REQUIRED("90005", "결제금액을 입력해주세요.", HttpStatus.BAD_REQUEST),
+  ;
 
   private final String code;
   private final String message;

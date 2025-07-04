@@ -463,4 +463,51 @@ class CustomerQueryServiceImplTest {
         .should()
         .findByPhoneNumberAndShopIdAndDeletedAtIsNull(phoneNumber, shopId);
   }
+
+  @Test
+  @DisplayName("고객 ID 리스트로 전화번호 조회 성공")
+  void getCustomerPhoneNumbers_Success() {
+    // given
+    List<Long> customerIds = List.of(1L, 2L);
+    Customer customer1 = createTestCustomer(); // id = 1L, phone = 01012345678
+    Customer customer2 =
+        Customer.builder()
+            .id(2L)
+            .shopId(1L)
+            .customerName("김영희")
+            .phoneNumber("01098765432")
+            .createdAt(LocalDateTime.now())
+            .modifiedAt(LocalDateTime.now())
+            .build();
+
+    List<Customer> customers = List.of(customer1, customer2);
+
+    given(customerJpaRepository.findAllById(customerIds)).willReturn(customers);
+
+    // when
+    List<String> phoneNumbers = customerQueryService.getCustomerPhoneNumbers(customerIds);
+
+    // then
+    assertThat(phoneNumbers).containsExactlyInAnyOrder("01012345678", "01098765432");
+
+    then(customerJpaRepository).should().findAllById(customerIds);
+  }
+
+  @Test
+  @DisplayName("고객 ID 리스트로 전화번호 조회 실패 - 일부 고객 없음")
+  void getCustomerPhoneNumbers_Failure_CustomerNotFound() {
+    // given
+    List<Long> customerIds = List.of(1L, 2L);
+    Customer customer1 = createTestCustomer(); // id = 1L
+    List<Customer> customers = List.of(customer1); // 1명만 반환
+
+    given(customerJpaRepository.findAllById(customerIds)).willReturn(customers);
+
+    // when & then
+    assertThatThrownBy(() -> customerQueryService.getCustomerPhoneNumbers(customerIds))
+        .isInstanceOf(BusinessException.class)
+        .hasMessageContaining("고객을 찾을 수 없습니다");
+
+    then(customerJpaRepository).should().findAllById(customerIds);
+  }
 }

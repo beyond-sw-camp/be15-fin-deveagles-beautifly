@@ -8,9 +8,12 @@ import com.deveagles.be15_deveagles_be.common.exception.ErrorCode;
 import com.deveagles.be15_deveagles_be.features.items.command.application.dto.request.PrimaryItemRequest;
 import com.deveagles.be15_deveagles_be.features.items.command.domain.aggregate.Category;
 import com.deveagles.be15_deveagles_be.features.items.command.domain.aggregate.PrimaryItem;
+import com.deveagles.be15_deveagles_be.features.items.command.domain.aggregate.SecondaryItem;
 import com.deveagles.be15_deveagles_be.features.items.command.domain.repository.PrimaryItemRepository;
+import com.deveagles.be15_deveagles_be.features.items.command.domain.repository.SecondaryItemRepository;
 import com.deveagles.be15_deveagles_be.features.shops.command.domain.aggregate.Shop;
 import com.deveagles.be15_deveagles_be.features.shops.command.repository.ShopRepository;
+import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -20,14 +23,17 @@ class PrimaryItemCommandServiceImplTest {
 
   private PrimaryItemRepository primaryItemRepository;
   private ShopRepository shopRepository;
+  private SecondaryItemRepository secondaryItemRepository;
   private PrimaryItemCommandServiceImpl primaryItemCommandService;
 
   @BeforeEach
   void setUp() {
     primaryItemRepository = mock(PrimaryItemRepository.class);
+    secondaryItemRepository = mock(SecondaryItemRepository.class);
     shopRepository = mock(ShopRepository.class);
     primaryItemCommandService =
-        new PrimaryItemCommandServiceImpl(primaryItemRepository, shopRepository);
+        new PrimaryItemCommandServiceImpl(
+            primaryItemRepository, secondaryItemRepository, shopRepository);
   }
 
   @Test
@@ -138,9 +144,11 @@ class PrimaryItemCommandServiceImplTest {
   }
 
   @Test
-  @DisplayName("성공: 1차 상품 삭제 수행")
+  @DisplayName("성공: 1차 상품 삭제 수행 (2차 상품도 함께 soft delete)")
   void deletePrimaryItem_success() {
     Long id = 1L;
+
+    // given - PrimaryItem
     PrimaryItem item =
         PrimaryItem.builder()
             .primaryItemId(id)
@@ -148,12 +156,36 @@ class PrimaryItemCommandServiceImplTest {
             .category(Category.SERVICE)
             .build();
 
+    // given - SecondaryItems
+    SecondaryItem secondary1 =
+        SecondaryItem.builder()
+            .secondaryItemId(101L)
+            .primaryItemId(id)
+            .secondaryItemName("남성컷")
+            .build();
+    SecondaryItem secondary2 =
+        SecondaryItem.builder()
+            .secondaryItemId(102L)
+            .primaryItemId(id)
+            .secondaryItemName("여성컷")
+            .build();
+
+    List<SecondaryItem> secondaryItems = List.of(secondary1, secondary2);
+
+    // when
     when(primaryItemRepository.findById(id)).thenReturn(Optional.of(item));
+    when(secondaryItemRepository.findByPrimaryItemId(id)).thenReturn(secondaryItems);
 
     primaryItemCommandService.deletePrimaryItem(id);
 
+    // then
     assertNotNull(item.getDeletedAt());
+    assertNotNull(secondary1.getDeletedAt());
+    assertNotNull(secondary2.getDeletedAt());
+
     verify(primaryItemRepository).save(item);
+    verify(secondaryItemRepository).save(secondary1);
+    verify(secondaryItemRepository).save(secondary2);
   }
 
   @Test

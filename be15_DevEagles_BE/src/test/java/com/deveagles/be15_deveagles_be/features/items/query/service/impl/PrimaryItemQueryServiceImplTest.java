@@ -29,24 +29,26 @@ class PrimaryItemQueryServiceImplTest {
   @Test
   void getAllPrimaryItems_shouldReturnMappedResponses() {
     // given
+    Long shopId = 1L;
+
     PrimaryItem item1 =
         PrimaryItem.builder()
             .primaryItemId(1L)
             .primaryItemName("헤어컷")
-            .category(Category.valueOf("SERVICE"))
+            .category(Category.SERVICE)
             .build();
 
     PrimaryItem item2 =
         PrimaryItem.builder()
             .primaryItemId(2L)
             .primaryItemName("샴푸")
-            .category(Category.valueOf("PRODUCT"))
+            .category(Category.PRODUCT)
             .build();
 
-    when(primaryItemRepository.findAllByDeletedAtIsNull()).thenReturn(Arrays.asList(item1, item2));
+    when(primaryItemRepository.findAllByShopId(shopId)).thenReturn(Arrays.asList(item1, item2));
 
     // when
-    List<PrimaryItemResponse> result = primaryItemQueryService.getAllPrimaryItems();
+    List<PrimaryItemResponse> result = primaryItemQueryService.getAllPrimaryItems(shopId);
 
     // then
     assertThat(result).hasSize(2);
@@ -54,6 +56,6 @@ class PrimaryItemQueryServiceImplTest {
     assertThat(result.get(0).getPrimaryItemName()).isEqualTo("헤어컷");
     assertThat(result.get(0).getCategory()).isEqualTo(Category.SERVICE);
 
-    verify(primaryItemRepository, times(1)).findAllByDeletedAtIsNull();
+    verify(primaryItemRepository, times(1)).findAllByShopId(shopId);
   }
 }

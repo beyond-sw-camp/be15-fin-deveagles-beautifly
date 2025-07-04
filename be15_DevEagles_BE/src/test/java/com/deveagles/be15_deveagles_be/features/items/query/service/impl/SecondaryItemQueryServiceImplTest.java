@@ -28,6 +28,8 @@ class SecondaryItemQueryServiceImplTest {
   @Test
   void getAllSecondaryItems_shouldReturnMappedResponses() {
     // given
+    Long shopId = 1L;
+
     SecondaryItem item1 =
         SecondaryItem.builder()
             .secondaryItemId(1L)
@@ -48,11 +50,10 @@ class SecondaryItemQueryServiceImplTest {
             .isActive(false)
             .build();
 
-    when(secondaryItemRepository.findAllByDeletedAtIsNull())
-        .thenReturn(Arrays.asList(item1, item2));
+    when(secondaryItemRepository.findAllByShopId(shopId)).thenReturn(Arrays.asList(item1, item2));
 
     // when
-    List<SecondaryItemResponse> result = secondaryItemQueryService.getAllSecondaryItems();
+    List<SecondaryItemResponse> result = secondaryItemQueryService.getAllSecondaryItems(shopId);
 
     // then
     assertThat(result).hasSize(2);
@@ -69,6 +70,6 @@ class SecondaryItemQueryServiceImplTest {
     assertThat(result.get(1).getTimeTaken()).isEqualTo(120);
     assertThat(result.get(1).isActive()).isFalse();
 
-    verify(secondaryItemRepository, times(1)).findAllByDeletedAtIsNull();
+    verify(secondaryItemRepository, times(1)).findAllByShopId(shopId);
   }
 }
