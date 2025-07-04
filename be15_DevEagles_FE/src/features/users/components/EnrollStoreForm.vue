@@ -53,6 +53,7 @@
       v-model="form.phoneNumber"
       placeholder="매장 전화번호를 입력해주세요."
       :error="errors.phoneNumber"
+      @blur="phoneNumberChecked"
       @focus="clearError('phoneNumber')"
     />
 
@@ -117,6 +118,7 @@
 
   const nameCheckPassed = ref(false);
   const industryCheckPassed = ref(false);
+  const phoneCheckPassed = ref(false);
   const bizCheckPassed = ref(false);
   const addressCheckPassed = ref(false);
   const detailAddressCheckPassed = ref(false);
@@ -166,6 +168,22 @@
     }
   };
 
+  const phoneNumberChecked = () => {
+    const phone = form.value.phoneNumber?.trim();
+    if (phone) {
+      if (!/^[0-9]+$/.test(phone)) {
+        errors.value.phoneNumber = '숫자만 입력해주세요.';
+        phoneCheckPassed.value = false;
+      } else if (form.value.phoneNumber.length > 12) {
+        errors.value.phoneNumber = '최대 12자리까지 입력 가능합니다.';
+        phoneCheckPassed.value = false;
+      } else {
+        errors.value.phoneNumber = '';
+        phoneCheckPassed.value = true;
+      }
+    }
+  };
+
   const bizNumberChecked = async () => {
     const bizNum = form.value.businessNumber?.trim();
     if (bizNum) {
@@ -177,7 +195,6 @@
       try {
         const res = await validBizNumber({ bizNum });
         if (res.data.data === true) {
-          errors.value.businessNumber = '사용 가능한 등록번호입니다.';
           bizCheckPassed.value = true;
         } else {
           errors.value.businessNumber = '이미 사용 중인 등록번호입니다.';
@@ -208,11 +225,11 @@
       if (!onlyNumberPattern.test(form.value.phoneNumber)) {
         errors.value.phoneNumber = '숫자만 입력해주세요.';
         valid = false;
-      }
-
-      if (!form.value.phoneNumber.length < 13) {
+      } else if (form.value.phoneNumber.length > 12) {
         errors.value.phoneNumber = '최대 12자리까지 입력 가능합니다.';
         valid = false;
+      } else {
+        errors.value.phoneNumber = ''; // 오류 없을 경우 초기화
       }
     }
 
