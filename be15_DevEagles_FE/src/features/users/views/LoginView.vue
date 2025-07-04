@@ -22,7 +22,7 @@
       />
 
       <div class="login-links">
-        <a href="#" @click.prevent="showFindPwdModal = true">비밀번호 찾기</a>
+        <a href="#" @click.prevent="showFindPwdModal = true">비밀번호 초기화</a>
       </div>
 
       <div class="login-buttons">
@@ -32,21 +32,7 @@
     </form>
   </div>
 
-  <BaseModal v-model="showVerifyModal" title="미인증 회원">
-    <p class="modal-text">
-      인증되지 않은 회원입니다.<br />
-      이메일을 인증하시겠습니까?
-    </p>
-
-    <template #footer>
-      <div class="modal-footer-buttons">
-        <BaseButton type="error" @click="showVerifyModal = false">취소</BaseButton>
-        <BaseButton type="primary" @click="goVerifyEmail">확인</BaseButton>
-      </div>
-    </template>
-  </BaseModal>
-
-  <!-- 비밀번호 찾기 -->
+  <!-- 비밀번호 초기화 -->
   <FindPwdModal v-model="showFindPwdModal" @submit="onFindPwdSubmit" />
   <FindPwdResModal v-model:show="showFindPwdResModal" :found-user-pwd="foundUserPwd" />
 
@@ -56,12 +42,10 @@
   import { useRouter } from 'vue-router';
   import { onMounted, ref } from 'vue';
   import BaseForm from '@/components/common/BaseForm.vue';
-  import BaseButton from '@/components/common/BaseButton.vue';
-  import BaseModal from '@/components/common/BaseModal.vue';
   import Logo from '@/images/logo_name_navy.png';
   import FindPwdModal from '@/features/users/components/FindPwdModal.vue';
   import FindPwdResModal from '@/features/users/components/FindPwdResModal.vue';
-  import { login } from '@/features/users/api/users.js';
+  import { login, checkEmail } from '@/features/users/api/users.js';
   import BaseToast from '@/components/common/BaseToast.vue';
   import { useAuthStore } from '@/store/auth.js';
 
@@ -83,15 +67,31 @@
   };
 
   const shake = ref(false);
-  const showVerifyModal = ref(false);
   const showFindPwdModal = ref(false);
   const showFindPwdResModal = ref(false);
   const foundUserPwd = ref();
 
-  const onFindPwdSubmit = ({ userName, email }) => {
-    showFindPwdModal.value = false;
-    foundUserPwd.value = true;
-    showFindPwdResModal.value = true;
+  const onFindPwdSubmit = async ({ staffName, email }) => {
+    try {
+      await checkEmail({ staffName, email });
+      showFindPwdModal.value = false;
+      foundUserPwd.value = true;
+      showFindPwdResModal.value = true;
+    } catch (err) {
+      const res = err.response?.data;
+      if (!res) {
+        toastRef.value?.error?.('존재하지 않는 회원입니다.');
+        return;
+      }
+      if (!res.message) {
+        toastRef.value?.error?.('존재하지 않는 회원입니다.');
+      } else {
+        toastRef.value?.error?.(res.message);
+      }
+    } finally {
+      staffName.value = null;
+      email.value = null;
+    }
   };
 
   const fetchUser = async () => {
@@ -123,11 +123,6 @@
         }
       }
     }
-  };
-
-  const goVerifyEmail = () => {
-    showVerifyModal.value = false;
-    // 회원 이메일 인증 api 호출
   };
 
   const goToSignup = () => {

@@ -2,11 +2,11 @@ import api from '@/plugins/axios.js';
 import { useAuthStore } from '@/store/auth.js';
 
 const exceptToken = [
-  { method: 'post', url: '/user' },
-  { method: 'post', url: '/user/valid-id' },
-  { method: 'post', url: '/user/valid-email' },
-  { method: 'post', url: '/shop/valid-biz' },
-  { method: 'get', url: '/shop/get-industry' },
+  { method: 'post', url: '/users' },
+  { method: 'post', url: '/users/valid-id' },
+  { method: 'post', url: '/users/valid-email' },
+  { method: 'post', url: '/shops/valid-biz' },
+  { method: 'get', url: '/shops/get-industry' },
   { method: 'post', url: '/auth/login' },
 ];
 
@@ -33,20 +33,26 @@ export const login = params => api.post(`/auth/login`, params);
 
 export const logout = () => api.post(`/auth/logout`);
 
-export const signUp = params => api.post(`/user`, params);
+export const checkEmail = params => api.post(`/auth/check-email`, params);
 
-export const validId = params => api.post(`/user/valid-id`, params);
+export const verifyPwd = params => api.post(`/auth/verify`, params);
 
-export const validEmail = params => api.post(`/user/valid-email`, params);
+export const patchPwd = params => api.patch(`/users/password`, params);
 
-export const getAccount = params => api.post(`/user/account`, params);
+export const signUp = params => api.post(`/users`, params);
 
-export const patchAccount = params => api.patch(`/user/account`, params);
+export const validId = params => api.post(`/users/valid-id`, params);
 
-export const getProfile = () => api.get(`/user/profile`);
+export const validEmail = params => api.post(`/users/valid-email`, params);
 
-export const patchProfile = formData => api.patch(`/user/profile`, formData);
+export const getAccount = params => api.post(`/users/account`, params);
 
-export const validBizNumber = params => api.post(`/shop/valid-biz`, params);
+export const patchAccount = params => api.patch(`/users/account`, params);
 
-export const getIndustry = () => api.get(`/shop/get-industry`);
+export const getProfile = () => api.get(`/users/profile`);
+
+export const patchProfile = formData => api.patch(`/users/profile`, formData);
+
+export const validBizNumber = params => api.post(`/shops/valid-biz`, params);
+
+export const getIndustry = () => api.get(`/shops/get-industry`);
