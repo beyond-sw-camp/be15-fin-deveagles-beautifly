@@ -45,5 +45,7 @@ public interface CustomerQueryService {
 
   void reindexAllCustomers(Long shopId);
 
+  List<String> getCustomerPhoneNumbers(List<Long> customerIds);
+
   Optional<CustomerIdResponse> findCustomerIdByPhoneNumber(String phoneNumber, Long shopId);
 }

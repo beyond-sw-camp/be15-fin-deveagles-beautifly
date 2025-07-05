@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "2차 상품", description = "2차 상품 API")
 @RestController
-@RequestMapping("/api/v1/secondary-items")
+@RequestMapping("/secondary-items")
 @RequiredArgsConstructor
 @Validated
 @Slf4j

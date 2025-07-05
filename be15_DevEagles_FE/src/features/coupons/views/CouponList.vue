@@ -88,8 +88,17 @@
     />
 
     <!-- Create Window -->
-    <BaseWindow v-model="showModal" title="쿠폰 생성" :min-height="'650px'">
-      <CouponForm @save="handleSaveCoupon" @cancel="closeModal" />
+    <BaseWindow
+      v-model="showModal"
+      title="쿠폰 생성"
+      :min-height="'650px'"
+      :before-close="checkBeforeClose"
+    >
+      <CouponForm
+        @save="handleSaveCoupon"
+        @cancel="closeModal"
+        @set-before-close="setBeforeCloseCallback"
+      />
     </BaseWindow>
 
     <!-- Detail Modal -->
@@ -116,10 +125,10 @@
 </template>
 
 <script>
-  import { ref, computed } from 'vue';
-  import { useListManagement } from '@/composables/useListManagement';
-  import { MESSAGES } from '@/constants/messages';
-  import { MOCK_COUPONS } from '@/constants/mockData';
+  import { ref, computed, onMounted } from 'vue';
+  import { useToast } from '@/composables/useToast';
+  import { createLogger } from '@/plugins/logger.js';
+  import couponsAPI from '../api/coupons.js';
   import BaseButton from '@/components/common/BaseButton.vue';
   import BaseWindow from '@/components/common/BaseWindow.vue';
   import BasePopover from '@/components/common/BasePopover.vue';
@@ -131,6 +140,8 @@
   import TrashIcon from '@/components/icons/TrashIcon.vue';
   import CouponForm from '../components/CouponForm.vue';
   import CouponDetailModal from '../components/CouponDetailModal.vue';
+
+  const logger = createLogger('CouponList');
 
   export default {
     name: 'CouponList',
@@ -149,35 +160,26 @@
       CouponDetailModal,
     },
     setup() {
-      // List management composable
-      const {
-        items: coupons,
-        currentPage,
-        loading,
-        showDeleteConfirm,
-        selectedItem: selectedCouponForDelete,
-        triggerElement,
-        totalItems,
-        totalPages,
-        itemsPerPage,
-        paginatedItems: paginatedCoupons,
-        toggleItemStatus,
-        deleteItem,
-        confirmDelete,
-        cancelDelete,
-        handlePageChange,
-        handleItemsPerPageChange,
-        addItem,
-      } = useListManagement({
-        itemName: MESSAGES.COUPON.ITEM_NAME,
-        initialItems: MOCK_COUPONS,
-        itemsPerPage: 10,
-      });
+      // Toast composable
+      const { showToast } = useToast();
 
       // Local state
+      const coupons = ref([]);
+      const paginatedCoupons = ref([]);
+      const currentPage = ref(0);
+      const totalPages = ref(0);
+      const totalItems = ref(0);
+      const itemsPerPage = ref(10);
+      const loading = ref(false);
       const showModal = ref(false);
       const showDetailModal = ref(false);
       const selectedCouponForDetail = ref(null);
+      const showDeleteConfirm = ref(false);
+      const selectedCouponForDelete = ref(null);
+      const triggerElement = ref(null);
+      const beforeCloseCallback = ref(null);
+
+      // 모달 변경사항 체크는 BaseWindow에서 직접 처리
 
       // Table columns
       const tableColumns = [
@@ -192,26 +194,169 @@
       // Computed
       const deleteConfirmMessage = computed(() =>
         selectedCouponForDelete.value
-          ? MESSAGES.COUPON.DELETE_CONFIRM(selectedCouponForDelete.value.name)
+          ? `쿠폰 '${selectedCouponForDelete.value.name}'을(를) 삭제하시겠습니까?`
           : ''
       );
 
-      // Methods
+      // API Methods
+      const loadCoupons = async (searchParams = {}) => {
+        try {
+          loading.value = true;
+          logger.info('쿠폰 목록 로드 시작', searchParams);
+
+          const response = await couponsAPI.getCoupons({
+            page: currentPage.value,
+            size: itemsPerPage.value,
+            ...searchParams,
+          });
+
+          // API 응답에서 data 추출
+          const data = response.data || response;
+
+          coupons.value = data.content || [];
+          paginatedCoupons.value = data.content || [];
+          totalPages.value = data.totalPages || 0;
+          totalItems.value = data.totalElements || 0;
+
+          logger.info('쿠폰 목록 로드 완료', {
+            totalItems: totalItems.value,
+            totalPages: totalPages.value,
+          });
+        } catch (error) {
+          logger.error('쿠폰 목록 로드 실패', error);
+          showToast(error.message || '쿠폰 목록을 불러오는 데 실패했습니다.', 'error');
+          coupons.value = [];
+          paginatedCoupons.value = [];
+        } finally {
+          loading.value = false;
+        }
+      };
+
+      const createCoupon = async couponData => {
+        try {
+          logger.info('쿠폰 생성 시작', couponData);
+
+          const newCoupon = await couponsAPI.createCoupon(couponData);
+
+          logger.info('쿠폰 생성 완료', newCoupon);
+          showToast('쿠폰이 성공적으로 생성되었습니다.', 'success');
+
+          await loadCoupons(); // 목록 새로고침
+        } catch (error) {
+          logger.error('쿠폰 생성 실패', error);
+          showToast(error.message || '쿠폰 생성에 실패했습니다.', 'error');
+          throw error;
+        }
+      };
+
+      const deleteCouponById = async id => {
+        try {
+          logger.info('쿠폰 삭제 시작', { id });
+
+          await couponsAPI.deleteCoupon(id);
+
+          logger.info('쿠폰 삭제 완료', { id });
+          showToast('쿠폰이 삭제되었습니다.', 'success');
+
+          await loadCoupons(); // 목록 새로고침
+        } catch (error) {
+          logger.error('쿠폰 삭제 실패', error);
+          showToast(error.message || '쿠폰 삭제에 실패했습니다.', 'error');
+        }
+      };
+
+      const toggleCouponStatusById = async coupon => {
+        try {
+          logger.info('쿠폰 상태 토글 시작', { id: coupon.id, currentStatus: coupon.isActive });
+
+          const updatedCoupon = await couponsAPI.toggleCouponStatus(coupon.id);
+
+          // 로컬 상태 업데이트
+          const index = paginatedCoupons.value.findIndex(c => c.id === coupon.id);
+          if (index !== -1) {
+            paginatedCoupons.value[index] = updatedCoupon;
+          }
+
+          logger.info('쿠폰 상태 토글 완료', { id: coupon.id, newStatus: updatedCoupon.isActive });
+          showToast(
+            `쿠폰이 ${updatedCoupon.isActive ? '활성화' : '비활성화'}되었습니다.`,
+            'success'
+          );
+        } catch (error) {
+          logger.error('쿠폰 상태 토글 실패', error);
+          showToast(error.message || '쿠폰 상태 변경에 실패했습니다.', 'error');
+
+          // 실패 시 원래 상태로 되돌리기
+          coupon.isActive = !coupon.isActive;
+        }
+      };
+
+      // Event Handlers
       const openCreateModal = () => {
+        beforeCloseCallback.value = null; // 콜백 초기화
         showModal.value = true;
       };
 
       const closeModal = () => {
+        beforeCloseCallback.value = null; // 콜백 초기화
         showModal.value = false;
       };
 
-      const handleSaveCoupon = couponData => {
-        addItem(couponData);
-        closeModal();
+      const setBeforeCloseCallback = callback => {
+        beforeCloseCallback.value = callback;
       };
 
-      const deleteCoupon = (coupon, event) => deleteItem(coupon, event);
-      const toggleCouponStatus = coupon => toggleItemStatus(coupon);
+      const checkBeforeClose = () => {
+        if (beforeCloseCallback.value) {
+          return beforeCloseCallback.value();
+        }
+        return true; // 콜백이 없으면 항상 닫기 허용
+      };
+
+      const handleSaveCoupon = async couponData => {
+        try {
+          await createCoupon(couponData);
+          closeModal();
+        } catch (error) {
+          // 에러는 createCoupon에서 처리됨
+        }
+      };
+
+      const deleteCoupon = (coupon, event) => {
+        selectedCouponForDelete.value = coupon;
+        triggerElement.value = event.currentTarget;
+        showDeleteConfirm.value = true;
+      };
+
+      const confirmDelete = async () => {
+        if (selectedCouponForDelete.value) {
+          await deleteCouponById(selectedCouponForDelete.value.id);
+        }
+        showDeleteConfirm.value = false;
+        selectedCouponForDelete.value = null;
+        triggerElement.value = null;
+      };
+
+      const cancelDelete = () => {
+        showDeleteConfirm.value = false;
+        selectedCouponForDelete.value = null;
+        triggerElement.value = null;
+      };
+
+      const toggleCouponStatus = coupon => {
+        toggleCouponStatusById(coupon);
+      };
+
+      const handlePageChange = page => {
+        currentPage.value = page;
+        loadCoupons();
+      };
+
+      const handleItemsPerPageChange = size => {
+        itemsPerPage.value = size;
+        currentPage.value = 0; // 첫 페이지로 리셋
+        loadCoupons();
+      };
 
       // Detail modal methods
       const openDetailModal = coupon => {
@@ -219,10 +364,14 @@
         showDetailModal.value = true;
       };
 
-      // Row click handler
-      const handleRowClick = (item, event) => {
+      const handleRowClick = item => {
         openDetailModal(item);
       };
+
+      // 초기 데이터 로드
+      onMounted(() => {
+        loadCoupons();
+      });
 
       return {
         // State
@@ -248,6 +397,8 @@
         // Methods
         openCreateModal,
         closeModal,
+        setBeforeCloseCallback,
+        checkBeforeClose,
         handleSaveCoupon,
         deleteCoupon,
         confirmDelete,
@@ -257,6 +408,7 @@
         handleItemsPerPageChange,
         openDetailModal,
         handleRowClick,
+        loadCoupons,
       };
     },
   };

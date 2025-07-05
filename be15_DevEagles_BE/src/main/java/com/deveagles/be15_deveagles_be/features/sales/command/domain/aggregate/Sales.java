@@ -26,7 +26,7 @@ public class Sales {
   @Column(name = "shop_id", nullable = false)
   private Long shopId;
 
-  @Column(name = "reservation_id", nullable = false)
+  @Column(name = "reservation_id")
   private Long reservationId;
 
   @Column(name = "discount_rate")

@@ -3,10 +3,10 @@ import { useAuthStore } from '@/store/auth.js';
 
 const exceptToken = [
   { method: 'post', url: '/users' },
-  { method: 'post', url: '/valid-id' },
-  { method: 'post', url: '/valid-email' },
-  { method: 'post', url: '/valid-biz' },
-  { method: 'get', url: '/get-industry' },
+  { method: 'post', url: '/users/valid-id' },
+  { method: 'post', url: '/users/valid-email' },
+  { method: 'post', url: '/shops/valid-biz' },
+  { method: 'get', url: '/shops/get-industry' },
   { method: 'post', url: '/auth/login' },
 ];
 
@@ -29,21 +29,30 @@ api.interceptors.request.use(
     return Promise.reject(error);
   }
 );
+export const login = params => api.post(`/auth/login`, params);
+
+export const logout = () => api.post(`/auth/logout`);
+
+export const checkEmail = params => api.post(`/auth/check-email`, params);
+
+export const verifyPwd = params => api.post(`/auth/verify`, params);
+
+export const patchPwd = params => api.patch(`/users/password`, params);
 
 export const signUp = params => api.post(`/users`, params);
 
-export const validId = params => api.post(`/valid-id`, params);
+export const validId = params => api.post(`/users/valid-id`, params);
 
-export const validEmail = params => api.post(`/valid-email`, params);
+export const validEmail = params => api.post(`/users/valid-email`, params);
 
-export const validBizNumber = params => api.post(`/valid-biz`, params);
+export const getAccount = params => api.post(`/users/account`, params);
 
-export const getIndustry = () => api.get(`/get-industry`);
+export const patchAccount = params => api.patch(`/users/account`, params);
 
-export const login = params => api.post(`/auth/login`, params);
+export const getProfile = () => api.get(`/users/profile`);
 
-export const getAccount = params => api.post(`/account`, params);
+export const patchProfile = formData => api.patch(`/users/profile`, formData);
 
-export const patchAccount = params => api.patch(`/account`, params);
+export const validBizNumber = params => api.post(`/shops/valid-biz`, params);
 
-export const logout = () => api.post(`/auth/logout`);
+export const getIndustry = () => api.get(`/shops/get-industry`);

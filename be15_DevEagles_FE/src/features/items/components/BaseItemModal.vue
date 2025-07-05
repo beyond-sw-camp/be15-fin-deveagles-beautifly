@@ -96,18 +96,4 @@
     padding: 16px 24px;
     border-top: 1px solid #eee;
   }
-  .footer-left,
-  .footer-right {
-    display: flex;
-    gap: 8px;
-  }
-
-  .cancel,
-  .submit {
-    padding: 8px 16px;
-    background: white;
-    border: 1px solid #aaa;
-    border-radius: 4px;
-    cursor: pointer;
-  }
 </style>

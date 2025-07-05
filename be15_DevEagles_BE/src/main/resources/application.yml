@@ -51,6 +51,25 @@ spring:
       host: localhost
       port: 6379
 
+  # mail
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${EMAIL_ADDRESS}
+    password: ${EMAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
+      auth-code-expiration-millis: 1800000
+    pwd-url: ${PWD-URL}
+
 # 서버 설정
 server:
   port: ${SERVER_PORT:8080}
@@ -59,6 +78,8 @@ server:
       enabled: false
     include-stacktrace: never
     include-message: never
+  servlet:
+    context-path: /api/v1
 
 # 액추에이터 설정 (운영 모니터링 : Cloudwatch 연결시 스프링 프로필 prod로 변경할 시 적용됨)
 management:
@@ -112,6 +133,18 @@ jwt:
   expiration: 1800000
   refresh-expiration: 604800000
 
+# AWS 설정
+cloud:
+  aws:
+    s3:
+      bucket: ${BUCKET}
+    region:
+      static: ap-northeast-2
+    stack:
+      auto: false
+    credentials:
+      access-key: ${ACCESSKEY}
+      secret-key: ${SECRETKEY}
 ---
 # 개발 환경 설정
 spring:
@@ -140,6 +173,11 @@ spring:
     console:
       enabled: true
       path: /h2-console
+
+
+coolsms:
+  apiKey: ${SMS_API_KEY}
+  apiSecret: ${SMS_SECRET_API_KEY}
 
 # 개발환경 로그 레벨
 logging:
@@ -240,3 +278,4 @@ jwt:
   secret: ${JWT_SECRET}
   expiration: 1800000
   refresh-expiration: 604800000
+

@@ -2,15 +2,19 @@ package com.deveagles.be15_deveagles_be.features.users.command.application.servi
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.deveagles.be15_deveagles_be.common.exception.BusinessException;
 import com.deveagles.be15_deveagles_be.common.exception.ErrorCode;
-import com.deveagles.be15_deveagles_be.features.users.command.application.dto.request.GetAccountRequest;
-import com.deveagles.be15_deveagles_be.features.users.command.application.dto.request.PatchAccountRequest;
-import com.deveagles.be15_deveagles_be.features.users.command.application.dto.request.UserCreateRequest;
-import com.deveagles.be15_deveagles_be.features.users.command.application.dto.request.ValidCheckRequest;
+import com.deveagles.be15_deveagles_be.features.auth.command.application.model.CustomUser;
+import com.deveagles.be15_deveagles_be.features.users.command.application.dto.request.*;
 import com.deveagles.be15_deveagles_be.features.users.command.application.dto.response.AccountResponse;
+import com.deveagles.be15_deveagles_be.features.users.command.application.dto.response.ProfileResponse;
 import com.deveagles.be15_deveagles_be.features.users.command.domain.aggregate.Staff;
+import com.deveagles.be15_deveagles_be.features.users.command.domain.aggregate.StaffStatus;
 import com.deveagles.be15_deveagles_be.features.users.command.repository.UserRepository;
+import java.net.URL;
+import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -19,8 +23,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.modelmapper.ModelMapper;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.web.multipart.MultipartFile;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("UserCommandService 단위 테스트")
@@ -28,15 +34,20 @@ public class UserCommandServiceImplTest {
 
   @Mock private UserRepository userRepository;
 
-  @Mock private ModelMapper modelMapper;
-
   @Mock private PasswordEncoder passwordEncoder;
+
+  @Mock private AmazonS3 amazonS3;
+
+  @Mock private MultipartFile multipartFile;
+
+  private String bucket = "test-bucket";
 
   private UserCommandServiceImpl service;
 
   @BeforeEach
   void setUp() {
-    service = new UserCommandServiceImpl(userRepository, modelMapper, passwordEncoder);
+    service = new UserCommandServiceImpl(userRepository, passwordEncoder, amazonS3);
+    ReflectionTestUtils.setField(service, "bucket", bucket);
   }
 
   @Test
@@ -50,7 +61,7 @@ public class UserCommandServiceImplTest {
     Mockito.when(userRepository.findStaffByLoginId(loginId)).thenReturn(Optional.of(existingStaff));
 
     UserCommandServiceImpl service =
-        new UserCommandServiceImpl(userRepository, modelMapper, passwordEncoder);
+        new UserCommandServiceImpl(userRepository, passwordEncoder, amazonS3);
 
     // when
     Boolean result = service.validCheckId(request);
@@ -69,7 +80,7 @@ public class UserCommandServiceImplTest {
     Mockito.when(userRepository.findStaffByLoginId(loginId)).thenReturn(Optional.empty());
 
     UserCommandServiceImpl service =
-        new UserCommandServiceImpl(userRepository, modelMapper, passwordEncoder);
+        new UserCommandServiceImpl(userRepository, passwordEncoder, amazonS3);
 
     // when
     Boolean result = service.validCheckId(request);
@@ -325,5 +336,133 @@ public class UserCommandServiceImplTest {
     assertEquals("test@email.com", response.getEmail()); // 변경 없음
     assertEquals("01012345678", response.getPhoneNumber()); // 변경 없음
     assertEquals("encodedNewPw", staff.getPassword()); // 변경됨
+  }
+
+  @Test
+  @DisplayName("getProfile: 유저 정보 조회 성공")
+  void getProfile_성공() {
+    // given
+    Long userId = 1L;
+    Staff staff =
+        Staff.builder()
+            .staffId(userId)
+            .profileUrl("https://test.com/profile.jpg")
+            .staffDescription("설명")
+            .colorCode("#000000")
+            .build();
+
+    Mockito.when(userRepository.findStaffByStaffId(userId)).thenReturn(Optional.of(staff));
+
+    CustomUser customUser =
+        CustomUser.builder()
+            .userId(userId)
+            .username("user01")
+            .password("encodedPw")
+            .staffStatus(StaffStatus.STAFF)
+            .staffName("홍길동")
+            .grade("매니저")
+            .shopId(1L)
+            .profileUrl("https://test.com/profile.jpg")
+            .authorities(List.of())
+            .build();
+
+    // when
+    ProfileResponse result = service.getProfile(customUser);
+
+    // then
+    assertEquals("#000000", result.getColorCode());
+    assertEquals("설명", result.getDescription());
+    assertEquals("https://test.com/profile.jpg", result.getProfileUrl());
+  }
+
+  @Test
+  @DisplayName("patchProfile: 프로필 이미지와 정보 수정 성공")
+  void patchProfile_성공() throws Exception {
+    // given
+    Long staffId = 1L;
+    PatchProfileRequest request = new PatchProfileRequest("홍길동", "매니저", "#FFFFFF", "설명 수정");
+
+    Staff staff =
+        Staff.builder()
+            .staffId(staffId)
+            .staffName("홍길동")
+            .staffDescription("설명")
+            .colorCode("#000000")
+            .build();
+
+    String fileName = "profile.png";
+    byte[] fileBytes = "test".getBytes();
+    MultipartFile multipartFile = new MockMultipartFile(fileName, fileName, "image/png", fileBytes);
+
+    ObjectMetadata metadata = new ObjectMetadata();
+    metadata.setContentLength(fileBytes.length);
+    metadata.setContentType("image/png");
+
+    Mockito.when(userRepository.findStaffByStaffId(staffId)).thenReturn(Optional.of(staff));
+    Mockito.when(userRepository.save(Mockito.any(Staff.class))).thenReturn(staff);
+    Mockito.when(amazonS3.getUrl(Mockito.eq(bucket), Mockito.anyString()))
+        .thenReturn(new URL("https://test.com/profile/updated.jpg"));
+
+    // when
+    ProfileResponse result = service.patchProfile(staffId, request, multipartFile);
+
+    // then
+    assertEquals("설명 수정", result.getDescription());
+    assertEquals("#FFFFFF", result.getColorCode());
+    assertEquals("https://test.com/profile/updated.jpg", result.getProfileUrl());
+  }
+
+  @Test
+  @DisplayName("patchProfile: 존재하지 않는 유저면 예외 발생")
+  void patchProfile_예외() {
+    // given
+    Long staffId = 99L;
+    PatchProfileRequest request = new PatchProfileRequest("홍길동", "desc", "#FFFFFF", "매니저");
+
+    Mockito.when(userRepository.findStaffByStaffId(staffId)).thenReturn(Optional.empty());
+
+    // when & then
+    BusinessException ex =
+        assertThrows(BusinessException.class, () -> service.patchProfile(staffId, request, null));
+    assertEquals(ErrorCode.USER_NOT_FOUND, ex.getErrorCode());
+  }
+
+  @Test
+  @DisplayName("patchPaassword: 이메일로 유저를 찾아 비밀번호를 변경한다")
+  void patchPassword_성공() {
+    // given
+    String email = "user@example.com";
+    String rawPassword = "newPassword123";
+    String encodedPassword = "encodedNewPassword123";
+
+    PatchPasswordRequest request = new PatchPasswordRequest(email, rawPassword);
+
+    Staff staff = Staff.builder().email(email).password("oldPassword").build();
+
+    Mockito.when(userRepository.findStaffByEmail(email)).thenReturn(Optional.of(staff));
+    Mockito.when(passwordEncoder.encode(rawPassword)).thenReturn(encodedPassword);
+    Mockito.when(userRepository.save(Mockito.any(Staff.class))).thenReturn(staff);
+
+    // when
+    service.patchPaassword(request);
+
+    // then
+    assertEquals(encodedPassword, staff.getPassword());
+  }
+
+  @Test
+  @DisplayName("patchPaassword: 이메일에 해당하는 유저가 없으면 예외 발생")
+  void patchPassword_유저없음_예외() {
+    // given
+    String email = "ghost@example.com";
+    PatchPasswordRequest request = new PatchPasswordRequest(email, "pw");
+
+    Mockito.when(userRepository.findStaffByEmail(email)).thenReturn(Optional.empty());
+
+    // when & then
+    BusinessException ex =
+        assertThrows(BusinessException.class, () -> service.patchPaassword(request));
+
+    assertEquals(ErrorCode.USER_NOT_FOUND, ex.getErrorCode());
   }
 }

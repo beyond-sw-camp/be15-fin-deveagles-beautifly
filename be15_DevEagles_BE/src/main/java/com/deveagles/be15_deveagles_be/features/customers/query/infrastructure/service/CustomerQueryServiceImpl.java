@@ -353,4 +353,15 @@ public class CustomerQueryServiceImpl implements CustomerQueryService {
       default -> "customerName.keyword";
     };
   }
+
+  @Override
+  public List<String> getCustomerPhoneNumbers(List<Long> customerIds) {
+    List<Customer> customers = customerJpaRepository.findAllById(customerIds);
+
+    if (customers.size() != customerIds.size()) {
+      throw new BusinessException(ErrorCode.CUSTOMER_NOT_FOUND);
+    }
+
+    return customers.stream().map(Customer::getPhoneNumber).toList();
+  }
 }
