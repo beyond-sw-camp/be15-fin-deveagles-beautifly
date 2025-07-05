@@ -47,6 +47,7 @@ public enum ErrorCode implements ErrorCodeType {
       "40005", "예약 메시지일 경우에는 예약 시간이 필요합니다.", HttpStatus.BAD_REQUEST),
   SCHEDULE_TIME_NOT_ALLOWED_FOR_IMMEDIATE(
       "40006", "즉시 메시지일 경우에는 예약 시간이 없습니다.", HttpStatus.BAD_REQUEST),
+  SMS_NOT_FOUND("40007", "해당 메시지가 없습니다.", HttpStatus.BAD_REQUEST),
   // 쿠폰 관련 에러 (50000번대)
   COUPON_NOT_FOUND("50001", "쿠폰을 찾을 수 없습니다", HttpStatus.NOT_FOUND),
   COUPON_CODE_DUPLICATE("50002", "이미 존재하는 쿠폰 코드입니다", HttpStatus.CONFLICT),
