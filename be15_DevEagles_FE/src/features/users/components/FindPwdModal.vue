@@ -1,12 +1,12 @@
 <template>
-  <BaseModal v-model="showModal" title="비밀번호 찾기">
+  <BaseModal v-model="showModal" title="비밀번호 초기화">
     <p class="modal-description">가입하신 이름과 이메일주소를 입력해주세요.</p>
 
     <div class="form-container">
       <div class="form-row">
         <label class="form-label">이름</label>
         <div class="form-input">
-          <BaseForm v-model="userName" placeholder="이름을 입력해주세요" />
+          <BaseForm v-model="staffName" placeholder="이름을 입력해주세요" />
         </div>
       </div>
 
@@ -40,13 +40,13 @@
     set: val => emit('update:modelValue', val),
   });
 
-  const userName = ref('');
+  const staffName = ref('');
   const email = ref('');
 
   const handleSubmit = () => {
-    emit('submit', { userName: userName.value, email: email.value });
+    emit('submit', { staffName: staffName.value, email: email.value });
     showModal.value = false;
-    userName.value = '';
+    staffName.value = '';
     email.value = '';
   };
 </script>

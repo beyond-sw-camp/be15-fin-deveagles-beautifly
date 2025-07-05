@@ -9,4 +9,6 @@ public interface MessageCommandService {
   List<MessageSendResult> sendSms(SmsRequest smsRequest);
 
   void markSmsAsFailed(Collection<Long> smsIds);
+
+  void markSmsAsSent(Collection<Long> smsIds);
 }
