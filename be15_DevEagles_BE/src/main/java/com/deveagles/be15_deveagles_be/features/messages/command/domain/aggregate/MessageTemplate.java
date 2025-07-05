@@ -59,4 +59,17 @@ public class MessageTemplate {
   public boolean isUsableForShop(Long requestShopId) {
     return this.shopId.equals(requestShopId);
   }
+
+  public void update(
+      String templateName,
+      String templateContent,
+      MessageTemplateType type,
+      Long gradeId,
+      Long tagId) {
+    this.templateName = templateName;
+    this.templateContent = templateContent;
+    this.templateType = type;
+    this.customerGradeId = gradeId;
+    this.tagId = tagId;
+  }
 }
