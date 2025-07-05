@@ -12,7 +12,7 @@ import lombok.Getter;
 @AllArgsConstructor
 public class MessageTemplateResponse {
 
-  private Long id;
+  private Long templateId;
   private String templateName;
   private String templateContent;
   private MessageTemplateType templateType;
@@ -23,7 +23,7 @@ public class MessageTemplateResponse {
 
   public static MessageTemplateResponse from(MessageTemplate t) {
     return MessageTemplateResponse.builder()
-        .id(t.getId())
+        .templateId(t.getTemplateId())
         .templateName(t.getTemplateName())
         .templateContent(t.getTemplateContent())
         .templateType(t.getTemplateType())

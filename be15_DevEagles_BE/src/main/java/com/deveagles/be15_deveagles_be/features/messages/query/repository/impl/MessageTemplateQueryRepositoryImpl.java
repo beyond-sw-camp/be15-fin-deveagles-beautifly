@@ -45,7 +45,7 @@ public class MessageTemplateQueryRepositoryImpl implements MessageTemplateQueryR
     MessageTemplate result =
         queryFactory
             .selectFrom(template)
-            .where(template.id.eq(id), template.deletedAt.isNull())
+            .where(template.templateId.eq(id), template.deletedAt.isNull())
             .fetchOne();
 
     return Optional.ofNullable(result);
