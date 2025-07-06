@@ -70,6 +70,7 @@
   import ScheduleRegistModal from '@/features/schedules/components/ScheduleRegistModal.vue';
   import { getCalendarSchedules, getRegularSchedules } from '@/features/schedules/api/schedules';
   import { useAuthStore } from '@/store/auth';
+  import dayjs from 'dayjs';
 
   const authStore = useAuthStore();
   const shopId = computed(() => authStore.shopId);
@@ -79,8 +80,8 @@
   const selectedService = ref('');
   const selectedStaff = ref('');
   const selectedType = ref('');
-  const schedules = ref([]); // 일반 일정 + 예약 + 휴무
-  const regularSchedules = ref([]); // 정기 일정 + 정기 휴무
+  const schedules = ref([]);
+  const regularSchedules = ref([]);
 
   const selectedReservation = ref(null);
   const isModalOpen = ref(false);
@@ -107,7 +108,6 @@
     fetchSchedules();
   };
 
-  // selectedType.value 값 → 서버 전송용 값으로 변환
   const getScheduleTypeParam = () => {
     switch (selectedType.value) {
       case 'reservation':
@@ -126,6 +126,9 @@
   };
   const fetchRegularSchedules = async () => {
     try {
+      regularSchedules.value = [];
+      console.log('정기 일정 수:', regularSchedules.value.length);
+      console.log('예시:', regularSchedules.value.slice(0, 5));
       const { from, to } = searchParams.value;
 
       const [regularPlan, regularLeave] = await Promise.all([
@@ -212,36 +215,48 @@
   });
 
   const calendarEvents = computed(() => {
-    const normalEvents = schedules.value.map(item => ({
-      id: item.id,
-      title: item.title,
-      start: item.startAt,
-      end: item.endAt,
-      allDay: item.scheduleType === 'LEAVE' || item.scheduleType === 'REGULAR_LEAVE',
-      backgroundColor: item.staffColor || 'var(--color-gray-300)',
-      textColor: 'var(--color-text-primary)',
-      type: item.scheduleType.toLowerCase(), // RESERVATION → 'reservation', PLAN → 'plan' 등
-      status: item.status,
-      staffName: item.staffName,
-      customer: item.customerName,
-      service: item.items,
-      memo: item.memo,
-      staffColor: item.staffColor,
-    }));
+    const selected = selectedType.value;
 
-    const regularEvents = regularSchedules.value.map(item => ({
-      id: item.id,
-      title: item.title,
-      start: item.startAt,
-      end: item.endAt,
-      allDay: item.scheduleType === 'REGULAR_LEAVE',
-      backgroundColor: item.staffColor || 'var(--color-gray-200)',
-      textColor: 'var(--color-text-primary)',
-      type: item.scheduleType.toLowerCase(),
-      staffName: item.staffName,
-      memo: item.memo,
-      staffColor: item.staffColor,
-    }));
+    const normalEvents = schedules.value
+      .filter(item => !selected || item.scheduleType.toLowerCase() === selected)
+      .map(item => ({
+        id: item.id,
+        title: item.title,
+        start: item.startAt,
+        end: item.endAt,
+        allDay: ['leave'].includes(item.scheduleType.toLowerCase()),
+        backgroundColor: item.staffColor || 'var(--color-gray-300)',
+        textColor: 'var(--color-text-primary)',
+        type: item.scheduleType.toLowerCase(),
+        status: item.status,
+        staffName: item.staffName,
+        customer: item.customerName,
+        service: item.items,
+        memo: item.memo,
+        staffColor: item.staffColor,
+      }));
+
+    const regularEvents = regularSchedules.value
+      .filter(item => !selected || item.scheduleType.toLowerCase() === selected)
+      .map(item => {
+        const isAllDay = item.scheduleType.toLowerCase() === 'regular_leave';
+        const startDate = item.startAt.split('T')[0];
+        const endDate = dayjs(item.startAt).add(1, 'day').format('YYYY-MM-DD');
+
+        return {
+          id: `${item.id}-${dayjs(item.startAt).format('YYYYMMDD')}`,
+          title: item.title,
+          start: isAllDay ? startDate : item.startAt,
+          end: isAllDay ? endDate : item.endAt,
+          allDay: isAllDay,
+          backgroundColor: item.staffColor || 'var(--color-gray-200)',
+          textColor: 'var(--color-text-primary)',
+          type: item.scheduleType.toLowerCase(),
+          staffName: item.staffName,
+          memo: item.memo,
+          staffColor: item.staffColor,
+        };
+      });
 
     return [...normalEvents, ...regularEvents];
   });
@@ -253,10 +268,13 @@
     padding: 20px;
     border-radius: 12px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+    width: 100%;
   }
 
   .container {
     padding: 14px;
+    height: auto;
+    overflow: visible;
   }
 
   .page-header {

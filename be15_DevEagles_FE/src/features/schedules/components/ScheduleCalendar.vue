@@ -51,6 +51,7 @@
     locale: koLocale,
     resources: [],
     resourceOrder: 'customOrder',
+    height: 'auto',
 
     headerToolbar: {
       left: 'prev,next today',
@@ -75,18 +76,24 @@
     eventContent({ event, view }) {
       const type = event.extendedProps.type;
       const time = event.start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+      const showTime = !(type === 'leave' || type === 'regular_leave');
       const viewType = view.type;
 
       return {
         html: `
-        <div class="custom-event-style ${type}">
-          ${type === 'reservation' || type === 'leave' ? '<div class="left-bar"></div>' : ''}
-          <div class="text">
-            ${viewType === 'dayGridMonth' ? `<strong>${time}</strong>&nbsp;` : ''}
-            ${event.title}
-          </div>
+      <div class="custom-event-style ${type}">
+        ${
+          type === 'reservation' || type === 'leave' || type === 'regular_leave'
+            ? '<div class="left-bar"></div>'
+            : ''
+        }
+        <div class="text">
+          ${showTime ? `<strong>${time}</strong>&nbsp;` : ''}
+          ${event.title}
         </div>
-      `,
+      </div>
+    `,
       };
     },
 
@@ -103,7 +110,7 @@
       const bgColor =
         type === 'reservation'
           ? statusColors[status] || 'var(--color-info-50)'
-          : type === 'leave'
+          : type === 'leave' || type === 'regular_leave'
             ? 'rgba(220, 38, 38, 0.3)'
             : 'var(--color-neutral-white)';
 
@@ -243,6 +250,12 @@
 </template>
 
 <style scoped>
+  :deep(.fc) {
+    border-radius: 8px;
+    overflow: hidden;
+    background-color: white;
+  }
+
   :deep(.fc-event) {
     background-color: transparent !important;
     border: none !important;
@@ -255,6 +268,7 @@
     display: block !important;
     width: 100% !important;
     max-width: 100% !important;
+    z-index: 5;
   }
 
   :deep(.custom-event-style) {
@@ -269,10 +283,16 @@
     white-space: nowrap;
     text-overflow: ellipsis;
     height: 100%;
+    z-index: 5;
+    width: 99%;
   }
 
-  :deep(.custom-event-style.event) {
+  :deep(.custom-event-style.plan) {
     background-color: var(--color-neutral-white);
+    z-index: 1;
+    padding-left: 0;
+    text-align: center;
+    flex: 1;
   }
 
   :deep(.custom-event-style .left-bar) {
@@ -282,15 +302,51 @@
     width: 6px;
     border-radius: 6px 0 0 6px;
     height: 100%;
+    z-index: 6;
   }
 
   :deep(.custom-event-style .text) {
-    padding-left: 10px;
+    padding-left: 6px;
+    text-align: left;
     z-index: 1;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
     color: var(--color-text-primary);
+  }
+
+  :deep(.fc-col-header-cell),
+  :deep(.fc-theme-standard th) {
+    background-color: var(--color-primary-main) !important;
+    border-bottom: 1px solid var(--color-primary-main);
+  }
+
+  :deep(.fc-scrollgrid) {
+    border: 2px solid var(--color-primary-main) !important;
+    overflow: hidden;
+    width: 100%;
+    box-sizing: border-box;
+    table-layout: fixed;
+  }
+  :deep(.fc-scrollgrid-section-header > table),
+  :deep(.fc-scrollgrid-sync-table) {
+    border-spacing: 0 !important;
+    border-collapse: collapse !important;
+    width: 100% !important;
+    table-layout: fixed !important;
+  }
+
+  :deep(.fc-col-header-cell-cushion) {
+    color: var(--color-neutral-white) !important;
+    font-weight: 600 !important;
+    text-decoration: none !important; /* 기본 밑줄 제거 */
+    font-size: 14px;
+  }
+
+  :deep(.fc-scrollgrid-section-header) {
+    border: 2px solid var(--color-primary-main);
+    border-radius: 8px;
+    overflow: hidden;
   }
 
   .tippy-box[data-theme~='light'] {
