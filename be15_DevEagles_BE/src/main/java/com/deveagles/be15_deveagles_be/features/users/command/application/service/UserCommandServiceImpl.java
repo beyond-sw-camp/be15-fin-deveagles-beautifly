@@ -145,6 +145,24 @@ public class UserCommandServiceImpl implements UserCommandService {
     userRepository.save(staff);
   }
 
+  @Override
+  public String saveProfile(MultipartFile profile) {
+
+    String fileName = "user/thumbnail_" + UUID.randomUUID() + "_" + profile.getOriginalFilename();
+
+    ObjectMetadata metadata = new ObjectMetadata();
+    metadata.setContentLength(profile.getSize());
+    metadata.setContentType(profile.getContentType());
+
+    try {
+      amazonS3.putObject(bucket, fileName, profile.getInputStream(), metadata);
+    } catch (IOException e) {
+      throw new BusinessException(ErrorCode.FILE_SAVE_ERROR);
+    }
+
+    return amazonS3.getUrl(bucket, fileName).toString();
+  }
+
   private Staff findStaffByStaffId(Long staffId) {
 
     return userRepository
@@ -167,22 +185,5 @@ public class UserCommandServiceImpl implements UserCommandService {
         .description(staff.getStaffDescription())
         .colorCode(staff.getColorCode())
         .build();
-  }
-
-  private String saveProfile(MultipartFile profile) {
-
-    String fileName = "user/thumbnail_" + UUID.randomUUID() + "_" + profile.getOriginalFilename();
-
-    ObjectMetadata metadata = new ObjectMetadata();
-    metadata.setContentLength(profile.getSize());
-    metadata.setContentType(profile.getContentType());
-
-    try {
-      amazonS3.putObject(bucket, fileName, profile.getInputStream(), metadata);
-    } catch (IOException e) {
-      throw new BusinessException(ErrorCode.FILE_SAVE_ERROR);
-    }
-
-    return amazonS3.getUrl(bucket, fileName).toString();
   }
 }
