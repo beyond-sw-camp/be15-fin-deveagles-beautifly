@@ -48,6 +48,7 @@
         LEFT JOIN payments p ON s.sales_id = p.sales_id
         LEFT JOIN secondary_item si ON i.secondary_item_id = si.secondary_item_id
         WHERE s.shop_id = #{shopId}
+        AND s.deleted_at IS NULL
         <if test="filter.startDate != null">
             AND s.sales_date &gt;= #{filter.startDate}
         </if>
@@ -86,6 +87,7 @@
         LEFT JOIN session_pass_sales sp ON s.sales_id = sp.sales_id
         LEFT JOIN prepaid_pass_sales pp ON s.sales_id = pp.sales_id
         WHERE s.shop_id = #{shopId}
+        AND s.deleted_at IS NULL
         <if test="filter.startDate != null">
             AND s.sales_date &gt;= #{filter.startDate}
         </if>
