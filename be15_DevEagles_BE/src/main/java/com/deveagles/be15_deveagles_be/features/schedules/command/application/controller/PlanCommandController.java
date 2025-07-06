@@ -11,7 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/v1/schedules")
+@RequestMapping("/schedules")
 @RequiredArgsConstructor
 @Tag(name = "일정 관리", description = "단기 및 정기 일정 생성, 수정, 삭제 API")
 public class PlanCommandController {

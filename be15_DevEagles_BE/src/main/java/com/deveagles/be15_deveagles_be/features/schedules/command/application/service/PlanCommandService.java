@@ -155,7 +155,7 @@ public class PlanCommandService {
     if (fromType == toType) {
       switch (fromType) {
         case PLAN -> updatePlan(request.fromId(), request.planRequest());
-        case REGULAR -> updateRegularPlan(request.fromId(), request.regularPlanRequest());
+        case REGULAR_PLAN -> updateRegularPlan(request.fromId(), request.regularPlanRequest());
         default -> throw new BusinessException(ErrorCode.INVALID_SCHEDULE_TYPE);
       }
       return;
@@ -169,7 +169,7 @@ public class PlanCommandService {
         }
         planRepository.deleteById(request.fromId());
       }
-      case REGULAR -> {
+      case REGULAR_PLAN -> {
         if (!regularPlanRepository.existsById(request.fromId())) {
           throw new BusinessException(ErrorCode.REGULAR_PLAN_NOT_FOUND);
         }
@@ -180,7 +180,7 @@ public class PlanCommandService {
 
     switch (toType) {
       case PLAN -> createPlan(request.planRequest());
-      case REGULAR -> createRegularPlan(request.regularPlanRequest());
+      case REGULAR_PLAN -> createRegularPlan(request.regularPlanRequest());
       default -> throw new BusinessException(ErrorCode.INVALID_SCHEDULE_TYPE);
     }
   }
