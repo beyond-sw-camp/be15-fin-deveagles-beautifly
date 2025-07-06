@@ -20,6 +20,10 @@ public class SecondaryItem {
   @Column(name = "primary_item_id", nullable = false)
   private Long primaryItemId;
 
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "primary_item_id", insertable = false, updatable = false)
+  private PrimaryItem primaryItem;
+
   @Column(name = "secondary_item_name")
   private String secondaryItemName;
 

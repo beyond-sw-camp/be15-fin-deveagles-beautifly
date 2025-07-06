@@ -23,4 +23,8 @@ public interface UserCommandService {
 
   ProfileResponse patchProfile(
       Long staffId, @Valid PatchProfileRequest profileRequest, MultipartFile profile);
+
+  void patchPaassword(@Valid PatchPasswordRequest passwordRequest);
+
+  String saveProfile(MultipartFile profile);
 }

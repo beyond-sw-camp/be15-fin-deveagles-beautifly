@@ -22,7 +22,7 @@ const autoLogLevel = isDev ? 'debug' : 'error';
 const logLevel = import.meta.env.VITE_LOG_LEVEL || autoLogLevel;
 const currentLogLevel = LOG_LEVELS[logLevel] || LOG_LEVELS[autoLogLevel];
 
-class Logger {
+export class Logger {
   constructor(prefix = '') {
     this.prefix = prefix;
   }
@@ -85,7 +85,7 @@ class Logger {
 // 기본 로거
 export const logger = new Logger();
 
-// 모듈별 로거 생성 함수
+// 모듈별 로거 생성 함수 (레거시 호환성)
 export function createLogger(moduleName) {
   return new Logger(` [${moduleName}]`);
 }

@@ -26,10 +26,7 @@
   </div>
 
   <BaseModal v-model="showConfirmModal" title="">
-    <p class="modal-text">
-      입력하신 이메일로 인증을<br />
-      완료하시면 회원가입이 완료됩니다,
-    </p>
+    <p class="modal-text">회원가입을 완료하시겠습니까?</p>
     <template #footer>
       <div class="modal-footer-buttons">
         <BaseButton type="error" @click="showConfirmModal = false">취소</BaseButton>

@@ -80,7 +80,10 @@ dependencies {
     // https://mvnrepository.com/artifact/org.json/json
     implementation 'net.nurigo:sdk:4.3.2'
 
-
+    // jakarta mail
+    dependencies {
+        implementation 'org.springframework.boot:spring-boot-starter-mail'
+    }
 
     // S3
     implementation("com.amazonaws:aws-java-sdk-s3:1.12.783")

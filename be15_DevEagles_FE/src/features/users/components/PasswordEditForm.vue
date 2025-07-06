@@ -4,19 +4,19 @@
       v-model="form.password"
       type="password"
       label="변경 비밀번호"
-      placeholder="새로운 비밀번호를 입력해주세요"
+      placeholder="특수문자, 영문자, 숫자를 포함한 8자리 이상"
       :error="errors.password"
     />
     <BaseForm
       v-model="form.confirmPassword"
       type="password"
       label="비밀번호 확인"
-      placeholder="비밀번호를 다시 입력해주세요"
+      placeholder="비밀번호 확인 입력"
       :error="errors.confirmPassword"
     />
 
     <div class="button-group">
-      <BaseButton type="primary">확인</BaseButton>
+      <BaseButton type="primary" html-type="submit">확인</BaseButton>
       <BaseButton type="secondary" outline @click="handleCancel">취소</BaseButton>
     </div>
 
@@ -34,16 +34,15 @@
 </template>
 
 <script setup>
-  import { computed, reactive, ref } from 'vue';
+  import { reactive, ref } from 'vue';
   import { useRoute, useRouter } from 'vue-router';
   import BaseForm from '@/components/common/BaseForm.vue';
   import BaseButton from '@/components/common/BaseButton.vue';
   import BaseModal from '@/components/common/BaseModal.vue';
+  import { patchPwd } from '@/features/users/api/users.js';
 
   const route = useRoute();
-  const isFromEmail = computed(() => route.path.startsWith('/edit-pwd'));
   const email = route.query.email;
-
   const props = defineProps({
     onCancel: {
       type: Function,
@@ -97,19 +96,17 @@
   };
 
   const handleSubmit = async () => {
-    /* if (!validate()) return;
-
+    if (!validate()) return;
     try {
-      if (isFromEmail.value)
-        await emailEditPassword({
-          email: email.value,
-          password: form.password,
-        });
-      else await editPassword(form.password);
+      await patchPwd({
+        email: email,
+        password: form.password,
+      });
+
       isSuccessModalOpen.value = true;
     } catch (e) {
       console.error(e);
-    }*/
+    }
   };
 
   const handleCancel = () => {

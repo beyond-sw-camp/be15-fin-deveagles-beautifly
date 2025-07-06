@@ -4,5 +4,5 @@ import com.deveagles.be15_deveagles_be.features.items.query.dto.response.Primary
 import java.util.List;
 
 public interface PrimaryItemQueryService {
-  List<PrimaryItemResponse> getAllPrimaryItems();
+  List<PrimaryItemResponse> getAllPrimaryItems(Long shopId);
 }

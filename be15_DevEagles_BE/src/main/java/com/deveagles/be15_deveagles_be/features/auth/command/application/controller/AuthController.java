@@ -1,6 +1,8 @@
 package com.deveagles.be15_deveagles_be.features.auth.command.application.controller;
 
 import com.deveagles.be15_deveagles_be.common.dto.ApiResponse;
+import com.deveagles.be15_deveagles_be.features.auth.command.application.dto.request.CheckEmailRequest;
+import com.deveagles.be15_deveagles_be.features.auth.command.application.dto.request.EmailVerifyRequest;
 import com.deveagles.be15_deveagles_be.features.auth.command.application.dto.request.LoginRequest;
 import com.deveagles.be15_deveagles_be.features.auth.command.application.dto.response.TokenResponse;
 import com.deveagles.be15_deveagles_be.features.auth.command.application.service.AuthService;
@@ -18,7 +20,7 @@ import org.springframework.web.bind.annotation.*;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/v1/auth")
+@RequestMapping("/auth")
 @RequiredArgsConstructor
 @Tag(name = "Auth", description = "Auth 관련 API")
 public class AuthController {
@@ -61,6 +63,25 @@ public class AuthController {
     }
     TokenResponse tokenResponse = authService.refreshToken(refreshToken);
     return buildTokenResponse(tokenResponse);
+  }
+
+  @Operation(summary = "비밀번호 변경 이메일 인증", description = "사용자가 비밀번호 변경을 위한 이메일을 인증합니다.")
+  @PostMapping("/check-email")
+  public ResponseEntity<ApiResponse<Void>> findPwd(
+      @RequestBody @Valid CheckEmailRequest checkEmailRequest) {
+
+    authService.sendPatchPwdEmail(checkEmailRequest);
+
+    return ResponseEntity.ok().body(ApiResponse.success(null));
+  }
+
+  @Operation(summary = "비밀번호 변경을 위한 인증 코드 확인", description = "사용자가 비밀번호 변경을 위한 인증 코드를 확인합니다.")
+  @PostMapping("/verify")
+  public ResponseEntity<ApiResponse<Void>> verifyAuthCode(
+      @RequestBody @Valid EmailVerifyRequest verifyRequest) {
+
+    authService.verifyAuthCode(verifyRequest);
+    return ResponseEntity.ok().body(ApiResponse.success(null));
   }
 
   private ResponseEntity<ApiResponse<TokenResponse>> buildTokenResponse(TokenResponse response) {

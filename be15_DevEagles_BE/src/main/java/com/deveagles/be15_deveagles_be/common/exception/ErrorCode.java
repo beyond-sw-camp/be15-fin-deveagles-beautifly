@@ -17,12 +17,16 @@ public enum ErrorCode implements ErrorCodeType {
   RESOURCE_NOT_FOUND("00006", "요청한 리소스를 찾을 수 없습니다", HttpStatus.NOT_FOUND),
   DUPLICATE_RESOURCE("00007", "중복된 리소스입니다", HttpStatus.CONFLICT),
   FILE_SAVE_ERROR("00008", "파일 저장에 실패했습니다", HttpStatus.INTERNAL_SERVER_ERROR),
+  SEND_EMAIL_FAILURE_EXCEPTION("00009", "이메일 전송을 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
   INTERNAL_SERVER_ERROR("00999", "서버 내부 오류가 발생했습니다", HttpStatus.INTERNAL_SERVER_ERROR),
 
   // 회원 관련 에러 (10000번대)
   USER_NAME_NOT_FOUND("11001", "존재하지 않는 ID입니다. 다시 입력해주세요.", HttpStatus.NOT_FOUND),
   USER_INVALID_PASSWORD("11002", "잘못된 비밀번호입니다.", HttpStatus.BAD_REQUEST),
   USER_NOT_FOUND("11003", "존재하지 않는 회원입니다.", HttpStatus.NOT_FOUND),
+  DUPLICATE_SEND_AUTH_EXCEPTION(
+      "11004", "이미 인증 메일을 발송했습니다. 잠시 후 다시 시도해주세요.", HttpStatus.BAD_REQUEST),
+  INVALID_AUTH_CODE("11005", "유효한 인증이 아닙니다.", HttpStatus.BAD_REQUEST),
 
   // 매장 관련 에러 (20000번대)
   SHOP_NOT_FOUNT("20001", "매장이 존재하지 않습니다.", HttpStatus.NOT_FOUND),
@@ -43,6 +47,9 @@ public enum ErrorCode implements ErrorCodeType {
       "40005", "예약 메시지일 경우에는 예약 시간이 필요합니다.", HttpStatus.BAD_REQUEST),
   SCHEDULE_TIME_NOT_ALLOWED_FOR_IMMEDIATE(
       "40006", "즉시 메시지일 경우에는 예약 시간이 없습니다.", HttpStatus.BAD_REQUEST),
+  SMS_NOT_FOUND("40007", "해당 메시지가 없습니다.", HttpStatus.BAD_REQUEST),
+  TEMPLATE_NOT_FOUND("40008", "해당 템플릿이 없습니다.", HttpStatus.BAD_REQUEST),
+  TEMPLATE_ACCESS_DENIED("40009", "해당 템플릿을 수정할 수 있는 권한이 없습니다.", HttpStatus.UNAUTHORIZED),
   // 쿠폰 관련 에러 (50000번대)
   COUPON_NOT_FOUND("50001", "쿠폰을 찾을 수 없습니다", HttpStatus.NOT_FOUND),
   COUPON_CODE_DUPLICATE("50002", "이미 존재하는 쿠폰 코드입니다", HttpStatus.CONFLICT),
@@ -106,9 +113,18 @@ public enum ErrorCode implements ErrorCodeType {
   SESSIONPASS_NOT_FOUND("82006", "횟수권을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
   MEMBERSHIP_EXPIRATION_PERIOD_TYPE_REQUIRED(
       "82007", "회원권 유효기간 단위를 입력해주세요.", HttpStatus.BAD_REQUEST),
-// 매출 관련 에러 (90000번대)
 
-;
+  // 매출 관련 에러 (90000번대)
+
+  SALES_RETAILPRICE_REQUIRED("90001", "매출정가를 입력해주세요.", HttpStatus.BAD_REQUEST),
+  SALES_TOTALAMOUNT_REQUIRED("90002", "결제금액을 입력해주세요.", HttpStatus.BAD_REQUEST),
+  SALES_SALESDATE_REQUIRED("90003", "매출일시를 입력해수제요.", HttpStatus.BAD_REQUEST),
+  SALES_PAYMENTMETHOD_REQUIRED("90004", "결제수단을 입력해주세요.", HttpStatus.BAD_REQUEST),
+  SALES_PAYMENTSAMOUNT_REQUIRED("90005", "결제금액을 입력해주세요.", HttpStatus.BAD_REQUEST),
+  SALES_NOT_FOUND("90006", "매출을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+  SALES_ALREADY_REFUNDED("90007", "이미 환불된 매출입니다.", HttpStatus.BAD_REQUEST),
+  SALES_ALREADY_DELETED("90008", "이미 삭제된 매출입니다.", HttpStatus.BAD_REQUEST),
+  ;
 
   private final String code;
   private final String message;

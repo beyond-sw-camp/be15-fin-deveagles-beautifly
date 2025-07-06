@@ -24,8 +24,8 @@ import org.springframework.web.multipart.MultipartFile;
 @Slf4j
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/user")
-@Tag(name = "회원-직원", description = "회원(직원) 관련 API")
+@RequestMapping("/users")
+@Tag(name = "회원", description = "회원 관련 API")
 public class UserCommandController {
 
   private final UserCommandService userCommandService;
@@ -101,5 +101,14 @@ public class UserCommandController {
         userCommandService.patchProfile(customUser.getUserId(), profileRequest, profile);
 
     return ResponseEntity.ok().body(ApiResponse.success(response));
+  }
+
+  @PatchMapping("/password")
+  public ResponseEntity<ApiResponse<Void>> patchPassword(
+      @RequestBody @Valid PatchPasswordRequest passwordRequest) {
+
+    userCommandService.patchPaassword(passwordRequest);
+
+    return ResponseEntity.ok().body(ApiResponse.success(null));
   }
 }

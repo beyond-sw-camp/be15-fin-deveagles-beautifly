@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "1차 상품", description = "1차 상품 API")
 @RestController
-@RequestMapping("/api/v1/primary-items")
+@RequestMapping("/primary-items")
 @RequiredArgsConstructor
 @Validated
 @Slf4j

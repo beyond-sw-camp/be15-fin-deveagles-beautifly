@@ -99,4 +99,7 @@ app.use(PrimeVue, {
 });
 
 app.use(pinia);
+
+// 개발 모드에서 로거 개발자 도구 초기화는 제거됨
+
 app.mount('#app');

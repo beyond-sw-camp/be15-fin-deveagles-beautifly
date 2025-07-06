@@ -26,7 +26,7 @@ public class Sales {
   @Column(name = "shop_id", nullable = false)
   private Long shopId;
 
-  @Column(name = "reservation_id", nullable = false)
+  @Column(name = "reservation_id")
   private Long reservationId;
 
   @Column(name = "discount_rate")
@@ -58,4 +58,39 @@ public class Sales {
 
   @Column(name = "deleted_at")
   private LocalDateTime deletedAt;
+
+  public void update(
+      Long shopId,
+      Long customerId,
+      Long staffId,
+      Long reservationId,
+      Integer retailPrice,
+      Integer discountRate,
+      Integer discountAmount,
+      Integer totalAmount,
+      String salesMemo,
+      LocalDateTime salesDate) {
+    this.shopId = shopId;
+    this.customerId = customerId;
+    this.staffId = staffId;
+    this.reservationId = reservationId;
+    this.retailPrice = retailPrice;
+    this.discountRate = discountRate;
+    this.discountAmount = discountAmount;
+    this.totalAmount = totalAmount;
+    this.salesMemo = salesMemo;
+    this.salesDate = salesDate;
+  }
+
+  public Boolean isRefunded() {
+    return isRefunded;
+  }
+
+  public void setRefunded(boolean isRefunded) {
+    this.isRefunded = isRefunded;
+  }
+
+  public void delete() {
+    this.deletedAt = LocalDateTime.now();
+  }
 }

@@ -426,4 +426,43 @@ public class UserCommandServiceImplTest {
         assertThrows(BusinessException.class, () -> service.patchProfile(staffId, request, null));
     assertEquals(ErrorCode.USER_NOT_FOUND, ex.getErrorCode());
   }
+
+  @Test
+  @DisplayName("patchPaassword: 이메일로 유저를 찾아 비밀번호를 변경한다")
+  void patchPassword_성공() {
+    // given
+    String email = "user@example.com";
+    String rawPassword = "newPassword123";
+    String encodedPassword = "encodedNewPassword123";
+
+    PatchPasswordRequest request = new PatchPasswordRequest(email, rawPassword);
+
+    Staff staff = Staff.builder().email(email).password("oldPassword").build();
+
+    Mockito.when(userRepository.findStaffByEmail(email)).thenReturn(Optional.of(staff));
+    Mockito.when(passwordEncoder.encode(rawPassword)).thenReturn(encodedPassword);
+    Mockito.when(userRepository.save(Mockito.any(Staff.class))).thenReturn(staff);
+
+    // when
+    service.patchPaassword(request);
+
+    // then
+    assertEquals(encodedPassword, staff.getPassword());
+  }
+
+  @Test
+  @DisplayName("patchPaassword: 이메일에 해당하는 유저가 없으면 예외 발생")
+  void patchPassword_유저없음_예외() {
+    // given
+    String email = "ghost@example.com";
+    PatchPasswordRequest request = new PatchPasswordRequest(email, "pw");
+
+    Mockito.when(userRepository.findStaffByEmail(email)).thenReturn(Optional.empty());
+
+    // when & then
+    BusinessException ex =
+        assertThrows(BusinessException.class, () -> service.patchPaassword(request));
+
+    assertEquals(ErrorCode.USER_NOT_FOUND, ex.getErrorCode());
+  }
 }

@@ -3,14 +3,19 @@ package com.deveagles.be15_deveagles_be.features.auth.command.application.servic
 import com.deveagles.be15_deveagles_be.common.exception.BusinessException;
 import com.deveagles.be15_deveagles_be.common.exception.ErrorCode;
 import com.deveagles.be15_deveagles_be.common.jwt.JwtTokenProvider;
+import com.deveagles.be15_deveagles_be.features.auth.command.application.dto.request.CheckEmailRequest;
+import com.deveagles.be15_deveagles_be.features.auth.command.application.dto.request.EmailVerifyRequest;
 import com.deveagles.be15_deveagles_be.features.auth.command.application.dto.request.LoginRequest;
 import com.deveagles.be15_deveagles_be.features.auth.command.application.dto.response.TokenResponse;
 import com.deveagles.be15_deveagles_be.features.users.command.domain.aggregate.Staff;
 import com.deveagles.be15_deveagles_be.features.users.command.repository.UserRepository;
+import jakarta.mail.MessagingException;
 import java.time.Duration;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -25,6 +30,10 @@ public class AuthServiceImpl implements AuthService {
   private final JwtTokenProvider jwtTokenProvider;
   private final RefreshTokenService refreshTokenService;
   private final RedisTemplate<String, String> redisTemplate;
+  private final MailService mailService;
+
+  @Value("${spring.mail.properties.auth-code-expiration-millis}")
+  private long expireMinute;
 
   @Override
   public TokenResponse login(LoginRequest request) {
@@ -97,5 +106,49 @@ public class AuthServiceImpl implements AuthService {
 
     long remainTime = jwtTokenProvider.getRemainingExpiration(accessToken);
     redisTemplate.opsForValue().set("BL:" + accessToken, "logout", Duration.ofMillis(remainTime));
+  }
+
+  @Override
+  public void sendPatchPwdEmail(CheckEmailRequest request) {
+
+    userRepository
+        .findStaffForGetPwd(request.staffName(), request.email())
+        .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+    if (getAuthCode(request.email()) != null) {
+      throw new BusinessException(ErrorCode.DUPLICATE_SEND_AUTH_EXCEPTION);
+    }
+
+    String authCode = UUID.randomUUID().toString().substring(0, 6);
+    saveAuthCode(request.email(), authCode);
+
+    try {
+      mailService.sendFindPwdEmail(request.email(), authCode);
+    } catch (MessagingException e) {
+      throw new BusinessException(ErrorCode.SEND_EMAIL_FAILURE_EXCEPTION);
+    }
+  }
+
+  @Override
+  public void verifyAuthCode(EmailVerifyRequest request) {
+    String authCode = getAuthCode(request.email());
+
+    if (authCode == null || !authCode.equals(request.authCode())) {
+      throw new BusinessException(ErrorCode.INVALID_AUTH_CODE);
+    }
+
+    deleteAuthCode(authCode);
+  }
+
+  private void saveAuthCode(String email, String code) {
+    redisTemplate.opsForValue().set(email, code, Duration.ofMillis(expireMinute));
+  }
+
+  private String getAuthCode(String email) {
+    return redisTemplate.opsForValue().get(email);
+  }
+
+  private void deleteAuthCode(String code) {
+    redisTemplate.delete(code);
   }
 }

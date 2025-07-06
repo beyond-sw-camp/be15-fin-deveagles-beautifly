@@ -322,6 +322,8 @@
   });
 
   onBeforeUnmount(() => {
+    showRegisterDropdown.value = false;
+    showDropdownIndex.value = null;
     window.removeEventListener('mousedown', handleClickOutside);
   });
 </script>
