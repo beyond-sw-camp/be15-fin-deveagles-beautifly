@@ -10,31 +10,43 @@
           class="search-input"
           @keyup.enter="handleSearch"
         />
-        <BaseButton @click="handleSearch">검색</BaseButton>
+        <BaseButton @click="resetFilters">초기화</BaseButton>
+
         <label class="checkbox-label">
           <input v-model="onlyActive" type="checkbox" />
-          재직 여부
+          재직자만 보기
         </label>
       </div>
     </div>
 
     <!-- 테이블 -->
-    <BaseTable
-      :columns="columns"
-      :data="filteredStaff"
-      :hover="true"
-      :striped="true"
-      :row-key="'id'"
-      @click-row="goToDetail"
-    >
-      <!-- 이름 셀 커스터마이징 -->
-      <template #cell-name="{ item, value }">
-        <div class="name-cell" @click="goToDetail(item)">
-          <div class="color-box" :style="{ backgroundColor: item.colorCode }"></div>
-          {{ value }}
-        </div>
-      </template>
-    </BaseTable>
+    <div class="table-wrapper">
+      <BaseTable
+        :columns="columns"
+        :data="staffList"
+        :hover="true"
+        :striped="true"
+        :row-key="'id'"
+        @click-row="goToDetail"
+      >
+        <!-- 이름 셀 커스터마이징 -->
+        <template #cell-staffName="{ item, value }">
+          <div class="name-cell" @click="goToDetail(item)">
+            <div class="color-box" :style="{ backgroundColor: item.colorCode }"></div>
+            {{ value }}&nbsp;
+            <p style="color: #888888">({{ item.loginId }})</p>
+          </div>
+        </template>
+        <!-- 재직 상태 커스터마이징 -->
+        <template #cell-isActive="{ item }">
+          <BaseBadge
+            :type="item.leftDate ? 'error' : 'success'"
+            :text="item.leftDate ? '퇴직' : '재직'"
+            dot
+          />
+        </template>
+      </BaseTable>
+    </div>
 
     <!-- 페이지네이션 -->
     <Pagination
@@ -45,229 +57,70 @@
       @page-change="handlePageChange"
     />
   </div>
+  <BaseToast ref="toastRef" />
 </template>
 
 <script setup>
-  import { ref, computed, onMounted } from 'vue';
+  import { ref, computed, onMounted, watch } from 'vue';
   import { useRouter } from 'vue-router';
   import BaseTable from '@/components/common/BaseTable.vue';
   import BaseButton from '@/components/common/BaseButton.vue';
   import Pagination from '@/components/common/Pagination.vue';
+  import { getStaff } from '@/features/staffs/api/staffs.js';
+  import BaseToast from '@/components/common/BaseToast.vue';
+  import BaseBadge from '@/components/common/BaseBadge.vue';
+  import { debounce } from 'chart.js/helpers';
 
   const router = useRouter();
+  const toastRef = ref();
   const staffList = ref([]);
-  // ✅ 더미 데이터
-  const dummyStaffList = [
-    {
-      id: 1,
-      name: '김보라',
-      phone: '010-1111-1111',
-      position: '수석 디자이너',
-      status: '재직',
-      colorCode: '#FFB6B6',
-    },
-    {
-      id: 2,
-      name: '이준혁',
-      phone: '010-2222-2222',
-      position: '디자이너',
-      status: '재직',
-      colorCode: '#FFD29D',
-    },
-    {
-      id: 3,
-      name: '정하늘',
-      phone: '010-3333-3333',
-      position: '수습',
-      status: '재직',
-      colorCode: '#FFF5BA',
-    },
-    {
-      id: 4,
-      name: '박지현',
-      phone: '010-4444-4444',
-      position: '디자이너',
-      status: '퇴사',
-      colorCode: '#C9F4AA',
-    },
-    {
-      id: 5,
-      name: '한민서',
-      phone: '010-5555-5555',
-      position: '사장',
-      status: '재직',
-      colorCode: '#A0E7E5',
-    },
-    {
-      id: 6,
-      name: '최유진',
-      phone: '010-6666-6666',
-      position: '수석 디자이너',
-      status: '재직',
-      colorCode: '#B4F8C8',
-    },
-    {
-      id: 7,
-      name: '장도연',
-      phone: '010-7777-7777',
-      position: '수습',
-      status: '재직',
-      colorCode: '#FFDAC1',
-    },
-    {
-      id: 8,
-      name: '홍지수',
-      phone: '010-8888-8888',
-      position: '디자이너',
-      status: '퇴사',
-      colorCode: '#E0BBE4',
-    },
-    {
-      id: 9,
-      name: '유하린',
-      phone: '010-9999-9999',
-      position: '디자이너',
-      status: '재직',
-      colorCode: '#D5AAFF',
-    },
-    {
-      id: 10,
-      name: '배진우',
-      phone: '010-1010-1010',
-      position: '수습',
-      status: '재직',
-      colorCode: '#A1C6EA',
-    },
-    {
-      id: 11,
-      name: '송가희',
-      phone: '010-1112-1112',
-      position: '디자이너',
-      status: '재직',
-      colorCode: '#FF9AA2',
-    },
-    {
-      id: 12,
-      name: '문재하',
-      phone: '010-1212-1212',
-      position: '수석 디자이너',
-      status: '재직',
-      colorCode: '#FFB347',
-    },
-    {
-      id: 13,
-      name: '김태림',
-      phone: '010-1313-1313',
-      position: '수습',
-      status: '퇴사',
-      colorCode: '#B5EAD7',
-    },
-    {
-      id: 14,
-      name: '이채연',
-      phone: '010-1414-1414',
-      position: '디자이너',
-      status: '재직',
-      colorCode: '#C7CEEA',
-    },
-    {
-      id: 15,
-      name: '오서준',
-      phone: '010-1515-1515',
-      position: '수석 디자이너',
-      status: '재직',
-      colorCode: '#F3B0C3',
-    },
-    {
-      id: 16,
-      name: '권소연',
-      phone: '010-1616-1616',
-      position: '디자이너',
-      status: '재직',
-      colorCode: '#C8E7FF',
-    },
-    {
-      id: 17,
-      name: '양은서',
-      phone: '010-1717-1717',
-      position: '수습',
-      status: '퇴사',
-      colorCode: '#F8ECD1',
-    },
-    {
-      id: 18,
-      name: '조승우',
-      phone: '010-1818-1818',
-      position: '디자이너',
-      status: '재직',
-      colorCode: '#F6DFEB',
-    },
-    {
-      id: 19,
-      name: '임소민',
-      phone: '010-1919-1919',
-      position: '수석 디자이너',
-      status: '재직',
-      colorCode: '#B5EAD7',
-    },
-    {
-      id: 20,
-      name: '정동윤',
-      phone: '010-2020-2020',
-      position: '사장',
-      status: '재직',
-      colorCode: '#FFCCBC',
-    },
-  ];
-
-  onMounted(() => {
-    staffList.value = dummyStaffList;
-    totalCount.value = dummyStaffList.length;
-  });
 
   const page = ref(1);
   const limit = ref(10);
   const totalCount = ref(0);
   const searchText = ref('');
-  const onlyActive = ref(true);
+  const onlyActive = ref(false);
 
   const columns = [
-    { key: 'name', title: '이름', width: '200px' },
-    { key: 'phone', title: '연락처', width: '180px' },
-    { key: 'position', title: '직급', width: '150px' },
-    { key: 'status', title: '재직 상태', width: '120px' },
+    { key: 'staffName', title: '이름', width: '200px' },
+    { key: 'phoneNumber', title: '연락처', width: '180px' },
+    { key: 'grade', title: '직급', width: '150px' },
+    { key: 'isActive', title: '재직 상태', width: '120px' },
   ];
 
   const totalPages = computed(() => Math.ceil(totalCount.value / limit.value));
 
-  // 현재 페이지의 staffList 계산
-  const pagedStaff = computed(() => {
-    const start = (page.value - 1) * limit.value;
-    const end = start + limit.value;
-    return dummyStaffList.slice(start, end);
-  });
-
-  // 필터링된 직원 리스트
-  const filteredStaff = computed(() => {
-    return pagedStaff.value.filter(staff => {
-      const matchesName = staff.name.includes(searchText.value);
-      const matchesStatus = onlyActive.value ? staff.status === '재직' : true;
-      return matchesName && matchesStatus;
-    });
-  });
-
   const handleSearch = () => {
-    // 검색 버튼 눌렀을 때 현재 페이지를 1페이지로 초기화하고 다시 불러옴
     page.value = 1;
     fetchStaff();
   };
 
   const fetchStaff = async () => {
-    // todo api 연동
+    try {
+      const res = await getStaff({
+        page: page.value,
+        size: limit.value,
+        keyword: searchText.value || null,
+        isActive: onlyActive.value,
+      });
+
+      staffList.value = res.data.data.staffList;
+      totalCount.value = res.data.data.pagination.totalItems;
+      totalPages.value = res.data.data.pagination.totalPages;
+    } catch (err) {
+      toastRef.value?.error?.('직원 목록 조회에 실패했습니다.');
+    }
   };
 
   const handlePageChange = newPage => {
     page.value = newPage;
+    fetchStaff();
+  };
+
+  const resetFilters = () => {
+    searchText.value = '';
+    onlyActive.value = false;
+    page.value = 1;
     fetchStaff();
   };
 
@@ -278,7 +131,23 @@
   const goToDetail = staff => {
     router.push({ name: 'StaffDetail', params: { id: staff.id } });
   };
-  // onMounted(fetchStaff);
+  onMounted(() => {
+    fetchStaff();
+  });
+
+  // 검색
+  watch(
+    searchText,
+    debounce(() => {
+      page.value = 1;
+      fetchStaff();
+    }, 400)
+  );
+
+  watch(onlyActive, () => {
+    page.value = 1;
+    fetchStaff();
+  });
 </script>
 
 <style scoped>
@@ -322,5 +191,13 @@
     display: flex;
     align-items: center;
     cursor: pointer;
+  }
+
+  .table-wrapper {
+    background-color: #fff;
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    margin-top: 1.5rem;
   }
 </style>
