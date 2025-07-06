@@ -81,4 +81,12 @@ public class Sales {
     this.salesMemo = salesMemo;
     this.salesDate = salesDate;
   }
+
+  public Boolean isRefunded() {
+    return isRefunded;
+  }
+
+  public void setRefunded(boolean isRefunded) {
+    this.isRefunded = isRefunded;
+  }
 }
