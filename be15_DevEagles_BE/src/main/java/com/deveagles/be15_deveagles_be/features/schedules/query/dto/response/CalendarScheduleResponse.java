@@ -7,7 +7,7 @@ import lombok.Builder;
 @Builder
 public record CalendarScheduleResponse(
     Long id,
-    ScheduleType scheduleType, // PLAN / REGULAR / LEAVE / REGULAR_LEAVE / RESERVATION
+    ScheduleType scheduleType, // PLAN / REGULAR_PLAN / LEAVE / REGULAR_LEAVE / RESERVATION
     String title, // 제목 or 고객명
     LocalDateTime startAt,
     LocalDateTime endAt,
