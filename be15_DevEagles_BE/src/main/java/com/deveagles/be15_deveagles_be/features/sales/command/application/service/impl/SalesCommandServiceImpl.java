@@ -29,4 +29,19 @@ public class SalesCommandServiceImpl implements SalesCommandService {
 
     sales.setRefunded(true);
   }
+
+  @Transactional
+  @Override
+  public void deleteSales(Long salesId) {
+    Sales sales =
+        salesRepository
+            .findById(salesId)
+            .orElseThrow(() -> new BusinessException(ErrorCode.SALES_NOT_FOUND));
+
+    if (sales.getDeletedAt() != null) {
+      throw new BusinessException(ErrorCode.SALES_ALREADY_DELETED);
+    }
+
+    sales.delete(); // deletedAt = now()
+  }
 }

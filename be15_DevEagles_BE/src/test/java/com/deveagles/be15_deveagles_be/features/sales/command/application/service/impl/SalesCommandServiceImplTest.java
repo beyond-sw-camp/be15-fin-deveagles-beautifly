@@ -7,6 +7,7 @@ import com.deveagles.be15_deveagles_be.common.exception.BusinessException;
 import com.deveagles.be15_deveagles_be.common.exception.ErrorCode;
 import com.deveagles.be15_deveagles_be.features.sales.command.domain.aggregate.Sales;
 import com.deveagles.be15_deveagles_be.features.sales.command.domain.repository.SalesRepository;
+import java.time.LocalDateTime;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -68,5 +69,49 @@ class SalesCommandServiceImplTest {
     BusinessException exception =
         assertThrows(BusinessException.class, () -> salesCommandService.refundSales(salesId));
     assertEquals(ErrorCode.SALES_ALREADY_REFUNDED, exception.getErrorCode());
+  }
+
+  @Test
+  @DisplayName("성공: 매출 soft delete 처리")
+  void deleteSales_success() {
+    // given
+    Long salesId = 1L;
+    Sales sales = mock(Sales.class);
+    when(sales.getDeletedAt()).thenReturn(null);
+    when(salesRepository.findById(salesId)).thenReturn(Optional.of(sales));
+
+    // when
+    salesCommandService.deleteSales(salesId);
+
+    // then
+    verify(sales).delete(); // soft delete가 호출됐는지 확인
+  }
+
+  @Test
+  @DisplayName("예외: 존재하지 않는 매출 ID")
+  void deleteSales_salesNotFound() {
+    // given
+    Long salesId = 1L;
+    when(salesRepository.findById(salesId)).thenReturn(Optional.empty());
+
+    // when & then
+    BusinessException exception =
+        assertThrows(BusinessException.class, () -> salesCommandService.deleteSales(salesId));
+    assertEquals(ErrorCode.SALES_NOT_FOUND, exception.getErrorCode());
+  }
+
+  @Test
+  @DisplayName("예외: 이미 삭제된 매출")
+  void deleteSales_alreadyDeleted() {
+    // given
+    Long salesId = 1L;
+    Sales sales = mock(Sales.class);
+    when(sales.getDeletedAt()).thenReturn(LocalDateTime.now()); // 이미 삭제됨
+    when(salesRepository.findById(salesId)).thenReturn(Optional.of(sales));
+
+    // when & then
+    BusinessException exception =
+        assertThrows(BusinessException.class, () -> salesCommandService.deleteSales(salesId));
+    assertEquals(ErrorCode.SALES_ALREADY_DELETED, exception.getErrorCode());
   }
 }

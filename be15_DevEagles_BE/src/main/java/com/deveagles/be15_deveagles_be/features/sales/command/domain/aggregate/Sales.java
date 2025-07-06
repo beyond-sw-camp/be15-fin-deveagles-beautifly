@@ -89,4 +89,8 @@ public class Sales {
   public void setRefunded(boolean isRefunded) {
     this.isRefunded = isRefunded;
   }
+
+  public void delete() {
+    this.deletedAt = LocalDateTime.now();
+  }
 }
