@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.deveagles.be15_deveagles_be.features.membership.query.mapper.CustomerMembershipMapper">
+
+    <resultMap id="CustomerMembershipResultMap" type="com.deveagles.be15_deveagles_be.features.membership.query.dto.response.CustomerMembershipResponse">
+        <id property="customerId" column="customer_id"/>
+        <result property="customerName" column="customer_name"/>
+        <result property="phoneNumber" column="phone_number"/>
+        <result property="totalRemainingPrepaidAmount" column="total_remaining_prepaid_amount"/>
+        <result property="expirationDate" column="expiration_date"/>
+    </resultMap>
+
+    <!-- 전체 조회 -->
+    <select id="findAllCustomerMemberships" resultMap="CustomerMembershipResultMap">
+        SELECT
+            c.customer_id AS customer_id,
+            c.customer_name AS customer_name,
+            c.phone_number AS phone_number,
+            COALESCE(SUM(cp.remaining_amount), 0) AS total_remaining_prepaid_amount,
+            (
+                SELECT MIN(cs.expiration_date)
+                FROM customer_session_pass cs
+                WHERE cs.customer_id = c.customer_id
+                  AND cs.remaining_count > 0
+                  AND cs.expiration_date >= CURRENT_DATE
+                  AND cs.deleted_at IS NULL
+            ) AS expiration_date
+        FROM customer c
+                 LEFT JOIN customer_prepaid_pass cp ON c.customer_id = cp.customer_id
+            AND cp.remaining_amount > 0
+            AND cp.expiration_date >= CURRENT_DATE
+            AND cp.deleted_at IS NULL
+        WHERE c.shop_id = #{shopId}
+          AND (
+            EXISTS (
+                SELECT 1 FROM customer_prepaid_pass cpp
+                WHERE cpp.customer_id = c.customer_id
+                  AND cpp.remaining_amount > 0
+                  AND cpp.expiration_date >= CURRENT_DATE
+                  AND cpp.deleted_at IS NULL
+            )
+                OR EXISTS (
+                SELECT 1 FROM customer_session_pass csp
+                WHERE csp.customer_id = c.customer_id
+                  AND csp.remaining_count > 0
+                  AND csp.expiration_date >= CURRENT_DATE
+                  AND csp.deleted_at IS NULL
+            )
+            )
+        GROUP BY c.customer_id
+        ORDER BY c.customer_name
+            LIMIT #{offset}, #{size}
+    </select>
+
+    <select id="countAllCustomerMemberships" resultType="long">
+        SELECT COUNT(DISTINCT c.customer_id)
+        FROM customer c
+        WHERE c.shop_id = #{shopId}
+          AND (
+            EXISTS (
+                SELECT 1 FROM customer_prepaid_pass cpp
+                WHERE cpp.customer_id = c.customer_id
+                  AND cpp.remaining_amount > 0
+                  AND cpp.expiration_date >= CURRENT_DATE
+                  AND cpp.deleted_at IS NULL
+            )
+                OR EXISTS (
+                SELECT 1 FROM customer_session_pass csp
+                WHERE csp.customer_id = c.customer_id
+                  AND csp.remaining_count > 0
+                  AND csp.expiration_date >= CURRENT_DATE
+                  AND csp.deleted_at IS NULL
+            )
+            )
+    </select>
+
+    <!-- 필터 조회 -->
+    <select id="findCustomerMemberships" resultMap="CustomerMembershipResultMap">
+        SELECT
+        c.customer_id AS customer_id,
+        c.customer_name AS customer_name,
+        c.phone_number AS phone_number,
+        COALESCE(SUM(cp.remaining_amount), 0) AS total_remaining_prepaid_amount,
+        (
+        SELECT MIN(cs.expiration_date)
+        FROM customer_session_pass cs
+        WHERE cs.customer_id = c.customer_id
+        AND cs.remaining_count > 0
+        AND cs.expiration_date >= CURRENT_DATE
+        AND cs.deleted_at IS NULL
+        ) AS expiration_date
+        FROM customer c
+        LEFT JOIN customer_prepaid_pass cp ON c.customer_id = cp.customer_id
+        AND cp.remaining_amount > 0
+        AND cp.expiration_date >= CURRENT_DATE
+        AND cp.deleted_at IS NULL
+        WHERE c.shop_id = #{shopId}
+        AND (
+        EXISTS (
+        SELECT 1 FROM customer_prepaid_pass cpp
+        WHERE cpp.customer_id = c.customer_id
+        AND cpp.remaining_amount > 0
+        AND cpp.expiration_date >= CURRENT_DATE
+        AND cpp.deleted_at IS NULL
+        )
+        OR EXISTS (
+        SELECT 1 FROM customer_session_pass csp
+        WHERE csp.customer_id = c.customer_id
+        AND csp.remaining_count > 0
+        AND csp.expiration_date >= CURRENT_DATE
+        AND csp.deleted_at IS NULL
+        )
+        )
+        <if test="filter.minRemainingAmount != null">
+            AND cp.remaining_amount &gt;= #{filter.minRemainingAmount}
+        </if>
+        <if test="filter.maxRemainingAmount != null">
+            AND cp.remaining_amount &lt;= #{filter.maxRemainingAmount}
+        </if>
+        GROUP BY c.customer_id
+        ORDER BY c.customer_name
+        LIMIT #{offset}, #{filter.size}
+    </select>
+
+    <select id="countCustomerMemberships" resultType="long">
+        SELECT COUNT(DISTINCT c.customer_id)
+        FROM customer c
+        LEFT JOIN customer_prepaid_pass cp ON c.customer_id = cp.customer_id
+        AND cp.remaining_amount > 0
+        AND cp.expiration_date >= CURRENT_DATE
+        AND cp.deleted_at IS NULL
+        WHERE c.shop_id = #{shopId}
+        AND (
+        EXISTS (
+        SELECT 1 FROM customer_prepaid_pass cpp
+        WHERE cpp.customer_id = c.customer_id
+        AND cpp.remaining_amount > 0
+        AND cpp.expiration_date >= CURRENT_DATE
+        AND cpp.deleted_at IS NULL
+        )
+        OR EXISTS (
+        SELECT 1 FROM customer_session_pass csp
+        WHERE csp.customer_id = c.customer_id
+        AND csp.remaining_count > 0
+        AND csp.expiration_date >= CURRENT_DATE
+        AND csp.deleted_at IS NULL
+        )
+        )
+        <if test="filter.minRemainingAmount != null">
+            AND cp.remaining_amount &gt;= #{filter.minRemainingAmount}
+        </if>
+        <if test="filter.maxRemainingAmount != null">
+            AND cp.remaining_amount &lt;= #{filter.maxRemainingAmount}
+        </if>
+    </select>
+
+    <!-- session_passes 는 따로 조회 -->
+    <select id="findSessionPassesByCustomerId" resultType="com.deveagles.be15_deveagles_be.features.membership.query.dto.response.SessionPassInfo">
+        SELECT DISTINCT sp.session_pass_name AS sessionPassName
+        FROM customer_session_pass csp
+                 JOIN session_pass sp ON csp.session_pass_id = sp.session_pass_id
+        WHERE csp.customer_id = #{customerId}
+          AND csp.remaining_count > 0
+          AND csp.expiration_date >= CURRENT_DATE
+          AND csp.deleted_at IS NULL
+    </select>
+
+</mapper>
