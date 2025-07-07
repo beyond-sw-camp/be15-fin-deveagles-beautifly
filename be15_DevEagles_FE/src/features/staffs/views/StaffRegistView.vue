@@ -66,6 +66,7 @@
         v-model="form.grade"
         label="직급"
         type="text"
+        placeholder="직급을 입력해주세요."
         :error="errors.grade"
         @focus="clearError('grade')"
       />
@@ -291,6 +292,11 @@
       } else {
         errors.value.phoneNumber = '전화번호를 정확히 입력해주세요.';
       }
+      valid = false;
+    }
+
+    if (!form.value.grade) {
+      errors.value.grade = '직급을 입력해주세요.';
       valid = false;
     }
 
