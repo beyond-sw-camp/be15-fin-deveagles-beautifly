@@ -129,6 +129,7 @@ be15_DevEagles_DA/logs/
 *.h5
 *.pt
 *.onnx
+cached_analysis.json
 
 # Analytics environment configuration
 be15_DevEagles_DA/.env

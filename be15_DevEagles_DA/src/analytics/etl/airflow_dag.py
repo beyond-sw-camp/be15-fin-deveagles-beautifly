@@ -2,6 +2,8 @@
 
 from datetime import datetime, timedelta
 from typing import Dict, Any
+import os
+import requests
 
 try:
     from airflow import DAG
@@ -15,6 +17,7 @@ except ImportError:
     AIRFLOW_AVAILABLE = False
 
 from analytics.core.logging import get_logger
+from analytics.core.config import settings
 from .config import DEFAULT_AIRFLOW_CONFIG, DEFAULT_ETL_CONFIG
 from .pipeline import create_pipeline
 
@@ -124,8 +127,6 @@ def check_data_quality(**context) -> Dict[str, Any]:
 
 def send_notification(**context) -> Dict[str, Any]:
     """알림 전송 태스크."""
-    # TODO: 디스코드, 이메일 등으로 알림 전송
-    
     task_instance = context['task_instance']
     dag_run = context['dag_run']
     
@@ -133,19 +134,53 @@ def send_notification(**context) -> Dict[str, Any]:
     etl_result = task_instance.xcom_pull(task_ids='run_etl_pipeline')
     quality_result = task_instance.xcom_pull(task_ids='check_data_quality')
     
+    # 디스코드 메시지 포맷팅
     message = f"""
-    ETL Pipeline Completed
+    **ETL Pipeline 실행 결과**
     
-    Execution Date: {dag_run.execution_date}
-    ETL Success: {etl_result.get('success', False) if etl_result else False}
-    Quality Checks: {len(quality_result.get('quality_issues', [])) if quality_result else 0} issues
+    📅 실행 일시: {dag_run.execution_date}
+    ✅ ETL 성공 여부: {etl_result.get('success', False) if etl_result else False}
+    🔍 품질 검사: {len(quality_result.get('quality_issues', [])) if quality_result else 0} 이슈 발견
     
-    Results: {etl_result.get('results', {}) if etl_result else {}}
+    **처리 결과**
     """
     
-    logger.info(f"Notification: {message}")
+    # ETL 결과 상세 정보 추가
+    if etl_result and 'results' in etl_result:
+        for step, result in etl_result['results'].items():
+            message += f"\n• {step}: {result.get('records_processed', 0)} 건 처리 ({result.get('processing_time_seconds', 0):.2f}초)"
     
-    return {"success": True, "message": message}
+    # 품질 이슈가 있다면 추가
+    if quality_result and quality_result.get('quality_issues'):
+        message += "\n\n**발견된 품질 이슈**"
+        for issue in quality_result['quality_issues']:
+            message += f"\n❗ {issue}"
+    
+    logger.info(f"Sending Discord notification")
+    
+    # 디스코드 웹훅 URL 가져오기
+    webhook_url = os.getenv('DISCORD_WEBHOOK_URL')
+    if not webhook_url:
+        logger.warning("Discord webhook URL not found in environment variables")
+        return {"success": False, "error": "Discord webhook URL not configured"}
+    
+    try:
+        # 디스코드로 메시지 전송
+        response = requests.post(
+            webhook_url,
+            json={
+                "content": message,
+                "username": "ETL Pipeline Bot",
+                "avatar_url": "https://i.imgur.com/4M34hi2.png"
+            }
+        )
+        response.raise_for_status()
+        logger.info("Discord notification sent successfully")
+        return {"success": True, "message": message}
+        
+    except Exception as e:
+        logger.error(f"Failed to send Discord notification: {e}")
+        return {"success": False, "error": str(e)}
 
 
 def create_customer_analytics_dag():
