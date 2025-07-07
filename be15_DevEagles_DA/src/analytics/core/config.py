@@ -271,11 +271,11 @@ class Settings(BaseSettings):
 
     @property
     def crm_pool_size(self) -> int:
-        return self.database.get("crm", DatabaseConfig()).pool_size
+        return self.database.get("crm", DatabaseConfig(url="", pool_size=5)).pool_size
 
     @property
     def crm_max_overflow(self) -> int:
-        return self.database.get("crm", DatabaseConfig()).max_overflow
+        return self.database.get("crm", DatabaseConfig(url="", max_overflow=10)).max_overflow
 
     @property
     def analytics_db_path(self) -> str:
