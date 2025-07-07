@@ -2,12 +2,12 @@
   <div class="staff-detail-view">
     <h2>직원 정보 설정</h2>
 
-    <div class="staff-detail-layout">
+    <div v-if="staff" class="staff-detail-layout">
       <div class="form-column">
-        <StaffForm v-model="staffForm" />
+        <StaffForm v-model="staff" />
       </div>
       <div class="permission-column">
-        <StaffPermission v-model="staffForm.permissions" />
+        <StaffPermission v-model="staff.permissions" />
       </div>
     </div>
 
@@ -16,56 +16,45 @@
       <BaseButton @click="handleSave">저장하기</BaseButton>
     </div>
   </div>
+  <BaseToast ref="toastRef" />
 </template>
 
 <script setup>
-  import { ref } from 'vue';
+  import { onMounted, ref } from 'vue';
   import BaseButton from '@/components/common/BaseButton.vue';
   import StaffForm from '@/features/staffs/components/StaffForm.vue';
   import StaffPermission from '@/features/staffs/components/StaffPermission.vue';
+  import { useRoute, useRouter } from 'vue-router';
+  import { getStaffDetail } from '@/features/staffs/api/staffs.js';
+  import BaseToast from '@/components/common/BaseToast.vue';
 
-  // 직원 정보 초기값
-  const staffForm = ref({
-    profileImage: '',
-    colorCode: '#FFB6B6',
-    name: '김보라',
-    username: 'bora@example.com',
-    phone: '010-1111-1111',
-    position: '수석 디자이너',
-    status: true,
-    joinDate: '2021-12-25',
-    retireDate: '',
-    permissions: [
-      {
-        key: 'customer',
-        label: '고객 관리',
-        enabled: true,
-        read: true,
-        write: false,
-        delete: false,
-      },
-      {
-        key: 'reservation',
-        label: '예약 관리',
-        enabled: false,
-        read: false,
-        write: false,
-        delete: false,
-      },
-      {
-        key: 'sales',
-        label: '매출 관리',
-        enabled: true,
-        read: true,
-        write: true,
-        delete: false,
-      },
-    ],
+  const route = useRoute();
+  const router = useRouter();
+  const toastRef = ref();
+
+  const staffId = route.params.staffId;
+  const staff = ref(null);
+
+  const fetchStaffDetail = async () => {
+    try {
+      const res = await getStaffDetail(staffId);
+      staff.value = res.data.data;
+    } catch (err) {
+      const message = err?.message || '존재하지 않는 직원입니다.';
+      toastRef.value?.error?.(message);
+      setTimeout(() => {
+        router.push('/settings/staff');
+      }, 1000);
+    }
+  };
+
+  onMounted(() => {
+    fetchStaffDetail();
   });
 
   const handleSave = () => {
     // todo api 연동
-    console.log('직원 정보 저장:', staffForm.value);
+    console.log('직원 정보 저장:', staff.value);
   };
 </script>
 

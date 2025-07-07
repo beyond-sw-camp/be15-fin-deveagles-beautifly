@@ -6,8 +6,10 @@ import com.deveagles.be15_deveagles_be.features.auth.command.domain.aggregate.Ac
 import com.deveagles.be15_deveagles_be.features.auth.command.domain.aggregate.AccessList;
 import com.deveagles.be15_deveagles_be.features.auth.command.repository.AccessAuthRepository;
 import com.deveagles.be15_deveagles_be.features.auth.command.repository.AccessListRepository;
+import com.deveagles.be15_deveagles_be.features.auth.query.infroStructure.repository.AccessAuthQueryRepository;
 import com.deveagles.be15_deveagles_be.features.users.command.application.dto.request.CreateStaffRequest;
 import com.deveagles.be15_deveagles_be.features.users.command.application.dto.response.StaffInfoResponse;
+import com.deveagles.be15_deveagles_be.features.users.command.application.dto.response.StaffPermissions;
 import com.deveagles.be15_deveagles_be.features.users.command.domain.aggregate.Staff;
 import com.deveagles.be15_deveagles_be.features.users.command.domain.aggregate.StaffStatus;
 import com.deveagles.be15_deveagles_be.features.users.command.repository.UserRepository;
@@ -29,6 +31,7 @@ public class StaffCommandServiceImpl implements StaffCommandService {
   private final AccessAuthRepository accessAuthRepository;
   private final PasswordEncoder passwordEncoder;
   private final UserCommandService userCommandService;
+  private final AccessAuthQueryRepository accessAuthQueryRepository;
 
   @Override
   @Transactional
@@ -81,12 +84,14 @@ public class StaffCommandServiceImpl implements StaffCommandService {
             .findStaffByStaffId(staffId)
             .orElseThrow(() -> new BusinessException(ErrorCode.STAFF_NOT_FOUND));
 
-    List<AccessAuth> authList = accessAuthRepository.findAllByStaffId(staffId);
+    List<StaffPermissions> permissions =
+        accessAuthQueryRepository.getAccessPermissionsByStaffId(staffId);
 
-    return buildStaffInfoResponse(staff, authList);
+    return buildStaffInfoResponse(staff, permissions);
   }
 
-  private StaffInfoResponse buildStaffInfoResponse(Staff staff, List<AccessAuth> authList) {
+  private StaffInfoResponse buildStaffInfoResponse(
+      Staff staff, List<StaffPermissions> permissions) {
 
     boolean isWorking = staff.getLeftDate() == null;
 
@@ -99,7 +104,8 @@ public class StaffCommandServiceImpl implements StaffCommandService {
         .joinedDate(staff.getJoinedDate())
         .phoneNumber(staff.getPhoneNumber())
         .description(staff.getStaffDescription())
-        .accessList(authList)
+        .profileUrl(staff.getProfileUrl())
+        .permissions(permissions)
         .build();
   }
 }

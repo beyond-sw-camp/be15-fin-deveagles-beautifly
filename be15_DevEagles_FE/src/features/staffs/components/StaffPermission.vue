@@ -2,23 +2,27 @@
   <div class="permission-section">
     <h3>접근 권한 목록</h3>
 
-    <div v-for="(perm, index) in permissions" :key="perm.key" class="permission-item">
+    <div
+      v-for="(perm, index) in permissions"
+      :key="perm.authId ?? `${perm.accessName}-${index}`"
+      class="permission-item"
+    >
       <!-- 권한 활성화 토글 -->
       <div class="permission-header">
-        <label>{{ perm.label }}</label>
-        <BaseToggleSwitch v-model="perm.enabled" />
+        <label>{{ perm.accessName }}</label>
+        <BaseToggleSwitch v-model="perm.active" />
       </div>
 
       <!-- 하위 권한: 읽기/쓰기/삭제 -->
-      <div v-if="perm.enabled" class="permission-detail">
+      <div v-if="perm.active" class="permission-detail">
         <BaseForm
           v-model="perm.permissions"
           type="checkbox"
           :label="''"
           :options="[
-            { value: 'read', text: '읽기' },
-            { value: 'write', text: '쓰기' },
-            { value: 'delete', text: '삭제' },
+            { value: 'canRead', text: '읽기' },
+            { value: 'canWrite', text: '쓰기' },
+            { value: 'canDelete', text: '삭제' },
           ]"
         />
       </div>
@@ -39,17 +43,34 @@
 
   const permissions = ref([]);
 
+  // 1. props → 내부 상태로 변환 (boolean → 배열)
   watch(
     () => props.modelValue,
     val => {
-      permissions.value = val ? JSON.parse(JSON.stringify(val)) : [];
+      permissions.value = val
+        ? val.map(p => ({
+            ...p,
+            permissions: [
+              ...(p.canRead ? ['canRead'] : []),
+              ...(p.canWrite ? ['canWrite'] : []),
+              ...(p.canDelete ? ['canDelete'] : []),
+            ],
+          }))
+        : [];
     },
     { immediate: true, deep: true }
   );
+  // 2. 내부 상태 → 서버로 emit (배열 → boolean)
   watch(
     permissions,
     val => {
-      emit('update:modelValue', val);
+      const emitData = val.map(p => ({
+        ...p,
+        canRead: p.permissions.includes('canRead'),
+        canWrite: p.permissions.includes('canWrite'),
+        canDelete: p.permissions.includes('canDelete'),
+      }));
+      emit('update:modelValue', emitData);
     },
     { deep: true }
   );
