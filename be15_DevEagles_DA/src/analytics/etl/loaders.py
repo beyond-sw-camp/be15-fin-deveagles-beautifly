@@ -3,9 +3,111 @@
 from datetime import datetime
 from typing import List, Dict, Any
 import pandas as pd
+from sqlalchemy import text
+import logging
 
 from analytics.core.database import get_analytics_db
 from .base import BaseLoader, ETLResult
+from ..core.config import get_settings
+
+logger = logging.getLogger(__name__)
+
+class DataLoader(BaseLoader):
+    """기본 데이터 로더."""
+
+    def __init__(self, config=None):
+        super().__init__(config)
+        self.engine = get_analytics_db()
+        self.settings = get_settings()
+
+    def load(self, data: Dict[str, pd.DataFrame]) -> None:
+        """데이터를 데이터베이스에 적재."""
+        try:
+            # 고객 데이터 적재
+            if 'customers' in data:
+                self.load_customers(data['customers'])
+            
+            # 방문 데이터 적재
+            if 'visits' in data:
+                self.load_visits(data['visits'])
+            
+            # 서비스 데이터 적재
+            if 'services' in data:
+                self.load_services(data['services'])
+            
+            # 방문-서비스 상세 데이터 적재
+            if 'visit_services' in data:
+                self.load_visit_services(data['visit_services'])
+            
+        except Exception as e:
+            logger.error(f"데이터 적재 중 오류 발생: {str(e)}")
+            raise
+
+    def load_customers(self, df: pd.DataFrame) -> None:
+        """고객 데이터 적재."""
+        try:
+            table_name = 'customers'
+            self.create_table_if_not_exists(table_name, df)
+            df.to_sql(table_name, self.engine, if_exists='append', index=False)
+            
+        except Exception as e:
+            logger.error(f"고객 데이터 적재 중 오류 발생: {str(e)}")
+            raise
+
+    def load_visits(self, df: pd.DataFrame) -> None:
+        """방문 데이터 적재."""
+        try:
+            table_name = 'visits'
+            self.create_table_if_not_exists(table_name, df)
+            df.to_sql(table_name, self.engine, if_exists='append', index=False)
+            
+        except Exception as e:
+            logger.error(f"방문 데이터 적재 중 오류 발생: {str(e)}")
+            raise
+
+    def load_services(self, df: pd.DataFrame) -> None:
+        """서비스 데이터 적재."""
+        try:
+            table_name = 'services'
+            self.create_table_if_not_exists(table_name, df)
+            df.to_sql(table_name, self.engine, if_exists='append', index=False)
+            
+        except Exception as e:
+            logger.error(f"서비스 데이터 적재 중 오류 발생: {str(e)}")
+            raise
+
+    def load_visit_services(self, df: pd.DataFrame) -> None:
+        """방문-서비스 상세 데이터 적재."""
+        try:
+            table_name = 'visit_services'
+            self.create_table_if_not_exists(table_name, df)
+            df.to_sql(table_name, self.engine, if_exists='append', index=False)
+            
+        except Exception as e:
+            logger.error(f"방문-서비스 데이터 적재 중 오류 발생: {str(e)}")
+            raise
+
+    def create_table_if_not_exists(self, table_name: str, df: pd.DataFrame) -> None:
+        """테이블이 없으면 생성."""
+        try:
+            with self.engine.connect() as conn:
+                # 테이블 존재 여부 확인
+                result = conn.execute(text(f"""
+                    SELECT EXISTS (
+                        SELECT FROM information_schema.tables 
+                        WHERE table_name = '{table_name}'
+                    )
+                """))
+                exists = result.scalar()
+                
+                if not exists:
+                    # 데이터프레임의 스키마를 기반으로 테이블 생성
+                    df.head(0).to_sql(table_name, self.engine, if_exists='fail', index=False)
+                    logger.info(f"테이블 생성됨: {table_name}")
+                
+        except Exception as e:
+            logger.error(f"테이블 생성 중 오류 발생: {str(e)}")
+            raise
 
 
 class AnalyticsDataLoader(BaseLoader):

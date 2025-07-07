@@ -259,7 +259,8 @@ class PlanCommandServiceTest {
     when(planRepository.save(any(Plan.class))).thenReturn(Plan.builder().planId(999L).build());
 
     planCommandService.switchSchedule(
-        new UpdatePlanScheduleRequest(ScheduleType.REGULAR, id, ScheduleType.PLAN, request, null));
+        new UpdatePlanScheduleRequest(
+            ScheduleType.REGULAR_PLAN, id, ScheduleType.PLAN, request, null));
 
     verify(regularPlanRepository).deleteById(id);
     verify(planRepository).save(any(Plan.class));
@@ -279,7 +280,8 @@ class PlanCommandServiceTest {
         .thenReturn(RegularPlan.builder().regularPlanId(888L).build());
 
     planCommandService.switchSchedule(
-        new UpdatePlanScheduleRequest(ScheduleType.PLAN, id, ScheduleType.REGULAR, null, request));
+        new UpdatePlanScheduleRequest(
+            ScheduleType.PLAN, id, ScheduleType.REGULAR_PLAN, null, request));
 
     verify(planRepository).deleteById(id);
     verify(regularPlanRepository).save(any(RegularPlan.class));

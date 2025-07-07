@@ -11,7 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/v1/schedules")
+@RequestMapping("/schedules")
 @RequiredArgsConstructor
 @Tag(name = "휴무 관리", description = "직원 단기 및 정기 휴무 등록, 수정, 삭제 API")
 public class LeaveCommandController {

@@ -2,6 +2,11 @@ package com.deveagles.be15_deveagles_be.features.sales.command.application.servi
 
 import com.deveagles.be15_deveagles_be.common.exception.BusinessException;
 import com.deveagles.be15_deveagles_be.common.exception.ErrorCode;
+import com.deveagles.be15_deveagles_be.features.membership.command.application.dto.request.CustomerPrepaidPassRegistRequest;
+import com.deveagles.be15_deveagles_be.features.membership.command.application.service.CustomerPrepaidPassCommandService;
+import com.deveagles.be15_deveagles_be.features.membership.command.domain.aggregate.ExpirationPeriodType;
+import com.deveagles.be15_deveagles_be.features.membership.command.domain.aggregate.PrepaidPass;
+import com.deveagles.be15_deveagles_be.features.membership.command.domain.repository.PrepaidPassRepository;
 import com.deveagles.be15_deveagles_be.features.sales.command.application.dto.request.PaymentsInfo;
 import com.deveagles.be15_deveagles_be.features.sales.command.application.dto.request.PrepaidPassSalesRequest;
 import com.deveagles.be15_deveagles_be.features.sales.command.application.service.PrepaidPassSalesCommandService;
@@ -12,6 +17,7 @@ import com.deveagles.be15_deveagles_be.features.sales.command.domain.repository.
 import com.deveagles.be15_deveagles_be.features.sales.command.domain.repository.PrepaidPassSalesRepository;
 import com.deveagles.be15_deveagles_be.features.sales.command.domain.repository.SalesRepository;
 import jakarta.transaction.Transactional;
+import java.time.LocalDate;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -21,31 +27,28 @@ import org.springframework.stereotype.Service;
 public class PrepaidPassSalesCommandServiceImpl implements PrepaidPassSalesCommandService {
 
   private final PrepaidPassSalesRepository prepaidPassSalesRepository;
+  private final PrepaidPassRepository prepaidPassRepository;
   private final SalesRepository salesRepository;
   private final PaymentsRepository paymentsRepository;
+  private final CustomerPrepaidPassCommandService customerPrepaidPassCommandService;
 
   @Transactional
   @Override
   public void registPrepaidPassSales(PrepaidPassSalesRequest request) {
 
-    if (request.getPrepaidPassId() == null)
-      throw new BusinessException(ErrorCode.PREPAIDPASS_NOT_FOUND);
-    if (request.getCustomerId() == null) throw new BusinessException(ErrorCode.CUSTOMER_NOT_FOUND);
-    if (request.getShopId() == null) throw new BusinessException(ErrorCode.SHOP_NOT_FOUND);
-    if (request.getRetailPrice() == null || request.getRetailPrice() < 0)
+    // 0. 유효성 검사
+    if (request.getRetailPrice() < 0) {
       throw new BusinessException(ErrorCode.SALES_RETAILPRICE_REQUIRED);
-    if (request.getTotalAmount() == null || request.getTotalAmount() < 0)
+    }
+    if (request.getTotalAmount() < 0) {
       throw new BusinessException(ErrorCode.SALES_TOTALAMOUNT_REQUIRED);
-    if (request.getStaffId() == null) throw new BusinessException(ErrorCode.USER_NOT_FOUND);
-
-    if (request.getSalesDate() == null)
-      throw new BusinessException(ErrorCode.SALES_SALESDATE_REQUIRED);
+    }
     for (PaymentsInfo payment : request.getPayments()) {
-      if (payment.getPaymentsMethod() == null) {
-        throw new BusinessException(ErrorCode.SALES_PAYMENTMETHOD_REQUIRED);
-      }
       if (payment.getAmount() == null || payment.getAmount() <= 0) {
         throw new BusinessException(ErrorCode.SALES_PAYMENTSAMOUNT_REQUIRED);
+      }
+      if (payment.getPaymentsMethod() == null) {
+        throw new BusinessException(ErrorCode.SALES_PAYMENTMETHOD_REQUIRED);
       }
     }
 
@@ -74,13 +77,107 @@ public class PrepaidPassSalesCommandServiceImpl implements PrepaidPassSalesComma
             .build();
     prepaidPassSalesRepository.save(prepaidPassSales);
 
-    // 3. Payment 저장
+    // 3. Payments 저장
     List<Payments> payments =
         request.getPayments().stream()
             .map(
                 p ->
                     Payments.builder()
                         .salesId(sales.getSalesId())
+                        .paymentsMethod(p.getPaymentsMethod())
+                        .amount(p.getAmount())
+                        .build())
+            .toList();
+    for (Payments payment : payments) {
+      paymentsRepository.save(payment);
+    }
+
+    // 4. 고객 선불권 등록
+    PrepaidPass prepaidPass =
+        prepaidPassRepository
+            .findById(request.getPrepaidPassId())
+            .orElseThrow(() -> new BusinessException(ErrorCode.PREPAIDPASS_NOT_FOUND));
+
+    LocalDate expirationDate =
+        calculateExpirationDate(
+            prepaidPass.getExpirationPeriod(), prepaidPass.getExpirationPeriodType());
+
+    int baseAmount = request.getRetailPrice();
+    int bonusAmount = prepaidPass.getBonus() != null ? prepaidPass.getBonus() : 0;
+
+    CustomerPrepaidPassRegistRequest passRequest = new CustomerPrepaidPassRegistRequest();
+    passRequest.setCustomerId(request.getCustomerId());
+    passRequest.setPrepaidPassId(prepaidPass.getPrepaidPassId());
+    passRequest.setRemainingAmount(baseAmount + bonusAmount);
+    passRequest.setExpirationDate(expirationDate);
+
+    customerPrepaidPassCommandService.registCustomerPrepaidPass(passRequest);
+  }
+
+  private LocalDate calculateExpirationDate(int period, ExpirationPeriodType type) {
+    return switch (type) {
+      case DAY -> LocalDate.now().plusDays(period);
+      case WEEK -> LocalDate.now().plusWeeks(period);
+      case MONTH -> LocalDate.now().plusMonths(period);
+      case YEAR -> LocalDate.now().plusYears(period);
+    };
+  }
+
+  @Transactional
+  @Override
+  public void updatePrepaidPassSales(Long salesId, PrepaidPassSalesRequest request) {
+
+    if (request.getRetailPrice() < 0) {
+      throw new BusinessException(ErrorCode.SALES_RETAILPRICE_REQUIRED);
+    }
+    if (request.getTotalAmount() < 0) {
+      throw new BusinessException(ErrorCode.SALES_TOTALAMOUNT_REQUIRED);
+    }
+    for (PaymentsInfo payment : request.getPayments()) {
+      if (payment.getAmount() == null || payment.getAmount() <= 0) {
+        throw new BusinessException(ErrorCode.SALES_PAYMENTSAMOUNT_REQUIRED);
+      }
+      if (payment.getPaymentsMethod() == null) {
+        throw new BusinessException(ErrorCode.SALES_PAYMENTMETHOD_REQUIRED);
+      }
+    }
+
+    // 1. 기존 Sales 엔티티 조회 및 업데이트
+    Sales sales =
+        salesRepository
+            .findById(salesId)
+            .orElseThrow(() -> new BusinessException(ErrorCode.SALES_NOT_FOUND));
+
+    sales.update(
+        request.getShopId(),
+        request.getCustomerId(),
+        request.getStaffId(),
+        request.getReservationId(),
+        request.getRetailPrice(),
+        request.getDiscountRate(),
+        request.getDiscountAmount(),
+        request.getTotalAmount(),
+        request.getSalesMemo(),
+        request.getSalesDate());
+
+    // 2. 기존 PrepaidPassSales 삭제 후 새로 저장
+    prepaidPassSalesRepository.deleteBySalesId(salesId);
+    PrepaidPassSales prepaidPassSales =
+        PrepaidPassSales.builder()
+            .salesId(salesId)
+            .prepaidPassId(request.getPrepaidPassId())
+            .build();
+    prepaidPassSalesRepository.save(prepaidPassSales);
+
+    // 3. 기존 Payments 삭제 후 재등록
+    paymentsRepository.deleteBySalesId(salesId);
+
+    List<Payments> payments =
+        request.getPayments().stream()
+            .map(
+                p ->
+                    Payments.builder()
+                        .salesId(salesId)
                         .paymentsMethod(p.getPaymentsMethod())
                         .amount(p.getAmount())
                         .build())
