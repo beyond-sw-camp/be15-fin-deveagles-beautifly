@@ -1,6 +1,5 @@
 package com.deveagles.be15_deveagles_be.features.membership.command.domain.aggregate;
 
-import com.deveagles.be15_deveagles_be.features.customers.command.domain.aggregate.Customer;
 import jakarta.persistence.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -19,13 +18,11 @@ public class CustomerSessionPass {
   @Column(name = "customer_session_pass_id")
   private Long customerSessionPassId;
 
-  @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "customer_id", nullable = false)
-  private Customer customerId;
+  @Column(name = "customer_id", nullable = false)
+  private Long customerId;
 
-  @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "session_pass_id", nullable = false)
-  private SessionPass sessionPassId;
+  @Column(name = "session_pass_id", nullable = false)
+  private Long sessionPassId;
 
   @Column(name = "remaining_count")
   private Integer remainingCount;

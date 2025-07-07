@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @Tag(name = "선불권 조회", description = "선불권 조회 API")
 @RestController
-@RequestMapping("/api/v1/prepaid-pass")
+@RequestMapping("/prepaid-pass")
 @RequiredArgsConstructor
 public class PrepaidPassQueryController {
 

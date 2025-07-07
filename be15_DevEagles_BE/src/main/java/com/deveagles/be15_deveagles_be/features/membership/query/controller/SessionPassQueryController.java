@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @Tag(name = "횟수권 조회", description = "횟수권 조회 API")
 @RestController
-@RequestMapping("/api/v1/session-pass")
+@RequestMapping("/session-pass")
 @RequiredArgsConstructor
 public class SessionPassQueryController {
 
