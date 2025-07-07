@@ -1,5 +1,7 @@
 package com.deveagles.be15_deveagles_be.features.messages.command.application.service;
 
+import com.deveagles.be15_deveagles_be.common.exception.BusinessException;
+import com.deveagles.be15_deveagles_be.common.exception.ErrorCode;
 import com.deveagles.be15_deveagles_be.features.customers.query.service.CustomerQueryService;
 import com.deveagles.be15_deveagles_be.features.messages.command.application.dto.SmsSendUnit;
 import com.deveagles.be15_deveagles_be.features.messages.command.application.dto.response.MessageSendResult;
@@ -55,23 +57,29 @@ public class ScheduledSmsSender {
       phoneNumberMap.put(customerIds.get(i), phoneNumbers.get(i));
     }
 
-    // 3. 메시지를 messageContent + senderNumber 로 그룹핑
+    // ✅ 3. shopId → senderNumber 캐싱 처리
+    Map<Long, String> senderNumberMap = new HashMap<>();
+    for (Sms sms : scheduledMessages) {
+      senderNumberMap.computeIfAbsent(
+          sms.getShopId(),
+          shopId ->
+              messageSettingRepository
+                  .findByShopId(shopId)
+                  .map(MessageSettings::getSenderNumber)
+                  .orElseThrow(() -> new BusinessException(ErrorCode.MESSAGE_SETTINGS_NOT_FOUND)));
+    }
+
+    // ✅ 4. senderNumber + messageContent 로 그룹핑
     Map<String, List<Sms>> grouped =
         scheduledMessages.stream()
             .filter(sms -> phoneNumberMap.containsKey(sms.getCustomerId()))
             .collect(
                 Collectors.groupingBy(
-                    sms -> {
-                      String senderNumber =
-                          messageSettingRepository
-                              .findByShopId(sms.getShopId())
-                              .map(MessageSettings::getSenderNumber)
-                              .orElse("");
-                      return senderNumber + "|" + sms.getMessageContent();
-                    }));
+                    sms -> senderNumberMap.get(sms.getShopId()) + "|" + sms.getMessageContent()));
 
     List<MessageSendResult> allResults = new ArrayList<>();
 
+    // 5. 그룹별 전송
     for (Map.Entry<String, List<Sms>> entry : grouped.entrySet()) {
       String[] keyParts = entry.getKey().split("\\|", 2);
       String senderNumber = keyParts[0];
@@ -89,18 +97,20 @@ public class ScheduledSmsSender {
       allResults.addAll(results);
     }
 
-    // 4. 성공/실패 반영
+    // 6. 성공/실패 반영
     List<Long> successIds =
         allResults.stream()
             .filter(MessageSendResult::success)
             .map(MessageSendResult::messageId)
             .toList();
+
     List<Long> failedIds =
         allResults.stream().filter(r -> !r.success()).map(MessageSendResult::messageId).toList();
 
     if (!successIds.isEmpty()) {
       messageCommandService.markSmsAsSent(successIds);
     }
+
     if (!failedIds.isEmpty()) {
       messageCommandService.markSmsAsFailed(failedIds);
     }
