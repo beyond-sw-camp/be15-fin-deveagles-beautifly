@@ -65,16 +65,14 @@ be15_DevEagles_DA/
 │   │   │   └── admin.py            # 관리자 API
 │   │   ├── dependencies.py         # 의존성 주입
 │   │   └── middleware.py           # API 미들웨어
-│   ├── utils/                      # 유틸리티 함수
+│   ├── dashboard/                  # Dash 기반 BI 대시보드
 │   │   ├── __init__.py
-│   │   ├── datetime_utils.py       # 날짜/시간 유틸
-│   │   ├── decorators.py           # 공통 데코레이터
-│   │   ├── validators.py           # 데이터 검증
-│   │   └── formatters.py           # 데이터 포맷팅
-│   └── scheduler/                  # 스케줄링 모듈
-│       ├── __init__.py
-│       ├── jobs.py                 # 스케줄 작업 정의
-│       └── scheduler.py            # APScheduler 설정
+│   │   ├── bi_dashboard.py         # BusinessIntelligenceDashboard 구현
+│   │   ├── components/             # 재사용 UI 컴포넌트
+│   │   ├── utils/                  # 직렬화 등 보조 모듈
+│   │   └── constants.py            # 색상, 테마 상수
+│   └── utils/                      # 유틸리티 함수 (공통)
+│       └── __init__.py
 ├── tests/                          # 테스트 코드
 │   ├── __init__.py
 │   ├── conftest.py                 # pytest 설정 및 픽스처

@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/v1/schedules/reservation/settings")
+@RequestMapping("/schedules/reservation/settings")
 @Tag(name = "예약 설정 수정", description = "매장의 요일별 예약 가능 설정 수정 API")
 public class ReservationSettingCommandController {
 

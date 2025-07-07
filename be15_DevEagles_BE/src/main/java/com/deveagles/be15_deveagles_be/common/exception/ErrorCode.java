@@ -47,6 +47,15 @@ public enum ErrorCode implements ErrorCodeType {
       "40005", "예약 메시지일 경우에는 예약 시간이 필요합니다.", HttpStatus.BAD_REQUEST),
   SCHEDULE_TIME_NOT_ALLOWED_FOR_IMMEDIATE(
       "40006", "즉시 메시지일 경우에는 예약 시간이 없습니다.", HttpStatus.BAD_REQUEST),
+  SMS_NOT_FOUND("40007", "해당 메시지가 없습니다.", HttpStatus.BAD_REQUEST),
+  TEMPLATE_NOT_FOUND("40008", "해당 템플릿이 없습니다.", HttpStatus.BAD_REQUEST),
+  TEMPLATE_ACCESS_DENIED("40009", "해당 템플릿을 수정할 수 있는 권한이 없습니다.", HttpStatus.UNAUTHORIZED),
+  SMS_SHOP_MISMATCH("40010", "해당 매장에서 접근할 수 없는 메시지입니다.", HttpStatus.BAD_REQUEST),
+  INVALID_MESSAGET_TYPE("40011", "해당 메시지는 예약 메시지가 아닙니다.", HttpStatus.BAD_REQUEST),
+  ALREADY_SENT_OR_CANCELED("40012", "해당 메시지는 취소됐거나 이미 발송된 메시지입니다.", HttpStatus.BAD_REQUEST),
+  INVALID_SCHEDULED_TIME("40013", "예약 발송 시간은 현재 시간 이후여야 합니다.", HttpStatus.BAD_REQUEST),
+  INVALID_MESSAGE_CANCEL_CONDITION("40014", "예약 취소가 불가능한 상태입니다", HttpStatus.BAD_REQUEST),
+
   // 쿠폰 관련 에러 (50000번대)
   COUPON_NOT_FOUND("50001", "쿠폰을 찾을 수 없습니다", HttpStatus.NOT_FOUND),
   COUPON_CODE_DUPLICATE("50002", "이미 존재하는 쿠폰 코드입니다", HttpStatus.CONFLICT),
@@ -87,6 +96,7 @@ public enum ErrorCode implements ErrorCodeType {
   // 정기 일정,휴무 관련 에러 (74000번대)
   INVALID_SCHEDULE_TYPE("74001", "유효하지 않은 스케줄 타입입니다", HttpStatus.BAD_REQUEST),
   INVALID_SCHEDULE_REPEAT_TYPE("74002", "정기 스케줄은 요일 또는 월 중 하나만 설정해야 합니다", HttpStatus.BAD_REQUEST),
+  INVALID_DAY_OF_WEEK("74003", "유효하지 않은 요일입니다", HttpStatus.BAD_REQUEST),
 
   // 상품, 회원권 관련 에러 (상품 :81000번대, 회원권: 82000번대)
   PRIMARY_ITEM_NAME_REQUIRED("81001", "1차 상품명을 입력해주세요.", HttpStatus.BAD_REQUEST),
@@ -117,6 +127,9 @@ public enum ErrorCode implements ErrorCodeType {
   SALES_SALESDATE_REQUIRED("90003", "매출일시를 입력해수제요.", HttpStatus.BAD_REQUEST),
   SALES_PAYMENTMETHOD_REQUIRED("90004", "결제수단을 입력해주세요.", HttpStatus.BAD_REQUEST),
   SALES_PAYMENTSAMOUNT_REQUIRED("90005", "결제금액을 입력해주세요.", HttpStatus.BAD_REQUEST),
+  SALES_NOT_FOUND("90006", "매출을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+  SALES_ALREADY_REFUNDED("90007", "이미 환불된 매출입니다.", HttpStatus.BAD_REQUEST),
+  SALES_ALREADY_DELETED("90008", "이미 삭제된 매출입니다.", HttpStatus.BAD_REQUEST),
   ;
 
   private final String code;

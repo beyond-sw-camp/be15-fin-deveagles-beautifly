@@ -17,7 +17,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/v1/schedules/plans")
+@RequestMapping("/schedules/plans")
 @RequiredArgsConstructor
 @Tag(name = "일정 조회", description = "직원 단기/정기 일정 상세 및 목록 조회 API")
 public class PlanQueryController {

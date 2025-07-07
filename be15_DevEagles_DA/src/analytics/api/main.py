@@ -18,6 +18,7 @@ logger = get_logger("api")
 async def lifespan(app: FastAPI):
     """Application lifespan manager."""
     logger.info(f"Starting {settings.app_name} v{settings.app_version}")
+    logger.info(f"CRM DB URL: {settings.crm_database_url}")
     
     # Startup
     try:
@@ -25,11 +26,12 @@ async def lifespan(app: FastAPI):
         analytics_conn = db_manager.get_analytics_connection()
         analytics_conn.execute("SELECT 1").fetchone()
         logger.info("Analytics database connection established successfully")
-        
-        # CRM database는 나중에 연결 (일단 skip)
-        # crm_engine = db_manager.get_crm_engine()
-        # with crm_engine.connect() as conn:
-        #     conn.execute("SELECT 1")
+
+        # CRM database 실제 연결 시도
+        crm_engine = db_manager.get_crm_engine()
+        with crm_engine.connect() as conn:
+            conn.execute("SELECT 1")
+        logger.info("CRM database connection established successfully")
         
     except Exception as e:
         logger.warning(f"Database connection warning: {e}")
