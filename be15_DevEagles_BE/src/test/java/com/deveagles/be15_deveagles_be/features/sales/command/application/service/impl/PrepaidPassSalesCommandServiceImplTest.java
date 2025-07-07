@@ -5,6 +5,10 @@ import static org.mockito.Mockito.*;
 
 import com.deveagles.be15_deveagles_be.common.exception.BusinessException;
 import com.deveagles.be15_deveagles_be.common.exception.ErrorCode;
+import com.deveagles.be15_deveagles_be.features.membership.command.application.service.CustomerPrepaidPassCommandService;
+import com.deveagles.be15_deveagles_be.features.membership.command.domain.aggregate.ExpirationPeriodType;
+import com.deveagles.be15_deveagles_be.features.membership.command.domain.aggregate.PrepaidPass;
+import com.deveagles.be15_deveagles_be.features.membership.command.domain.repository.PrepaidPassRepository;
 import com.deveagles.be15_deveagles_be.features.sales.command.application.dto.request.PaymentsInfo;
 import com.deveagles.be15_deveagles_be.features.sales.command.application.dto.request.PrepaidPassSalesRequest;
 import com.deveagles.be15_deveagles_be.features.sales.command.domain.aggregate.PaymentsMethod;
@@ -25,15 +29,24 @@ class PrepaidPassSalesCommandServiceImplTest {
   private SalesRepository salesRepository;
   private PaymentsRepository paymentsRepository;
   private PrepaidPassSalesCommandServiceImpl service;
+  private PrepaidPassRepository prepaidPassRepository;
+  private CustomerPrepaidPassCommandService customerPrepaidPassCommandService;
 
   @BeforeEach
   void setUp() {
     prepaidPassSalesRepository = mock(PrepaidPassSalesRepository.class);
     salesRepository = mock(SalesRepository.class);
     paymentsRepository = mock(PaymentsRepository.class);
+    prepaidPassRepository = mock(PrepaidPassRepository.class);
+    customerPrepaidPassCommandService = mock(CustomerPrepaidPassCommandService.class);
+
     service =
         new PrepaidPassSalesCommandServiceImpl(
-            prepaidPassSalesRepository, salesRepository, paymentsRepository);
+            prepaidPassSalesRepository,
+            prepaidPassRepository,
+            salesRepository,
+            paymentsRepository,
+            customerPrepaidPassCommandService);
   }
 
   // ===== 등록 테스트 =====
@@ -72,6 +85,28 @@ class PrepaidPassSalesCommandServiceImplTest {
     request.setPayments(List.of(new PaymentsInfo(null, 1000)));
     assertThrowsWithCode(
         () -> service.registPrepaidPassSales(request), ErrorCode.SALES_PAYMENTMETHOD_REQUIRED);
+  }
+
+  @Test
+  @DisplayName("성공: 등록 - 정상 요청")
+  void registSuccess() {
+    PrepaidPassSalesRequest request = validRequest();
+    when(prepaidPassRepository.findById(request.getPrepaidPassId()))
+        .thenReturn(
+            Optional.of(
+                PrepaidPass.builder()
+                    .prepaidPassId(request.getPrepaidPassId())
+                    .expirationPeriod(30)
+                    .expirationPeriodType(ExpirationPeriodType.DAY)
+                    .bonus(1000)
+                    .build()));
+
+    service.registPrepaidPassSales(request);
+
+    verify(salesRepository).save(any());
+    verify(prepaidPassSalesRepository).save(any());
+    verify(paymentsRepository, times(1)).save(any());
+    verify(customerPrepaidPassCommandService).registCustomerPrepaidPass(any());
   }
 
   // ===== 수정 테스트 =====
