@@ -32,6 +32,7 @@
 
 <script setup>
   import { ref, watch } from 'vue';
+  import isEqual from 'lodash.isequal';
   import BaseToggleSwitch from '@/components/common/BaseToggleSwitch.vue';
   import BaseForm from '@/components/common/BaseForm.vue';
 
@@ -42,25 +43,27 @@
   const emit = defineEmits(['update:modelValue']);
 
   const permissions = ref([]);
+  let prevEmitted = null;
 
-  // 1. props → 내부 상태로 변환 (boolean → 배열)
+  // ✅ modelValue → 내부 permissions 초기화
   watch(
     () => props.modelValue,
     val => {
-      permissions.value = val
-        ? val.map(p => ({
-            ...p,
-            permissions: [
-              ...(p.canRead ? ['canRead'] : []),
-              ...(p.canWrite ? ['canWrite'] : []),
-              ...(p.canDelete ? ['canDelete'] : []),
-            ],
-          }))
-        : [];
+      if (!val || isEqual(val, permissions.value)) return;
+
+      permissions.value = val.map(p => ({
+        ...p,
+        permissions: [
+          ...(p.canRead ? ['canRead'] : []),
+          ...(p.canWrite ? ['canWrite'] : []),
+          ...(p.canDelete ? ['canDelete'] : []),
+        ],
+      }));
     },
-    { immediate: true, deep: true }
+    { immediate: true }
   );
-  // 2. 내부 상태 → 서버로 emit (배열 → boolean)
+
+  // ✅ permissions 변경 시 → modelValue emit
   watch(
     permissions,
     val => {
@@ -70,7 +73,11 @@
         canWrite: p.permissions.includes('canWrite'),
         canDelete: p.permissions.includes('canDelete'),
       }));
-      emit('update:modelValue', emitData);
+
+      if (!isEqual(emitData, prevEmitted)) {
+        emit('update:modelValue', emitData);
+        prevEmitted = emitData;
+      }
     },
     { deep: true }
   );

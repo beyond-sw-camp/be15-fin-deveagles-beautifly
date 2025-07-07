@@ -4,7 +4,12 @@
 
     <div v-if="staff" class="staff-detail-layout">
       <div class="form-column">
-        <StaffForm v-model="staff" />
+        <StaffForm
+          ref="staffFormRef"
+          v-model="staff"
+          v-model:file="profileFile"
+          v-model:preview="profilePreview"
+        />
       </div>
       <div class="permission-column">
         <StaffPermission v-model="staff.permissions" />
@@ -25,20 +30,26 @@
   import StaffForm from '@/features/staffs/components/StaffForm.vue';
   import StaffPermission from '@/features/staffs/components/StaffPermission.vue';
   import { useRoute, useRouter } from 'vue-router';
-  import { getStaffDetail } from '@/features/staffs/api/staffs.js';
+  import { getStaffDetail, putStaffDetail } from '@/features/staffs/api/staffs.js';
   import BaseToast from '@/components/common/BaseToast.vue';
 
   const route = useRoute();
   const router = useRouter();
   const toastRef = ref();
 
+  const staffFormRef = ref();
+  const originalStaff = ref(null);
   const staffId = route.params.staffId;
   const staff = ref(null);
+  const profileFile = ref(null);
+  const profilePreview = ref('');
 
   const fetchStaffDetail = async () => {
     try {
       const res = await getStaffDetail(staffId);
       staff.value = res.data.data;
+      originalStaff.value = JSON.parse(JSON.stringify(res.data.data)); // 깊은 복사
+      profilePreview.value = res.data.data.profileUrl;
     } catch (err) {
       const message = err?.message || '존재하지 않는 직원입니다.';
       toastRef.value?.error?.(message);
@@ -52,9 +63,65 @@
     fetchStaffDetail();
   });
 
-  const handleSave = () => {
-    // todo api 연동
-    console.log('직원 정보 저장:', staff.value);
+  const handleSave = async () => {
+    const isValid = staffFormRef.value?.validate?.();
+    if (!isValid) {
+      toastRef.value?.error?.('입력 값을 확인해주세요.');
+      return;
+    }
+
+    const current = staff.value;
+    const origin = originalStaff.value;
+    const change = {};
+
+    const isDifferent = (key, formatter = v => v) =>
+      formatter(current[key]) !== formatter(origin[key]) ? current[key] : origin[key];
+
+    change.staffName = isDifferent('staffName');
+    change.email = isDifferent('email');
+    change.phoneNumber = isDifferent('phoneNumber');
+    change.grade = isDifferent('grade');
+    change.description = isDifferent('description');
+    change.colorCode = isDifferent('colorCode');
+
+    const formatDate = d => (d ? new Date(d).toISOString().split('T')[0] : null);
+
+    change.joinedDate =
+      formatDate(current.joinedDate) !== formatDate(origin.joinedDate)
+        ? formatDate(current.joinedDate)
+        : formatDate(origin.joinedDate);
+
+    change.leftDate =
+      formatDate(current.leftDate) !== formatDate(origin.leftDate)
+        ? formatDate(current.leftDate)
+        : formatDate(origin.leftDate);
+
+    change.permissions = current.permissions || [];
+
+    const formData = new FormData();
+    formData.append(
+      'staffRequest',
+      new Blob([JSON.stringify(change)], { type: 'application/json' })
+    );
+
+    if (profileFile.value !== null) {
+      formData.append('profile', profileFile.value);
+    } else if (!profilePreview.value && originalStaff.value.profileUrl) {
+      const emptyFile = new File([''], 'delete.png', { type: 'image/png' });
+      formData.append('profile', emptyFile);
+    }
+
+    try {
+      await putStaffDetail({
+        staffId,
+        formData,
+      });
+      toastRef.value?.success?.('직원 정보가 수정되었습니다.');
+      await fetchStaffDetail();
+    } catch (err) {
+      const message = err?.message || '직원 정보 수정에 실패했습니다.';
+      toastRef.value?.error?.(message);
+    }
   };
 </script>
 

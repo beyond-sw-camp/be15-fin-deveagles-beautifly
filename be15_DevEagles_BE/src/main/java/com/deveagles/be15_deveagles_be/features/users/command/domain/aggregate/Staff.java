@@ -140,4 +140,12 @@ public class Staff {
   public void patchDescription(String staffDescription) {
     this.staffDescription = staffDescription;
   }
+
+  public void patchJoinedDate(Date joinedDate) {
+    this.joinedDate = joinedDate;
+  }
+
+  public void patchLeftDate(Date leftDate) {
+    this.leftDate = leftDate;
+  }
 }

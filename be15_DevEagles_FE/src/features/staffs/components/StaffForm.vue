@@ -1,7 +1,7 @@
 <template>
   <div class="staff-form">
     <div class="profile-section">
-      <ProfileUpload v-model="form.profileUrl" />
+      <ProfileUpload v-model="profilePreview" v-model:file="profileFile" />
 
       <div class="color-picker-inline">
         <PickColors v-model:value="form.colorCode" class="color-picker" />
@@ -13,10 +13,32 @@
       </div>
     </div>
 
-    <BaseForm v-model="form.staffName" label="직원명" />
-    <BaseForm v-model="form.email" label="이메일" />
-    <BaseForm v-model="form.phoneNumber" label="전화번호" />
-    <BaseForm v-model="form.grade" label="직급" />
+    <BaseForm
+      v-model="form.staffName"
+      label="직원명"
+      :error="errors.staffName"
+      @focus="clearError('staffName')"
+    />
+    <BaseForm
+      v-model="form.email"
+      label="이메일"
+      :error="errors.email"
+      @blur="emailChecked"
+      @focus="clearError('email')"
+    />
+    <BaseForm
+      v-model="form.phoneNumber"
+      label="전화번호"
+      :error="errors.phoneNumber"
+      @blur="phoneChecked"
+      @focus="clearError('phoneNumber')"
+    />
+    <BaseForm
+      v-model="form.grade"
+      label="직급"
+      :error="errors.grade"
+      @focus="clearError('grade')"
+    />
     <BaseForm
       v-model="form.working"
       label="재직 상태"
@@ -27,68 +49,212 @@
       ]"
     />
     <PrimeDatePicker v-model="form.joinedDate" label="입사일" />
-    <PrimeDatePicker v-show="form.working === false" v-model="form.leftDate" label="퇴사일" />
+    <PrimeDatePicker
+      v-show="form.working === false || form.working === 'false'"
+      v-model="form.leftDate"
+      label="퇴사일"
+    />
     <BaseForm v-model="form.description" label="메모" type="textarea" :rows="4" />
   </div>
 </template>
 <script setup>
-  import { ref, watch } from 'vue';
+  import { ref, toRaw, watch } from 'vue';
+  import isEqual from 'lodash.isequal';
   import PickColors from 'vue-pick-colors';
   import ProfileUpload from '@/features/users/components/ProfileUpload.vue';
   import BaseForm from '@/components/common/BaseForm.vue';
   import PrimeDatePicker from '@/components/common/PrimeDatePicker.vue';
   import InfoTooltipIcon from '@/components/icons/InfoTooltipIcon.vue';
+  import { validEmail } from '@/features/users/api/users.js';
 
-  const props = defineProps({ modelValue: Object });
-  const emit = defineEmits(['update:modelValue']);
+  const props = defineProps({
+    modelValue: Object,
+    file: File,
+    preview: String,
+  });
 
-  const form = ref({});
+  const emit = defineEmits(['update:modelValue', 'update:file', 'update:preview']);
 
-  // 1. props → 내부 form
+  const form = ref({
+    staffName: '',
+    email: '',
+    phoneNumber: '',
+    grade: '',
+    description: '',
+    joinedDate: null,
+    leftDate: null,
+    working: true,
+    colorCode: '#3FC1C9',
+  });
+
+  const profilePreview = ref('');
+  const profileFile = ref(null);
+
+  // ✅ props 값 → 내부 form 초기화 (개별 필드 할당)
+
+  const initialized = ref(false); // 최초 1회 초기화 플래그
+
   watch(
     () => props.modelValue,
     val => {
-      if (JSON.stringify(val) !== JSON.stringify(form.value)) {
-        form.value = {
-          ...val,
-          working: Boolean(val?.working),
-          colorCode: val?.colorCode || '#3FC1C9',
-        };
+      if (!val) return;
+
+      const newForm = {
+        ...form.value,
+        staffName: val.staffName ?? form.value.staffName,
+        email: val.email ?? form.value.email,
+        phoneNumber: val.phoneNumber ?? form.value.phoneNumber,
+        grade: val.grade ?? form.value.grade,
+        description: val.description ?? form.value.description,
+        joinedDate: val.joinedDate ?? form.value.joinedDate,
+        leftDate: val.leftDate ?? form.value.leftDate,
+        working: val.working ?? form.value.working,
+        colorCode: val.colorCode ?? form.value.colorCode,
+        permissions: val.permissions ?? form.value.permissions,
+      };
+
+      if (!isEqual(newForm, toRaw(form.value))) {
+        form.value = newForm;
+      }
+
+      if (!initialized.value && val.profileUrl) {
+        profilePreview.value = val.profileUrl;
+        initialized.value = true;
       }
     },
-    { immediate: true, deep: true }
+    { immediate: true }
   );
 
-  // 2. 재직 상태 바뀔 때 퇴사일 초기화
-  // "false" (string) → false (boolean) 로 변환
+  // ✅ 내부 form 변경 → 부모에게 emit
+  let prevEmittedForm = {};
+
+  watch(
+    form,
+    () => {
+      const rawForm = toRaw(form.value);
+      if (!isEqual(rawForm, prevEmittedForm)) {
+        emit('update:modelValue', { ...rawForm });
+        prevEmittedForm = { ...rawForm }; // 최신 값 기억
+      }
+    },
+    { deep: true }
+  );
+
+  watch(profilePreview, val => emit('update:preview', val));
+  watch(profileFile, val => emit('update:file', val));
+
+  // ✅ 재직 상태에 따른 퇴사일 처리
   watch(
     () => form.value.working,
     newVal => {
-      if (newVal === 'false') {
-        form.value.working = false;
-      } else if (newVal === 'true') {
-        form.value.working = true;
-      }
+      if (newVal === false) return;
+      form.value.leftDate = null;
     }
   );
 
-  watch(
-    () => form.value.working,
-    newVal => {
-      if (newVal === true) {
-        form.value.leftDate = null;
-      }
-    }
-  );
+  // ✅ validation
+  const errors = ref({
+    staffName: '',
+    email: '',
+    phoneNumber: '',
+    grade: '',
+  });
 
-  // 3. 내부 form → 부모 emit
-  watch(
-    () => form.value,
-    val => {
-      emit('update:modelValue', val);
-    },
-    { deep: false }
-  );
+  const clearError = field => {
+    errors.value[field] = '';
+  };
+
+  const emailCheckPassed = ref(false);
+  const phonePassed = ref(false);
+
+  const emailChecked = async () => {
+    const checkItem = form.value.email?.trim();
+    if (!checkItem) {
+      errors.value.email = '이메일을 입력해주세요.';
+      emailCheckPassed.value = false;
+      return;
+    }
+
+    const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(checkItem);
+    if (!isValidEmail) {
+      errors.value.email = '올바른 이메일 형식을 입력해주세요.';
+      emailCheckPassed.value = false;
+      return;
+    }
+
+    try {
+      const res = await validEmail({ checkItem });
+      if (res.data.data === true) {
+        errors.value.email = '';
+        emailCheckPassed.value = true;
+      } else {
+        errors.value.email = '이미 사용 중인 이메일입니다.';
+        emailCheckPassed.value = false;
+      }
+    } catch (err) {
+      errors.value.email = '중복 확인 중 오류가 발생했습니다.';
+      emailCheckPassed.value = false;
+    }
+  };
+
+  const phoneChecked = () => {
+    const phoneNumber = form.value.phoneNumber?.trim();
+
+    if (!phoneNumber) {
+      errors.value.phoneNumber = '전화번호를 입력해주세요.';
+      phonePassed.value = false;
+      return;
+    }
+
+    const isValidPhone = /^[0-9]+$/.test(phoneNumber);
+
+    if (!isValidPhone) {
+      errors.value.phoneNumber = '올바른 전화번호 형식을 입력해주세요.';
+      phonePassed.value = false;
+      return;
+    }
+
+    if (phoneNumber.length === 11) {
+      errors.value.phoneNumber = '';
+      phonePassed.value = true;
+    } else {
+      errors.value.phoneNumber = '전화번호는 11자리 숫자만 입력 가능합니다.';
+      phonePassed.value = false;
+    }
+  };
+
+  const validate = () => {
+    let valid = true;
+
+    if (!form.value.email || !form.value.email.includes('@')) {
+      errors.value.email = '올바른 이메일 형식을 입력해주세요.';
+      valid = false;
+    }
+
+    if (!form.value.staffName) {
+      errors.value.staffName = '대표자명을 입력해주세요.';
+      valid = false;
+    }
+
+    if (!form.value.phoneNumber || form.value.phoneNumber.length < 10) {
+      const onlyNumberPattern = /^[0-9]+$/;
+      if (!onlyNumberPattern.test(form.value.phoneNumber)) {
+        errors.value.phoneNumber = '숫자만 입력해주세요.';
+      } else {
+        errors.value.phoneNumber = '전화번호를 정확히 입력해주세요.';
+      }
+      valid = false;
+    }
+
+    if (!form.value.grade) {
+      errors.value.grade = '직급을 입력해주세요.';
+      valid = false;
+    }
+
+    return valid;
+  };
+
+  defineExpose({ validate });
 </script>
 
 <style scoped>
