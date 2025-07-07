@@ -1,14 +1,20 @@
 package com.deveagles.be15_deveagles_be.features.schedules.command.application.service;
 
+import com.deveagles.be15_deveagles_be.common.exception.BusinessException;
+import com.deveagles.be15_deveagles_be.common.exception.ErrorCode;
 import com.deveagles.be15_deveagles_be.features.customers.query.dto.response.CustomerIdResponse;
 import com.deveagles.be15_deveagles_be.features.customers.query.service.CustomerQueryService;
+import com.deveagles.be15_deveagles_be.features.schedules.command.application.dto.request.CreateReservationFullRequest;
 import com.deveagles.be15_deveagles_be.features.schedules.command.application.dto.request.CreateReservationRequest;
+import com.deveagles.be15_deveagles_be.features.schedules.command.application.dto.request.UpdateReservationRequest;
 import com.deveagles.be15_deveagles_be.features.schedules.command.domain.aggregate.Reservation;
 import com.deveagles.be15_deveagles_be.features.schedules.command.domain.aggregate.ReservationDetail;
 import com.deveagles.be15_deveagles_be.features.schedules.command.domain.aggregate.ReservationStatusName;
 import com.deveagles.be15_deveagles_be.features.schedules.command.domain.repository.ReservationDetailRepository;
 import com.deveagles.be15_deveagles_be.features.schedules.command.domain.repository.ReservationRepository;
 import jakarta.transaction.Transactional;
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -63,5 +69,91 @@ public class ReservationService {
     }
 
     return reservation.getReservationId();
+  }
+
+  @Transactional
+  public Long createFullReservation(CreateReservationFullRequest request) {
+
+    Long customerId = request.customerId(); // null이면 미등록 고객
+    Reservation reservation =
+        Reservation.builder()
+            .staffId(request.staffId())
+            .shopId(request.shopId())
+            .customerId(customerId)
+            .reservationStatusName(ReservationStatusName.PENDING)
+            .staffMemo(request.staffMemo())
+            .reservationMemo(request.reservationMemo())
+            .reservationStartAt(request.reservationStartAt())
+            .reservationEndAt(request.reservationEndAt())
+            .build();
+
+    reservationRepository.save(reservation);
+
+    for (Long secondaryItemId : request.secondaryItemIds()) {
+      ReservationDetail detail =
+          ReservationDetail.builder()
+              .reservationId(reservation.getReservationId())
+              .secondaryItemId(secondaryItemId)
+              .build();
+      reservationDetailRepository.save(detail);
+    }
+
+    return reservation.getReservationId();
+  }
+
+  @Transactional
+  public void updateReservation(Long reservationId, UpdateReservationRequest request) {
+    // 1. 예약 조회
+    Reservation reservation =
+        reservationRepository
+            .findById(reservationId)
+            .orElseThrow(() -> new BusinessException(ErrorCode.RESERVATION_NOT_FOUND));
+
+    // 2. 예약 수정
+    reservation.update(
+        request.staffId(),
+        ReservationStatusName.valueOf(request.reservationStatusName()),
+        request.staffMemo(),
+        request.reservationMemo(),
+        request.reservationStartAt(),
+        request.reservationEndAt());
+
+    // 3. 기존 시술 항목 삭제 후 다시 등록
+    reservationDetailRepository.deleteByReservationId(reservationId);
+    List<ReservationDetail> newDetails =
+        request.secondaryItemIds().stream()
+            .map(
+                itemId ->
+                    ReservationDetail.builder()
+                        .reservationId(reservationId)
+                        .secondaryItemId(itemId)
+                        .build())
+            .toList();
+
+    reservationDetailRepository.saveAll(newDetails);
+  }
+
+  @Transactional
+  public void deleteReservation(Long reservationId) {
+    Reservation reservation =
+        reservationRepository
+            .findById(reservationId)
+            .orElseThrow(() -> new BusinessException(ErrorCode.RESERVATION_NOT_FOUND));
+
+    reservation.setDeletedAt(LocalDateTime.now());
+  }
+
+  @Transactional
+  public void changeReservationStatus(Long reservationId, ReservationStatusName newStatus) {
+    Reservation reservation =
+        reservationRepository
+            .findById(reservationId)
+            .orElseThrow(() -> new BusinessException(ErrorCode.RESERVATION_NOT_FOUND));
+
+    if (reservation.getReservationStatusName() == ReservationStatusName.PAID) {
+      throw new BusinessException(ErrorCode.MODIFY_NOT_ALLOWED_FOR_PAID_RESERVATION);
+    }
+
+    reservation.changeStatus(newStatus);
   }
 }
