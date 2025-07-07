@@ -2,12 +2,17 @@
   <div class="staff-detail-view">
     <h2>직원 정보 설정</h2>
 
-    <div class="staff-detail-layout">
+    <div v-if="staff" class="staff-detail-layout">
       <div class="form-column">
-        <StaffForm v-model="staffForm" />
+        <StaffForm
+          ref="staffFormRef"
+          v-model="staff"
+          v-model:file="profileFile"
+          v-model:preview="profilePreview"
+        />
       </div>
       <div class="permission-column">
-        <StaffPermission v-model="staffForm.permissions" />
+        <StaffPermission v-model="staff.permissions" />
       </div>
     </div>
 
@@ -16,56 +21,107 @@
       <BaseButton @click="handleSave">저장하기</BaseButton>
     </div>
   </div>
+  <BaseToast ref="toastRef" />
 </template>
 
 <script setup>
-  import { ref } from 'vue';
+  import { onMounted, ref } from 'vue';
   import BaseButton from '@/components/common/BaseButton.vue';
   import StaffForm from '@/features/staffs/components/StaffForm.vue';
   import StaffPermission from '@/features/staffs/components/StaffPermission.vue';
+  import { useRoute, useRouter } from 'vue-router';
+  import { getStaffDetail, putStaffDetail } from '@/features/staffs/api/staffs.js';
+  import BaseToast from '@/components/common/BaseToast.vue';
 
-  // 직원 정보 초기값
-  const staffForm = ref({
-    profileImage: '',
-    colorCode: '#FFB6B6',
-    name: '김보라',
-    username: 'bora@example.com',
-    phone: '010-1111-1111',
-    position: '수석 디자이너',
-    status: true,
-    joinDate: '2021-12-25',
-    retireDate: '',
-    permissions: [
-      {
-        key: 'customer',
-        label: '고객 관리',
-        enabled: true,
-        read: true,
-        write: false,
-        delete: false,
-      },
-      {
-        key: 'reservation',
-        label: '예약 관리',
-        enabled: false,
-        read: false,
-        write: false,
-        delete: false,
-      },
-      {
-        key: 'sales',
-        label: '매출 관리',
-        enabled: true,
-        read: true,
-        write: true,
-        delete: false,
-      },
-    ],
+  const route = useRoute();
+  const router = useRouter();
+  const toastRef = ref();
+
+  const staffFormRef = ref();
+  const originalStaff = ref(null);
+  const staffId = route.params.staffId;
+  const staff = ref(null);
+  const profileFile = ref(null);
+  const profilePreview = ref('');
+
+  const fetchStaffDetail = async () => {
+    try {
+      const res = await getStaffDetail(staffId);
+      staff.value = res.data.data;
+      originalStaff.value = JSON.parse(JSON.stringify(res.data.data)); // 깊은 복사
+      profilePreview.value = res.data.data.profileUrl;
+    } catch (err) {
+      const message = err?.message || '존재하지 않는 직원입니다.';
+      toastRef.value?.error?.(message);
+      setTimeout(() => {
+        router.push('/settings/staff');
+      }, 1000);
+    }
+  };
+
+  onMounted(() => {
+    fetchStaffDetail();
   });
 
-  const handleSave = () => {
-    // todo api 연동
-    console.log('직원 정보 저장:', staffForm.value);
+  const handleSave = async () => {
+    const isValid = staffFormRef.value?.validate?.();
+    if (!isValid) {
+      toastRef.value?.error?.('입력 값을 확인해주세요.');
+      return;
+    }
+
+    const current = staff.value;
+    const origin = originalStaff.value;
+    const change = {};
+
+    const isDifferent = (key, formatter = v => v) =>
+      formatter(current[key]) !== formatter(origin[key]) ? current[key] : origin[key];
+
+    change.staffName = isDifferent('staffName');
+    change.email = isDifferent('email');
+    change.phoneNumber = isDifferent('phoneNumber');
+    change.grade = isDifferent('grade');
+    change.description = isDifferent('description');
+    change.colorCode = isDifferent('colorCode');
+
+    const formatDate = d => (d ? new Date(d).toISOString().split('T')[0] : null);
+
+    change.joinedDate =
+      formatDate(current.joinedDate) !== formatDate(origin.joinedDate)
+        ? formatDate(current.joinedDate)
+        : formatDate(origin.joinedDate);
+
+    change.leftDate =
+      formatDate(current.leftDate) !== formatDate(origin.leftDate)
+        ? formatDate(current.leftDate)
+        : formatDate(origin.leftDate);
+
+    change.permissions = current.permissions || [];
+
+    const formData = new FormData();
+    formData.append(
+      'staffRequest',
+      new Blob([JSON.stringify(change)], { type: 'application/json' })
+    );
+
+    if (profileFile.value !== null) {
+      formData.append('profile', profileFile.value);
+    } else if (!profilePreview.value && originalStaff.value.profileUrl) {
+      const emptyFile = new File([''], 'delete.png', { type: 'image/png' });
+      formData.append('profile', emptyFile);
+    }
+
+    try {
+      await putStaffDetail({
+        staffId,
+        formData,
+      });
+      toastRef.value?.success?.('직원 정보가 수정되었습니다.');
+      await fetchStaffDetail();
+    } catch (err) {
+      const message = err?.message || '직원 정보 수정에 실패했습니다.';
+      toastRef.value?.error?.(message);
+    }
   };
 </script>
 

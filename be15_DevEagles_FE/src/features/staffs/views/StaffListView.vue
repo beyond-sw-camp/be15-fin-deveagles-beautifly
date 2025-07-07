@@ -26,7 +26,7 @@
         :data="staffList"
         :hover="true"
         :striped="true"
-        :row-key="'id'"
+        :row-key="'staffId'"
         @click-row="goToDetail"
       >
         <!-- 이름 셀 커스터마이징 -->
@@ -129,7 +129,7 @@
   };
 
   const goToDetail = staff => {
-    router.push({ name: 'StaffDetail', params: { id: staff.id } });
+    router.push({ name: 'StaffDetail', params: { staffId: staff.staffId } });
   };
   onMounted(() => {
     fetchStaff();

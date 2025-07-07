@@ -2,23 +2,27 @@
   <div class="permission-section">
     <h3>접근 권한 목록</h3>
 
-    <div v-for="(perm, index) in permissions" :key="perm.key" class="permission-item">
+    <div
+      v-for="(perm, index) in permissions"
+      :key="perm.authId ?? `${perm.accessName}-${index}`"
+      class="permission-item"
+    >
       <!-- 권한 활성화 토글 -->
       <div class="permission-header">
-        <label>{{ perm.label }}</label>
-        <BaseToggleSwitch v-model="perm.enabled" />
+        <label>{{ perm.accessName }}</label>
+        <BaseToggleSwitch v-model="perm.active" />
       </div>
 
       <!-- 하위 권한: 읽기/쓰기/삭제 -->
-      <div v-if="perm.enabled" class="permission-detail">
+      <div v-if="perm.active" class="permission-detail">
         <BaseForm
           v-model="perm.permissions"
           type="checkbox"
           :label="''"
           :options="[
-            { value: 'read', text: '읽기' },
-            { value: 'write', text: '쓰기' },
-            { value: 'delete', text: '삭제' },
+            { value: 'canRead', text: '읽기' },
+            { value: 'canWrite', text: '쓰기' },
+            { value: 'canDelete', text: '삭제' },
           ]"
         />
       </div>
@@ -28,6 +32,7 @@
 
 <script setup>
   import { ref, watch } from 'vue';
+  import isEqual from 'lodash.isequal';
   import BaseToggleSwitch from '@/components/common/BaseToggleSwitch.vue';
   import BaseForm from '@/components/common/BaseForm.vue';
 
@@ -38,18 +43,41 @@
   const emit = defineEmits(['update:modelValue']);
 
   const permissions = ref([]);
+  let prevEmitted = null;
 
+  // ✅ modelValue → 내부 permissions 초기화
   watch(
     () => props.modelValue,
     val => {
-      permissions.value = val ? JSON.parse(JSON.stringify(val)) : [];
+      if (!val || isEqual(val, permissions.value)) return;
+
+      permissions.value = val.map(p => ({
+        ...p,
+        permissions: [
+          ...(p.canRead ? ['canRead'] : []),
+          ...(p.canWrite ? ['canWrite'] : []),
+          ...(p.canDelete ? ['canDelete'] : []),
+        ],
+      }));
     },
-    { immediate: true, deep: true }
+    { immediate: true }
   );
+
+  // ✅ permissions 변경 시 → modelValue emit
   watch(
     permissions,
     val => {
-      emit('update:modelValue', val);
+      const emitData = val.map(p => ({
+        ...p,
+        canRead: p.permissions.includes('canRead'),
+        canWrite: p.permissions.includes('canWrite'),
+        canDelete: p.permissions.includes('canDelete'),
+      }));
+
+      if (!isEqual(emitData, prevEmitted)) {
+        emit('update:modelValue', emitData);
+        prevEmitted = emitData;
+      }
     },
     { deep: true }
   );
