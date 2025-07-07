@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.deveagles.be15_deveagles_be.features.schedules.query.mapper.ReservationSearchMapper">
+
+    <select id="findReservations" resultType="com.deveagles.be15_deveagles_be.features.schedules.query.dto.response.ReservationSearchResponse">
+        SELECT
+        r.reservation_id         AS reservationId,
+        c.customer_name          AS customerName,
+        c.phone_number         AS customerPhone,
+        r.reservation_start_at   AS reservationStartAt,
+        r.reservation_end_at     AS reservationEndAt,
+        GROUP_CONCAT(si.secondary_item_name SEPARATOR ', ') AS itemNames,
+        s.staff_name             AS staffName,
+        r.reservation_status_name AS reservationStatusName,
+        r.staff_memo             AS staffMemo,
+        r.reservation_memo       AS reservationMemo
+        FROM reservation r
+        LEFT JOIN customer c ON r.customer_id = c.customer_id
+        LEFT JOIN staff s ON r.staff_id = s.staff_id
+        LEFT JOIN reservation_detail rd ON r.reservation_id = rd.reservation_id
+        LEFT JOIN secondary_item si ON rd.secondary_item_id = si.secondary_item_id
+        WHERE r.shop_id = #{req.shopId}
+        AND r.deleted_at IS NULL
+        <if test="req.staffId != null">
+            AND r.staff_id = #{req.staffId}
+        </if>
+        <if test="req.reservationStatusName != null">
+            AND r.reservation_status_name = #{req.reservationStatusName}
+        </if>
+        <if test="req.customerKeyword != null">
+            AND (c.customer_name LIKE CONCAT('%', #{req.customerKeyword}, '%')
+            OR c.phone_number LIKE CONCAT('%', #{req.customerKeyword}, '%'))
+        </if>
+        <if test="req.from != null and req.to != null">
+            AND r.reservation_start_at BETWEEN #{req.from} AND #{req.to}
+        </if>
+        GROUP BY r.reservation_id
+        ORDER BY r.reservation_start_at ASC
+        LIMIT #{size} OFFSET #{offset}
+    </select>
+
+    <select id="countReservations" resultType="int">
+        SELECT COUNT(DISTINCT r.reservation_id)
+        FROM reservation r
+        LEFT JOIN customer c ON r.customer_id = c.customer_id
+        WHERE r.deleted_at IS NULL
+        <if test="req.shopId != null">
+            AND r.shop_id = #{req.shopId}
+        </if>
+        <if test="req.staffId != null">
+            AND r.staff_id = #{req.staffId}
+        </if>
+        <if test="req.reservationStatusName != null">
+            AND r.reservation_status_name = #{req.reservationStatusName}
+        </if>
+        <if test="req.customerKeyword != null and req.customerKeyword != ''">
+            AND (
+            c.customer_name LIKE CONCAT('%', #{req.customerKeyword}, '%')
+            OR c.phone_number LIKE CONCAT('%', #{req.customerKeyword}, '%')
+            )
+        </if>
+        <if test="req.from != null and req.to != null">
+            AND r.reservation_start_at BETWEEN #{req.from} AND #{req.to}
+        </if>
+    </select>
+
+</mapper>

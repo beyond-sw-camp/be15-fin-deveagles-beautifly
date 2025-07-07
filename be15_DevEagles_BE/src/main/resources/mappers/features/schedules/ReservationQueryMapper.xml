@@ -16,5 +16,63 @@
         ORDER BY reservation_start_at
     </select>
 
+
+    <select id="findReservationRequests" resultType="com.deveagles.be15_deveagles_be.features.schedules.query.dto.response.ReservationListResponse">
+        SELECT
+            r.reservation_id         AS reservationId,
+            c.customer_name          AS customerName,
+            c.phone_number         AS customerPhone,
+            r.reservation_start_at   AS reservationStartAt,
+            r.reservation_end_at     AS reservationEndAt,
+            GROUP_CONCAT(i.secondary_item_name SEPARATOR ', ') AS itemNames,
+            s.staff_name             AS staffName,
+            r.reservation_status_name AS reservationStatusName,
+            r.staff_memo             AS staffMemo,
+            r.reservation_memo       AS reservationMemo
+        FROM reservation r
+                 LEFT JOIN customer c ON r.customer_id = c.customer_id
+                 JOIN staff s ON r.staff_id = s.staff_id
+                 LEFT JOIN reservation_detail rd ON r.reservation_id = rd.reservation_id
+                 LEFT JOIN secondary_item i ON rd.secondary_item_id = i.secondary_item_id
+        WHERE r.shop_id = #{shopId}
+          AND r.reservation_status_name = 'PENDING'
+          AND r.deleted_at IS NULL
+          AND r.reservation_start_at >= NOW()
+        GROUP BY r.reservation_id
+        ORDER BY r.reservation_start_at ASC
+            LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countReservationRequests" resultType="long">
+        SELECT COUNT(*)
+        FROM reservation r
+        WHERE r.shop_id = #{shopId}
+          AND r.reservation_status_name = 'PENDING'
+          AND r.deleted_at IS NULL
+          AND r.reservation_start_at >= NOW()
+    </select>
+
+    <select id="findReservationDetailById"
+            resultType="com.deveagles.be15_deveagles_be.features.schedules.query.dto.response.ReservationDetailResponse">
+        SELECT
+            r.reservation_id AS reservationId,
+            c.customer_name AS customerName,
+            c.phone_number AS customerPhone,
+            r.reservation_start_at AS reservationStartAt,
+            r.reservation_end_at AS reservationEndAt,
+            s.staff_name AS staffName,
+            r.reservation_status_name AS reservationStatusName,
+            r.staff_memo AS staffMemo,
+            r.reservation_memo AS reservationMemo,
+            GROUP_CONCAT(si.secondary_item_name SEPARATOR ',') AS itemNames
+        FROM reservation r
+                 LEFT JOIN customer c ON r.customer_id = c.customer_id
+                 LEFT JOIN staff s ON r.staff_id = s.staff_id
+                 LEFT JOIN reservation_detail rd ON r.reservation_id = rd.reservation_id
+                 LEFT JOIN secondary_item si ON rd.secondary_item_id = si.secondary_item_id
+        WHERE r.reservation_id = #{reservationId}
+          AND r.shop_id = #{shopId}
+        GROUP BY r.reservation_id
+    </select>
 </mapper>
 
