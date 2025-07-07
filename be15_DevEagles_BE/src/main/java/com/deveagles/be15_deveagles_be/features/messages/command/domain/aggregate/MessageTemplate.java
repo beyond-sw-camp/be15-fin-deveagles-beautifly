@@ -44,6 +44,13 @@ public class MessageTemplate {
   @Column(name = "tag_id")
   private Long tagId;
 
+  @Enumerated(EnumType.STRING)
+  @Column(name = "automatic_event_type")
+  private AutomaticEventType automaticEventType;
+
+  @Column(name = "is_active")
+  private boolean isActive;
+
   public void softDelete() {
     this.deletedAt = LocalDateTime.now();
   }
