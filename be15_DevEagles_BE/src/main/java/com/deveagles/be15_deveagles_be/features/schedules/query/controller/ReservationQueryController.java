@@ -42,9 +42,10 @@ public class ReservationQueryController {
   @Operation(summary = "예약 신청 목록 조회", description = "매장의 PENDING 상태 예약 신청 목록을 조회합니다.")
   @GetMapping("/requests")
   public ApiResponse<PagedResponse<ReservationListResponse>> findReservationRequests(
-      @RequestParam Long shopId,
+      @AuthenticationPrincipal CustomUser user,
       @RequestParam(defaultValue = "0") int page,
       @RequestParam(defaultValue = "10") int size) {
+    Long shopId = user.getShopId();
     return ApiResponse.success(
         PagedResponse.from(reservationQueryService.findReservationRequests(shopId, page, size)));
   }
@@ -52,10 +53,12 @@ public class ReservationQueryController {
   @Operation(summary = "예약 전체 조회", description = "담당자, 상태, 고객 키워드로 예약 전체를 조회합니다.")
   @GetMapping
   public ApiResponse<PagedResponse<ReservationSearchResponse>> searchReservations(
-      ReservationSearchRequest request,
+      @AuthenticationPrincipal CustomUser user,
+      @ModelAttribute ReservationSearchRequest request,
       @RequestParam(defaultValue = "0") int page,
       @RequestParam(defaultValue = "10") int size) {
-    var result = reservationQueryService.searchReservations(request, page, size);
+
+    var result = reservationQueryService.searchReservations(user.getShopId(), request, page, size);
     return ApiResponse.success(PagedResponse.from(result));
   }
 

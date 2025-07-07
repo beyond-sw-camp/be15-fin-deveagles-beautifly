@@ -72,13 +72,13 @@ public class ReservationService {
   }
 
   @Transactional
-  public Long createFullReservation(CreateReservationFullRequest request) {
-
+  public Long createFullReservation(Long shopId, CreateReservationFullRequest request) {
     Long customerId = request.customerId(); // null이면 미등록 고객
+
     Reservation reservation =
         Reservation.builder()
             .staffId(request.staffId())
-            .shopId(request.shopId())
+            .shopId(shopId)
             .customerId(customerId)
             .reservationStatusName(ReservationStatusName.PENDING)
             .staffMemo(request.staffMemo())
@@ -102,14 +102,16 @@ public class ReservationService {
   }
 
   @Transactional
-  public void updateReservation(Long reservationId, UpdateReservationRequest request) {
-    // 1. 예약 조회
+  public void updateReservation(Long shopId, Long reservationId, UpdateReservationRequest request) {
     Reservation reservation =
         reservationRepository
             .findById(reservationId)
             .orElseThrow(() -> new BusinessException(ErrorCode.RESERVATION_NOT_FOUND));
 
-    // 2. 예약 수정
+    if (!reservation.getShopId().equals(shopId)) {
+      throw new BusinessException(ErrorCode.RESERVATION_NOT_FOUND);
+    }
+
     reservation.update(
         request.staffId(),
         ReservationStatusName.valueOf(request.reservationStatusName()),
@@ -118,7 +120,6 @@ public class ReservationService {
         request.reservationStartAt(),
         request.reservationEndAt());
 
-    // 3. 기존 시술 항목 삭제 후 다시 등록
     reservationDetailRepository.deleteByReservationId(reservationId);
     List<ReservationDetail> newDetails =
         request.secondaryItemIds().stream()
@@ -134,21 +135,30 @@ public class ReservationService {
   }
 
   @Transactional
-  public void deleteReservation(Long reservationId) {
+  public void deleteReservation(Long shopId, Long reservationId) {
     Reservation reservation =
         reservationRepository
             .findById(reservationId)
             .orElseThrow(() -> new BusinessException(ErrorCode.RESERVATION_NOT_FOUND));
+
+    if (!reservation.getShopId().equals(shopId)) {
+      throw new BusinessException(ErrorCode.RESERVATION_NOT_FOUND);
+    }
 
     reservation.setDeletedAt(LocalDateTime.now());
   }
 
   @Transactional
-  public void changeReservationStatus(Long reservationId, ReservationStatusName newStatus) {
+  public void changeReservationStatus(
+      Long shopId, Long reservationId, ReservationStatusName newStatus) {
     Reservation reservation =
         reservationRepository
             .findById(reservationId)
             .orElseThrow(() -> new BusinessException(ErrorCode.RESERVATION_NOT_FOUND));
+
+    if (!reservation.getShopId().equals(shopId)) {
+      throw new BusinessException(ErrorCode.RESERVATION_NOT_FOUND);
+    }
 
     if (reservation.getReservationStatusName() == ReservationStatusName.PAID) {
       throw new BusinessException(ErrorCode.MODIFY_NOT_ALLOWED_FOR_PAID_RESERVATION);

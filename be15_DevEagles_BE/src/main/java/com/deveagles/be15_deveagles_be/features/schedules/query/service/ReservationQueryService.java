@@ -43,16 +43,27 @@ public class ReservationQueryService {
   }
 
   public PagedResult<ReservationSearchResponse> searchReservations(
-      ReservationSearchRequest request, int page, int size) {
+      Long shopId, ReservationSearchRequest request, int page, int size) {
+
     int offset = page * size;
+
+    ReservationSearchRequest newRequest =
+        ReservationSearchRequest.builder()
+            .shopId(shopId)
+            .staffId(request.staffId())
+            .reservationStatusName(request.reservationStatusName())
+            .customerKeyword(request.customerKeyword())
+            .from(request.from())
+            .to(request.to())
+            .build();
+
     List<ReservationSearchResponse> content =
-        reservationSearchMapper.findReservations(request, offset, size);
-    int totalCount = reservationSearchMapper.countReservations(request);
+        reservationSearchMapper.findReservations(newRequest, offset, size);
+
+    int totalCount = reservationSearchMapper.countReservations(newRequest);
 
     return new PagedResult<>(
-        content,
-        new com.deveagles.be15_deveagles_be.common.dto.Pagination(
-            page, (int) Math.ceil((double) totalCount / size), totalCount));
+        content, new Pagination(page, (int) Math.ceil((double) totalCount / size), totalCount));
   }
 
   public ReservationDetailResponse getReservationDetail(Long reservationId, Long shopId) {
