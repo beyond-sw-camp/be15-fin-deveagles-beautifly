@@ -25,7 +25,7 @@ import org.springframework.web.multipart.MultipartFile;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/users")
-@Tag(name = "회원-직원", description = "회원(직원) 관련 API")
+@Tag(name = "회원", description = "회원 관련 API")
 public class UserCommandController {
 
   private final UserCommandService userCommandService;

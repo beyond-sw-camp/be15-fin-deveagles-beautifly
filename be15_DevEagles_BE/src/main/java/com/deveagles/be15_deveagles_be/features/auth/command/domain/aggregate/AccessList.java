@@ -1,11 +1,9 @@
 package com.deveagles.be15_deveagles_be.features.auth.command.domain.aggregate;
 
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
+@Builder
 @Getter
 @Entity
 @Table(name = "access_list")

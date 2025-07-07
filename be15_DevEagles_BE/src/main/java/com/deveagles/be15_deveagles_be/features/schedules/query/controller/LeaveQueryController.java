@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/v1/schedules/leaves")
+@RequestMapping("/schedules/leaves")
 @Tag(name = "휴무 조회", description = "직원 단기/정기 휴무 조회 API")
 public class LeaveQueryController {
 

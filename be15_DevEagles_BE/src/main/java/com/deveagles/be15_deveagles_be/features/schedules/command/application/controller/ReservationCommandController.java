@@ -9,7 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/v1/schedules/reservations")
+@RequestMapping("/schedules/reservations")
 @RequiredArgsConstructor
 @Tag(name = "예약 생성", description = "고객 예약 등록 API")
 public class ReservationCommandController {
