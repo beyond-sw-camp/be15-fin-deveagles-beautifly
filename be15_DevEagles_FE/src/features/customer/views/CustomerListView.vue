@@ -259,82 +259,21 @@
   import BaseToast from '@/components/common/BaseToast.vue';
   import CustomerGradeSettingsDrawer from '../components/CustomerGradeSettingsDrawer.vue';
   import CustomerTagSettingsDrawer from '../components/CustomerTagSettingsDrawer.vue';
+  import customersAPI from '../api/customers.js';
+  import tagsAPI from '../api/tags.js';
+  import gradesAPI from '../api/grades.js';
+  import { getStaff } from '@/features/staffs/api/staffs.js';
+  import { useAuthStore } from '@/store/auth.js';
 
   const activeFilters = ref({});
 
-  const dummyTags = ref([
-    { tag_id: 1, tag_name: 'VIP' },
-    { tag_id: 2, tag_name: '신규' },
-    { tag_id: 3, tag_name: '컴플레인' },
-    { tag_id: 4, tag_name: '아주아주 긴 태그명 테스트' },
-  ]);
-  const dummyStaff = ref([
-    { id: 1, name: '부재녕' },
-    { id: 2, name: '김담당' },
-    { id: 3, name: '이매니저' },
-  ]);
-  const dummyGrades = ref([
-    { id: 1, name: '일반' },
-    { id: 2, name: 'VIP' },
-    { id: 3, name: 'VVIP' },
-    { id: 4, name: '아주아주 긴 등급명 테스트' },
-  ]);
+  const authStoreMeta = useAuthStore();
 
-  const dummyData = ref(
-    Array.from({ length: 20 }, (_, i) => ({
-      customer_id: 100 - i,
-      customer_name: i % 4 === 0 ? '홍길동입니다아' : `고객${100 - i}`,
-      phone_number: `010-0000-${String(1000 + i).slice(-4)}`,
-      staff_name: i % 2 === 0 ? '부재녕' : '김담당',
-      memo:
-        i % 3 === 0
-          ? '이것은 예시 메모입니다. 길어지면 ...으로 표시됩니다. 아주 긴 메모 테스트입니다. 정말로 깁니다.'
-          : '',
-      visit_count: Math.floor(Math.random() * 10),
-      noshow_count: Math.floor(Math.random() * 2),
-      remaining_amount: Math.floor(Math.random() * 100000),
-      total_revenue: Math.floor(Math.random() * 1000000),
-      recent_visit_date: `2025-06-${String(10 + (i % 20)).padStart(2, '0')}`,
-      tags:
-        i % 3 !== 0
-          ? [
-              {
-                tag_id: i % 2 === 0 ? 1 : 4,
-                tag_name: i % 2 === 0 ? 'VIP' : '아주아주 긴 태그명 테스트',
-                color_code: i % 2 === 0 ? '#FFD700' : '#00BFFF',
-              },
-            ]
-          : [],
-      customer_grade_name: i % 2 === 0 ? '일반' : '아주아주 긴 등급명 테스트',
-      birthdate: `1990-${String((i % 12) + 1).padStart(2, '0')}-15`,
-      gender: i % 2 === 0 ? '남성' : '여성',
-      channel_id: i % 2 === 0 ? 1 : 2,
-      acquisition_channel_name: i % 2 === 0 ? '네이버검색' : '지인 추천',
-      created_at: new Date(2025, 5, 30 - i).toISOString(),
-      customer_session_passes:
-        i % 4 === 0
-          ? [
-              {
-                customer_session_pass_id: i * 10 + 1,
-                session_pass_name: '10회 이용권',
-                remaining_count: 5,
-                expiration_date: '2025-12-31',
-              },
-            ]
-          : [],
-      customer_prepaid_passes:
-        i % 5 === 0
-          ? [
-              {
-                customer_prepaid_pass_id: i * 10 + 2,
-                prepaid_pass_name: '10만원 정액권',
-                remaining_amount: 35000,
-                expiration_date: '2026-06-30',
-              },
-            ]
-          : [],
-    }))
-  );
+  // 백엔드 데이터 저장소
+  const tags = ref([]);
+  const staff = ref([]);
+  const grades = ref([]);
+  const customerList = ref([]);
 
   const columns = ref([
     { key: 'checkbox', title: '', width: '50px' },
@@ -368,6 +307,15 @@
 
   const showFilterModal = ref(false);
 
+  const showColumnDrawer = ref(false);
+  const columnSettings = ref(
+    columns.value
+      .filter(col => col.key !== 'checkbox')
+      .map(col => ({ key: col.key, title: col.title, visible: true }))
+  );
+
+  const authStore = useAuthStore();
+
   const openGradeSettingsDrawer = () => {
     showGradeSettingsDrawer.value = true;
     showGradeTagDropdown.value = false;
@@ -385,7 +333,9 @@
 
   const handleDeleteCustomerConfirmed = () => {
     if (customerIdToDelete.value) {
-      dummyData.value = dummyData.value.filter(c => c.customer_id !== customerIdToDelete.value);
+      customerList.value = customerList.value.filter(
+        c => c.customer_id !== customerIdToDelete.value
+      );
       toastRef.value?.success('고객 정보가 삭제되었습니다.');
       customerIdToDelete.value = null;
       showDetailModal.value = false;
@@ -403,28 +353,16 @@
     // showDetailModal.value = false; // [수정] 상세 모달이 닫히지 않도록 이 줄을 삭제
   }
 
-  function handleUpdateCustomer(updatedCustomer) {
-    const idx = dummyData.value.findIndex(c => c.customer_id === updatedCustomer.customer_id);
-    if (idx !== -1) {
-      dummyData.value[idx] = { ...dummyData.value[idx], ...updatedCustomer };
-      // [기능 추가] 상세 모달이 열려있다면, 그 내용도 실시간으로 갱신
-      if (
-        selectedCustomer.value &&
-        selectedCustomer.value.customer_id === updatedCustomer.customer_id
-      ) {
-        selectedCustomer.value = dummyData.value[idx];
-      }
+  async function handleUpdateCustomer(updatedCustomer) {
+    try {
+      await customersAPI.updateCustomer(updatedCustomer.customer_id, updatedCustomer);
+      toastRef.value?.success('고객 수정 완료');
+      await loadCustomers();
+      showEditDrawer.value = false;
+    } catch (err) {
+      toastRef.value?.success(err.message || '고객 수정 실패');
     }
-    toastRef.value?.success('고객 수정 완료');
-    showEditDrawer.value = false;
   }
-
-  const showColumnDrawer = ref(false);
-  const columnSettings = ref(
-    columns.value
-      .filter(col => col.key !== 'checkbox')
-      .map(col => ({ key: col.key, title: col.title, visible: true }))
-  );
 
   function openColumnDrawer() {
     showColumnDrawer.value = true;
@@ -474,7 +412,7 @@
   }
 
   const filteredData = computed(() => {
-    let data = [...dummyData.value];
+    let data = [...customerList.value];
 
     // 1. 검색어 필터링
     if (search.value) {
@@ -500,12 +438,12 @@
       }
       // 담당자
       if (filters.staff?.length > 0) {
-        const staffNames = filters.staff.map(id => dummyStaff.value.find(s => s.id === id)?.name);
+        const staffNames = filters.staff.map(id => staff.value.find(s => s.id === id)?.name);
         checkFunctions.push(c => staffNames.includes(c.staff_name));
       }
       // 등급
       if (filters.grades?.length > 0) {
-        const gradeNames = filters.grades.map(id => dummyGrades.value.find(g => g.id === id)?.name);
+        const gradeNames = filters.grades.map(id => grades.value.find(g => g.id === id)?.name);
         checkFunctions.push(c => gradeNames.includes(c.customer_grade_name));
       }
       // 생일 (이번달, 이번주, 오늘)
@@ -801,6 +739,8 @@
   }
   onMounted(() => {
     document.addEventListener('click', handleClickOutside);
+    loadCustomers();
+    loadMetaData();
   });
   onBeforeUnmount(() => {
     document.removeEventListener('click', handleClickOutside);
@@ -820,45 +760,17 @@
     toastRef.value?.success('필터가 적용되었습니다.');
   };
 
-  const acquisitionChannelOptions = [
-    { channel_id: 1, channel_name: '네이버검색' },
-    { channel_id: 2, channel_name: '지인 추천' },
-  ];
+  // 유입채널 정보는 필요 시 customers 데이터를 통해 사용합니다.
 
-  function handleCreateCustomer(newCustomer) {
-    const channel = acquisitionChannelOptions.find(c => c.channel_id === newCustomer.channel_id);
-
-    dummyData.value.unshift({
-      customer_id: Date.now(),
-      customer_name: newCustomer.name,
-      phone_number: newCustomer.phone,
-      staff_name: newCustomer.staff_name,
-      memo: newCustomer.memo,
-      visit_count: 0,
-      noshow_count: 0,
-      remaining_amount: 0,
-      total_revenue: 0,
-      recent_visit_date: null,
-      channel_id: newCustomer.channel_id,
-      acquisition_channel_name: channel ? channel.channel_name : '',
-      tags:
-        Array.isArray(newCustomer.tags) && newCustomer.tags.length > 0
-          ? newCustomer.tags.map((tag, idx) => ({
-              tag_id: Date.now() + idx,
-              ...tag,
-            }))
-          : [],
-      customer_grade_name: newCustomer.grade,
-      birthdate: newCustomer.birthdate || null,
-      gender: newCustomer.gender || null,
-      customer_session_passes: [],
-      customer_prepaid_passes: [],
-      created_at: new Date().toISOString(),
-    });
-    toastRef.value?.success('고객 등록 완료', { duration: 2000 });
-    sortKey.value = 'created_at';
-    sortOrder.value = 'desc';
-    page.value = 1;
+  async function handleCreateCustomer(newCustomer) {
+    try {
+      const shopId = authStore.shopId?.value || authStore.shopId || 1;
+      await customersAPI.createCustomer({ ...newCustomer, shopId });
+      toastRef.value?.success('고객 등록 완료', { duration: 2000 });
+      await loadCustomers();
+    } catch (err) {
+      toastRef.value?.success(err.message || '고객 등록 실패');
+    }
   }
 
   const activeFilterPills = computed(() => {
@@ -877,19 +789,19 @@
     }
     if (filters.tags?.length > 0) {
       const tagNames = filters.tags.map(
-        id => dummyTags.value.find(t => t.tag_id === id)?.tag_name || `ID:${id}`
+        id => tags.value.find(t => t.tag_id === id)?.tag_name || `ID:${id}`
       );
       addPill('tags', '태그', tagNames.join(', '), filters.tags);
     }
     if (filters.staff?.length > 0) {
       const staffNames = filters.staff.map(
-        id => dummyStaff.value.find(s => s.id === id)?.name || `ID:${id}`
+        id => staff.value.find(s => s.id === id)?.name || `ID:${id}`
       );
       addPill('staff', '담당자', staffNames.join(', '), filters.staff);
     }
     if (filters.grades?.length > 0) {
       const gradeNames = filters.grades.map(
-        id => dummyGrades.value.find(g => g.id === id)?.name || `ID:${id}`
+        id => grades.value.find(g => g.id === id)?.name || `ID:${id}`
       );
       addPill('grades', '등급', gradeNames.join(', '), filters.grades);
     }
@@ -1037,6 +949,50 @@
 
     activeFilters.value = currentFilters;
     page.value = 1;
+  }
+
+  /**
+   * 서버에서 고객 목록을 불러온다.
+   * TODO: shopId를 실제 로그인 정보에서 가져오도록 수정
+   */
+  async function loadCustomers() {
+    loading.value = true;
+    try {
+      const shopId = authStore.shopId?.value || authStore.shopId || 1;
+      const data = await customersAPI.getCustomersByShop(shopId);
+      customerList.value = data;
+    } catch (err) {
+      toastRef.value?.success(err.message || '고객 데이터를 불러오는데 실패했습니다.');
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  async function loadMetaData() {
+    const shopId = authStoreMeta.shopId?.value || authStoreMeta.shopId || 1;
+
+    // 태그
+    try {
+      tags.value = await tagsAPI.getTagsByShop(shopId);
+    } catch (e) {
+      tags.value = [];
+    }
+
+    // 등급
+    try {
+      grades.value = await gradesAPI.getGradesByShop(shopId);
+    } catch (e) {
+      grades.value = [];
+    }
+
+    // 직원
+    try {
+      const res = await getStaff({ page: 1, size: 1000, isActive: true });
+      const list = res.data?.data?.staffList || [];
+      staff.value = list.map(s => ({ id: s.staffId || s.id, name: s.staffName || s.name }));
+    } catch (e) {
+      staff.value = [];
+    }
   }
 </script>
 

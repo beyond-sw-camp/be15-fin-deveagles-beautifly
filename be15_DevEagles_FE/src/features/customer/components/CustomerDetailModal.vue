@@ -45,7 +45,7 @@
                     </div>
                     <div class="info-item">
                       <span class="label">생일</span>
-                      <span class="value">{{ customer.birthdate || '-' }}</span>
+                      <span class="value">{{ formatDate(customer.birthdate) || '-' }}</span>
                     </div>
                     <div class="info-item">
                       <span class="label">담당자</span>

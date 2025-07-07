@@ -7,7 +7,7 @@
         :style="{ zIndex: zIndex }"
         @click.self="closeDrawer"
       >
-        <transition name="drawer-slide">
+        <transition name="drawer-slide" @after-leave="$emit('afterLeave')">
           <div v-if="modelValue" :class="['drawer', `drawer-${position}`, `drawer-${size}`]">
             <!-- Drawer Header -->
             <div v-if="$slots.header || title" class="drawer-header">
@@ -75,7 +75,7 @@
         default: 1000,
       },
     },
-    emits: ['update:modelValue', 'close'],
+    emits: ['update:modelValue', 'close', 'afterLeave'],
     mounted() {
       // ESC 키로 닫기
       this.handleEscape = e => {
@@ -247,9 +247,11 @@
 
   /* Footer */
   .drawer-footer {
-    padding: 1.5rem;
     border-top: 1px solid var(--color-gray-200);
-    flex-shrink: 0;
+    padding: 1rem;
+    display: flex;
+    justify-content: center;
+    gap: 0.75rem;
   }
 
   /* Transitions */

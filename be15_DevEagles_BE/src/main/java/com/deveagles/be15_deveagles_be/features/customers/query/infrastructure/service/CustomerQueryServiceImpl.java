@@ -21,6 +21,7 @@ import com.deveagles.be15_deveagles_be.features.customers.query.repository.Custo
 import com.deveagles.be15_deveagles_be.features.customers.query.service.CustomerQueryService;
 import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -114,32 +115,104 @@ public class CustomerQueryServiceImpl implements CustomerQueryService {
 
       Pageable pageable = PageRequest.of(query.page(), query.size(), sort);
 
-      Page<CustomerDocument> documentPage;
+      // 기본 쿼리 생성
+      JPAQuery<Customer> jpaQuery =
+          queryFactory
+              .selectFrom(customer)
+              .leftJoin(customerGrade)
+              .on(customer.customerGradeId.eq(customerGrade.id))
+              .where(customer.shopId.eq(query.shopId()).and(customer.deletedAt.isNull()));
+
+      // 키워드 검색
       if (query.keyword() != null && !query.keyword().trim().isEmpty()) {
-        documentPage =
-            elasticsearchRepository.advancedSearch(query.shopId(), query.keyword(), pageable);
-      } else {
-        documentPage =
-            elasticsearchRepository.findByShopIdAndDeletedAtIsNull(query.shopId(), pageable);
+        jpaQuery.where(
+            customer
+                .customerName
+                .containsIgnoreCase(query.keyword())
+                .or(customer.phoneNumber.containsIgnoreCase(query.keyword())));
       }
 
+      // 고객 등급 필터링
+      if (query.customerGradeIds() != null && !query.customerGradeIds().isEmpty()) {
+        jpaQuery.where(customer.customerGradeId.in(query.customerGradeIds()));
+      }
+
+      // 태그 필터링
+      if (query.tagIds() != null && !query.tagIds().isEmpty()) {
+        jpaQuery
+            .innerJoin(tagByCustomer)
+            .on(customer.id.eq(tagByCustomer.customerId))
+            .where(
+                tagByCustomer.tagId.in(
+                    query.tagIds().stream().map(Long::valueOf).collect(Collectors.toList())));
+      }
+
+      // 성별 필터링
+      if (query.gender() != null) {
+        jpaQuery.where(customer.gender.eq(Customer.Gender.valueOf(query.gender())));
+      }
+
+      // 마케팅 동의 필터링
+      if (query.marketingConsent() != null) {
+        jpaQuery.where(customer.marketingConsent.eq(query.marketingConsent()));
+      }
+
+      // 알림 동의 필터링
+      if (query.notificationConsent() != null) {
+        jpaQuery.where(customer.notificationConsent.eq(query.notificationConsent()));
+      }
+
+      // 휴면 고객 제외
+      if (query.excludeDormant() != null && query.excludeDormant()) {
+        LocalDateTime dormantDate =
+            LocalDateTime.now()
+                .minusMonths(query.dormantMonths() != null ? query.dormantMonths() : 6);
+        jpaQuery.where(customer.recentVisitDate.after(dormantDate.toLocalDate()));
+      }
+
+      // 최근 메시지 수신자 제외
+      if (query.excludeRecentMessage() != null && query.excludeRecentMessage()) {
+        LocalDateTime recentMessageDate =
+            LocalDateTime.now()
+                .minusDays(query.recentMessageDays() != null ? query.recentMessageDays() : 30);
+        jpaQuery.where(
+            customer
+                .lastMessageSentAt
+                .before(recentMessageDate)
+                .or(customer.lastMessageSentAt.isNull()));
+      }
+
+      // 페이징 적용
+      long total = jpaQuery.fetchCount();
+      List<Customer> customers =
+          jpaQuery.offset(pageable.getOffset()).limit(pageable.getPageSize()).fetch();
+
+      // 결과 변환
       List<CustomerSearchResult> responses =
-          documentPage.getContent().stream()
-              .map(CustomerSearchResult::from)
+          customers.stream()
+              .map(
+                  c ->
+                      CustomerSearchResult.of(
+                          c.getId(),
+                          c.getCustomerName(),
+                          c.getPhoneNumber(),
+                          c.getCustomerGradeId(),
+                          null, // customerGradeName은 나중에 조인으로 가져오도록 수정
+                          c.getGender()))
               .collect(Collectors.toList());
 
       Pagination pagination =
           Pagination.builder()
-              .currentPage(documentPage.getNumber())
-              .totalPages(documentPage.getTotalPages())
-              .totalItems(documentPage.getTotalElements())
+              .currentPage(query.page())
+              .totalPages((int) Math.ceil((double) total / query.size()))
+              .totalItems(total)
               .build();
 
       return new PagedResult<>(responses, pagination);
 
     } catch (Exception e) {
-      log.warn("Elasticsearch 고급 검색 실패, JPA로 폴백: {}", e.getMessage());
-      return fallbackToJpaAdvancedSearch(query);
+      log.error("JPA 고급 검색 실패: {}", e.getMessage(), e);
+      throw new BusinessException(ErrorCode.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -296,54 +369,6 @@ public class CustomerQueryServiceImpl implements CustomerQueryService {
                     tuple.get(customerGrade.customerGradeName),
                     tuple.get(customer.gender)))
         .collect(Collectors.toList());
-  }
-
-  private PagedResult<CustomerSearchResult> fallbackToJpaAdvancedSearch(CustomerSearchQuery query) {
-    JPAQuery<com.querydsl.core.Tuple> baseQuery =
-        queryFactory
-            .select(
-                customer.id,
-                customer.customerName,
-                customer.phoneNumber,
-                customer.customerGradeId,
-                customerGrade.customerGradeName,
-                customer.gender)
-            .from(customer)
-            .leftJoin(customerGrade)
-            .on(customer.customerGradeId.eq(customerGrade.id))
-            .where(customer.shopId.eq(query.shopId()).and(customer.deletedAt.isNull()));
-
-    if (query.keyword() != null && !query.keyword().trim().isEmpty()) {
-      baseQuery.where(
-          customer
-              .customerName
-              .contains(query.keyword())
-              .or(customer.phoneNumber.contains(query.keyword())));
-    }
-
-    long totalCount = baseQuery.stream().count();
-
-    List<CustomerSearchResult> results =
-        baseQuery.offset((long) query.page() * query.size()).limit(query.size()).fetch().stream()
-            .map(
-                tuple ->
-                    CustomerSearchResult.of(
-                        tuple.get(customer.id),
-                        tuple.get(customer.customerName),
-                        tuple.get(customer.phoneNumber),
-                        tuple.get(customer.customerGradeId),
-                        tuple.get(customerGrade.customerGradeName),
-                        tuple.get(customer.gender)))
-            .collect(Collectors.toList());
-
-    Pagination pagination =
-        Pagination.builder()
-            .currentPage(query.page())
-            .totalPages((int) ((totalCount + query.size() - 1) / query.size()))
-            .totalItems((int) totalCount)
-            .build();
-
-    return new PagedResult<>(results, pagination);
   }
 
   private String mapSortField(String sortBy) {

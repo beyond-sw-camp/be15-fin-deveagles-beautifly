@@ -7,7 +7,7 @@
     :closable="true"
     :mask-closable="true"
     :z-index="zIndex"
-    @after-leave="resetForm"
+    @after-leave="handleAfterLeave"
   >
     <form
       class="customer-create-form"
@@ -34,7 +34,7 @@
           type="text"
           class="form-input"
           :class="{ 'input-error': errors.phone }"
-          placeholder="010-0000-0000"
+          placeholder="01000000000"
           @blur="validateField('phone')"
         />
         <div v-if="errors.phone" class="error-message">{{ errors.phone }}</div>
@@ -72,10 +72,10 @@
           <option :value="null" disabled>유입경로 선택</option>
           <option
             v-for="channel in acquisitionChannelOptions"
-            :key="channel.channel_id"
-            :value="channel.channel_id"
+            :key="channel.id"
+            :value="channel.id"
           >
-            {{ channel.channel_name }}
+            {{ channel.channelName }}
           </option>
         </select>
       </div>
@@ -130,12 +130,17 @@
 </template>
 
 <script setup>
-  import { ref, watch, defineEmits, defineProps, nextTick } from 'vue';
+  import { ref, watch, defineEmits, defineProps, nextTick, onMounted } from 'vue';
   import BaseDrawer from '@/components/common/BaseDrawer.vue';
   import BaseButton from '@/components/common/BaseButton.vue';
   import Multiselect from '@vueform/multiselect';
   import PrimeDatePicker from '@/components/common/PrimeDatePicker.vue';
   import '@vueform/multiselect/themes/default.css';
+  import { useAuthStore } from '@/store/auth.js';
+  import tagsAPI from '../api/tags.js';
+  import gradesAPI from '../api/grades.js';
+  import { getStaff } from '@/features/staffs/api/staffs.js';
+  import channelsAPI from '../api/channels.js';
 
   const props = defineProps({
     modelValue: { type: Boolean, default: false },
@@ -146,7 +151,7 @@
       default: 1000,
     },
   });
-  const emit = defineEmits(['update:modelValue', 'update', 'close']);
+  const emit = defineEmits(['update:modelValue', 'update', 'close', 'afterLeave']);
 
   const visible = ref(props.modelValue);
   watch(
@@ -156,22 +161,81 @@
       if (v) nextTick(resetForm);
     }
   );
-  watch(visible, v => emit('update:modelValue', v));
+  watch(visible, v => {
+    emit('update:modelValue', v);
+    if (!v) emit('close');
+  });
 
-  const staffOptions = ['부재녕', '김담당', '이팀장'];
-  const acquisitionChannelOptions = [
-    { channel_id: 1, channel_name: '네이버검색' },
-    { channel_id: 2, channel_name: '지인 추천' },
-  ];
-  const tagOptions = [
-    { tag_name: 'VIP', color_code: '#FFD700' },
-    { tag_name: '신규', color_code: '#00BFFF' },
-    { tag_name: '단골', color_code: '#90ee90' },
-    { tag_name: 'vvvip', color_code: '#FF69B4' },
-    { tag_name: 'jayboo', color_code: '#FFB347' },
-    { tag_name: '김치찌개', color_code: '#B0E0E6' },
-  ];
-  const gradeOptions = ['기본등급', '일반', 'VIP', '신규'];
+  const handleAfterLeave = () => {
+    emit('afterLeave');
+  };
+
+  const staffOptions = ref([]);
+  const lastStaffFetchTime = ref(0);
+  const STAFF_CACHE_DURATION = 5 * 60 * 1000; // 5분
+
+  async function loadStaffs() {
+    const now = Date.now();
+    if (staffOptions.value.length > 0 && now - lastStaffFetchTime.value < STAFF_CACHE_DURATION) {
+      return staffOptions.value;
+    }
+
+    try {
+      const shopId = authStore.shopId?.value || authStore.shopId || 1;
+      const res = await getStaff({ shopId });
+      const list = res.data?.data?.staffList || [];
+      staffOptions.value = list.map(s => s.staffName || s.staff_name || '');
+      lastStaffFetchTime.value = now;
+      return staffOptions.value;
+    } catch (e) {
+      console.warn('직원 목록 로드 실패:', e);
+      return [];
+    }
+  }
+
+  const tagOptions = ref([]);
+  const gradeOptions = ref([]);
+  const acquisitionChannelOptions = ref([]);
+
+  async function loadChannels() {
+    try {
+      const shopId = authStore.shopId?.value || authStore.shopId || 1;
+      const channels = await channelsAPI.getChannelsByShop(shopId);
+      acquisitionChannelOptions.value = channels;
+    } catch (e) {
+      console.warn('유입채널 목록 로드 실패:', e);
+      acquisitionChannelOptions.value = [];
+    }
+  }
+
+  // 메타데이터 로드 (태그 / 등급 / 직원)
+  const authStore = useAuthStore();
+
+  async function loadMeta() {
+    const shopId = authStore.shopId?.value || authStore.shopId || 1;
+
+    try {
+      const [tags, grades] = await Promise.all([
+        tagsAPI.getTagsByShop(shopId),
+        gradesAPI.getGradesByShop(shopId),
+      ]);
+      tagOptions.value = tags;
+      gradeOptions.value = grades.map(g => g.gradeName || g.name);
+    } catch (e) {
+      console.warn('메타데이터 로드 실패:', e);
+    }
+  }
+
+  onMounted(async () => {
+    await Promise.all([loadMeta(), loadStaffs(), loadChannels()]);
+  });
+
+  watch(visible, async v => {
+    emit('update:modelValue', v);
+    if (!v) emit('close');
+    if (v) await loadMeta();
+  });
+
   const today = new Date().toISOString().slice(0, 10);
 
   function getInitialForm() {
@@ -190,7 +254,7 @@
     }
     return {
       name: props.customer.customer_name || '',
-      phone: props.customer.phone_number || '',
+      phone: (props.customer.phone_number || '').replace(/-/g, ''),
       gender: props.customer.gender || '',
       birthdate: props.customer.birthdate ? new Date(props.customer.birthdate) : null,
       staff_name: props.customer.staff_name || '',
@@ -218,7 +282,7 @@
     if (field === 'name') errors.value.name = !form.value.name.trim() ? '이름을 입력해주세요' : '';
     if (field === 'phone') {
       if (!form.value.phone.trim()) errors.value.phone = '연락처를 입력해주세요';
-      else if (!/^01[016789]-\d{3,4}-\d{4}$/.test(form.value.phone))
+      else if (!/^01[016789]\d{7,8}$/.test(form.value.phone))
         errors.value.phone = '올바른 형식으로 작성해주세요';
       else errors.value.phone = '';
     }
@@ -232,14 +296,16 @@
       const payload = {
         ...props.customer,
         customer_name: form.value.name,
-        phone_number: form.value.phone,
+        phone_number: form.value.phone.replace(/-/g, ''),
         gender: form.value.gender,
-        birthdate: form.value.birthdate ? form.value.birthdate.toISOString().split('T')[0] : null,
+        birthdate: form.value.birthdate
+          ? new Date(form.value.birthdate).toISOString().split('T')[0]
+          : null,
         staff_name: form.value.staff_name,
-        channel_id: form.value.channel_id,
+        channelId: form.value.channel_id,
         tags: form.value.tags.map(
           tagName =>
-            tagOptions.find(opt => opt.tag_name === tagName) || {
+            tagOptions.value.find(opt => opt.tag_name === tagName) || {
               tag_name: tagName,
               color_code: '#ccc',
             }
@@ -247,6 +313,9 @@
         memo: form.value.memo,
         customer_grade_name: form.value.grade,
       };
+      // gender enum 변환
+      if (payload.gender === '남성') payload.gender = 'M';
+      else if (payload.gender === '여성') payload.gender = 'F';
       emit('update', payload);
       visible.value = false;
       resetForm();
@@ -331,9 +400,6 @@
   }
   .drawer-footer-actions {
     display: flex;
-    gap: 10px;
-    justify-content: flex-end;
-    margin-top: 0;
-    margin-bottom: 0;
+    gap: 0.75rem;
   }
 </style>

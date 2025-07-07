@@ -182,10 +182,15 @@ public class CustomerQueryController {
         new CustomerSearchQuery(
             shopId,
             keyword,
-            customerGradeId,
+            customerGradeId != null ? List.of(customerGradeId) : null,
+            null, // tagIds
             gender,
             marketingConsent,
             notificationConsent,
+            false, // excludeDormant
+            null, // dormantMonths
+            false, // excludeRecentMessage
+            null, // recentMessageDays
             includeDeleted,
             page,
             size,
