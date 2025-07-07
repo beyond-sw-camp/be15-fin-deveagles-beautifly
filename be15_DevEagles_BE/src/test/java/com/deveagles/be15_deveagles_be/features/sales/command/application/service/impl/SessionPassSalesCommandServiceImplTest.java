@@ -5,6 +5,10 @@ import static org.mockito.Mockito.*;
 
 import com.deveagles.be15_deveagles_be.common.exception.BusinessException;
 import com.deveagles.be15_deveagles_be.common.exception.ErrorCode;
+import com.deveagles.be15_deveagles_be.features.membership.command.application.service.CustomerSessionPassCommandService;
+import com.deveagles.be15_deveagles_be.features.membership.command.domain.aggregate.ExpirationPeriodType;
+import com.deveagles.be15_deveagles_be.features.membership.command.domain.aggregate.SessionPass;
+import com.deveagles.be15_deveagles_be.features.membership.command.domain.repository.SessionPassRepository;
 import com.deveagles.be15_deveagles_be.features.sales.command.application.dto.request.PaymentsInfo;
 import com.deveagles.be15_deveagles_be.features.sales.command.application.dto.request.SessionPassSalesRequest;
 import com.deveagles.be15_deveagles_be.features.sales.command.domain.aggregate.PaymentsMethod;
@@ -25,15 +29,24 @@ class SessionPassSalesCommandServiceImplTest {
   private SalesRepository salesRepository;
   private PaymentsRepository paymentsRepository;
   private SessionPassSalesCommandServiceImpl service;
+  private SessionPassRepository sessionPassRepository;
+  private CustomerSessionPassCommandService customerSessionPassCommandService;
 
   @BeforeEach
   void setUp() {
     sessionPassSalesRepository = mock(SessionPassSalesRepository.class);
     salesRepository = mock(SalesRepository.class);
     paymentsRepository = mock(PaymentsRepository.class);
+    sessionPassRepository = mock(SessionPassRepository.class);
+    customerSessionPassCommandService = mock(CustomerSessionPassCommandService.class);
+
     service =
         new SessionPassSalesCommandServiceImpl(
-            sessionPassSalesRepository, salesRepository, paymentsRepository);
+            sessionPassSalesRepository,
+            sessionPassRepository,
+            salesRepository,
+            paymentsRepository,
+            customerSessionPassCommandService);
   }
 
   // ===== 등록 테스트 =====
@@ -72,6 +85,30 @@ class SessionPassSalesCommandServiceImplTest {
     request.setPayments(List.of(new PaymentsInfo(null, 1000)));
     assertThrowsWithCode(
         () -> service.registSessionPassSales(request), ErrorCode.SALES_PAYMENTMETHOD_REQUIRED);
+  }
+
+  @Test
+  @DisplayName("성공: 회차권 매출 등록")
+  void registSuccess() {
+    SessionPassSalesRequest request = validRequest();
+
+    when(sessionPassRepository.findById(request.getSessionPassId()))
+        .thenReturn(
+            Optional.of(
+                SessionPass.builder()
+                    .sessionPassId(request.getSessionPassId())
+                    .expirationPeriod(60)
+                    .expirationPeriodType(ExpirationPeriodType.DAY)
+                    .session(10)
+                    .bonus(2)
+                    .build()));
+
+    service.registSessionPassSales(request);
+
+    verify(salesRepository).save(any());
+    verify(sessionPassSalesRepository).save(any());
+    verify(paymentsRepository).save(any());
+    verify(customerSessionPassCommandService).registCustomerSessionPass(any());
   }
 
   // ===== 수정 테스트 =====

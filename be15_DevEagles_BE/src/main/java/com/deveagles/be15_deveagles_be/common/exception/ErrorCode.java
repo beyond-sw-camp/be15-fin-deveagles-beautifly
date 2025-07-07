@@ -51,6 +51,12 @@ public enum ErrorCode implements ErrorCodeType {
   SMS_NOT_FOUND("40007", "해당 메시지가 없습니다.", HttpStatus.BAD_REQUEST),
   TEMPLATE_NOT_FOUND("40008", "해당 템플릿이 없습니다.", HttpStatus.BAD_REQUEST),
   TEMPLATE_ACCESS_DENIED("40009", "해당 템플릿을 수정할 수 있는 권한이 없습니다.", HttpStatus.UNAUTHORIZED),
+  SMS_SHOP_MISMATCH("40010", "해당 매장에서 접근할 수 없는 메시지입니다.", HttpStatus.BAD_REQUEST),
+  INVALID_MESSAGET_TYPE("40011", "해당 메시지는 예약 메시지가 아닙니다.", HttpStatus.BAD_REQUEST),
+  ALREADY_SENT_OR_CANCELED("40012", "해당 메시지는 취소됐거나 이미 발송된 메시지입니다.", HttpStatus.BAD_REQUEST),
+  INVALID_SCHEDULED_TIME("40013", "예약 발송 시간은 현재 시간 이후여야 합니다.", HttpStatus.BAD_REQUEST),
+  INVALID_MESSAGE_CANCEL_CONDITION("40014", "예약 취소가 불가능한 상태입니다", HttpStatus.BAD_REQUEST),
+
   // 쿠폰 관련 에러 (50000번대)
   COUPON_NOT_FOUND("50001", "쿠폰을 찾을 수 없습니다", HttpStatus.NOT_FOUND),
   COUPON_CODE_DUPLICATE("50002", "이미 존재하는 쿠폰 코드입니다", HttpStatus.CONFLICT),

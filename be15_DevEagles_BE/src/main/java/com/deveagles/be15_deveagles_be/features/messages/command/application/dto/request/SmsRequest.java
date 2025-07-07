@@ -17,4 +17,6 @@ public record SmsRequest(
     Boolean hasLink,
     Long customerGradeId,
     Long tagId,
-    MessageKind messageKind) {}
+    MessageKind messageKind,
+    Long couponId,
+    Long workflowId) {}

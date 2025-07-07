@@ -31,7 +31,6 @@ public class SessionPassSalesRequest {
   @NotNull(message = "결제금액을 입력해주세요") private Integer totalAmount;
 
   private String salesMemo;
-  ;
 
   @NotNull(message = "판매일시를 입력해주세요") private LocalDateTime SalesDate;
 
