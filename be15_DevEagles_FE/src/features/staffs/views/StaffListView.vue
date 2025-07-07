@@ -106,7 +106,6 @@
 
       staffList.value = res.data.data.staffList;
       totalCount.value = res.data.data.pagination.totalItems;
-      totalPages.value = res.data.data.pagination.totalPages;
     } catch (err) {
       toastRef.value?.error?.('직원 목록 조회에 실패했습니다.');
     }
