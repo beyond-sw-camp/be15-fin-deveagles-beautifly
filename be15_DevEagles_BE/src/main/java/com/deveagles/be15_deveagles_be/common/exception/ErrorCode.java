@@ -55,7 +55,8 @@ public enum ErrorCode implements ErrorCodeType {
   ALREADY_SENT_OR_CANCELED("40012", "해당 메시지는 취소됐거나 이미 발송된 메시지입니다.", HttpStatus.BAD_REQUEST),
   INVALID_SCHEDULED_TIME("40013", "예약 발송 시간은 현재 시간 이후여야 합니다.", HttpStatus.BAD_REQUEST),
   INVALID_MESSAGE_CANCEL_CONDITION("40014", "예약 취소가 불가능한 상태입니다", HttpStatus.BAD_REQUEST),
-
+  AUTOMATIC_TEMPLATE_ALREADY_EXISTS(
+      "40015", "이미 동일한 이벤트 타입으로 메시지가 등록 되어 있습니다.", HttpStatus.BAD_REQUEST),
   // 쿠폰 관련 에러 (50000번대)
   COUPON_NOT_FOUND("50001", "쿠폰을 찾을 수 없습니다", HttpStatus.NOT_FOUND),
   COUPON_CODE_DUPLICATE("50002", "이미 존재하는 쿠폰 코드입니다", HttpStatus.CONFLICT),
