@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 import random
 
 # 프로젝트 루트를 Python 경로에 추가
-sys.path.insert(0, str(Path(__file__).parent / "src"))
+sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
 
 def create_realistic_customer_data():
     """현실적인 고객 데이터 생성."""

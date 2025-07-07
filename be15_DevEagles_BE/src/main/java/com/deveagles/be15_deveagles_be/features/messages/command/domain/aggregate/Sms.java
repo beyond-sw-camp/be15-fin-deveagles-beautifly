@@ -1,5 +1,7 @@
 package com.deveagles.be15_deveagles_be.features.messages.command.domain.aggregate;
 
+import com.deveagles.be15_deveagles_be.common.exception.BusinessException;
+import com.deveagles.be15_deveagles_be.common.exception.ErrorCode;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import lombok.*;
@@ -21,7 +23,7 @@ public class Sms {
   @Column(name = "message_content", nullable = false, length = 500)
   private String messageContent;
 
-  @Column(name = "sent_at", nullable = false)
+  @Column(name = "sent_at", nullable = true)
   private LocalDateTime sentAt;
 
   @Enumerated(EnumType.STRING)
@@ -66,6 +68,12 @@ public class Sms {
   @Column(name = "message_kind", nullable = false)
   private MessageKind messageKind;
 
+  @Column(name = "coupon_id", nullable = true)
+  private Long couponId;
+
+  @Column(name = "workflow_id", nullable = true)
+  private Long workflowId;
+
   public void markAsSent() {
     this.sentAt = LocalDateTime.now();
     this.messageDeliveryStatus = MessageDeliveryStatus.SENT;
@@ -88,5 +96,26 @@ public class Sms {
 
   public void attachLink(boolean hasLink) {
     this.hasLink = hasLink;
+  }
+
+  public void updateReservation(
+      String messageContent, MessageKind messageKind, Long customerId, LocalDateTime scheduledAt) {
+    if (this.messageSendingType != MessageSendingType.RESERVATION) {
+      throw new BusinessException(ErrorCode.INVALID_MESSAGET_TYPE);
+    }
+    if (this.messageDeliveryStatus != MessageDeliveryStatus.PENDING) {
+      throw new BusinessException(ErrorCode.ALREADY_SENT_OR_CANCELED);
+    }
+    this.messageContent = messageContent;
+    this.messageKind = messageKind;
+    this.customerId = customerId;
+    this.scheduledAt = scheduledAt;
+  }
+
+  public boolean isReservable() {
+    return this.messageSendingType == MessageSendingType.RESERVATION
+        && this.messageDeliveryStatus == MessageDeliveryStatus.PENDING
+        && this.scheduledAt != null
+        && this.scheduledAt.isAfter(LocalDateTime.now());
   }
 }

@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "선불권", description = "선불권 API")
 @RestController
-@RequestMapping("/api/v1/prepaid-pass")
+@RequestMapping("/prepaid-pass")
 @RequiredArgsConstructor
 @Validated
 @Slf4j

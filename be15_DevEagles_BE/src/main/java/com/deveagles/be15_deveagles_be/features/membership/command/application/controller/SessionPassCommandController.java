@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "횟수권", description = "횟수권 API")
 @RestController
-@RequestMapping("/api/v1/session-pass")
+@RequestMapping("/session-pass")
 @RequiredArgsConstructor
 @Validated
 @Slf4j

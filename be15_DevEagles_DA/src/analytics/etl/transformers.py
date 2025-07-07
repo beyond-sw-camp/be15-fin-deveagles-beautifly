@@ -4,30 +4,29 @@ from datetime import datetime, date
 from typing import List, Dict, Any
 import pandas as pd
 import numpy as np
+import logging
 
 from analytics.core.config import get_settings
+from analytics.ml.churn_model import predict as predict_churn
 from .base import BaseTransformer
+
+logger = logging.getLogger(__name__)
 
 
 class CustomerAnalyticsTransformer(BaseTransformer):
-    """고객 분석 데이터 변환기."""
     
     def __init__(self, config=None):
         super().__init__(config)
         self.settings = get_settings()
     
     def transform(self, data: pd.DataFrame) -> pd.DataFrame:
-        """고객 데이터를 분석용 형태로 변환."""
         if data.empty:
             return pd.DataFrame()
         
-        # 기본 고객 정보
         result = data[['customer_id', 'name', 'phone', 'email', 'birth_date', 'gender']].copy()
         
-        # 나이 계산
         result['age'] = self._calculate_age(data['birth_date'])
         
-        # 기본값 설정
         result['first_visit_date'] = None
         result['last_visit_date'] = None
         result['total_visits'] = 0
@@ -41,8 +40,12 @@ class CustomerAnalyticsTransformer(BaseTransformer):
         result['amount_3m'] = 0.0
         result['segment'] = 'new'
         result['segment_updated_at'] = datetime.now()
-        result['churn_risk_score'] = 0.0
-        result['churn_risk_level'] = 'low'
+
+        # ---- Churn prediction ----
+        scores, levels = predict_churn(result)
+        result['churn_risk_score'] = scores
+        result['churn_risk_level'] = levels
+
         result['updated_at'] = datetime.now()
         
         return result
@@ -67,28 +70,27 @@ class CustomerAnalyticsTransformer(BaseTransformer):
 
 
 class VisitAnalyticsTransformer(BaseTransformer):
-    """방문 분석 데이터 변환기."""
     
     def transform(self, data: pd.DataFrame) -> pd.DataFrame:
-        """방문 데이터를 분석용 형태로 변환."""
         if data.empty:
             return pd.DataFrame()
         
         result = data.copy()
         
-        # employee_id 처리 (None을 NULL로 변환)
-        result['employee_id'] = data['employee_id'].fillna(None)
+        import numpy as np
+        result['employee_id'] = data['employee_id'].fillna(value=np.nan)
         
-        # 서비스 목록 파싱
-        result['service_categories'] = self._parse_service_list(data['service_categories'])
-        result['service_names'] = self._parse_service_list(data['service_names'])
+        if 'services' in data.columns:
+            result['service_categories'] = self._parse_service_list(data['services'])
+            result['service_names'] = self._parse_service_list(data['services'])
+        else:
+            result['service_categories'] = pd.Series([[]] * len(data))
+            result['service_names'] = pd.Series([[]] * len(data))
         
-        # 방문 시간 분석
         result['visit_hour'] = pd.to_datetime(data['visit_date']).dt.hour
         result['visit_weekday'] = pd.to_datetime(data['visit_date']).dt.weekday
         result['visit_month'] = pd.to_datetime(data['visit_date']).dt.month
         
-        # 기본값 설정
         result['is_first_visit'] = False
         result['days_since_previous_visit'] = None
         result['visit_sequence'] = 1
@@ -107,43 +109,34 @@ class VisitAnalyticsTransformer(BaseTransformer):
 
 
 class ServicePreferenceTransformer(BaseTransformer):
-    """서비스 선호도 분석 변환기."""
     
     def transform(self, data: pd.DataFrame) -> pd.DataFrame:
-        """방문-서비스 데이터를 고객별 선호도로 변환."""
         if data.empty:
             return pd.DataFrame()
         
-        # 고객별 서비스별 집계
         preference_data = self._aggregate_customer_service_data(data)
         
-        # 선호도 순위 계산
         preference_data = self._calculate_preference_ranks(preference_data)
         
-        # 비율 계산
         preference_data = self._calculate_ratios(preference_data)
         
-        # 최근 활동 계산
         preference_data = self._calculate_recent_activity(preference_data, data)
         
         return preference_data
     
     def _aggregate_customer_service_data(self, data: pd.DataFrame) -> pd.DataFrame:
-        """고객별 서비스별 데이터 집계."""
         agg_data = data.groupby(['customer_id', 'service_id', 'service_name', 'service_category']).agg({
             'visit_id': 'count',  # total_visits
             'final_price': ['sum', 'mean'],  # total_amount, avg_amount
-            'visit_date': ['min', 'max']  # first_service_date, last_service_date
+            'service_date': ['min', 'max']  # first_service_date, last_service_date
         }).reset_index()
         
-        # 컬럼명 정리
         agg_data.columns = [
             'customer_id', 'service_id', 'service_name', 'service_category',
             'total_visits', 'total_amount', 'avg_amount',
             'first_service_date', 'last_service_date'
         ]
         
-        # 마지막 이용일로부터 경과 일수
         today = datetime.now()
         agg_data['days_since_last_service'] = (
             today - pd.to_datetime(agg_data['last_service_date'])
@@ -154,8 +147,6 @@ class ServicePreferenceTransformer(BaseTransformer):
         return agg_data
     
     def _calculate_preference_ranks(self, data: pd.DataFrame) -> pd.DataFrame:
-        """고객별 선호도 순위 계산."""
-        # 방문 횟수 기준으로 순위 매기기
         data['preference_rank'] = data.groupby('customer_id')['total_visits'].rank(
             method='dense', ascending=False
         ).astype(int)
@@ -163,8 +154,6 @@ class ServicePreferenceTransformer(BaseTransformer):
         return data
     
     def _calculate_ratios(self, data: pd.DataFrame) -> pd.DataFrame:
-        """고객별 방문/금액 비율 계산."""
-        # 고객별 총 방문 횟수와 총 금액
         customer_totals = data.groupby('customer_id').agg({
             'total_visits': 'sum',
             'total_amount': 'sum'
@@ -172,67 +161,52 @@ class ServicePreferenceTransformer(BaseTransformer):
         
         customer_totals.columns = ['customer_id', 'customer_total_visits', 'customer_total_amount']
         
-        # 원본 데이터와 병합
         data = data.merge(customer_totals, on='customer_id')
         
-        # 비율 계산
         data['visit_ratio'] = data['total_visits'] / data['customer_total_visits']
         data['amount_ratio'] = data['total_amount'] / data['customer_total_amount']
         
-        # 임시 컬럼 제거
         data = data.drop(['customer_total_visits', 'customer_total_amount'], axis=1)
         
         return data
     
     def _calculate_recent_activity(self, preference_data: pd.DataFrame, raw_data: pd.DataFrame) -> pd.DataFrame:
-        """최근 3개월 활동 계산."""
         three_months_ago = datetime.now() - pd.Timedelta(days=90)
         
-        # 최근 3개월 데이터 필터링
-        recent_data = raw_data[pd.to_datetime(raw_data['visit_date']) >= three_months_ago]
+        recent_data = raw_data[pd.to_datetime(raw_data['service_date']) >= three_months_ago]
         
         if recent_data.empty:
             preference_data['recent_visits_3m'] = 0
             return preference_data
         
-        # 최근 3개월 방문 횟수 집계
         recent_visits = recent_data.groupby(['customer_id', 'service_id']).size().reset_index()
         recent_visits.columns = ['customer_id', 'service_id', 'recent_visits_3m']
         
-        # 병합
         preference_data = preference_data.merge(
             recent_visits, 
             on=['customer_id', 'service_id'], 
             how='left'
         )
         
-        # 결측값 처리
         preference_data['recent_visits_3m'] = preference_data['recent_visits_3m'].fillna(0).astype(int)
         
         return preference_data
 
 
 class ServiceTagsTransformer(BaseTransformer):
-    """서비스 태그 생성 변환기."""
     
     def transform(self, data: pd.DataFrame) -> pd.DataFrame:
-        """고객별 선호 서비스 태그 생성."""
         if data.empty:
             return pd.DataFrame()
         
-        # 고객별 상위 3개 서비스 추출
         top_services = self._get_top_services_per_customer(data)
         
-        # 선호 카테고리 계산
         preferred_categories = self._get_preferred_categories(data)
         
-        # 가격대 분석
         price_analysis = self._analyze_price_preferences(data)
         
-        # 다양성 점수 계산
         variety_scores = self._calculate_variety_scores(data)
         
-        # 모든 데이터 병합
         result = top_services.merge(preferred_categories, on='customer_id', how='outer')
         result = result.merge(price_analysis, on='customer_id', how='outer')
         result = result.merge(variety_scores, on='customer_id', how='outer')
@@ -242,11 +216,8 @@ class ServiceTagsTransformer(BaseTransformer):
         return result.fillna('')
     
     def _get_top_services_per_customer(self, data: pd.DataFrame) -> pd.DataFrame:
-        """고객별 상위 3개 서비스 추출."""
-        # 선호도 순위 1-3위만 필터링
         top_3 = data[data['preference_rank'] <= 3].copy()
         
-        # 피벗 테이블로 변환
         pivot = top_3.pivot_table(
             index='customer_id',
             columns='preference_rank',
@@ -254,10 +225,8 @@ class ServiceTagsTransformer(BaseTransformer):
             aggfunc='first'
         ).reset_index()
         
-        # 컬럼명 변경
         pivot.columns = ['customer_id'] + [f'top_service_{i}' for i in range(1, len(pivot.columns))]
         
-        # 1-3위 컬럼이 없는 경우 추가
         for i in range(1, 4):
             col_name = f'top_service_{i}'
             if col_name not in pivot.columns:
@@ -266,11 +235,8 @@ class ServiceTagsTransformer(BaseTransformer):
         return pivot[['customer_id', 'top_service_1', 'top_service_2', 'top_service_3']]
     
     def _get_preferred_categories(self, data: pd.DataFrame) -> pd.DataFrame:
-        """고객별 선호 카테고리 계산."""
-        # 고객별 카테고리별 방문 횟수
         category_visits = data.groupby(['customer_id', 'service_category'])['total_visits'].sum().reset_index()
         
-        # 고객별 상위 카테고리들 추출 (방문 횟수 기준)
         top_categories = category_visits.groupby('customer_id').apply(
             lambda x: x.nlargest(3, 'total_visits')['service_category'].tolist()
         ).reset_index()
@@ -280,12 +246,9 @@ class ServiceTagsTransformer(BaseTransformer):
         return top_categories
     
     def _analyze_price_preferences(self, data: pd.DataFrame) -> pd.DataFrame:
-        """고객별 가격대 선호도 분석."""
-        # 고객별 평균 서비스 가격
         avg_prices = data.groupby('customer_id')['avg_amount'].mean().reset_index()
         avg_prices.columns = ['customer_id', 'avg_service_price']
         
-        # 가격대 분류
         def classify_price_range(price):
             if price < 50000:
                 return 'low'
@@ -299,20 +262,186 @@ class ServiceTagsTransformer(BaseTransformer):
         return avg_prices
     
     def _calculate_variety_scores(self, data: pd.DataFrame) -> pd.DataFrame:
-        """고객별 서비스 다양성 점수 계산."""
-        # 고객별 이용한 서비스 개수
         service_counts = data.groupby('customer_id')['service_id'].nunique().reset_index()
         service_counts.columns = ['customer_id', 'service_count']
         
-        # 다양성 점수 (최대 10개 서비스 기준으로 정규화)
         service_counts['service_variety_score'] = np.minimum(service_counts['service_count'] / 10.0, 1.0)
         
-        # 충성 서비스 (3회 이상 이용한 서비스들)
         loyalty_services = data[data['total_visits'] >= 3].groupby('customer_id')['service_name'].apply(list).reset_index()
         loyalty_services.columns = ['customer_id', 'loyalty_services']
         
-        # 병합
         result = service_counts.merge(loyalty_services, on='customer_id', how='left')
         result['loyalty_services'] = result['loyalty_services'].fillna('').apply(lambda x: x if isinstance(x, list) else [])
         
-        return result[['customer_id', 'service_variety_score', 'loyalty_services']] 
+        return result[['customer_id', 'service_variety_score', 'loyalty_services']]
+
+
+class DataTransformer(BaseTransformer):
+    """기본 데이터 변환기."""
+
+    def __init__(self, config=None):
+        super().__init__(config)
+        self.settings = get_settings()
+
+    def transform(self, data: Dict[str, pd.DataFrame]) -> Dict[str, pd.DataFrame]:
+        """데이터 변환 수행."""
+        try:
+            transformed_data = {}
+            
+            # 고객 데이터 변환
+            if 'customers' in data:
+                transformed_data['customers'] = self.transform_customers(data['customers'])
+            
+            # 방문/예약 데이터 변환
+            if 'visits' in data:
+                transformed_data['visits'] = self.transform_visits(data['visits'])
+            elif 'reservations' in data:
+                transformed_data['visits'] = self.transform_reservations(data['reservations'])
+            
+            # 서비스 데이터 변환
+            if 'services' in data:
+                transformed_data['services'] = self.transform_services(data['services'])
+            
+            # 방문-서비스 상세 데이터 변환
+            if 'visit_services' in data:
+                transformed_data['visit_services'] = self.transform_visit_services(data['visit_services'])
+            
+            return transformed_data
+            
+        except Exception as e:
+            logger.error(f"데이터 변환 중 오류 발생: {str(e)}")
+            raise
+
+    def transform_customers(self, df: pd.DataFrame) -> pd.DataFrame:
+        """고객 데이터 변환."""
+        try:
+            # 필수 컬럼 확인
+            required_columns = ['customer_id', 'name', 'phone']
+            missing_columns = [col for col in required_columns if col not in df.columns]
+            if missing_columns:
+                raise ValueError(f"고객 데이터에 필수 컬럼이 없습니다: {missing_columns}")
+            
+            # 데이터 타입 변환
+            df['customer_id'] = df['customer_id'].astype(str)
+            if 'birth_date' in df.columns:
+                df['birth_date'] = pd.to_datetime(df['birth_date'], errors='coerce')
+            if 'created_at' in df.columns:
+                df['created_at'] = pd.to_datetime(df['created_at'])
+            if 'updated_at' in df.columns:
+                df['updated_at'] = pd.to_datetime(df['updated_at'])
+            
+            return df
+            
+        except Exception as e:
+            logger.error(f"고객 데이터 변환 중 오류 발생: {str(e)}")
+            raise
+
+    def transform_visits(self, df: pd.DataFrame) -> pd.DataFrame:
+        """방문 데이터 변환."""
+        try:
+            # 필수 컬럼 확인
+            required_columns = ['visit_id', 'customer_id', 'visit_date']
+            missing_columns = [col for col in required_columns if col not in df.columns]
+            if missing_columns:
+                raise ValueError(f"방문 데이터에 필수 컬럼이 없습니다: {missing_columns}")
+            
+            # 데이터 타입 변환
+            df['visit_id'] = df['visit_id'].astype(str)
+            df['customer_id'] = df['customer_id'].astype(str)
+            df['visit_date'] = pd.to_datetime(df['visit_date'])
+            if 'created_at' in df.columns:
+                df['created_at'] = pd.to_datetime(df['created_at'])
+            if 'updated_at' in df.columns:
+                df['updated_at'] = pd.to_datetime(df['updated_at'])
+            
+            return df
+            
+        except Exception as e:
+            logger.error(f"방문 데이터 변환 중 오류 발생: {str(e)}")
+            raise
+
+    def transform_reservations(self, df: pd.DataFrame) -> pd.DataFrame:
+        """예약 데이터를 방문 데이터 형식으로 변환."""
+        try:
+            # 필수 컬럼 확인
+            required_columns = ['reservation_id', 'customer_id', 'reservation_start_at']
+            missing_columns = [col for col in required_columns if col not in df.columns]
+            if missing_columns:
+                raise ValueError(f"예약 데이터에 필수 컬럼이 없습니다: {missing_columns}")
+            
+            # 컬럼 이름 변경
+            df = df.rename(columns={
+                'reservation_id': 'visit_id',
+                'reservation_start_at': 'visit_date',
+                'reservation_status_name': 'status'
+            })
+            
+            # 데이터 타입 변환
+            df['visit_id'] = df['visit_id'].astype(str)
+            df['customer_id'] = df['customer_id'].astype(str)
+            df['visit_date'] = pd.to_datetime(df['visit_date'])
+            if 'created_at' in df.columns:
+                df['created_at'] = pd.to_datetime(df['created_at'])
+            if 'updated_at' in df.columns:
+                df['updated_at'] = pd.to_datetime(df['updated_at'])
+            
+            return df
+            
+        except Exception as e:
+            logger.error(f"예약 데이터 변환 중 오류 발생: {str(e)}")
+            raise
+
+    def transform_services(self, df: pd.DataFrame) -> pd.DataFrame:
+        """서비스 데이터 변환."""
+        try:
+            # 필수 컬럼 확인
+            required_columns = ['service_id', 'name', 'price']
+            missing_columns = [col for col in required_columns if col not in df.columns]
+            if missing_columns:
+                raise ValueError(f"서비스 데이터에 필수 컬럼이 없습니다: {missing_columns}")
+            
+            # 데이터 타입 변환
+            df['service_id'] = df['service_id'].astype(str)
+            df['price'] = pd.to_numeric(df['price'], errors='coerce')
+            if 'duration_minutes' in df.columns:
+                df['duration_minutes'] = pd.to_numeric(df['duration_minutes'], errors='coerce')
+            if 'created_at' in df.columns:
+                df['created_at'] = pd.to_datetime(df['created_at'])
+            if 'updated_at' in df.columns:
+                df['updated_at'] = pd.to_datetime(df['updated_at'])
+            
+            return df
+            
+        except Exception as e:
+            logger.error(f"서비스 데이터 변환 중 오류 발생: {str(e)}")
+            raise
+
+    def transform_visit_services(self, df: pd.DataFrame) -> pd.DataFrame:
+        """방문-서비스 상세 데이터 변환."""
+        try:
+            # 필수 컬럼 확인
+            required_columns = ['visit_service_id', 'visit_id', 'service_id']
+            missing_columns = [col for col in required_columns if col not in df.columns]
+            if missing_columns:
+                raise ValueError(f"방문-서비스 데이터에 필수 컬럼이 없습니다: {missing_columns}")
+            
+            # 데이터 타입 변환
+            df['visit_service_id'] = df['visit_service_id'].astype(str)
+            df['visit_id'] = df['visit_id'].astype(str)
+            df['service_id'] = df['service_id'].astype(str)
+            if 'quantity' in df.columns:
+                df['quantity'] = pd.to_numeric(df['quantity'], errors='coerce')
+            if 'unit_price' in df.columns:
+                df['unit_price'] = pd.to_numeric(df['unit_price'], errors='coerce')
+            if 'total_price' in df.columns:
+                df['total_price'] = pd.to_numeric(df['total_price'], errors='coerce')
+            if 'created_at' in df.columns:
+                df['created_at'] = pd.to_datetime(df['created_at'])
+            if 'updated_at' in df.columns:
+                df['updated_at'] = pd.to_datetime(df['updated_at'])
+            
+            return df
+            
+        except Exception as e:
+            logger.error(f"방문-서비스 데이터 변환 중 오류 발생: {str(e)}")
+            raise 

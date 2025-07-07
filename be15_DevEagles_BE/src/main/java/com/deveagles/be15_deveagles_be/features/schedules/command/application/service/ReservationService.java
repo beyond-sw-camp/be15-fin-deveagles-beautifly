@@ -1,5 +1,6 @@
 package com.deveagles.be15_deveagles_be.features.schedules.command.application.service;
 
+import com.deveagles.be15_deveagles_be.common.events.ReservationCreatedEvent;
 import com.deveagles.be15_deveagles_be.common.exception.BusinessException;
 import com.deveagles.be15_deveagles_be.common.exception.ErrorCode;
 import com.deveagles.be15_deveagles_be.features.customers.query.dto.response.CustomerIdResponse;
@@ -17,6 +18,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -26,6 +28,7 @@ public class ReservationService {
   private final ReservationRepository reservationRepository;
   private final ReservationDetailRepository reservationDetailRepository;
   private final CustomerQueryService customerQueryService;
+  private final ApplicationEventPublisher eventPublisher;
 
   @Transactional
   public Long createReservation(CreateReservationRequest request) {
@@ -67,6 +70,10 @@ public class ReservationService {
               .build();
       reservationDetailRepository.save(detail);
     }
+
+    ReservationCreatedEvent event =
+        new ReservationCreatedEvent(reservation.getShopId(), request.customerName());
+    eventPublisher.publishEvent(event);
 
     return reservation.getReservationId();
   }
