@@ -2,6 +2,11 @@ package com.deveagles.be15_deveagles_be.features.sales.command.application.servi
 
 import com.deveagles.be15_deveagles_be.common.exception.BusinessException;
 import com.deveagles.be15_deveagles_be.common.exception.ErrorCode;
+import com.deveagles.be15_deveagles_be.features.membership.command.application.dto.request.CustomerSessionPassRegistRequest;
+import com.deveagles.be15_deveagles_be.features.membership.command.application.service.CustomerSessionPassCommandService;
+import com.deveagles.be15_deveagles_be.features.membership.command.domain.aggregate.ExpirationPeriodType;
+import com.deveagles.be15_deveagles_be.features.membership.command.domain.aggregate.SessionPass;
+import com.deveagles.be15_deveagles_be.features.membership.command.domain.repository.SessionPassRepository;
 import com.deveagles.be15_deveagles_be.features.sales.command.application.dto.request.PaymentsInfo;
 import com.deveagles.be15_deveagles_be.features.sales.command.application.dto.request.SessionPassSalesRequest;
 import com.deveagles.be15_deveagles_be.features.sales.command.application.service.SessionPassSalesCommandService;
@@ -12,6 +17,7 @@ import com.deveagles.be15_deveagles_be.features.sales.command.domain.repository.
 import com.deveagles.be15_deveagles_be.features.sales.command.domain.repository.SalesRepository;
 import com.deveagles.be15_deveagles_be.features.sales.command.domain.repository.SessionPassSalesRepository;
 import jakarta.transaction.Transactional;
+import java.time.LocalDate;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -21,8 +27,10 @@ import org.springframework.stereotype.Service;
 public class SessionPassSalesCommandServiceImpl implements SessionPassSalesCommandService {
 
   private final SessionPassSalesRepository sessionPassSalesRepository;
+  private final SessionPassRepository sessionPassRepository;
   private final SalesRepository salesRepository;
   private final PaymentsRepository paymentsRepository;
+  private final CustomerSessionPassCommandService customerSessionPassCommandService;
 
   @Transactional
   @Override
@@ -82,6 +90,36 @@ public class SessionPassSalesCommandServiceImpl implements SessionPassSalesComma
     for (Payments payment : payments) {
       paymentsRepository.save(payment);
     }
+
+    // 4. 고객 횟수권 등록
+    SessionPass sessionPass =
+        sessionPassRepository
+            .findById(request.getSessionPassId())
+            .orElseThrow(() -> new BusinessException(ErrorCode.SESSIONPASS_NOT_FOUND));
+
+    LocalDate expirationDate =
+        calculateExpirationDate(
+            sessionPass.getExpirationPeriod(), sessionPass.getExpirationPeriodType());
+
+    int baseCount = sessionPass.getSession();
+    int bonusCount = sessionPass.getBonus() != null ? sessionPass.getBonus() : 0;
+
+    CustomerSessionPassRegistRequest passRequest = new CustomerSessionPassRegistRequest();
+    passRequest.setCustomerId(request.getCustomerId());
+    passRequest.setSessionPassId(sessionPass.getSessionPassId());
+    passRequest.setRemainingCount(baseCount + bonusCount);
+    passRequest.setExpirationDate(expirationDate);
+
+    customerSessionPassCommandService.registCustomerSessionPass(passRequest);
+  }
+
+  private LocalDate calculateExpirationDate(int period, ExpirationPeriodType type) {
+    return switch (type) {
+      case DAY -> LocalDate.now().plusDays(period);
+      case WEEK -> LocalDate.now().plusWeeks(period);
+      case MONTH -> LocalDate.now().plusMonths(period);
+      case YEAR -> LocalDate.now().plusYears(period);
+    };
   }
 
   @Transactional
