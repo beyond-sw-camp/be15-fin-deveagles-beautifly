@@ -1,30 +1,34 @@
 <template>
   <div class="store-settings-container">
     <h2 class="font-section-title setting-title">매장 설정</h2>
-    <div class="form-fields">
+    <div v-if="shop" class="form-fields">
       <div class="label-row">
-        <label for="storeName">상점명</label>
+        <label for="shopName">상점명</label>
       </div>
-      <BaseForm id="storeName" v-model="store.name" placeholder="상점명을 입력해주세요." />
+      <BaseForm id="shopName" v-model="shop.shopName" placeholder="상점명을 입력해주세요." />
 
-      <AddressSearch v-model="store.address" />
-
-      <div class="label-row">
-        <label for="category">업종</label>
-      </div>
-      <BaseForm id="category" v-model="store.category" type="select" :options="categoryOptions" />
+      <AddressSearch :address="shop.address" :detail-address="shop.detailAddress" />
 
       <div class="label-row">
-        <label for="phone">매장 전화번호</label>
+        <label for="industry">업종</label>
       </div>
-      <BaseForm id="phone" v-model="store.phone" placeholder="매장 전화번호를 입력해주세요." />
+      <BaseForm id="industry" v-model="shop.industryId" type="select" :options="industryOptions" />
+
+      <div class="label-row">
+        <label for="phoneNumber">매장 전화번호</label>
+      </div>
+      <BaseForm
+        id="phoneNumber"
+        v-model="shop.phoneNumber"
+        placeholder="매장 전화번호를 입력해주세요."
+      />
 
       <div class="label-row">
         <label for="bizNumber">사업자 등록번호</label>
       </div>
       <BaseForm
         id="bizNumber"
-        v-model="store.bizNumber"
+        v-model="shop.bizNumber"
         placeholder="사업자 등록번호를 입력해주세요."
       />
 
@@ -32,7 +36,7 @@
       <div class="sns-row">
         <BaseForm
           id="sns-type-0"
-          v-model="store.snsList[0].type"
+          v-model="shop.snsList[0].type"
           type="select"
           :options="snsOptions"
           placeholder="선택"
@@ -40,17 +44,17 @@
         />
         <BaseForm
           id="sns-url-0"
-          v-model="store.snsList[0].url"
+          v-model="shop.snsList[0].snsAddress"
           placeholder="SNS 주소 입력"
           class="sns-input"
         />
         <button type="button" class="sns-action-button" @click="addSNS">+</button>
       </div>
 
-      <div v-for="(sns, index) in store.snsList.slice(1)" :key="index + 1" class="sns-row">
+      <div v-for="(sns, index) in shop.snsList.slice(1)" :key="sns.snsId || index" class="sns-row">
         <BaseForm
           :id="`sns-type-${index + 1}`"
-          v-model="store.snsList[index + 1].type"
+          v-model="shop.snsList[index + 1].type"
           type="select"
           :options="snsOptions"
           placeholder="선택"
@@ -58,7 +62,7 @@
         />
         <BaseForm
           :id="`sns-url-${index + 1}`"
-          v-model="store.snsList[index + 1].url"
+          v-model="shop.snsList[index + 1].snsAddress"
           placeholder="SNS 주소 입력"
           class="sns-input"
         />
@@ -70,64 +74,75 @@
       </BaseButton>
     </div>
   </div>
+  <BaseToast ref="toastRef" />
 </template>
 <script setup>
   import { onMounted, ref } from 'vue';
   import BaseForm from '@/components/common/BaseForm.vue';
   import BaseButton from '@/components/common/BaseButton.vue';
   import AddressSearch from '@/features/users/components/AddressSearch.vue';
+  import { getShop } from '@/features/users/api/users.js';
+  import BaseToast from '@/components/common/BaseToast.vue';
 
-  const store = ref({
-    name: '',
-    address: {
-      base: '',
-      detail: '',
-    },
-    category: '',
-    phone: '',
+  const shop = ref({
+    shopName: '',
+    address: '',
+    detailAddress: '',
+    industryId: null,
+    phoneNumber: '',
     bizNumber: '',
-    snsList: [{ type: '', url: '' }],
+    snsList: [{ type: '', snsAddress: '' }],
   });
+  const toastRef = ref();
 
   onMounted(() => {
-    store.value = {
-      name: '이글스샵',
-      address: {
-        base: '서울시 강남구 ...',
-        detail: 'A빌딩 2층',
-      },
-      category: 1,
-      phone: '021111234',
-      bizNumber: '0123456789',
-      snsList: [{ type: '1', url: 'https://sample.com' }],
-    };
+    fetchShop();
   });
 
-  const categoryOptions = [
-    { value: 1, text: '미용실' },
-    { value: 2, text: '네일샵' },
-    { value: 3, text: '피부관리실' },
-    { value: 4, text: '왁싱샵' },
-  ];
+  const industryOptions = ref([]);
+
+  const fetchShop = async () => {
+    try {
+      const res = await getShop();
+      const data = res.data.data;
+
+      if (!Array.isArray(data.snsList) || data.snsList.length === 0) {
+        data.snsList = [{ type: '', snsAddress: '' }];
+      }
+
+      shop.value = data;
+
+      const industryArray = shop.value.industryList;
+      industryOptions.value = industryArray.map(item => ({
+        value: item.industryId,
+        text: item.industryName,
+      }));
+    } catch (err) {
+      toastRef.value?.error?.(err.message || '매장 정보를 조회할 수 없습니다.');
+    }
+  };
 
   const snsOptions = [
-    { value: '1', text: 'Instagram' },
-    { value: '2', text: '네이버 블로그' },
-    { value: '3', text: '기타' },
+    { value: 'INSTA', text: 'Instagram' },
+    { value: 'BLOG', text: '네이버 블로그' },
+    { value: 'ETC', text: '기타' },
   ];
 
   const addSNS = () => {
-    store.value.snsList.push({ type: '', url: '' });
+    if (!Array.isArray(shop.value.snsList)) {
+      shop.value.snsList = [];
+    }
+    shop.value.snsList.push({ type: '', snsAddress: '' });
   };
 
   const removeSNS = index => {
-    if (store.value.snsList.length > 1) {
-      store.value.snsList.splice(index, 1);
+    if (shop.value.snsList.length > 1) {
+      shop.value.snsList.splice(index, 1);
     }
   };
 
   const handleEdit = () => {
-    console.log(`변경할 데이터: ${store.value}`);
+    console.log(`변경할 데이터: ${shop.value}`);
     //todo 변경 api 연동
   };
 </script>
@@ -162,6 +177,12 @@
   }
   .sns-select {
     width: 140px;
+  }
+  :deep(select.sns-select) {
+    width: 200px !important;
+    min-width: 200px;
+    max-width: 200px;
+    display: inline-block;
   }
   .sns-input {
     flex: 1;

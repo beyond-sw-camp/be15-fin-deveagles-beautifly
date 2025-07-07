@@ -1,5 +1,6 @@
 package com.deveagles.be15_deveagles_be.features.shops.command.application;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.deveagles.be15_deveagles_be.common.exception.BusinessException;
@@ -7,10 +8,16 @@ import com.deveagles.be15_deveagles_be.common.exception.ErrorCode;
 import com.deveagles.be15_deveagles_be.features.schedules.command.application.service.ReservationSettingInitializer;
 import com.deveagles.be15_deveagles_be.features.shops.command.application.dto.request.ShopCreateRequest;
 import com.deveagles.be15_deveagles_be.features.shops.command.application.dto.request.ValidBizNumberRequest;
+import com.deveagles.be15_deveagles_be.features.shops.command.application.dto.response.GetShopResponse;
 import com.deveagles.be15_deveagles_be.features.shops.command.application.service.IndustryRepository;
 import com.deveagles.be15_deveagles_be.features.shops.command.application.service.ShopCommandServiceImpl;
+import com.deveagles.be15_deveagles_be.features.shops.command.domain.aggregate.Industry;
+import com.deveagles.be15_deveagles_be.features.shops.command.domain.aggregate.SNS;
+import com.deveagles.be15_deveagles_be.features.shops.command.domain.aggregate.SNSType;
 import com.deveagles.be15_deveagles_be.features.shops.command.domain.aggregate.Shop;
 import com.deveagles.be15_deveagles_be.features.shops.command.repository.ShopRepository;
+import com.deveagles.be15_deveagles_be.features.shops.command.repository.SnsRepository;
+import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -28,15 +35,17 @@ public class ShopCommandServiceImplTest {
 
   @Mock private IndustryRepository industryRepository;
 
+  @Mock private SnsRepository snsRepository;
+
   @Mock private ReservationSettingInitializer reservationSettingInitializer;
 
-  private ShopCommandServiceImpl service;
+  private ShopCommandServiceImpl shopCommandService;
 
   @BeforeEach
   void setUp() {
-    service =
+    shopCommandService =
         new ShopCommandServiceImpl(
-            shopRepository, industryRepository, reservationSettingInitializer);
+            shopRepository, industryRepository, snsRepository, reservationSettingInitializer);
   }
 
   @Test
@@ -69,7 +78,7 @@ public class ShopCommandServiceImplTest {
     Mockito.when(shopRepository.save(Mockito.any(Shop.class))).thenReturn(expectedShop);
 
     // when
-    Shop result = service.shopRegist(request);
+    Shop result = shopCommandService.shopRegist(request);
 
     // then
     assertEquals("디브이헤어", result.getShopName());
@@ -89,7 +98,7 @@ public class ShopCommandServiceImplTest {
         .thenReturn(Optional.of(Shop.builder().businessNumber(bizNumber).build()));
 
     // when
-    Boolean result = service.validCheckBizNumber(request);
+    Boolean result = shopCommandService.validCheckBizNumber(request);
 
     // then
     assertFalse(result);
@@ -104,7 +113,7 @@ public class ShopCommandServiceImplTest {
     Mockito.when(shopRepository.findByBusinessNumber(bizNumber)).thenReturn(Optional.empty());
 
     // when
-    Boolean result = service.validCheckBizNumber(request);
+    Boolean result = shopCommandService.validCheckBizNumber(request);
 
     // then
     assertTrue(result);
@@ -118,7 +127,7 @@ public class ShopCommandServiceImplTest {
     Long ownerId = 999L;
 
     // when
-    service.patchOwnerId(shop, ownerId);
+    shopCommandService.patchOwnerId(shop, ownerId);
 
     // then
     assertEquals(ownerId, shop.getOwnerId());
@@ -133,7 +142,7 @@ public class ShopCommandServiceImplTest {
     Mockito.when(shopRepository.existsById(validShopId)).thenReturn(true);
 
     // when & then
-    assertDoesNotThrow(() -> service.validateShopExists(validShopId));
+    assertDoesNotThrow(() -> shopCommandService.validateShopExists(validShopId));
   }
 
   @Test
@@ -145,8 +154,47 @@ public class ShopCommandServiceImplTest {
 
     // when & then
     BusinessException exception =
-        assertThrows(BusinessException.class, () -> service.validateShopExists(invalidShopId));
+        assertThrows(
+            BusinessException.class, () -> shopCommandService.validateShopExists(invalidShopId));
 
     assertEquals(ErrorCode.SHOP_NOT_FOUNT, exception.getErrorCode());
+  }
+
+  @Test
+  void getShop_정상조회() {
+    // given
+    Long shopId = 1L;
+
+    Shop shop =
+        Shop.builder()
+            .shopId(shopId)
+            .shopName("테스트샵")
+            .address("서울시 강남구")
+            .detailAddress("2층")
+            .phoneNumber("010-1234-5678")
+            .businessNumber("123-45-67890")
+            .shopDescription("설명")
+            .industryId(10L)
+            .build();
+
+    List<Industry> industryList = List.of(new Industry(10L, "미용"), new Industry(20L, "네일"));
+
+    List<SNS> snsList =
+        List.of(
+            new SNS(1L, "https://insta.com/beauty", 1L, SNSType.INSTA),
+            new SNS(2L, "https://pf.kakao.com/_test", 1L, SNSType.ETC));
+
+    // when
+    Mockito.when(shopRepository.findByShopId(shopId)).thenReturn(Optional.of(shop));
+    Mockito.when(industryRepository.findAll()).thenReturn(industryList);
+    Mockito.when(snsRepository.findByShopId(shopId)).thenReturn(snsList);
+
+    GetShopResponse response = shopCommandService.getShop(shopId);
+
+    // then
+    assertThat(response.getShopName()).isEqualTo("테스트샵");
+    assertThat(response.getAddress()).isEqualTo("서울시 강남구");
+    assertThat(response.getIndustryList()).hasSize(2);
+    assertThat(response.getSnsList()).hasSize(2);
   }
 }
