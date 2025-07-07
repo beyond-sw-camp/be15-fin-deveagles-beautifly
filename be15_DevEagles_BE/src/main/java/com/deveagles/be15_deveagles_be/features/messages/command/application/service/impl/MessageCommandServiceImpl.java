@@ -5,6 +5,7 @@ import com.deveagles.be15_deveagles_be.common.exception.ErrorCode;
 import com.deveagles.be15_deveagles_be.features.customers.query.service.CustomerQueryService;
 import com.deveagles.be15_deveagles_be.features.messages.command.application.dto.SmsSendUnit;
 import com.deveagles.be15_deveagles_be.features.messages.command.application.dto.request.SmsRequest;
+import com.deveagles.be15_deveagles_be.features.messages.command.application.dto.request.UpdateReservationRequest;
 import com.deveagles.be15_deveagles_be.features.messages.command.application.dto.response.MessageSendResult;
 import com.deveagles.be15_deveagles_be.features.messages.command.application.service.MessageCommandService;
 import com.deveagles.be15_deveagles_be.features.messages.command.domain.aggregate.MessageDeliveryStatus;
@@ -35,10 +36,11 @@ public class MessageCommandServiceImpl implements MessageCommandService {
 
   @Override
   @Transactional
-  public List<MessageSendResult> sendSms(SmsRequest smsRequest) {
+  public List<MessageSendResult> sendSms(Long shopId, SmsRequest smsRequest) {
+    shopCommandService.validateShopExists(shopId);
     LocalDateTime now = LocalDateTime.now();
     LocalDateTime scheduledAt = resolveScheduledAt(smsRequest, now);
-    boolean isReservation = smsRequest.messageSendingType() == MessageSendingType.RESERVATION;
+    boolean isReservation = MessageSendingType.RESERVATION.equals(smsRequest.messageSendingType());
 
     shopCommandService.validateShopExists(smsRequest.shopId());
     // 2. 고객 ID 원본 리스트
@@ -58,25 +60,34 @@ public class MessageCommandServiceImpl implements MessageCommandService {
     List<Sms> smsList =
         IntStream.range(0, distinctCustomerIds.size())
             .mapToObj(
-                i ->
-                    Sms.builder()
-                        .shopId(smsRequest.shopId())
-                        .customerId(distinctCustomerIds.get(i))
-                        .messageContent(smsRequest.messageContent())
-                        .messageKind(smsRequest.messageKind())
-                        .messageType(smsRequest.messageType())
-                        .messageSendingType(smsRequest.messageSendingType())
-                        .messageDeliveryStatus(
-                            isReservation
-                                ? MessageDeliveryStatus.PENDING
-                                : MessageDeliveryStatus.SENT)
-                        .scheduledAt(scheduledAt)
-                        .templateId(smsRequest.templateId())
-                        .hasLink(Boolean.TRUE.equals(smsRequest.hasLink()))
-                        .customerGradeId(smsRequest.customerGradeId())
-                        .tagId(smsRequest.tagId())
-                        .sentAt(now)
-                        .build())
+                i -> {
+                  Sms.SmsBuilder builder =
+                      Sms.builder()
+                          .shopId(smsRequest.shopId())
+                          .customerId(distinctCustomerIds.get(i))
+                          .messageContent(smsRequest.messageContent())
+                          .messageKind(smsRequest.messageKind())
+                          .messageType(smsRequest.messageType())
+                          .messageSendingType(smsRequest.messageSendingType())
+                          .messageDeliveryStatus(
+                              isReservation
+                                  ? MessageDeliveryStatus.PENDING
+                                  : MessageDeliveryStatus.SENT)
+                          .scheduledAt(scheduledAt)
+                          .templateId(smsRequest.templateId())
+                          .hasLink(Boolean.TRUE.equals(smsRequest.hasLink()))
+                          .customerGradeId(smsRequest.customerGradeId())
+                          .tagId(smsRequest.tagId())
+                          .couponId(smsRequest.couponId())
+                          .workflowId(smsRequest.workflowId());
+                  ;
+
+                  if (!isReservation) {
+                    builder.sentAt(now);
+                  }
+
+                  return builder.build();
+                })
             .toList();
 
     List<Sms> saved = smsRepository.saveAll(smsList);
@@ -105,6 +116,51 @@ public class MessageCommandServiceImpl implements MessageCommandService {
     return saved.stream()
         .map(s -> new MessageSendResult(true, "예약 등록 완료", s.getMessageId()))
         .toList();
+  }
+
+  @Override
+  @Transactional
+  public void updateReservationMessage(
+      UpdateReservationRequest updateReservationRequest, Long shopId, Long messageId) {
+    shopCommandService.validateShopExists(shopId);
+    Sms sms =
+        smsRepository
+            .findById(messageId)
+            .orElseThrow(() -> new BusinessException(ErrorCode.SMS_NOT_FOUND));
+    if (!sms.getShopId().equals(shopId)) {
+      throw new BusinessException(ErrorCode.SMS_SHOP_MISMATCH);
+    }
+    if (sms.getScheduledAt().isBefore(LocalDateTime.now())) {
+      throw new BusinessException(ErrorCode.ALREADY_SENT_OR_CANCELED);
+    }
+    if (updateReservationRequest.scheduledAt().isBefore(LocalDateTime.now())) {
+      throw new BusinessException(ErrorCode.INVALID_SCHEDULED_TIME);
+    }
+    sms.updateReservation(
+        updateReservationRequest.messageContent(),
+        updateReservationRequest.messageKind(),
+        updateReservationRequest.customerId(),
+        updateReservationRequest.scheduledAt());
+  }
+
+  @Override
+  @Transactional
+  public void cancelScheduledMessage(Long messageId, Long shopId) {
+    shopCommandService.validateShopExists(shopId);
+    Sms sms =
+        smsRepository
+            .findById(messageId)
+            .orElseThrow(() -> new BusinessException(ErrorCode.SMS_NOT_FOUND));
+
+    if (!sms.getShopId().equals(shopId)) {
+      throw new BusinessException(ErrorCode.SMS_SHOP_MISMATCH);
+    }
+
+    if (!sms.isReservable()) {
+      throw new BusinessException(ErrorCode.INVALID_MESSAGE_CANCEL_CONDITION);
+    }
+
+    sms.cancel();
   }
 
   @Override
