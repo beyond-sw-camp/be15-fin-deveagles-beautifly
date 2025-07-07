@@ -1,5 +1,7 @@
 package com.deveagles.be15_deveagles_be.features.users.command.application.service;
 
+import com.deveagles.be15_deveagles_be.common.exception.BusinessException;
+import com.deveagles.be15_deveagles_be.common.exception.ErrorCode;
 import com.deveagles.be15_deveagles_be.features.auth.command.domain.aggregate.AccessAuth;
 import com.deveagles.be15_deveagles_be.features.auth.command.domain.aggregate.AccessList;
 import com.deveagles.be15_deveagles_be.features.auth.command.repository.AccessAuthRepository;
@@ -69,6 +71,19 @@ public class StaffCommandServiceImpl implements StaffCommandService {
 
       accessAuthRepository.save(auth);
     }
+  }
+
+  @Override
+  public StaffInfoResponse getStaffDetail(Long staffId) {
+
+    Staff staff =
+        userRepository
+            .findStaffByStaffId(staffId)
+            .orElseThrow(() -> new BusinessException(ErrorCode.STAFF_NOT_FOUND));
+
+    List<AccessAuth> authList = accessAuthRepository.findAllByStaffId(staffId);
+
+    return buildStaffInfoResponse(staff, authList);
   }
 
   private StaffInfoResponse buildStaffInfoResponse(Staff staff, List<AccessAuth> authList) {
