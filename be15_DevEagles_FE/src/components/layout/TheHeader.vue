@@ -222,6 +222,7 @@
   import { useRouter } from 'vue-router';
   import { logout } from '@/features/users/api/users.js';
   import customersAPI from '@/features/customer/api/customers.js';
+  import { useMetadataStore } from '@/store/metadata.js';
 
   const router = useRouter();
   const searchListRef = ref(null);
@@ -296,14 +297,41 @@
   const showCustomerModal = ref(false);
   const selectedCustomer = ref(null);
 
-  const showCustomerDetail = customer => {
-    if (!customer || !customer.customer_id) return;
+  const showCustomerDetail = async customer => {
+    if (!customer) return;
 
-    if (typeof customer.customer_id === 'string' && customer.customer_id.startsWith('auto-')) {
+    const rawId = customer.customerId || customer.customer_id;
+    if (!rawId) return;
+
+    // 자동완성 항목은 customer_id가 'auto-...' 형태일 수 있으므로 무시
+    if (typeof rawId === 'string' && rawId.startsWith('auto-')) {
       return;
     }
 
-    selectedCustomer.value = customer;
+    try {
+      const detail = await customersAPI.getCustomerDetail(rawId);
+      selectedCustomer.value = detail || customer;
+    } catch (err) {
+      console.warn('[Header] 고객 상세 조회 실패, 검색 결과 그대로 사용', err);
+      // 검색 결과 객체 필드 이름을 모달에서 인식하는 camelCase 구조로 일부 매핑
+      selectedCustomer.value = {
+        customerId: customer.customerId || customer.customer_id,
+        customerName: customer.customerName || customer.customer_name,
+        phoneNumber: customer.phoneNumber || customer.phone_number,
+        customerGrade: customer.customerGradeId
+          ? {
+              customerGradeId: customer.customerGradeId,
+              customerGradeName: customer.customerGradeName,
+            }
+          : undefined,
+        staff: customer.staffId
+          ? { staffId: customer.staffId, staffName: customer.staffName }
+          : undefined,
+        acquisitionChannelName:
+          customer.acquisitionChannelName || customer.acquisition_channel_name,
+      };
+    }
+
     showCustomerModal.value = true;
     showSuggestions.value = false;
     searchQuery.value = '';
@@ -403,7 +431,7 @@
     try {
       const originalCustomer = selectedCustomer.value;
       const originalTagIds = new Set(
-        (originalCustomer.tags || []).map(t => t.tag_id).filter(Boolean)
+        (originalCustomer.tags || []).map(t => t.tagId).filter(Boolean)
       );
       const newTagIdsArr = updatedCustomerPayload.tags || [];
       const newTagIds = new Set(newTagIdsArr);
@@ -411,16 +439,16 @@
       const customerPayload = { ...updatedCustomerPayload };
       delete customerPayload.tags;
 
-      const updatedCustomer = await customersAPI.updateCustomer(customerPayload);
-
-      const shopId = authStore.shopId;
-      const customerId = originalCustomer.customer_id;
+      const customerId = originalCustomer.customerId || originalCustomer.customer_id;
+      const updatedCustomer = await customersAPI.updateCustomer(customerId, customerPayload);
 
       // Add new tags
       for (const tagId of newTagIds) {
         if (!originalTagIds.has(tagId)) {
           try {
-            await customersAPI.addTagToCustomer(customerId, tagId, shopId);
+            await customersAPI.addTagToCustomer(customerId, tagId);
+            // 메타데이터 스토어 갱신
+            await metadataStore.loadMetadata(true);
           } catch (e) {
             console.error(`태그 추가 실패: customerId=${customerId}, tagId=${tagId}`, e);
           }
@@ -431,7 +459,9 @@
       for (const tagId of originalTagIds) {
         if (!newTagIds.has(tagId)) {
           try {
-            await customersAPI.removeTagFromCustomer(customerId, tagId, shopId);
+            await customersAPI.removeTagFromCustomer(customerId, tagId);
+            // 메타데이터 스토어 갱신
+            await metadataStore.loadMetadata(true);
           } catch (e) {
             console.error(`태그 제거 실패: customerId=${customerId}, tagId=${tagId}`, e);
           }
@@ -463,9 +493,8 @@
   // 고객 생성 완료 처리
   const handleCreateCustomer = async newCustomerPayload => {
     try {
-      const shopId = authStore.shopId?.value || authStore.shopId || 1;
       // create customer with tags in one request to reduce API calls
-      await customersAPI.createCustomer({ ...newCustomerPayload, shopId });
+      await customersAPI.createCustomer(newCustomerPayload);
 
       // 리스트 새로고침 (캐시 초기화 후 재조회)
       cachedCustomers.value = [];
@@ -531,8 +560,7 @@
     }
 
     try {
-      const shopId = authStore.shopId?.value || authStore.shopId || 1;
-      const customers = await customersAPI.getCustomersByShop(shopId);
+      const customers = await customersAPI.getCustomersByShop();
       cachedCustomers.value = customers;
       lastFetchTime.value = now;
       return customers;
@@ -551,6 +579,9 @@
     fetchAutocomplete(searchQuery.value);
   };
 
+  const searchTimeout = ref(null);
+  const isSearching = ref(false);
+
   const handleInput = async event => {
     const value = event.target.value;
     searchQuery.value = value;
@@ -562,49 +593,65 @@
       return;
     }
 
-    // 한글 입력 중이면 검색하지 않음
-    if (isComposing.value) {
-      return;
+    // 이전 타이머 취소
+    if (searchTimeout.value) {
+      clearTimeout(searchTimeout.value);
     }
 
-    // 실시간 검색 실행
-    fetchAutocomplete(value);
+    // 새로운 타이머 설정 (300ms 디바운스)
+    searchTimeout.value = setTimeout(() => {
+      fetchAutocomplete(value);
+    }, 300);
   };
 
   const fetchAutocomplete = async keyword => {
-    if (!keyword || !keyword.trim() || keyword.length < 2) {
-      // 최소 2글자 이상일 때만 검색
+    if (!keyword || !keyword.trim()) {
       searchSuggestions.value = [];
       showSuggestions.value = false;
       return;
     }
 
+    // 이미 검색 중이면 중복 요청 방지
+    if (isSearching.value) {
+      return;
+    }
+
+    isSearching.value = true;
+
     try {
-      const shopId = authStore.shopId?.value || authStore.shopId || 1;
       let results = [];
 
-      // 클라이언트 사이드 필터링 (캐시 사용)
-      const customers = await fetchCustomers();
-      const lowerKeyword = keyword.toLowerCase();
-      results = customers.filter(
-        c =>
-          c.customer_name.toLowerCase().includes(lowerKeyword) ||
-          (c.phone_number || '').includes(lowerKeyword)
-      );
-
-      // 서버 검색 시도 (로컬 결과가 없을 경우)
-      if (!results.length) {
-        results = await customersAPI.searchByKeyword(keyword, shopId);
+      // 키워드 검색 시도 (Elasticsearch)
+      try {
+        results = await customersAPI.searchByKeyword(keyword);
+      } catch (err) {
+        console.warn('[Header] 키워드 검색 실패', err);
       }
 
-      // 자동완성 시도 (다른 결과가 없을 경우)
+      // 결과가 없으면 자동완성 시도
       if (!results.length) {
-        const strings = await customersAPI.autocomplete(keyword, shopId);
-        results = strings.map((s, idx) => ({
-          customer_id: `auto-${idx}`,
-          customer_name: s,
-          phone_number: '',
-        }));
+        try {
+          const strings = await customersAPI.autocomplete(keyword);
+          results = strings.map((s, idx) => ({
+            customer_id: `auto-${idx}`,
+            customer_name: s,
+            phone_number: '',
+          }));
+        } catch (err) {
+          console.warn('[Header] 자동완성 실패', err);
+        }
+      }
+
+      // 모든 서버 검색이 실패하면 클라이언트 사이드 필터링
+      if (!results.length) {
+        const customers = await fetchCustomers();
+        const lowerKeyword = keyword?.toLowerCase() || '';
+        results =
+          customers?.filter(
+            c =>
+              (c?.customer_name || '').toLowerCase().includes(lowerKeyword) ||
+              (c?.phone_number || '').includes(lowerKeyword)
+          ) || [];
       }
 
       const sortedResults = sortSuggestions(results, keyword);
@@ -615,19 +662,27 @@
       console.warn('[Header] 검색 오류', err);
       searchSuggestions.value = [];
       showSuggestions.value = false;
+    } finally {
+      isSearching.value = false;
     }
   };
 
   const executeSearch = () => {
-    const keyword = searchQuery.value.trim();
+    const keyword = searchQuery.value?.trim();
     if (!keyword) return;
 
-    router.push({
-      name: 'CustomerListView',
-      query: { keyword },
-    });
+    router
+      .push({
+        name: 'CustomerList',
+        query: { keyword },
+      })
+      .catch(err => {
+        console.warn('[Header] 라우팅 오류', err);
+      });
     showSuggestions.value = false;
   };
+
+  const metadataStore = useMetadataStore();
 
   onMounted(async () => {
     document.addEventListener('click', handleClickOutside);
