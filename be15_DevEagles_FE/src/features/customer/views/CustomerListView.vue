@@ -168,8 +168,11 @@
                   </div>
                 </template>
                 <template v-else>
-                  <span class="single-line-ellipsis" :title="item[column.key] || ''">
-                    {{ item[column.key] }}
+                  <span
+                    class="single-line-ellipsis"
+                    :title="getNestedValue(item, column.key) || ''"
+                  >
+                    {{ getNestedValue(item, column.key) }}
                   </span>
                 </template>
               </td>
@@ -283,15 +286,15 @@
     { key: 'checkbox', title: '', width: '50px' },
     { key: 'customerName', title: '고객명', width: '110px' },
     { key: 'phoneNumber', title: '연락처', width: '130px' },
-    { key: 'staffName', title: '담당자', width: '90px' },
-    { key: 'acquisitionChannelName', title: '유입경로', width: '100px' },
+    { key: 'staff.staffName', title: '담당자', width: '90px' },
+    { key: 'acquisitionChannel.acquisitionChannelName', title: '유입경로', width: '100px' },
     { key: 'memo', title: '메모', width: '150px' },
     { key: 'visitCount', title: '방문횟수', width: '90px' },
     { key: 'remainingPrepaidAmount', title: '잔여선불액', width: '110px' },
     { key: 'totalRevenue', title: '누적매출액', width: '110px' },
     { key: 'recentVisitDate', title: '최근방문일', width: '120px' },
     { key: 'tags', title: '태그', width: '120px' },
-    { key: 'customerGradeName', title: '등급', width: '90px' },
+    { key: 'customerGrade.customerGradeName', title: '등급', width: '90px' },
     { key: 'birthdate', title: '생일', width: '110px' },
     { key: 'createdAt', title: '최초등록일', width: '120px' },
   ]);
@@ -337,8 +340,7 @@
   const handleDeleteCustomerConfirmed = async () => {
     if (customerIdToDelete.value) {
       try {
-        const shopId = authStore.shopId;
-        await customersAPI.deleteCustomer(customerIdToDelete.value, shopId);
+        await customersAPI.deleteCustomer(customerIdToDelete.value);
         toastRef.value?.success('고객 정보가 삭제되었습니다.');
         await loadCustomers(); // 목록 새로고침
         showDetailModal.value = false;
@@ -359,16 +361,20 @@
   function handleEditRequest(customer) {
     selectedCustomerEdit.value = customer;
     showEditDrawer.value = true;
-    // showDetailModal.value = false; // [수정] 상세 모달이 닫히지 않도록 이 줄을 삭제
   }
 
   async function handleUpdateCustomer(updatedCustomer) {
     try {
-      const shopId = authStore.shopId;
-      await customersAPI.updateCustomer(updatedCustomer.customerId, updatedCustomer, shopId);
+      if (updatedCustomer) {
+        await customersAPI.updateCustomer(updatedCustomer.customerId, updatedCustomer);
+      } else {
+        // payload 없이 성공 이벤트만 받은 경우 목록 재로딩만 수행
+        await loadCustomers();
+      }
       toastRef.value?.success('고객 수정 완료');
       await loadCustomers();
       showEditDrawer.value = false;
+      showDetailModal.value = false;
     } catch (err) {
       toastRef.value?.success(err.message || '고객 수정 실패');
     }
@@ -449,13 +455,11 @@
       }
       // 담당자
       if (filters.staff?.length > 0) {
-        const staffNames = filters.staff.map(id => staff.value.find(s => s.id === id)?.name);
-        checkFunctions.push(c => staffNames.includes(c.staffName));
+        checkFunctions.push(c => filters.staff.includes(c.staff?.staffId));
       }
       // 등급
       if (filters.grades?.length > 0) {
-        const gradeNames = filters.grades.map(id => grades.value.find(g => g.id === id)?.name);
-        checkFunctions.push(c => gradeNames.includes(c.customerGradeName));
+        checkFunctions.push(c => filters.grades.includes(c.customerGrade?.customerGradeId));
       }
       // 생일 (이번달, 이번주, 오늘)
       if (filters.birthday?.length > 0) {
@@ -682,8 +686,8 @@
     // 정렬 로직
     if (sortableKeys.includes(sortKey.value)) {
       data.sort((a, b) => {
-        let aValue = a[sortKey.value];
-        let bValue = b[sortKey.value];
+        const aValue = getNestedValue(a, sortKey.value);
+        const bValue = getNestedValue(b, sortKey.value);
         if (sortKey.value === 'recentVisitDate' || sortKey.value === 'createdAt') {
           return sortOrder.value === 'asc'
             ? (aValue || '').localeCompare(bValue || '')
@@ -722,8 +726,15 @@
         ...customer,
         gender: genderMap[customer.gender] || customer.gender,
         createdAt: formatDate(customer.createdAt),
+        birthdate: formatDate(customer.birthdate),
+        recentVisitDate: formatDate(customer.recentVisitDate),
         noshowCount: customer.noshowCount ?? '-',
-        staffName: customer.staffName || '-',
+        staffName: customer.staff?.staffName || '-',
+        customerGradeName: customer.customerGrade?.customerGradeName || '-',
+        acquisitionChannelName: customer.acquisitionChannel?.acquisitionChannelName || '-',
+        totalRevenue: customer.totalRevenue?.toLocaleString() || '0',
+        remainingPrepaidAmount: customer.remainingPrepaidAmount?.toLocaleString() || '0',
+        visitCount: customer.visitCount || 0,
       };
     });
   });
@@ -797,8 +808,7 @@
 
   async function handleCreateCustomer(newCustomer) {
     try {
-      const shopId = authStore.shopId?.value || authStore.shopId || 1;
-      await customersAPI.createCustomer({ ...newCustomer, shopId });
+      await customersAPI.createCustomer(newCustomer);
       toastRef.value?.success('고객 등록 완료', { duration: 2000 });
       await loadCustomers();
     } catch (err) {
@@ -992,14 +1002,26 @@
   async function loadCustomers() {
     loading.value = true;
     try {
-      const shopId = authStore.shopId?.value || authStore.shopId || 1;
-      const data = await customersAPI.getCustomersByShop(shopId);
+      const data = await customersAPI.getCustomersByShop();
       customerList.value = data;
     } catch (err) {
       toastRef.value?.success(err.message || '고객 데이터를 불러오는데 실패했습니다.');
     } finally {
       loading.value = false;
     }
+  }
+
+  function getNestedValue(obj, key) {
+    const keys = key.split('.');
+    let value = obj;
+    for (const k of keys) {
+      if (value && k in value) {
+        value = value[k];
+      } else {
+        return undefined;
+      }
+    }
+    return value;
   }
 </script>
 

@@ -58,7 +58,7 @@
       </div>
       <div class="form-row">
         <label class="form-label">담당자</label>
-        <select v-model="form.staff_id" class="form-input">
+        <select v-model="form.staffId" class="form-input">
           <option :value="null" disabled>담당자 선택</option>
           <option :value="null">담당자 없음</option>
           <option v-for="staff in staffOptions" :key="staff.id" :value="staff.id">
@@ -68,7 +68,7 @@
       </div>
       <div class="form-row">
         <label class="form-label">유입경로</label>
-        <select v-model="form.channel_id" class="form-input">
+        <select v-model="form.channelId" class="form-input">
           <option :value="null" disabled>유입경로 선택</option>
           <option
             v-for="channel in acquisitionChannelOptions"
@@ -82,6 +82,7 @@
       <div class="form-row">
         <label class="form-label">태그</label>
         <Multiselect
+          :key="`tags-${JSON.stringify(tagOptions.value)}`"
           v-model="form.tags"
           :options="tagOptions"
           mode="tags"
@@ -89,11 +90,12 @@
           :searchable="true"
           :create-option="false"
           :hide-selected="false"
-          label="tag_name"
-          value-prop="tag_id"
-          track-by="tag_id"
+          label="tagName"
+          value-prop="tagId"
+          track-by="tagId"
           placeholder="태그 선택"
           class="multiselect-custom"
+          :loading="metadataStore.isLoading"
         />
       </div>
       <div class="form-row">
@@ -108,7 +110,7 @@
       <div class="form-row">
         <label class="form-label"> 등급<span class="required">*</span> </label>
         <select
-          v-model="form.grade_id"
+          v-model="form.customerGradeId"
           class="form-input"
           :class="{ 'input-error': errors.grade }"
           @blur="validateField('grade')"
@@ -145,7 +147,7 @@
 </template>
 
 <script setup>
-  import { ref, watch, defineEmits, defineProps, nextTick, onMounted, computed } from 'vue';
+  import { ref, watch, defineEmits, defineProps, nextTick, onMounted } from 'vue';
   import BaseDrawer from '@/components/common/BaseDrawer.vue';
   import BaseButton from '@/components/common/BaseButton.vue';
   import Multiselect from '@vueform/multiselect';
@@ -153,6 +155,7 @@
   import '@vueform/multiselect/themes/default.css';
   import { useAuthStore } from '@/store/auth.js';
   import { useMetadataStore } from '@/store/metadata.js';
+  import { storeToRefs } from 'pinia';
 
   const props = defineProps({
     modelValue: { type: Boolean, default: false },
@@ -170,10 +173,12 @@
   watch(visible, v => emit('update:modelValue', v));
 
   const metadataStore = useMetadataStore();
-  const staffOptions = computed(() => metadataStore.staff);
-  const tagOptions = computed(() => metadataStore.tags);
-  const gradeOptions = computed(() => metadataStore.grades);
-  const acquisitionChannelOptions = computed(() => metadataStore.channels);
+  const {
+    staff: staffOptions,
+    tags: tagOptions,
+    grades: gradeOptions,
+    channels: acquisitionChannelOptions,
+  } = storeToRefs(metadataStore);
 
   const today = new Date().toISOString().slice(0, 10);
 
@@ -184,11 +189,11 @@
     phone: '',
     gender: '',
     birthdate: '',
-    staff_id: null,
-    channel_id: null,
+    staffId: null,
+    channelId: null,
     tags: [],
     memo: '',
-    grade_id: null,
+    customerGradeId: null,
     marketingConsent: false,
     notificationConsent: false,
   });
@@ -203,7 +208,8 @@
         errors.value.phone = '올바른 형식으로 작성해주세요';
       else errors.value.phone = '';
     }
-    if (field === 'grade') errors.value.grade = !form.value.grade_id ? '등급을 선택해주세요' : '';
+    if (field === 'grade')
+      errors.value.grade = !form.value.customerGradeId ? '등급을 선택해주세요' : '';
   }
 
   function validateAndSubmit() {
@@ -214,24 +220,12 @@
       const payload = { ...form.value };
 
       // 필드명 매핑
-      payload.shopId = authStore.shopId;
       payload.customerName = payload.name;
       delete payload.name;
       payload.phoneNumber = payload.phone?.replace(/-/g, '');
       delete payload.phone;
 
-      if (payload.channel_id != null) {
-        payload.channelId = payload.channel_id;
-        delete payload.channel_id;
-      }
-      if (payload.staff_id != null) {
-        payload.staffId = payload.staff_id;
-        delete payload.staff_id;
-      }
-      if (payload.grade_id != null) {
-        payload.customerGradeId = payload.grade_id;
-        delete payload.grade_id;
-      } else {
+      if (!payload.customerGradeId) {
         const defaultGrade = gradeOptions.value.find(g => g.name === '기본등급');
         if (defaultGrade) {
           payload.customerGradeId = defaultGrade.id;

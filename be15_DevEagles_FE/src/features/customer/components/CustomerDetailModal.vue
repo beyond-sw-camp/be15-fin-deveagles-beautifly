@@ -49,11 +49,11 @@
                     </div>
                     <div class="info-item">
                       <span class="label">담당자</span>
-                      <span class="value">{{ processedCustomer.staffName || '-' }}</span>
+                      <span class="value">{{ processedCustomer.staffName }}</span>
                     </div>
                     <div class="info-item">
                       <span class="label">등급</span>
-                      <span class="value">{{ processedCustomer.customerGradeName || '-' }}</span>
+                      <span class="value">{{ processedCustomer.customerGradeName }}</span>
                     </div>
                     <div class="info-item">
                       <span class="label">태그</span>
@@ -78,9 +78,7 @@
                     </div>
                     <div class="info-item">
                       <span class="label">유입경로</span>
-                      <span class="value">{{
-                        processedCustomer.acquisitionChannelName || '-'
-                      }}</span>
+                      <span class="value">{{ processedCustomer.acquisitionChannelName }}</span>
                     </div>
                   </div>
                 </div>
@@ -189,7 +187,13 @@
       createdAt: formatDate(props.customer.createdAt),
       birthdate: formatDate(props.customer.birthdate),
       noshowCount: props.customer.noshowCount ?? '-',
-      staffName: props.customer.staffName || '-',
+      staffName: props.customer.staff?.staffName || props.customer.staffName || '-',
+      customerGradeName:
+        props.customer.customerGrade?.customerGradeName || props.customer.customerGradeName || '-',
+      acquisitionChannelName:
+        props.customer.acquisitionChannel?.acquisitionChannelName ||
+        props.customer.acquisitionChannelName ||
+        '-',
     };
   });
 
