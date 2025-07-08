@@ -49,7 +49,7 @@
             </when>
 
             <!-- 정기 일정(regular)만 조회 -->
-            <when test="planType == 'regular'">
+            <when test="planType == 'regular_plan'">
                 SELECT
                 rp.regular_plan_id AS id,
                 s.staff_name AS staffName,
@@ -131,7 +131,7 @@
                 </if>
                 ) AS combined
                 ORDER BY
-                CASE WHEN planType = 'regular' THEN 0 ELSE 1 END,
+                CASE WHEN planType = 'regular_plan' THEN 0 ELSE 1 END,
                 COALESCE(startAt, startTime) ASC
                 LIMIT #{limit} OFFSET #{offset}
             </otherwise>
@@ -156,7 +156,7 @@
             </when>
 
             <!-- 정기 일정만 -->
-            <when test="planType == 'regular'">
+            <when test="planType == 'regular_plan'">
                 SELECT COUNT(*)
                 FROM regular_plan rp
                 WHERE rp.shop_id = #{shopId}

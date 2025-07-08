@@ -121,7 +121,6 @@ class ReservationServiceTest {
         new CreateReservationFullRequest(
             1L,
             2L,
-            99L,
             "담당자 메모",
             "고객 메모",
             LocalDateTime.now().plusDays(1),
