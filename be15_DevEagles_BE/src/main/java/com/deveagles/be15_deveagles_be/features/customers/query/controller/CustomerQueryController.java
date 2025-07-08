@@ -5,6 +5,7 @@ import com.deveagles.be15_deveagles_be.common.dto.PagedResponse;
 import com.deveagles.be15_deveagles_be.common.dto.PagedResult;
 import com.deveagles.be15_deveagles_be.common.exception.BusinessException;
 import com.deveagles.be15_deveagles_be.common.exception.ErrorCode;
+import com.deveagles.be15_deveagles_be.features.auth.command.application.model.CustomUser;
 import com.deveagles.be15_deveagles_be.features.customers.query.dto.request.CustomerSearchQuery;
 import com.deveagles.be15_deveagles_be.features.customers.query.dto.response.CustomerDetailResponse;
 import com.deveagles.be15_deveagles_be.features.customers.query.dto.response.CustomerListResponse;
@@ -23,6 +24,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -54,14 +56,14 @@ public class CustomerQueryController {
   })
   @GetMapping("/{customerId}")
   public ResponseEntity<ApiResponse<CustomerDetailResponse>> getCustomerDetail(
+      @AuthenticationPrincipal CustomUser user,
       @Parameter(description = "고객 ID", required = true, example = "1") @PathVariable
-          Long customerId,
-      @Parameter(description = "매장 ID", required = true, example = "1") @RequestParam Long shopId) {
-    log.info("고객 상세 조회 요청 - 고객ID: {}, 매장ID: {}", customerId, shopId);
+          Long customerId) {
+    log.info("고객 상세 조회 요청 - 고객ID: {}, 매장ID: {}", customerId, user.getShopId());
 
     CustomerDetailResponse response =
         customerQueryService
-            .getCustomerDetail(customerId, shopId)
+            .getCustomerDetail(customerId, user.getShopId())
             .orElseThrow(
                 () -> new BusinessException(ErrorCode.CUSTOMER_NOT_FOUND, "고객을 찾을 수 없습니다."));
     return ResponseEntity.ok(ApiResponse.success(response));
@@ -79,14 +81,14 @@ public class CustomerQueryController {
   })
   @GetMapping("/phone/{phoneNumber}")
   public ResponseEntity<ApiResponse<CustomerResponse>> getCustomerByPhoneNumber(
+      @AuthenticationPrincipal CustomUser user,
       @Parameter(description = "전화번호", required = true, example = "01012345678") @PathVariable
-          String phoneNumber,
-      @Parameter(description = "매장 ID", required = true, example = "1") @RequestParam Long shopId) {
-    log.info("전화번호로 고객 조회 요청 - 전화번호: {}, 매장ID: {}", phoneNumber, shopId);
+          String phoneNumber) {
+    log.info("전화번호로 고객 조회 요청 - 전화번호: {}, 매장ID: {}", phoneNumber, user.getShopId());
 
     CustomerResponse customer =
         customerQueryService
-            .getCustomerByPhoneNumber(phoneNumber, shopId)
+            .getCustomerByPhoneNumber(phoneNumber, user.getShopId())
             .orElseThrow(() -> new BusinessException(ErrorCode.CUSTOMER_NOT_FOUND));
 
     return ResponseEntity.ok(ApiResponse.success(customer));
@@ -104,12 +106,12 @@ public class CustomerQueryController {
         responseCode = "400",
         description = "잘못된 요청 파라미터")
   })
-  @GetMapping("/shop/{shopId}")
+  @GetMapping("/list")
   public ResponseEntity<ApiResponse<List<CustomerListResponse>>> getCustomersByShopId(
-      @Parameter(description = "매장 ID", required = true, example = "1") @PathVariable Long shopId) {
-    log.info("매장별 고객 목록 조회 요청 - 매장ID: {}", shopId);
+      @AuthenticationPrincipal CustomUser user) {
+    log.info("매장별 고객 목록 조회 요청 - 매장ID: {}", user.getShopId());
 
-    List<CustomerListResponse> customers = customerQueryService.getCustomerList(shopId);
+    List<CustomerListResponse> customers = customerQueryService.getCustomerList(user.getShopId());
     return ResponseEntity.ok(ApiResponse.success(customers));
   }
 
@@ -119,18 +121,18 @@ public class CustomerQueryController {
         responseCode = "200",
         description = "고객 목록 조회 성공")
   })
-  @GetMapping("/shop/{shopId}/paged")
+  @GetMapping("/list/paged")
   public ResponseEntity<ApiResponse<PagedResponse<CustomerListResponse>>> getCustomersByShopIdPaged(
-      @Parameter(description = "매장 ID", required = true, example = "1") @PathVariable Long shopId,
+      @AuthenticationPrincipal CustomUser user,
       @Parameter(description = "페이지 번호 (0부터 시작)", example = "0") @RequestParam(defaultValue = "0")
           int page,
       @Parameter(description = "페이지 크기", example = "20") @RequestParam(defaultValue = "20")
           int size) {
-    log.info("매장별 고객 목록 페이징 조회 요청 - 매장ID: {}, 페이지: {}, 크기: {}", shopId, page, size);
+    log.info("매장별 고객 목록 페이징 조회 요청 - 매장ID: {}, 페이지: {}, 크기: {}", user.getShopId(), page, size);
 
     Pageable pageable = Pageable.ofSize(size).withPage(page);
     Page<CustomerListResponse> customerPage =
-        customerQueryService.getCustomerListPaged(shopId, pageable);
+        customerQueryService.getCustomerListPaged(user.getShopId(), pageable);
     PagedResponse<CustomerListResponse> response =
         PagedResponse.from(PagedResult.from(customerPage));
     return ResponseEntity.ok(ApiResponse.success(response));
@@ -145,7 +147,7 @@ public class CustomerQueryController {
   })
   @GetMapping("/search")
   public ResponseEntity<ApiResponse<PagedResponse<CustomerSearchResult>>> searchCustomers(
-      @Parameter(description = "매장 ID", required = true, example = "1") @RequestParam Long shopId,
+      @AuthenticationPrincipal CustomUser user,
       @Parameter(description = "검색 키워드 (이름 또는 전화번호)", example = "홍길동")
           @RequestParam(required = false)
           String keyword,
@@ -173,19 +175,24 @@ public class CustomerQueryController {
 
     log.info(
         "고객 통합 검색 요청 - 매장ID: {}, 키워드: {}, 등급ID: {}, 성별: {}",
-        shopId,
+        user.getShopId(),
         keyword,
         customerGradeId,
         gender);
 
     CustomerSearchQuery query =
         new CustomerSearchQuery(
-            shopId,
+            user.getShopId(),
             keyword,
-            customerGradeId,
+            customerGradeId != null ? List.of(customerGradeId) : null,
+            null, // tagIds
             gender,
             marketingConsent,
             notificationConsent,
+            false, // excludeDormant
+            null, // dormantMonths
+            false, // excludeRecentMessage
+            null, // recentMessageDays
             includeDeleted,
             page,
             size,
@@ -206,10 +213,10 @@ public class CustomerQueryController {
   })
   @GetMapping("/count")
   public ResponseEntity<ApiResponse<Long>> getCustomerCountByShopId(
-      @Parameter(description = "매장 ID", required = true, example = "1") @RequestParam Long shopId) {
-    log.info("매장별 고객 수 조회 요청 - 매장ID: {}", shopId);
+      @AuthenticationPrincipal CustomUser user) {
+    log.info("매장별 고객 수 조회 요청 - 매장ID: {}", user.getShopId());
 
-    long count = customerQueryService.getCustomerCountByShopId(shopId);
+    long count = customerQueryService.getCustomerCountByShopId(user.getShopId());
     return ResponseEntity.ok(ApiResponse.success(count));
   }
 
@@ -221,12 +228,12 @@ public class CustomerQueryController {
   })
   @GetMapping("/exists")
   public ResponseEntity<ApiResponse<Boolean>> checkPhoneNumberExists(
+      @AuthenticationPrincipal CustomUser user,
       @Parameter(description = "전화번호", required = true, example = "01012345678") @RequestParam
-          String phoneNumber,
-      @Parameter(description = "매장 ID", required = true, example = "1") @RequestParam Long shopId) {
-    log.info("전화번호 중복 확인 요청 - 전화번호: {}, 매장ID: {}", phoneNumber, shopId);
+          String phoneNumber) {
+    log.info("전화번호 중복 확인 요청 - 전화번호: {}, 매장ID: {}", phoneNumber, user.getShopId());
 
-    boolean exists = customerQueryService.existsByPhoneNumber(phoneNumber, shopId);
+    boolean exists = customerQueryService.existsByPhoneNumber(phoneNumber, user.getShopId());
     return ResponseEntity.ok(ApiResponse.success(exists));
   }
 }

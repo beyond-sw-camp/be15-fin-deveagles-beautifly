@@ -59,7 +59,14 @@ class LoggerManager {
       };
 
       apiLogger.error = (method, url, error) => {
-        apiLogger.error(`💥 ${method.toUpperCase()} ${url}`, error);
+        // 에러 객체를 직접 전달하지 않고 필요한 정보만 추출
+        const errorInfo = {
+          message: error?.message,
+          status: error?.response?.status,
+          data: error?.response?.data,
+          stack: error?.stack,
+        };
+        apiLogger.info(`💥 ${method.toUpperCase()} ${url}`, errorInfo);
       };
 
       this.apiLoggers.set(loggerKey, apiLogger);
@@ -77,12 +84,15 @@ class LoggerManager {
 
       // 에러 전용 메서드 추가
       this.errorLogger.apiError = (context, error, additional = {}) => {
-        this.errorLogger.error(`API 에러 [${context}]`, {
-          message: error.message,
-          status: error.response?.status,
-          data: error.response?.data,
+        // 에러 객체를 직접 전달하지 않고 필요한 정보만 추출
+        const errorInfo = {
+          message: error?.message,
+          status: error?.response?.status,
+          data: error?.response?.data,
+          stack: error?.stack,
           ...additional,
-        });
+        };
+        this.errorLogger.info(`API 에러 [${context}]`, errorInfo);
       };
 
       this.errorLogger.validationError = (field, message, value = null) => {

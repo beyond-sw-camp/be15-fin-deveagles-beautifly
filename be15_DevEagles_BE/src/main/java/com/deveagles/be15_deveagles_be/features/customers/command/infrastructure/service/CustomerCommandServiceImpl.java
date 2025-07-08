@@ -2,18 +2,20 @@ package com.deveagles.be15_deveagles_be.features.customers.command.infrastructur
 
 import com.deveagles.be15_deveagles_be.common.exception.BusinessException;
 import com.deveagles.be15_deveagles_be.common.exception.ErrorCode;
+import com.deveagles.be15_deveagles_be.features.auth.command.application.model.CustomUser;
 import com.deveagles.be15_deveagles_be.features.customers.command.application.dto.request.CreateCustomerRequest;
 import com.deveagles.be15_deveagles_be.features.customers.command.application.dto.request.UpdateCustomerRequest;
 import com.deveagles.be15_deveagles_be.features.customers.command.application.dto.response.CustomerCommandResponse;
 import com.deveagles.be15_deveagles_be.features.customers.command.application.service.CustomerCommandService;
+import com.deveagles.be15_deveagles_be.features.customers.command.application.service.CustomerTagService;
 import com.deveagles.be15_deveagles_be.features.customers.command.domain.aggregate.Customer;
 import com.deveagles.be15_deveagles_be.features.customers.command.domain.repository.CustomerRepository;
-import com.deveagles.be15_deveagles_be.features.customers.command.infrastructure.repository.CustomerJpaRepository;
 import com.deveagles.be15_deveagles_be.features.customers.query.service.CustomerQueryService;
 import com.deveagles.be15_deveagles_be.features.messages.command.application.service.AutomaticMessageTriggerService;
 import com.deveagles.be15_deveagles_be.features.messages.command.domain.aggregate.AutomaticEventType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,45 +27,43 @@ public class CustomerCommandServiceImpl implements CustomerCommandService {
 
   private final CustomerRepository customerRepository;
   private final CustomerQueryService customerQueryService;
-  private final CustomerJpaRepository customerJpaRepository;
   private final AutomaticMessageTriggerService automaticMessageTriggerService;
+  private final CustomerTagService customerTagService;
 
   @Override
   public CustomerCommandResponse createCustomer(CreateCustomerRequest request) {
-    // 중복 전화번호 검증
-    if (customerRepository.existsByPhoneNumberAndShopId(request.phoneNumber(), request.shopId())) {
-      throw new BusinessException(ErrorCode.CUSTOMER_PHONE_DUPLICATE);
-    }
+    Long currentShopId = getCurrentShopId();
 
     Customer customer =
         Customer.builder()
-            .customerGradeId(request.customerGradeId())
-            .shopId(request.shopId())
-            .staffId(request.staffId())
+            .shopId(currentShopId)
             .customerName(request.customerName())
             .phoneNumber(request.phoneNumber())
-            .memo(request.memo())
-            .birthdate(request.birthdate())
             .gender(request.gender())
+            .birthdate(request.birthdate())
+            .customerGradeId(request.customerGradeId())
+            .staffId(request.staffId())
+            .channelId(request.channelId())
+            .memo(request.memo())
             .marketingConsent(request.marketingConsent())
             .notificationConsent(request.notificationConsent())
-            .channelId(request.channelId())
             .build();
 
     Customer savedCustomer = customerRepository.save(customer);
-    customerJpaRepository.flush();
-
-    // 3. 자동발신 트리거 실행
-    automaticMessageTriggerService.triggerAutomaticSend(
-        savedCustomer, AutomaticEventType.NEW_CUSTOMER);
-    // Elasticsearch 동기화
     customerQueryService.syncCustomerToElasticsearch(savedCustomer.getId());
 
+    if (request.tags() != null && !request.tags().isEmpty()) {
+      request
+          .tags()
+          .forEach(
+              tagId ->
+                  customerTagService.addTagToCustomer(savedCustomer.getId(), tagId, currentShopId));
+    }
+
     log.info(
-        "새 고객 생성됨: ID={}, 매장ID={}, 이름={}",
-        savedCustomer.getId(),
-        savedCustomer.getShopId(),
-        savedCustomer.getCustomerName());
+        "자동 발송 메시지 실행 - 이벤트: {}, 고객ID: {}", AutomaticEventType.NEW_CUSTOMER, savedCustomer.getId());
+    automaticMessageTriggerService.triggerAutomaticSend(
+        savedCustomer, AutomaticEventType.NEW_CUSTOMER);
 
     return CustomerCommandResponse.from(savedCustomer);
   }
@@ -81,6 +81,23 @@ public class CustomerCommandServiceImpl implements CustomerCommandService {
         request.memo(),
         request.gender(),
         request.channelId());
+
+    // 추가 필드 업데이트
+    if (request.staffId() != null) {
+      customer.updateStaff(request.staffId());
+    }
+    if (request.customerGradeId() != null) {
+      customer.updateGrade(request.customerGradeId());
+    }
+    if (request.birthdate() != null) {
+      customer.updateBirthdate(request.birthdate());
+    }
+    if (request.marketingConsent() != null) {
+      customer.updateMarketingConsent(request.marketingConsent());
+    }
+    if (request.notificationConsent() != null) {
+      customer.updateNotificationConsent(request.notificationConsent());
+    }
 
     Customer updatedCustomer = customerRepository.save(customer);
 
@@ -102,6 +119,9 @@ public class CustomerCommandServiceImpl implements CustomerCommandService {
     customer.softDelete();
     customerRepository.save(customer);
     log.info("고객 삭제됨: ID={}, 매장ID={}", customerId, shopId);
+
+    // Elasticsearch 동기화
+    customerQueryService.syncCustomerToElasticsearch(customerId);
   }
 
   @Override
@@ -160,8 +180,10 @@ public class CustomerCommandServiceImpl implements CustomerCommandService {
     return CustomerCommandResponse.from(updatedCustomer);
   }
 
-  // TODO: 실제 구현에서는 SecurityContext에서 shopId 가져오기
+  // SecurityContext에서 현재 사용자의 shopId 가져오기
   private Long getCurrentShopId() {
-    return 1L; // 임시값
+    CustomUser user =
+        (CustomUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+    return user.getShopId();
   }
 }

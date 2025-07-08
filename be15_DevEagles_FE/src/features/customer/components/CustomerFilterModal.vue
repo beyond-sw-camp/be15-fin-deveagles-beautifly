@@ -103,9 +103,9 @@
             <div class="filter-section">
               <h4 class="section-title">태그</h4>
               <div class="checkbox-group horizontal">
-                <label v-for="tag in dummyTags" :key="tag.tag_id" class="checkbox-item">
-                  <input v-model="filterForm.tags" type="checkbox" :value="tag.tag_id" />
-                  <span>{{ tag.tag_name }}</span>
+                <label v-for="tag in dummyTags" :key="tag.tagId" class="checkbox-item">
+                  <input v-model="filterForm.tags" type="checkbox" :value="tag.tagId" />
+                  <span>{{ tag.tagName }}</span>
                 </label>
               </div>
             </div>
@@ -369,10 +369,11 @@
 </template>
 
 <script setup>
-  import { ref, watch } from 'vue';
+  import { ref, watch, computed } from 'vue';
   import BaseButton from '@/components/common/BaseButton.vue';
   import PrimeDatePicker from '@/components/common/PrimeDatePicker.vue';
   import { RefreshCwIcon, AlertTriangleIcon } from 'lucide-vue-next';
+  import { useMetadataStore } from '@/store/metadata.js';
 
   const props = defineProps({
     modelValue: { type: Boolean, required: true },
@@ -380,21 +381,10 @@
   });
   const emit = defineEmits(['update:modelValue', 'apply-filters']);
 
-  const dummyTags = ref([
-    { tag_id: 1, tag_name: 'VIP' },
-    { tag_id: 2, tag_name: '신규' },
-    { tag_id: 3, tag_name: '컴플레인' },
-  ]);
-  const dummyStaff = ref([
-    { id: 1, name: '김스탭' },
-    { id: 2, name: '박스탭' },
-    { id: 3, name: '이매니저' },
-  ]);
-  const dummyGrades = ref([
-    { id: 1, name: '일반' },
-    { id: 2, name: 'VIP' },
-    { id: 3, name: 'VVIP' },
-  ]);
+  const metadataStore = useMetadataStore();
+  const dummyTags = computed(() => metadataStore.tags);
+  const dummyStaff = computed(() => metadataStore.staff);
+  const dummyGrades = computed(() => metadataStore.grades);
 
   const initialFormState = () => ({
     searchType: 'and',

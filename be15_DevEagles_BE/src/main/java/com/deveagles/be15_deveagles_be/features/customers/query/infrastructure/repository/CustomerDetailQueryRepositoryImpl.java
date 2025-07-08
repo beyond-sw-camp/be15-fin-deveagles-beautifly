@@ -5,10 +5,12 @@ import static com.deveagles.be15_deveagles_be.features.customers.command.domain.
 import static com.deveagles.be15_deveagles_be.features.customers.command.domain.aggregate.QCustomerGrade.customerGrade;
 import static com.deveagles.be15_deveagles_be.features.customers.command.domain.aggregate.QTag.tag;
 import static com.deveagles.be15_deveagles_be.features.customers.command.domain.aggregate.QTagByCustomer.tagByCustomer;
+import static com.deveagles.be15_deveagles_be.features.users.command.domain.aggregate.QStaff.staff;
 
 import com.deveagles.be15_deveagles_be.features.customers.query.dto.response.CustomerDetailResponse;
 import com.deveagles.be15_deveagles_be.features.customers.query.repository.CustomerDetailQueryRepository;
 import com.querydsl.core.types.Projections;
+import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import java.util.List;
 import java.util.Optional;
@@ -23,7 +25,7 @@ public class CustomerDetailQueryRepositoryImpl implements CustomerDetailQueryRep
 
   @Override
   public Optional<CustomerDetailResponse> findCustomerDetailById(Long customerId, Long shopId) {
-    CustomerDetailResponse customerDetail =
+    CustomerDetailResponse response =
         queryFactory
             .select(
                 Projections.constructor(
@@ -46,61 +48,39 @@ public class CustomerDetailQueryRepositoryImpl implements CustomerDetailQueryRep
                     customer.modifiedAt,
                     customer.shopId,
                     customer.staffId,
+                    staff.staffName,
+                    customerGrade.id,
                     customerGrade.customerGradeName,
                     customerGrade.discountRate,
-                    acquisitionChannel.channelName))
+                    acquisitionChannel.id,
+                    acquisitionChannel.channelName,
+                    Expressions.constant(0))) // remainingPrepaidAmount는 현재 구현되지 않음
             .from(customer)
-            .innerJoin(customerGrade)
+            .leftJoin(customerGrade)
             .on(customer.customerGradeId.eq(customerGrade.id))
-            .innerJoin(acquisitionChannel)
+            .leftJoin(acquisitionChannel)
             .on(customer.channelId.eq(acquisitionChannel.id))
-            .where(
-                customer
-                    .id
-                    .eq(customerId)
-                    .and(customer.shopId.eq(shopId))
-                    .and(customer.deletedAt.isNull()))
+            .leftJoin(staff)
+            .on(customer.staffId.eq(staff.staffId))
+            .where(customer.id.eq(customerId).and(customer.shopId.eq(shopId)))
             .fetchOne();
 
-    if (customerDetail == null) {
-      return Optional.empty();
+    if (response != null) {
+      // 태그 정보 조회 및 설정
+      List<CustomerDetailResponse.TagInfo> tags =
+          queryFactory
+              .select(
+                  Projections.constructor(
+                      CustomerDetailResponse.TagInfo.class, tag.id, tag.tagName, tag.colorCode))
+              .from(tagByCustomer)
+              .join(tag)
+              .on(tagByCustomer.tagId.eq(tag.id))
+              .where(tagByCustomer.customerId.eq(customerId))
+              .fetch();
+
+      response.getTags().addAll(tags);
     }
 
-    List<CustomerDetailResponse.TagInfo> tags =
-        queryFactory
-            .select(
-                Projections.constructor(
-                    CustomerDetailResponse.TagInfo.class, tag.id, tag.tagName, tag.colorCode))
-            .from(tagByCustomer)
-            .innerJoin(tag)
-            .on(tagByCustomer.tagId.eq(tag.id))
-            .where(tagByCustomer.customerId.eq(customerId))
-            .fetch();
-
-    return Optional.of(
-        CustomerDetailResponse.builder()
-            .customerId(customerDetail.getCustomerId())
-            .customerName(customerDetail.getCustomerName())
-            .phoneNumber(customerDetail.getPhoneNumber())
-            .memo(customerDetail.getMemo())
-            .visitCount(customerDetail.getVisitCount())
-            .totalRevenue(customerDetail.getTotalRevenue())
-            .recentVisitDate(customerDetail.getRecentVisitDate())
-            .birthdate(customerDetail.getBirthdate())
-            .noshowCount(customerDetail.getNoshowCount())
-            .gender(customerDetail.getGender())
-            .marketingConsent(customerDetail.getMarketingConsent())
-            .marketingConsentedAt(customerDetail.getMarketingConsentedAt())
-            .notificationConsent(customerDetail.getNotificationConsent())
-            .lastMessageSentAt(customerDetail.getLastMessageSentAt())
-            .createdAt(customerDetail.getCreatedAt())
-            .modifiedAt(customerDetail.getModifiedAt())
-            .shopId(customerDetail.getShopId())
-            .staffId(customerDetail.getStaffId())
-            .customerGradeName(customerDetail.getCustomerGradeName())
-            .discountRate(customerDetail.getDiscountRate())
-            .channelName(customerDetail.getChannelName())
-            .tags(tags)
-            .build());
+    return Optional.ofNullable(response);
   }
 }

@@ -1,6 +1,7 @@
 package com.deveagles.be15_deveagles_be.features.customers.command.application.controller;
 
 import com.deveagles.be15_deveagles_be.common.dto.ApiResponse;
+import com.deveagles.be15_deveagles_be.features.auth.command.application.model.CustomUser;
 import com.deveagles.be15_deveagles_be.features.customers.command.application.service.CustomerTagService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -9,12 +10,12 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @Tag(name = "고객 태그 관리", description = "고객에게 태그 추가, 제거 API")
@@ -41,13 +42,13 @@ public class CustomerTagController {
   })
   @PostMapping("/{tagId}")
   public ResponseEntity<ApiResponse<Void>> addTagToCustomer(
+      @AuthenticationPrincipal CustomUser user,
       @Parameter(description = "고객 ID", required = true, example = "1") @PathVariable
           Long customerId,
-      @Parameter(description = "태그 ID", required = true, example = "1") @PathVariable Long tagId,
-      @Parameter(description = "매장 ID", required = true, example = "1") @RequestParam Long shopId) {
-    log.info("고객 태그 추가 요청 - 고객ID: {}, 태그ID: {}, 매장ID: {}", customerId, tagId, shopId);
+      @Parameter(description = "태그 ID", required = true, example = "1") @PathVariable Long tagId) {
+    log.info("고객 태그 추가 요청 - 고객ID: {}, 태그ID: {}, 매장ID: {}", customerId, tagId, user.getShopId());
 
-    customerTagService.addTagToCustomer(customerId, tagId, shopId);
+    customerTagService.addTagToCustomer(customerId, tagId, user.getShopId());
     return ResponseEntity.ok(ApiResponse.success(null));
   }
 
@@ -62,13 +63,13 @@ public class CustomerTagController {
   })
   @DeleteMapping("/{tagId}")
   public ResponseEntity<ApiResponse<Void>> removeTagFromCustomer(
+      @AuthenticationPrincipal CustomUser user,
       @Parameter(description = "고객 ID", required = true, example = "1") @PathVariable
           Long customerId,
-      @Parameter(description = "태그 ID", required = true, example = "1") @PathVariable Long tagId,
-      @Parameter(description = "매장 ID", required = true, example = "1") @RequestParam Long shopId) {
-    log.info("고객 태그 제거 요청 - 고객ID: {}, 태그ID: {}, 매장ID: {}", customerId, tagId, shopId);
+      @Parameter(description = "태그 ID", required = true, example = "1") @PathVariable Long tagId) {
+    log.info("고객 태그 제거 요청 - 고객ID: {}, 태그ID: {}, 매장ID: {}", customerId, tagId, user.getShopId());
 
-    customerTagService.removeTagFromCustomer(customerId, tagId, shopId);
+    customerTagService.removeTagFromCustomer(customerId, tagId, user.getShopId());
     return ResponseEntity.ok(ApiResponse.success(null));
   }
 }

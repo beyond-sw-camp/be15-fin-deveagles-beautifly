@@ -1,6 +1,7 @@
 package com.deveagles.be15_deveagles_be.features.customers.query.controller;
 
 import com.deveagles.be15_deveagles_be.common.dto.ApiResponse;
+import com.deveagles.be15_deveagles_be.features.auth.command.application.model.CustomUser;
 import com.deveagles.be15_deveagles_be.features.customers.query.dto.response.CustomerSearchResult;
 import com.deveagles.be15_deveagles_be.features.customers.query.service.CustomerQueryService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -11,6 +12,7 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -64,14 +66,14 @@ public class CustomerElasticsearchController {
   })
   @PostMapping("/reindex")
   public ResponseEntity<ApiResponse<String>> reindexCustomers(
-      @Parameter(description = "매장 ID", required = true, example = "1") @RequestParam Long shopId) {
-    log.info("매장별 고객 재인덱싱 요청 - 매장ID: {}", shopId);
+      @AuthenticationPrincipal CustomUser user) {
+    log.info("매장별 고객 재인덱싱 요청 - 매장ID: {}", user.getShopId());
 
     try {
-      customerQueryService.reindexAllCustomers(shopId);
+      customerQueryService.reindexAllCustomers(user.getShopId());
       return ResponseEntity.ok(ApiResponse.success("매장의 모든 고객 데이터가 성공적으로 재인덱싱되었습니다."));
     } catch (Exception e) {
-      log.error("매장 재인덱싱 실패 - 매장ID: {}, 오류: {}", shopId, e.getMessage());
+      log.error("매장 재인덱싱 실패 - 매장ID: {}, 오류: {}", user.getShopId(), e.getMessage());
       return ResponseEntity.ok(ApiResponse.success("재인덱싱 중 오류가 발생했습니다: " + e.getMessage()));
     }
   }
@@ -84,16 +86,16 @@ public class CustomerElasticsearchController {
   })
   @GetMapping("/autocomplete")
   public ResponseEntity<ApiResponse<List<String>>> autocomplete(
+      @AuthenticationPrincipal CustomUser user,
       @Parameter(description = "검색 키워드", required = true, example = "홍") @RequestParam
-          String prefix,
-      @Parameter(description = "매장 ID", required = true, example = "1") @RequestParam Long shopId) {
-    log.info("자동완성 검색 요청 - 키워드: {}, 매장ID: {}", prefix, shopId);
+          String prefix) {
+    log.info("자동완성 검색 요청 - 키워드: {}, 매장ID: {}", prefix, user.getShopId());
 
     try {
-      List<String> suggestions = customerQueryService.autocomplete(prefix, shopId);
+      List<String> suggestions = customerQueryService.autocomplete(prefix, user.getShopId());
       return ResponseEntity.ok(ApiResponse.success(suggestions));
     } catch (Exception e) {
-      log.error("자동완성 검색 실패 - 키워드: {}, 매장ID: {}, 오류: {}", prefix, shopId, e.getMessage());
+      log.error("자동완성 검색 실패 - 키워드: {}, 매장ID: {}, 오류: {}", prefix, user.getShopId(), e.getMessage());
       return ResponseEntity.ok(ApiResponse.success(List.of()));
     }
   }
@@ -106,16 +108,17 @@ public class CustomerElasticsearchController {
   })
   @GetMapping("/count")
   public ResponseEntity<ApiResponse<Long>> countByKeyword(
+      @AuthenticationPrincipal CustomUser user,
       @Parameter(description = "검색 키워드", required = true, example = "홍길동") @RequestParam
-          String keyword,
-      @Parameter(description = "매장 ID", required = true, example = "1") @RequestParam Long shopId) {
-    log.info("키워드별 고객 수 조회 요청 - 키워드: {}, 매장ID: {}", keyword, shopId);
+          String keyword) {
+    log.info("키워드별 고객 수 조회 요청 - 키워드: {}, 매장ID: {}", keyword, user.getShopId());
 
     try {
-      long count = customerQueryService.countByKeyword(keyword, shopId);
+      long count = customerQueryService.countByKeyword(keyword, user.getShopId());
       return ResponseEntity.ok(ApiResponse.success(count));
     } catch (Exception e) {
-      log.error("키워드별 고객 수 조회 실패 - 키워드: {}, 매장ID: {}, 오류: {}", keyword, shopId, e.getMessage());
+      log.error(
+          "키워드별 고객 수 조회 실패 - 키워드: {}, 매장ID: {}, 오류: {}", keyword, user.getShopId(), e.getMessage());
       return ResponseEntity.ok(ApiResponse.success(0L));
     }
   }
@@ -128,16 +131,17 @@ public class CustomerElasticsearchController {
   })
   @GetMapping("/search")
   public ResponseEntity<ApiResponse<List<CustomerSearchResult>>> searchByKeyword(
+      @AuthenticationPrincipal CustomUser user,
       @Parameter(description = "검색 키워드", required = true, example = "홍길동") @RequestParam
-          String keyword,
-      @Parameter(description = "매장 ID", required = true, example = "1") @RequestParam Long shopId) {
-    log.info("키워드 검색 요청 - 키워드: {}, 매장ID: {}", keyword, shopId);
+          String keyword) {
+    log.info("키워드 검색 요청 - 키워드: {}, 매장ID: {}", keyword, user.getShopId());
 
     try {
-      List<CustomerSearchResult> results = customerQueryService.searchByKeyword(keyword, shopId);
+      List<CustomerSearchResult> results =
+          customerQueryService.searchByKeyword(keyword, user.getShopId());
       return ResponseEntity.ok(ApiResponse.success(results));
     } catch (Exception e) {
-      log.error("키워드 검색 실패 - 키워드: {}, 매장ID: {}, 오류: {}", keyword, shopId, e.getMessage());
+      log.error("키워드 검색 실패 - 키워드: {}, 매장ID: {}, 오류: {}", keyword, user.getShopId(), e.getMessage());
       return ResponseEntity.ok(ApiResponse.success(List.of()));
     }
   }

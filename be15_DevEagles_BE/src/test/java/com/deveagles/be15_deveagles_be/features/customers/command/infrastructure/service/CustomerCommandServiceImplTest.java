@@ -8,9 +8,11 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import com.deveagles.be15_deveagles_be.common.exception.BusinessException;
 import com.deveagles.be15_deveagles_be.common.exception.ErrorCode;
+import com.deveagles.be15_deveagles_be.features.auth.command.application.model.CustomUser;
 import com.deveagles.be15_deveagles_be.features.customers.command.application.dto.request.CreateCustomerRequest;
 import com.deveagles.be15_deveagles_be.features.customers.command.application.dto.request.UpdateCustomerRequest;
 import com.deveagles.be15_deveagles_be.features.customers.command.application.dto.response.CustomerCommandResponse;
@@ -22,13 +24,21 @@ import com.deveagles.be15_deveagles_be.features.messages.command.application.ser
 import com.deveagles.be15_deveagles_be.features.messages.command.domain.aggregate.AutomaticEventType;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Optional;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("고객 커맨드 서비스 테스트")
@@ -40,105 +50,241 @@ class CustomerCommandServiceImplTest {
   @Mock private AutomaticMessageTriggerService automaticMessageTriggerService;
   @InjectMocks private CustomerCommandServiceImpl customerCommandService;
 
-  @Test
-  @DisplayName("고객 생성 성공")
-  void createCustomer_Success() {
-    // given
-    CreateCustomerRequest request =
-        new CreateCustomerRequest(
-            1L, // customerGradeId
-            1L, // shopId
-            1L, // staffId
-            "홍길동",
-            "01012345678",
-            "테스트 고객",
-            LocalDate.of(1990, 1, 1),
-            Customer.Gender.M,
-            false,
-            false,
-            1L // channelId
-            );
-
-    Customer savedCustomer = createTestCustomer();
-
-    given(customerRepository.existsByPhoneNumberAndShopId(request.phoneNumber(), request.shopId()))
-        .willReturn(false);
-    given(customerRepository.save(any(Customer.class))).willReturn(savedCustomer);
-
-    // when
-    CustomerCommandResponse response = customerCommandService.createCustomer(request);
-
-    // then
-    assertThat(response.customerId()).isEqualTo(savedCustomer.getId());
-    assertThat(response.customerName()).isEqualTo(savedCustomer.getCustomerName());
-    assertThat(response.phoneNumber()).isEqualTo(savedCustomer.getPhoneNumber());
-
-    then(customerRepository)
-        .should()
-        .existsByPhoneNumberAndShopId(request.phoneNumber(), request.shopId());
-    then(customerRepository).should().save(any(Customer.class));
-    then(customerQueryService).should().syncCustomerToElasticsearch(savedCustomer.getId());
-    verify(automaticMessageTriggerService)
-        .triggerAutomaticSend(any(), eq(AutomaticEventType.NEW_CUSTOMER));
+  @BeforeEach
+  void setUpSecurityContext() {
+    CustomUser principal =
+        CustomUser.builder()
+            .shopId(1L)
+            .userId(1L)
+            .username("test")
+            .password("pw")
+            .staffStatus(null)
+            .staffName("test")
+            .grade("A")
+            .profileUrl(null)
+            .authorities(Collections.emptyList())
+            .build();
+    Authentication auth =
+        new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities());
+    SecurityContextHolder.getContext().setAuthentication(auth);
   }
 
-  @Test
-  @DisplayName("고객 생성 실패 - 중복된 전화번호")
-  void createCustomer_DuplicatePhoneNumber() {
-    // given
-    CreateCustomerRequest request =
-        new CreateCustomerRequest(
-            1L,
-            1L,
-            1L,
-            "홍길동",
-            "01012345678",
-            "테스트 고객",
-            LocalDate.of(1990, 1, 1),
-            Customer.Gender.M,
-            false,
-            false,
-            1L);
-
-    given(customerRepository.existsByPhoneNumberAndShopId(request.phoneNumber(), request.shopId()))
-        .willReturn(true);
-
-    // when & then
-    assertThatThrownBy(() -> customerCommandService.createCustomer(request))
-        .isInstanceOf(BusinessException.class)
-        .extracting("errorCode")
-        .isEqualTo(ErrorCode.CUSTOMER_PHONE_DUPLICATE);
-
-    then(customerRepository)
-        .should()
-        .existsByPhoneNumberAndShopId(request.phoneNumber(), request.shopId());
-    then(customerRepository).should(never()).save(any(Customer.class));
+  @AfterEach
+  void clearSecurityContext() {
+    SecurityContextHolder.clearContext();
   }
 
-  @Test
-  @DisplayName("고객 정보 수정 성공")
-  void updateCustomer_Success() {
-    // given
-    Long customerId = 1L;
-    UpdateCustomerRequest request =
-        new UpdateCustomerRequest(
-            customerId, "홍길순", "01098765432", "수정된 메모", Customer.Gender.F, 2L);
+  @Nested
+  @DisplayName("고객 생성 테스트")
+  class CreateCustomerTest {
+    private CreateCustomerRequest request;
+    private Customer customer;
 
-    Customer existingCustomer = createTestCustomer();
+    @BeforeEach
+    void setUp() {
+      request =
+          new CreateCustomerRequest(
+              1L, // customerGradeId
+              1L, // staffId
+              "Test Customer",
+              "01012345678",
+              "Test memo",
+              LocalDate.of(1990, 1, 1), // birthdate
+              Customer.Gender.M,
+              true, // marketingConsent
+              true, // notificationConsent
+              1L, // channelId
+              new ArrayList<>() // tags
+              );
 
-    given(customerRepository.findByIdAndShopId(customerId, 1L))
-        .willReturn(Optional.of(existingCustomer));
-    given(customerRepository.save(any(Customer.class))).willReturn(existingCustomer);
+      customer =
+          Customer.builder()
+              .id(1L)
+              .customerName(request.customerName())
+              .phoneNumber(request.phoneNumber())
+              .memo(request.memo())
+              .gender(request.gender())
+              .channelId(request.channelId())
+              .shopId(1L)
+              .staffId(request.staffId())
+              .customerGradeId(request.customerGradeId())
+              .birthdate(request.birthdate())
+              .marketingConsent(request.marketingConsent())
+              .notificationConsent(request.notificationConsent())
+              .build();
+    }
 
-    // when
-    CustomerCommandResponse response = customerCommandService.updateCustomer(request);
+    @Test
+    @DisplayName("정상적인 고객 생성")
+    void createCustomer_Success() {
+      // Given
+      when(customerRepository.save(any(Customer.class))).thenReturn(customer);
 
-    // then
-    assertThat(response.customerId()).isEqualTo(customerId);
+      // When
+      CustomerCommandResponse response = customerCommandService.createCustomer(request);
 
-    then(customerRepository).should().findByIdAndShopId(customerId, 1L);
-    then(customerRepository).should().save(existingCustomer);
-    then(customerQueryService).should().syncCustomerToElasticsearch(customerId);
+      // Then
+      assertThat(response).isNotNull();
+      assertThat(response.customerId()).isEqualTo(customer.getId());
+      assertThat(response.customerName()).isEqualTo(request.customerName());
+      assertThat(response.phoneNumber()).isEqualTo(request.phoneNumber());
+      assertThat(response.memo()).isEqualTo(request.memo());
+      assertThat(response.gender()).isEqualTo(request.gender());
+      assertThat(response.channelId()).isEqualTo(request.channelId());
+      assertThat(response.shopId()).isEqualTo(1L);
+      assertThat(response.staffId()).isEqualTo(request.staffId());
+      assertThat(response.customerGradeId()).isEqualTo(request.customerGradeId());
+      assertThat(response.birthdate()).isEqualTo(request.birthdate());
+      assertThat(response.marketingConsent()).isEqualTo(request.marketingConsent());
+      assertThat(response.notificationConsent()).isEqualTo(request.notificationConsent());
+
+      then(customerRepository).should().save(any(Customer.class));
+      verify(automaticMessageTriggerService)
+          .triggerAutomaticSend(any(), eq(AutomaticEventType.NEW_CUSTOMER));
+    }
+
+    @Test
+    @DisplayName("중복 전화번호여도 고객이 정상적으로 생성된다")
+    void createCustomer_DuplicatePhoneNumberAllowed() {
+      // given
+      CreateCustomerRequest request =
+          new CreateCustomerRequest(
+              1L,
+              1L,
+              "홍길동",
+              "01012345678",
+              "테스트 고객",
+              LocalDate.of(1990, 1, 1),
+              Customer.Gender.M,
+              false,
+              false,
+              1L,
+              new ArrayList<>());
+      // 중복 전화번호가 이미 있다고 가정
+      // when(customerRepository.existsByPhoneNumberAndShopId(request.phoneNumber(),
+      // 1L)).thenReturn(true);
+      Customer customer =
+          Customer.builder()
+              .id(1L)
+              .customerName(request.customerName())
+              .phoneNumber(request.phoneNumber())
+              .memo(request.memo())
+              .gender(request.gender())
+              .channelId(request.channelId())
+              .shopId(1L)
+              .staffId(request.staffId())
+              .customerGradeId(request.customerGradeId())
+              .birthdate(request.birthdate())
+              .marketingConsent(request.marketingConsent())
+              .notificationConsent(request.notificationConsent())
+              .build();
+      when(customerRepository.save(any(Customer.class))).thenReturn(customer);
+
+      // when
+      CustomerCommandResponse response = customerCommandService.createCustomer(request);
+
+      // then
+      assertThat(response).isNotNull();
+      assertThat(response.customerName()).isEqualTo(request.customerName());
+      assertThat(response.phoneNumber()).isEqualTo(request.phoneNumber());
+      assertThat(response.memo()).isEqualTo(request.memo());
+      assertThat(response.gender()).isEqualTo(request.gender());
+      assertThat(response.channelId()).isEqualTo(request.channelId());
+      assertThat(response.shopId()).isEqualTo(1L);
+      assertThat(response.staffId()).isEqualTo(request.staffId());
+      assertThat(response.customerGradeId()).isEqualTo(request.customerGradeId());
+      assertThat(response.birthdate()).isEqualTo(request.birthdate());
+      assertThat(response.marketingConsent()).isEqualTo(request.marketingConsent());
+      assertThat(response.notificationConsent()).isEqualTo(request.notificationConsent());
+    }
+  }
+
+  @Nested
+  @DisplayName("고객 정보 수정 테스트")
+  class UpdateCustomerTest {
+    private UpdateCustomerRequest request;
+    private Customer existingCustomer;
+    private Customer updatedCustomer;
+
+    @BeforeEach
+    void setUp() {
+      request =
+          new UpdateCustomerRequest(
+              1L, // customerId
+              "Updated Customer",
+              "01087654321",
+              "Updated memo",
+              Customer.Gender.F,
+              2L, // channelId
+              2L, // staffId
+              2L, // customerGradeId
+              LocalDate.of(1995, 1, 1), // birthdate
+              false, // marketingConsent
+              false // notificationConsent
+              );
+
+      existingCustomer =
+          Customer.builder()
+              .id(1L)
+              .customerName("Test Customer")
+              .phoneNumber("01012345678")
+              .memo("Test memo")
+              .gender(Customer.Gender.M)
+              .channelId(1L)
+              .shopId(1L)
+              .staffId(1L)
+              .customerGradeId(1L)
+              .birthdate(LocalDate.of(1990, 1, 1))
+              .marketingConsent(true)
+              .notificationConsent(true)
+              .build();
+
+      updatedCustomer =
+          Customer.builder()
+              .id(1L)
+              .customerName(request.customerName())
+              .phoneNumber(request.phoneNumber())
+              .memo(request.memo())
+              .gender(request.gender())
+              .channelId(request.channelId())
+              .shopId(1L)
+              .staffId(request.staffId())
+              .customerGradeId(request.customerGradeId())
+              .birthdate(request.birthdate())
+              .marketingConsent(request.marketingConsent())
+              .notificationConsent(request.notificationConsent())
+              .build();
+    }
+
+    @Test
+    @DisplayName("정상적인 고객 정보 수정")
+    void updateCustomer_Success() {
+      // Given
+      when(customerRepository.findByIdAndShopId(request.customerId(), 1L))
+          .thenReturn(Optional.of(existingCustomer));
+      when(customerRepository.save(any(Customer.class))).thenReturn(updatedCustomer);
+
+      // When
+      CustomerCommandResponse response = customerCommandService.updateCustomer(request);
+
+      // Then
+      assertThat(response).isNotNull();
+      assertThat(response.customerId()).isEqualTo(request.customerId());
+      assertThat(response.customerName()).isEqualTo(request.customerName());
+      assertThat(response.phoneNumber()).isEqualTo(request.phoneNumber());
+      assertThat(response.memo()).isEqualTo(request.memo());
+      assertThat(response.gender()).isEqualTo(request.gender());
+      assertThat(response.channelId()).isEqualTo(request.channelId());
+      assertThat(response.shopId()).isEqualTo(1L);
+      assertThat(response.staffId()).isEqualTo(request.staffId());
+      assertThat(response.customerGradeId()).isEqualTo(request.customerGradeId());
+      assertThat(response.birthdate()).isEqualTo(request.birthdate());
+      assertThat(response.marketingConsent()).isEqualTo(request.marketingConsent());
+      assertThat(response.notificationConsent()).isEqualTo(request.notificationConsent());
+
+      then(customerRepository).should().findByIdAndShopId(request.customerId(), 1L);
+      then(customerRepository).should().save(any(Customer.class));
+    }
   }
 
   @Test
@@ -148,7 +294,17 @@ class CustomerCommandServiceImplTest {
     Long customerId = 1L;
     UpdateCustomerRequest request =
         new UpdateCustomerRequest(
-            customerId, "홍길순", "01098765432", "수정된 메모", Customer.Gender.F, 2L);
+            customerId,
+            "홍길순",
+            "01098765432",
+            "수정된 메모",
+            Customer.Gender.F,
+            2L,
+            2L,
+            2L,
+            LocalDate.of(1990, 2, 2),
+            true,
+            true);
 
     given(customerRepository.findByIdAndShopId(customerId, 1L)).willReturn(Optional.empty());
 
@@ -179,6 +335,7 @@ class CustomerCommandServiceImplTest {
     // then
     then(customerRepository).should().findByIdAndShopId(customerId, shopId);
     then(customerRepository).should().save(existingCustomer);
+    assertThat(existingCustomer.isDeleted()).isTrue();
   }
 
   @Test
@@ -200,6 +357,8 @@ class CustomerCommandServiceImplTest {
 
     // then
     assertThat(response.customerId()).isEqualTo(customerId);
+    assertThat(existingCustomer.getMarketingConsent()).isTrue();
+    assertThat(existingCustomer.getMarketingConsentedAt()).isNotNull();
 
     then(customerRepository).should().findByIdAndShopId(customerId, shopId);
     then(customerRepository).should().save(existingCustomer);
@@ -224,6 +383,7 @@ class CustomerCommandServiceImplTest {
 
     // then
     assertThat(response.customerId()).isEqualTo(customerId);
+    assertThat(existingCustomer.getNotificationConsent()).isTrue();
 
     then(customerRepository).should().findByIdAndShopId(customerId, shopId);
     then(customerRepository).should().save(existingCustomer);
@@ -237,6 +397,8 @@ class CustomerCommandServiceImplTest {
     Long shopId = 1L;
     Integer revenue = 50000;
     Customer existingCustomer = createTestCustomer();
+    Integer initialVisitCount = existingCustomer.getVisitCount();
+    Integer initialRevenue = existingCustomer.getTotalRevenue();
 
     given(customerRepository.findByIdAndShopId(customerId, shopId))
         .willReturn(Optional.of(existingCustomer));
@@ -247,6 +409,9 @@ class CustomerCommandServiceImplTest {
 
     // then
     assertThat(response.customerId()).isEqualTo(customerId);
+    assertThat(existingCustomer.getVisitCount()).isEqualTo(initialVisitCount + 1);
+    assertThat(existingCustomer.getTotalRevenue()).isEqualTo(initialRevenue + revenue);
+    assertThat(existingCustomer.getRecentVisitDate()).isEqualTo(LocalDate.now());
 
     then(customerRepository).should().findByIdAndShopId(customerId, shopId);
     then(customerRepository).should().save(existingCustomer);
@@ -259,6 +424,7 @@ class CustomerCommandServiceImplTest {
     Long customerId = 1L;
     Long shopId = 1L;
     Customer existingCustomer = createTestCustomer();
+    Integer initialNoshowCount = existingCustomer.getNoshowCount();
 
     given(customerRepository.findByIdAndShopId(customerId, shopId))
         .willReturn(Optional.of(existingCustomer));
@@ -269,6 +435,7 @@ class CustomerCommandServiceImplTest {
 
     // then
     assertThat(response.customerId()).isEqualTo(customerId);
+    assertThat(existingCustomer.getNoshowCount()).isEqualTo(initialNoshowCount + 1);
 
     then(customerRepository).should().findByIdAndShopId(customerId, shopId);
     then(customerRepository).should().save(existingCustomer);
@@ -284,6 +451,11 @@ class CustomerCommandServiceImplTest {
     given(customerRepository.findByIdAndShopId(customerId, shopId)).willReturn(Optional.empty());
 
     // when & then
+    assertThatThrownBy(() -> customerCommandService.deleteCustomer(customerId, shopId))
+        .isInstanceOf(BusinessException.class)
+        .extracting("errorCode")
+        .isEqualTo(ErrorCode.CUSTOMER_NOT_FOUND);
+
     assertThatThrownBy(
             () -> customerCommandService.updateMarketingConsent(customerId, shopId, true))
         .isInstanceOf(BusinessException.class)
@@ -296,7 +468,7 @@ class CustomerCommandServiceImplTest {
         .extracting("errorCode")
         .isEqualTo(ErrorCode.CUSTOMER_NOT_FOUND);
 
-    assertThatThrownBy(() -> customerCommandService.addVisit(customerId, shopId, 10000))
+    assertThatThrownBy(() -> customerCommandService.addVisit(customerId, shopId, 50000))
         .isInstanceOf(BusinessException.class)
         .extracting("errorCode")
         .isEqualTo(ErrorCode.CUSTOMER_NOT_FOUND);

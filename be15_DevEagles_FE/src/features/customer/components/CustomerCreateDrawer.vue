@@ -33,7 +33,7 @@
           type="text"
           class="form-input"
           :class="{ 'input-error': errors.phone }"
-          placeholder="010-0000-0000"
+          placeholder="01000000000"
           @blur="validateField('phone')"
         />
         <div v-if="errors.phone" class="error-message">{{ errors.phone }}</div>
@@ -58,39 +58,44 @@
       </div>
       <div class="form-row">
         <label class="form-label">담당자</label>
-        <select v-model="form.staff_name" class="form-input">
-          <option value="" disabled>담당자 선택</option>
-          <option value="담당자 없음">담당자 없음</option>
-          <option v-for="staff in staffOptions" :key="staff" :value="staff">{{ staff }}</option>
+        <select v-model="form.staffId" class="form-input">
+          <option :value="null" disabled>담당자 선택</option>
+          <option :value="null">담당자 없음</option>
+          <option v-for="staff in staffOptions" :key="staff.id" :value="staff.id">
+            {{ staff.name }}
+          </option>
         </select>
       </div>
       <div class="form-row">
         <label class="form-label">유입경로</label>
-        <select v-model="form.channel_id" class="form-input">
+        <select v-model="form.channelId" class="form-input">
           <option :value="null" disabled>유입경로 선택</option>
           <option
             v-for="channel in acquisitionChannelOptions"
-            :key="channel.channel_id"
-            :value="channel.channel_id"
+            :key="channel.id"
+            :value="channel.id"
           >
-            {{ channel.channel_name }}
+            {{ channel.channelName }}
           </option>
         </select>
       </div>
       <div class="form-row">
         <label class="form-label">태그</label>
         <Multiselect
+          :key="`tags-${JSON.stringify(tagOptions.value)}`"
           v-model="form.tags"
           :options="tagOptions"
           mode="tags"
           :close-on-select="false"
           :searchable="true"
           :create-option="false"
-          label="tag_name"
-          value-prop="tag_name"
-          track-by="tag_name"
+          :hide-selected="false"
+          label="tagName"
+          value-prop="tagId"
+          track-by="tagId"
           placeholder="태그 선택"
           class="multiselect-custom"
+          :loading="metadataStore.isLoading"
         />
       </div>
       <div class="form-row">
@@ -105,15 +110,29 @@
       <div class="form-row">
         <label class="form-label"> 등급<span class="required">*</span> </label>
         <select
-          v-model="form.grade"
+          v-model="form.customerGradeId"
           class="form-input"
           :class="{ 'input-error': errors.grade }"
           @blur="validateField('grade')"
         >
-          <option value="" disabled>등급 선택</option>
-          <option v-for="grade in gradeOptions" :key="grade" :value="grade">{{ grade }}</option>
+          <option :value="null" disabled>등급 선택</option>
+          <option v-for="grade in gradeOptions" :key="grade.id" :value="grade.id">
+            {{ grade.name }}
+          </option>
         </select>
         <div v-if="errors.grade" class="error-message">{{ errors.grade }}</div>
+      </div>
+      <div class="form-row form-row-checkbox">
+        <label class="form-label-checkbox">
+          <input v-model="form.marketingConsent" type="checkbox" class="form-checkbox" />
+          <span>마케팅 정보 수신 동의</span>
+        </label>
+      </div>
+      <div class="form-row form-row-checkbox">
+        <label class="form-label-checkbox">
+          <input v-model="form.notificationConsent" type="checkbox" class="form-checkbox" />
+          <span>알림(예약 등) 수신 동의</span>
+        </label>
       </div>
     </form>
     <template #footer>
@@ -128,12 +147,15 @@
 </template>
 
 <script setup>
-  import { ref, watch, defineEmits, defineProps, nextTick } from 'vue';
+  import { ref, watch, defineEmits, defineProps, nextTick, onMounted } from 'vue';
   import BaseDrawer from '@/components/common/BaseDrawer.vue';
   import BaseButton from '@/components/common/BaseButton.vue';
   import Multiselect from '@vueform/multiselect';
   import PrimeDatePicker from '@/components/common/PrimeDatePicker.vue'; // 반드시 추가!
   import '@vueform/multiselect/themes/default.css';
+  import { useAuthStore } from '@/store/auth.js';
+  import { useMetadataStore } from '@/store/metadata.js';
+  import { storeToRefs } from 'pinia';
 
   const props = defineProps({
     modelValue: { type: Boolean, default: false },
@@ -150,32 +172,30 @@
   );
   watch(visible, v => emit('update:modelValue', v));
 
-  const staffOptions = ['부재녕', '김담당', '이팀장'];
-  const acquisitionChannelOptions = [
-    { channel_id: 1, channel_name: '네이버검색' },
-    { channel_id: 2, channel_name: '지인 추천' },
-  ];
-  const tagOptions = [
-    { tag_name: 'VIP', color_code: '#FFD700' },
-    { tag_name: '신규', color_code: '#00BFFF' },
-    { tag_name: '단골', color_code: '#90ee90' },
-    { tag_name: 'vvvip', color_code: '#FF69B4' },
-    { tag_name: 'jayboo', color_code: '#FFB347' },
-    { tag_name: '김치찌개', color_code: '#B0E0E6' },
-  ];
-  const gradeOptions = ['기본등급', '일반', 'VIP', '신규'];
+  const metadataStore = useMetadataStore();
+  const {
+    staff: staffOptions,
+    tags: tagOptions,
+    grades: gradeOptions,
+    channels: acquisitionChannelOptions,
+  } = storeToRefs(metadataStore);
+
   const today = new Date().toISOString().slice(0, 10);
+
+  const authStore = useAuthStore();
 
   const initialForm = () => ({
     name: '',
     phone: '',
     gender: '',
     birthdate: '',
-    staff_name: '',
-    channel_id: null,
+    staffId: null,
+    channelId: null,
     tags: [],
     memo: '',
-    grade: '기본등급',
+    customerGradeId: null,
+    marketingConsent: false,
+    notificationConsent: false,
   });
   const form = ref(initialForm());
   const errors = ref({ name: '', phone: '', grade: '' });
@@ -184,11 +204,12 @@
     if (field === 'name') errors.value.name = !form.value.name.trim() ? '이름을 입력해주세요' : '';
     if (field === 'phone') {
       if (!form.value.phone.trim()) errors.value.phone = '연락처를 입력해주세요';
-      else if (!/^01[016789]-\d{3,4}-\d{4}$/.test(form.value.phone))
+      else if (!/^01[016789]\d{7,8}$/.test(form.value.phone))
         errors.value.phone = '올바른 형식으로 작성해주세요';
       else errors.value.phone = '';
     }
-    if (field === 'grade') errors.value.grade = !form.value.grade ? '등급을 선택해주세요' : '';
+    if (field === 'grade')
+      errors.value.grade = !form.value.customerGradeId ? '등급을 선택해주세요' : '';
   }
 
   function validateAndSubmit() {
@@ -197,13 +218,33 @@
     validateField('grade');
     if (!errors.value.name && !errors.value.phone && !errors.value.grade) {
       const payload = { ...form.value };
-      payload.tags = payload.tags.map(
-        tagName =>
-          tagOptions.find(opt => opt.tag_name === tagName) || {
-            tag_name: tagName,
-            color_code: '#ccc',
-          }
-      );
+
+      // 필드명 매핑
+      payload.customerName = payload.name;
+      delete payload.name;
+      payload.phoneNumber = payload.phone?.replace(/-/g, '');
+      delete payload.phone;
+
+      if (!payload.customerGradeId) {
+        const defaultGrade = gradeOptions.value.find(g => g.name === '기본등급');
+        if (defaultGrade) {
+          payload.customerGradeId = defaultGrade.id;
+        }
+      }
+      if (payload.birthdate) {
+        const d = new Date(payload.birthdate);
+        payload.birthdate = d.toISOString().split('T')[0];
+      }
+      // 태그는 숫자 ID 배열로 전송
+      payload.tags = Array.isArray(payload.tags) ? payload.tags : [];
+      // gender enum 변환
+      if (payload.gender === '남성') payload.gender = 'M';
+      else if (payload.gender === '여성') payload.gender = 'F';
+
+      // staff_name, grade 속성 제거
+      delete payload.staff_name;
+      delete payload.grade;
+
       emit('create', payload);
       visible.value = false;
       resetForm();
@@ -217,6 +258,10 @@
     form.value = initialForm();
     errors.value = { name: '', phone: '', grade: '' };
   }
+
+  onMounted(async () => {
+    await metadataStore.loadMetadata();
+  });
 </script>
 
 <style>
@@ -291,5 +336,24 @@
     justify-content: flex-end;
     margin-top: 0;
     margin-bottom: 0;
+  }
+  .form-row-checkbox {
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+  }
+  .form-label-checkbox {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    color: #333;
+  }
+  .form-checkbox {
+    width: 16px;
+    height: 16px;
+    margin-right: 8px;
+    accent-color: #364f6b;
   }
 </style>
