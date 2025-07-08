@@ -4,7 +4,6 @@ import java.time.LocalDateTime;
 
 public record CreatePlanRequest(
     Long staffId,
-    Long shopId,
     String planTitle,
     String planMemo,
     LocalDateTime planStartAt,
