@@ -133,3 +133,68 @@ export const getPrepaidPass = async () => {
   const response = await api.get('/prepaid-pass');
   return response.data.data;
 };
+
+// 고객 회원권 조회
+
+// 전체 고객 회원권 조회
+export const getAllCustomerMemberships = async (page = 1, size = 10) => {
+  const response = await api.get('/customer-memberships', {
+    params: { page, size },
+  });
+  return response.data.data;
+};
+
+// 고객 회원권 필터 조회
+export const getFilteredCustomerMemberships = async filter => {
+  const response = await api.post('/customer-memberships/filter', filter);
+  return response.data.data;
+};
+
+// 조건부 만료 예정 선불권 필터 조회
+export const getFilteredExpiringPrepaidPasses = async filters => {
+  const response = await api.get('/customer-expiring-prepaid-passes', {
+    params: {
+      minRemainingAmount: filters.minRemainingAmount,
+      maxRemainingAmount: filters.maxRemainingAmount,
+      startDate: filters.startDate,
+      endDate: filters.endDate,
+      page: filters.page ?? 1,
+      size: filters.size ?? 10,
+    },
+  });
+  return response.data.data;
+};
+
+// 조건부 만료 예정 횟수권 필터 조회
+export const getFilteredExpiringSessionPasses = async filters => {
+  const response = await api.get('/customer-expiring-session-passes', {
+    params: {
+      minRemainingAmount: filters.minRemainingAmount,
+      maxRemainingAmount: filters.maxRemainingAmount,
+      startDate: filters.startDate,
+      endDate: filters.endDate,
+      page: filters.page ?? 1,
+      size: filters.size ?? 10,
+    },
+  });
+  return response.data.data;
+};
+
+// 고객 선불권 상세 조회
+export const getCustomerPrepaidPasses = async customerId => {
+  const response = await api.get(`/customer-memberships/prepaid-passes/detail/${customerId}`);
+  return response.data.data;
+};
+
+// 고객 횟수권 상세 조회
+export const getCustomerSessionPasses = async customerId => {
+  const response = await api.get(`/customer-memberships/session-passes/detail/${customerId}`);
+  return response.data.data;
+};
+
+// 만료 및 사용완료 회원권 조회
+// 만료 또는 소진된 회원권 목록 조회
+export const getExpiredOrUsedUpMemberships = async customerId => {
+  const response = await api.get(`/customer-memberships/expired-or-used-up/${customerId}`);
+  return response.data.data;
+};

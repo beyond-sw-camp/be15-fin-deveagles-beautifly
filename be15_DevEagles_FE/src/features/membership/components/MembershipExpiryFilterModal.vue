@@ -8,13 +8,13 @@
           v-model.number="min"
           type="number"
           step="100"
-          :placeholder="`잔여 ${type === '선불' ? '선불권' : '횟수권'}`"
+          :placeholder="`최소 잔여 ${type === '선불' ? '선불권' : '횟수권'}`"
         />
         <BaseForm
           v-model.number="max"
           type="number"
           step="100"
-          :placeholder="`잔여 ${type === '선불' ? '선불권' : '횟수권'}`"
+          :placeholder="`최대 잔여 ${type === '선불' ? '선불권' : '횟수권'}`"
         />
       </div>
 
@@ -62,22 +62,33 @@
   );
   watch(modalVisible, val => emit('update:modelValue', val));
 
+  // 필터 상태
   const min = ref(null);
   const max = ref(null);
-  const startDate = ref(null); // ✅ Date 객체
+  const startDate = ref(null); // Date 객체
   const endDate = ref(null);
 
+  // 모달 닫기
   const closeModal = () => {
     modalVisible.value = false;
   };
 
+  // 필터 적용 → 상위로 emit
   const applyFilter = () => {
-    emit('apply', {
-      min: min.value,
-      max: max.value,
+    const payload = {
       startDate: startDate.value,
       endDate: endDate.value,
-    });
+    };
+
+    if (props.type === '선불') {
+      payload.minRemainingAmount = min.value;
+      payload.maxRemainingAmount = max.value;
+    } else {
+      payload.minRemainingCount = min.value;
+      payload.maxRemainingCount = max.value;
+    }
+
+    emit('apply', payload);
     closeModal();
   };
 </script>
@@ -89,22 +100,18 @@
     flex-direction: column;
     gap: 1rem;
   }
-
   .section-title {
     font-weight: bold;
     font-size: 16px;
   }
-
   .range-inputs {
     display: flex;
     gap: 1rem;
   }
-
   .date-picker {
     flex: 1;
     min-width: 0;
   }
-
   .footer-buttons {
     display: flex;
     justify-content: flex-end;
