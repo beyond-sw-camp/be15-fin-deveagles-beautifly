@@ -2,6 +2,7 @@ package com.deveagles.be15_deveagles_be.features.shops.command.application.contr
 
 import com.deveagles.be15_deveagles_be.common.dto.ApiResponse;
 import com.deveagles.be15_deveagles_be.features.auth.command.application.model.CustomUser;
+import com.deveagles.be15_deveagles_be.features.shops.command.application.dto.request.PutShopRequest;
 import com.deveagles.be15_deveagles_be.features.shops.command.application.dto.request.ValidBizNumberRequest;
 import com.deveagles.be15_deveagles_be.features.shops.command.application.dto.response.GetIndustryResponse;
 import com.deveagles.be15_deveagles_be.features.shops.command.application.dto.response.GetShopResponse;
@@ -52,5 +53,16 @@ public class ShopCommandController {
     GetShopResponse response = shopCommandService.getShop(customUser.getShopId());
 
     return ResponseEntity.ok().body(ApiResponse.success(response));
+  }
+
+  @Transactional
+  @PutMapping()
+  public ResponseEntity<ApiResponse<Void>> putShop(
+      @AuthenticationPrincipal CustomUser customUser,
+      @RequestBody @Valid PutShopRequest shopRequest) {
+
+    shopCommandService.putShop(customUser.getShopId(), shopRequest);
+
+    return ResponseEntity.ok().body(ApiResponse.success(null));
   }
 }
