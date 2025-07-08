@@ -94,8 +94,8 @@
   function handleSubmit() {
     if (!tagName.value.trim() || !colorCode.value) return;
     emit('create', {
-      tag_name: tagName.value.trim(),
-      color_code: colorCode.value,
+      tagName: tagName.value.trim(),
+      colorCode: colorCode.value,
     });
     toastRef.value?.success('태그가 생성되었습니다.');
     emit('update:modelValue', false);

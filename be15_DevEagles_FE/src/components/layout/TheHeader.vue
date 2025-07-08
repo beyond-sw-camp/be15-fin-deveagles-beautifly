@@ -252,7 +252,6 @@
 
   const onSearchBlur = () => {
     isSearchFocused.value = false;
-    // 자동완성 목록을 바로 숨기면 클릭이 먹히지 않으므로 살짝 지연
     setTimeout(() => {
       showSuggestions.value = false;
     }, 150);
@@ -400,15 +399,50 @@
   const showCreateDrawer = ref(false);
 
   // 고객 수정 요청 처리
-  const handleUpdateCustomer = async updatedCustomer => {
+  const handleUpdateCustomer = async updatedCustomerPayload => {
     try {
-      // 캐시된 고객 목록 업데이트
-      const index = cachedCustomers.value.findIndex(
-        c => c.customer_id === updatedCustomer.customer_id
+      const originalCustomer = selectedCustomer.value;
+      const originalTagIds = new Set(
+        (originalCustomer.tags || []).map(t => t.tag_id).filter(Boolean)
       );
-      if (index !== -1) {
-        cachedCustomers.value[index] = updatedCustomer;
+      const newTagIdsArr = updatedCustomerPayload.tags || [];
+      const newTagIds = new Set(newTagIdsArr);
+
+      const customerPayload = { ...updatedCustomerPayload };
+      delete customerPayload.tags;
+
+      const updatedCustomer = await customersAPI.updateCustomer(customerPayload);
+
+      const shopId = authStore.shopId;
+      const customerId = originalCustomer.customer_id;
+
+      // Add new tags
+      for (const tagId of newTagIds) {
+        if (!originalTagIds.has(tagId)) {
+          try {
+            await customersAPI.addTagToCustomer(customerId, tagId, shopId);
+          } catch (e) {
+            console.error(`태그 추가 실패: customerId=${customerId}, tagId=${tagId}`, e);
+          }
+        }
       }
+
+      // Remove old tags
+      for (const tagId of originalTagIds) {
+        if (!newTagIds.has(tagId)) {
+          try {
+            await customersAPI.removeTagFromCustomer(customerId, tagId, shopId);
+          } catch (e) {
+            console.error(`태그 제거 실패: customerId=${customerId}, tagId=${tagId}`, e);
+          }
+        }
+      }
+
+      // 리스트 새로고침
+      cachedCustomers.value = [];
+      lastFetchTime.value = 0;
+      await fetchCustomers();
+
       showEditDrawer.value = false;
     } catch (error) {
       console.error('고객 정보 업데이트 실패:', error);
@@ -427,10 +461,17 @@
   };
 
   // 고객 생성 완료 처리
-  const handleCreateCustomer = async newCustomer => {
+  const handleCreateCustomer = async newCustomerPayload => {
     try {
-      // 캐시된 고객 목록에 추가
-      cachedCustomers.value = [newCustomer, ...cachedCustomers.value];
+      const shopId = authStore.shopId?.value || authStore.shopId || 1;
+      // create customer with tags in one request to reduce API calls
+      await customersAPI.createCustomer({ ...newCustomerPayload, shopId });
+
+      // 리스트 새로고침 (캐시 초기화 후 재조회)
+      cachedCustomers.value = [];
+      lastFetchTime.value = 0;
+      await fetchCustomers();
+
       showCreateDrawer.value = false;
     } catch (error) {
       console.error('고객 생성 실패:', error);

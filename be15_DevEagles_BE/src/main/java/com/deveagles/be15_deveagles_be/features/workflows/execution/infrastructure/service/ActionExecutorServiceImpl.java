@@ -2,6 +2,7 @@ package com.deveagles.be15_deveagles_be.features.workflows.execution.infrastruct
 
 import com.deveagles.be15_deveagles_be.features.workflows.command.domain.aggregate.Workflow;
 import com.deveagles.be15_deveagles_be.features.workflows.command.domain.aggregate.WorkflowExecution;
+import com.deveagles.be15_deveagles_be.features.workflows.command.domain.repository.WorkflowExecutionRepository;
 import com.deveagles.be15_deveagles_be.features.workflows.command.domain.vo.ActionConfig;
 import com.deveagles.be15_deveagles_be.features.workflows.command.domain.vo.ActionType;
 import com.deveagles.be15_deveagles_be.features.workflows.execution.application.service.ActionExecutorService;
@@ -18,10 +19,11 @@ import org.springframework.stereotype.Service;
 @Slf4j
 public class ActionExecutorServiceImpl implements ActionExecutorService {
 
+  private final WorkflowExecutionRepository workflowExecutionRepository;
   private final ObjectMapper objectMapper;
-  private final MockMessageService messageService;
-  private final MockCouponService couponService;
-  private final MockNotificationService notificationService;
+  private final MessageServiceAdapter messageService;
+  private final CouponServiceAdapter couponService;
+  private final NotificationServiceAdapter notificationService;
 
   @Override
   public ActionExecutionResult executeAction(
@@ -69,19 +71,12 @@ public class ActionExecutorServiceImpl implements ActionExecutorService {
 
     for (Long customerId : customerIds) {
       try {
-        boolean success =
-            messageService.sendMessage(
-                customerId,
-                workflow.getShopId(),
-                actionConfig.getMessageTemplateId(),
-                actionConfig.getSendTime());
-
+        boolean success = executeSmsAction(customerId, actionConfig, workflow.getShopId());
         if (success) {
           successCount++;
         } else {
           failureCount++;
         }
-
       } catch (Exception e) {
         log.error("메시지 발송 실패: 고객 ID={}, 오류={}", customerId, e.getMessage());
         failureCount++;
@@ -102,27 +97,19 @@ public class ActionExecutorServiceImpl implements ActionExecutorService {
     int successCount = 0;
     int failureCount = 0;
 
-    if (!couponService.isValidCoupon(actionConfig.getCouponId(), workflow.getShopId())) {
+    if (!isValidCoupon(actionConfig.getCouponId(), workflow.getShopId())) {
       log.error("유효하지 않은 쿠폰: 쿠폰 ID={}, 매장 ID={}", actionConfig.getCouponId(), workflow.getShopId());
       return new ActionExecutionResult(0, customerIds.size());
     }
 
     for (Long customerId : customerIds) {
       try {
-        boolean messageSent =
-            messageService.sendCouponMessage(
-                customerId,
-                workflow.getShopId(),
-                actionConfig.getMessageTemplateId(),
-                actionConfig.getCouponId(),
-                actionConfig.getSendTime());
-
-        if (messageSent) {
+        boolean success = executeAlimtalkAction(customerId, actionConfig, workflow.getShopId());
+        if (success) {
           successCount++;
         } else {
           failureCount++;
         }
-
       } catch (Exception e) {
         log.error("쿠폰+메시지 발송 실패: 고객 ID={}, 오류={}", customerId, e.getMessage());
         failureCount++;
@@ -138,15 +125,7 @@ public class ActionExecutorServiceImpl implements ActionExecutorService {
     log.info("시스템 알림 액션 실행: 제목={}", actionConfig.getNotificationTitle());
 
     try {
-      boolean success =
-          notificationService.sendNotification(
-              workflow.getShopId(),
-              workflow.getStaffId(),
-              actionConfig.getNotificationTitle(),
-              actionConfig.getNotificationContent(),
-              actionConfig.getNotificationLevel(),
-              customerIds.size());
-
+      boolean success = executeNotificationAction(actionConfig, workflow.getShopId());
       if (success) {
         log.info("시스템 알림 발송 완료");
         return new ActionExecutionResult(1, 0);
@@ -154,11 +133,51 @@ public class ActionExecutorServiceImpl implements ActionExecutorService {
         log.error("시스템 알림 발송 실패");
         return new ActionExecutionResult(0, 1);
       }
-
     } catch (Exception e) {
       log.error("시스템 알림 발송 중 오류: {}", e.getMessage());
       return new ActionExecutionResult(0, 1);
     }
+  }
+
+  private boolean executeSmsAction(Long customerId, ActionConfig action, Long shopId) {
+    String templateId = action.getMessageTemplateId();
+
+    if (templateId == null) {
+      log.warn("SMS 액션에 templateId가 없습니다. customerId: {}, shopId: {}", customerId, shopId);
+      return false;
+    }
+
+    return messageService.sendMessage(customerId, shopId, templateId, action.getSendTime());
+  }
+
+  private boolean executeAlimtalkAction(Long customerId, ActionConfig action, Long shopId) {
+    String templateId = action.getMessageTemplateId();
+    String couponId = action.getCouponId();
+
+    if (templateId == null) {
+      log.warn("알림톡 액션에 templateId가 없습니다. customerId: {}, shopId: {}", customerId, shopId);
+      return false;
+    }
+
+    return messageService.sendCouponMessage(
+        customerId, shopId, templateId, couponId, action.getSendTime());
+  }
+
+  private boolean executeNotificationAction(ActionConfig action, Long shopId) {
+    String title = action.getNotificationTitle();
+    String content = action.getNotificationContent();
+    String level = action.getNotificationLevel() != null ? action.getNotificationLevel() : "INFO";
+
+    if (title == null || content == null) {
+      log.warn("알림 액션에 필수 정보가 없습니다. title: {}, content: {}, shopId: {}", title, content, shopId);
+      return false;
+    }
+
+    return notificationService.sendNotification(shopId, 1L, title, content, level, 1);
+  }
+
+  private boolean isValidCoupon(String couponId, Long shopId) {
+    return couponService.isValidCoupon(couponId, shopId);
   }
 
   private ActionConfig parseActionConfig(String actionConfigJson) throws JsonProcessingException {
@@ -166,26 +185,5 @@ public class ActionExecutorServiceImpl implements ActionExecutorService {
       return ActionConfig.builder().build();
     }
     return objectMapper.readValue(actionConfigJson, ActionConfig.class);
-  }
-
-  interface MessageService {
-    boolean sendMessage(
-        Long customerId, Long shopId, String templateId, java.time.LocalTime sendTime);
-
-    boolean sendCouponMessage(
-        Long customerId,
-        Long shopId,
-        String templateId,
-        String couponId,
-        java.time.LocalTime sendTime);
-  }
-
-  interface CouponService {
-    boolean isValidCoupon(String couponId, Long shopId);
-  }
-
-  interface NotificationService {
-    boolean sendNotification(
-        Long shopId, Long staffId, String title, String content, String level, int targetCount);
   }
 }

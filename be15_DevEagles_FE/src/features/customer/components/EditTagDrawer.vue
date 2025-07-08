@@ -86,8 +86,8 @@
     () => props.modelValue,
     val => {
       if (val && props.tag) {
-        tagName.value = props.tag.tag_name || '';
-        colorCode.value = props.tag.color_code || null; // 초기화
+        tagName.value = props.tag.tagName || '';
+        colorCode.value = props.tag.colorCode || null; // 초기화
       } else if (!val) {
         tagName.value = '';
         colorCode.value = null; // 초기화
@@ -99,8 +99,8 @@
     if (!tagName.value.trim() || !colorCode.value) return;
     emit('update', {
       ...props.tag,
-      tag_name: tagName.value.trim(),
-      color_code: colorCode.value,
+      tagName: tagName.value.trim(),
+      colorCode: colorCode.value,
     });
     toastRef.value?.success('태그가 수정되었습니다.');
     emit('update:modelValue', false);

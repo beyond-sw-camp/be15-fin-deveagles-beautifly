@@ -1,15 +1,21 @@
 package com.deveagles.be15_deveagles_be.features.workflows.execution.infrastructure.service;
 
+import com.deveagles.be15_deveagles_be.features.customers.query.dto.request.CustomerSearchQuery;
+import com.deveagles.be15_deveagles_be.features.customers.query.service.CustomerQueryService;
 import com.deveagles.be15_deveagles_be.features.workflows.command.domain.aggregate.Workflow;
 import com.deveagles.be15_deveagles_be.features.workflows.command.domain.aggregate.WorkflowExecution;
 import com.deveagles.be15_deveagles_be.features.workflows.command.domain.repository.WorkflowExecutionRepository;
 import com.deveagles.be15_deveagles_be.features.workflows.command.domain.repository.WorkflowRepository;
 import com.deveagles.be15_deveagles_be.features.workflows.command.domain.vo.ExecutionStatus;
 import com.deveagles.be15_deveagles_be.features.workflows.execution.application.service.ActionExecutorService;
-import com.deveagles.be15_deveagles_be.features.workflows.execution.application.service.CustomerFilterService;
 import com.deveagles.be15_deveagles_be.features.workflows.execution.application.service.WorkflowExecutionService;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -23,8 +29,9 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
 
   private final WorkflowRepository workflowRepository;
   private final WorkflowExecutionRepository workflowExecutionRepository;
-  private final CustomerFilterService customerFilterService;
+  private final CustomerQueryService customerQueryService;
   private final ActionExecutorService actionExecutorService;
+  private final ObjectMapper objectMapper;
 
   @Override
   public void executeWorkflow(Workflow workflow) {
@@ -45,7 +52,7 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
       execution.start();
       workflowExecutionRepository.save(execution);
 
-      List<Long> targetCustomerIds = customerFilterService.filterTargetCustomerIds(workflow);
+      List<Long> targetCustomerIds = filterTargetCustomerIds(workflow);
 
       if (targetCustomerIds.isEmpty()) {
         log.info("대상 고객이 없어 워크플로우 실행을 건너뜁니다: ID={}", workflow.getId());
@@ -150,6 +157,60 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
       default:
         workflow.updateSchedule(LocalDateTime.now().plusDays(1));
         break;
+    }
+  }
+
+  private List<Long> filterTargetCustomerIds(Workflow workflow) {
+    CustomerSearchQuery query = buildSearchQuery(workflow);
+    return customerQueryService.advancedSearch(query).getContent().stream()
+        .map(result -> result.customerId())
+        .collect(Collectors.toList());
+  }
+
+  private CustomerSearchQuery buildSearchQuery(Workflow workflow) {
+    List<Long> customerGradeIds = parseCustomerGrades(workflow.getTargetCustomerGrades());
+    List<String> tagIds = parseTags(workflow.getTargetTags());
+
+    return new CustomerSearchQuery(
+        workflow.getShopId(),
+        null, // 키워드 검색 없음
+        customerGradeIds,
+        tagIds,
+        null, // 성별 필터링 없음
+        null, // 마케팅 동의 필터링 없음
+        null, // 알림 동의 필터링 없음
+        workflow.getExcludeDormantCustomers(),
+        workflow.getDormantPeriodMonths(),
+        workflow.getExcludeRecentMessageReceivers(),
+        workflow.getRecentMessagePeriodDays(),
+        false, // 삭제된 고객 제외
+        0, // 페이지
+        1000, // 최대 1000명
+        "createdAt",
+        "DESC");
+  }
+
+  private List<Long> parseCustomerGrades(String json) {
+    try {
+      if (json == null || json.isBlank()) {
+        return Collections.emptyList();
+      }
+      return objectMapper.readValue(json, new TypeReference<List<Long>>() {});
+    } catch (JsonProcessingException e) {
+      log.error("고객 등급 JSON 파싱 실패", e);
+      return Collections.emptyList();
+    }
+  }
+
+  private List<String> parseTags(String json) {
+    try {
+      if (json == null || json.isBlank()) {
+        return Collections.emptyList();
+      }
+      return objectMapper.readValue(json, new TypeReference<List<String>>() {});
+    } catch (JsonProcessingException e) {
+      log.error("태그 JSON 파싱 실패", e);
+      return Collections.emptyList();
     }
   }
 }

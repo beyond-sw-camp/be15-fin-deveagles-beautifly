@@ -80,9 +80,9 @@
       <div class="table-scroll-wrapper">
         <BaseTable
           :columns="visibleColumns"
-          :data="pagedData"
+          :data="processedPagedData"
           :loading="loading"
-          row-key="customer_id"
+          row-key="customerId"
           striped
           hover
           class="wide-table"
@@ -107,47 +107,47 @@
               </div>
             </div>
           </template>
-          <template #header-customer_name>
-            <button class="sortable-header" type="button" @click="sortBy('customer_name')">
+          <template #header-customerName>
+            <button class="sortable-header" type="button" @click="sortBy('customerName')">
               고객명
-              <SortIcon :direction="getSortDirection('customer_name')" />
+              <SortIcon :direction="getSortDirection('customerName')" />
             </button>
           </template>
-          <template #header-visit_count>
-            <button class="sortable-header" type="button" @click="sortBy('visit_count')">
+          <template #header-visitCount>
+            <button class="sortable-header" type="button" @click="sortBy('visitCount')">
               방문횟수
-              <SortIcon :direction="getSortDirection('visit_count')" />
+              <SortIcon :direction="getSortDirection('visitCount')" />
             </button>
           </template>
-          <template #header-remaining_amount>
-            <button class="sortable-header" type="button" @click="sortBy('remaining_amount')">
+          <template #header-remainingPrepaidAmount>
+            <button class="sortable-header" type="button" @click="sortBy('remainingPrepaidAmount')">
               잔여선불액
-              <SortIcon :direction="getSortDirection('remaining_amount')" />
+              <SortIcon :direction="getSortDirection('remainingPrepaidAmount')" />
             </button>
           </template>
-          <template #header-total_revenue>
-            <button class="sortable-header" type="button" @click="sortBy('total_revenue')">
+          <template #header-totalRevenue>
+            <button class="sortable-header" type="button" @click="sortBy('totalRevenue')">
               누적매출액
-              <SortIcon :direction="getSortDirection('total_revenue')" />
+              <SortIcon :direction="getSortDirection('totalRevenue')" />
             </button>
           </template>
-          <template #header-recent_visit_date>
-            <button class="sortable-header" type="button" @click="sortBy('recent_visit_date')">
+          <template #header-recentVisitDate>
+            <button class="sortable-header" type="button" @click="sortBy('recentVisitDate')">
               최근방문일
-              <SortIcon :direction="getSortDirection('recent_visit_date')" />
+              <SortIcon :direction="getSortDirection('recentVisitDate')" />
             </button>
           </template>
           <template #body>
             <tr
-              v-for="item in pagedData"
-              :key="item.customer_id"
+              v-for="item in processedPagedData"
+              :key="item.customerId"
               class="clickable-row"
               @click="openDetailModal(item)"
             >
               <td v-for="column in visibleColumns" :key="column.key">
                 <template v-if="column.key === 'checkbox'">
                   <div @click.stop>
-                    <input v-model="selectedIds" type="checkbox" :value="item.customer_id" />
+                    <input v-model="selectedIds" type="checkbox" :value="item.customerId" />
                   </div>
                 </template>
                 <template v-else-if="column.key === 'tags'">
@@ -155,10 +155,10 @@
                     <template v-if="Array.isArray(item.tags) && item.tags.length > 0">
                       <BaseBadge
                         v-for="tag in item.tags"
-                        :key="tag.tag_name"
-                        :text="tag.tag_name"
+                        :key="tag.tagId"
+                        :text="tag.tagName"
                         :style="{
-                          backgroundColor: tag.color_code,
+                          backgroundColor: tag.colorCode,
                           color: '#222',
                           marginRight: '4px',
                         }"
@@ -260,35 +260,40 @@
   import CustomerGradeSettingsDrawer from '../components/CustomerGradeSettingsDrawer.vue';
   import CustomerTagSettingsDrawer from '../components/CustomerTagSettingsDrawer.vue';
   import customersAPI from '../api/customers.js';
-  import tagsAPI from '../api/tags.js';
-  import gradesAPI from '../api/grades.js';
-  import { getStaff } from '@/features/staffs/api/staffs.js';
+  import { useMetadataStore } from '@/store/metadata.js';
   import { useAuthStore } from '@/store/auth.js';
 
   const activeFilters = ref({});
 
-  const authStoreMeta = useAuthStore();
+  const authStore = useAuthStore();
 
-  // 백엔드 데이터 저장소
-  const tags = ref([]);
-  const staff = ref([]);
-  const grades = ref([]);
+  // 메타데이터 Pinia 스토어
+  const metadataStore = useMetadataStore();
+  // 백엔드 메타데이터 (Pinia에서 관리)
+  const tags = computed(() => metadataStore.tags);
+  const staff = computed(() => metadataStore.staff);
+  const grades = computed(() => metadataStore.grades);
   const customerList = ref([]);
+  const customers = ref([]);
+  const isLoading = ref(true);
+  const totalCustomers = ref(0);
+  const currentPage = ref(1);
 
   const columns = ref([
     { key: 'checkbox', title: '', width: '50px' },
-    { key: 'customer_name', title: '고객명', width: '110px' },
-    { key: 'phone_number', title: '연락처', width: '130px' },
-    { key: 'staff_name', title: '담당자', width: '90px' },
-    { key: 'acquisition_channel_name', title: '유입경로', width: '100px' },
+    { key: 'customerName', title: '고객명', width: '110px' },
+    { key: 'phoneNumber', title: '연락처', width: '130px' },
+    { key: 'staffName', title: '담당자', width: '90px' },
+    { key: 'acquisitionChannelName', title: '유입경로', width: '100px' },
     { key: 'memo', title: '메모', width: '150px' },
-    { key: 'visit_count', title: '방문횟수', width: '90px' },
-    { key: 'remaining_amount', title: '잔여선불액', width: '110px' },
-    { key: 'total_revenue', title: '누적매출액', width: '110px' },
-    { key: 'recent_visit_date', title: '최근방문일', width: '120px' },
+    { key: 'visitCount', title: '방문횟수', width: '90px' },
+    { key: 'remainingPrepaidAmount', title: '잔여선불액', width: '110px' },
+    { key: 'totalRevenue', title: '누적매출액', width: '110px' },
+    { key: 'recentVisitDate', title: '최근방문일', width: '120px' },
     { key: 'tags', title: '태그', width: '120px' },
-    { key: 'customer_grade_name', title: '등급', width: '90px' },
+    { key: 'customerGradeName', title: '등급', width: '90px' },
     { key: 'birthdate', title: '생일', width: '110px' },
+    { key: 'createdAt', title: '최초등록일', width: '120px' },
   ]);
 
   const toastRef = ref(null);
@@ -314,8 +319,6 @@
       .map(col => ({ key: col.key, title: col.title, visible: true }))
   );
 
-  const authStore = useAuthStore();
-
   const openGradeSettingsDrawer = () => {
     showGradeSettingsDrawer.value = true;
     showGradeTagDropdown.value = false;
@@ -331,14 +334,20 @@
     showConfirmDelete.value = true;
   };
 
-  const handleDeleteCustomerConfirmed = () => {
+  const handleDeleteCustomerConfirmed = async () => {
     if (customerIdToDelete.value) {
-      customerList.value = customerList.value.filter(
-        c => c.customer_id !== customerIdToDelete.value
-      );
-      toastRef.value?.success('고객 정보가 삭제되었습니다.');
-      customerIdToDelete.value = null;
-      showDetailModal.value = false;
+      try {
+        const shopId = authStore.shopId;
+        await customersAPI.deleteCustomer(customerIdToDelete.value, shopId);
+        toastRef.value?.success('고객 정보가 삭제되었습니다.');
+        await loadCustomers(); // 목록 새로고침
+        showDetailModal.value = false;
+      } catch (err) {
+        toastRef.value?.error(err.message || '고객 삭제에 실패했습니다.');
+      } finally {
+        customerIdToDelete.value = null;
+        showConfirmDelete.value = false;
+      }
     }
   };
 
@@ -355,7 +364,8 @@
 
   async function handleUpdateCustomer(updatedCustomer) {
     try {
-      await customersAPI.updateCustomer(updatedCustomer.customer_id, updatedCustomer);
+      const shopId = authStore.shopId;
+      await customersAPI.updateCustomer(updatedCustomer.customerId, updatedCustomer, shopId);
       toastRef.value?.success('고객 수정 완료');
       await loadCustomers();
       showEditDrawer.value = false;
@@ -389,14 +399,15 @@
   const pageSize = ref(10);
   const selectedIds = ref([]);
   const loading = ref(false);
-  const sortKey = ref('created_at');
+  const sortKey = ref('createdAt');
   const sortOrder = ref('desc');
   const sortableKeys = [
-    'customer_name',
-    'visit_count',
-    'remaining_amount',
-    'total_revenue',
-    'recent_visit_date',
+    'customerName',
+    'visitCount',
+    'remainingPrepaidAmount',
+    'totalRevenue',
+    'recentVisitDate',
+    'createdAt',
   ];
 
   function sortBy(key) {
@@ -411,13 +422,13 @@
     return sortKey.value === key ? sortOrder.value : '';
   }
 
-  const filteredData = computed(() => {
+  const filteredCustomers = computed(() => {
     let data = [...customerList.value];
 
     // 1. 검색어 필터링
     if (search.value) {
       data = data.filter(
-        c => c.customer_name.includes(search.value) || c.phone_number.includes(search.value)
+        c => c.customerName.includes(search.value) || c.phoneNumber.includes(search.value)
       );
     }
 
@@ -434,17 +445,17 @@
       }
       // 태그
       if (filters.tags?.length > 0) {
-        checkFunctions.push(c => c.tags.some(t => filters.tags.includes(t.tag_id)));
+        checkFunctions.push(c => c.tags.some(t => filters.tags.includes(t.tagId)));
       }
       // 담당자
       if (filters.staff?.length > 0) {
         const staffNames = filters.staff.map(id => staff.value.find(s => s.id === id)?.name);
-        checkFunctions.push(c => staffNames.includes(c.staff_name));
+        checkFunctions.push(c => staffNames.includes(c.staffName));
       }
       // 등급
       if (filters.grades?.length > 0) {
         const gradeNames = filters.grades.map(id => grades.value.find(g => g.id === id)?.name);
-        checkFunctions.push(c => gradeNames.includes(c.customer_grade_name));
+        checkFunctions.push(c => gradeNames.includes(c.customerGradeName));
       }
       // 생일 (이번달, 이번주, 오늘)
       if (filters.birthday?.length > 0) {
@@ -494,7 +505,7 @@
       // 선불액 구매 내역
       if (filters.prepaidHistory?.length > 0) {
         checkFunctions.push(c => {
-          const hasPrepaid = c.customer_prepaid_passes && c.customer_prepaid_passes.length > 0;
+          const hasPrepaid = c.customerPrepaidPasses && c.customerPrepaidPasses.length > 0;
           return (
             (filters.prepaidHistory.includes('yes') && hasPrepaid) ||
             (filters.prepaidHistory.includes('no') && !hasPrepaid)
@@ -504,7 +515,7 @@
       // 횟수권 구매 내역
       if (filters.sessionPassHistory?.length > 0) {
         checkFunctions.push(c => {
-          const hasSessionPass = c.customer_session_passes && c.customer_session_passes.length > 0;
+          const hasSessionPass = c.customerSessionPasses && c.customerSessionPasses.length > 0;
           return (
             (filters.sessionPassHistory.includes('yes') && hasSessionPass) ||
             (filters.sessionPassHistory.includes('no') && !hasSessionPass)
@@ -515,8 +526,7 @@
       if (filters.usablePrepaid?.length > 0) {
         checkFunctions.push(c => {
           const hasUsable =
-            c.customer_prepaid_passes &&
-            c.customer_prepaid_passes.some(p => p.remaining_amount > 0);
+            c.customerPrepaidPasses && c.customerPrepaidPasses.some(p => p.remainingAmount > 0);
           return (
             (filters.usablePrepaid.includes('yes') && hasUsable) ||
             (filters.usablePrepaid.includes('no') && !hasUsable)
@@ -527,7 +537,7 @@
       if (filters.usableSessionPass?.length > 0) {
         checkFunctions.push(c => {
           const hasUsable =
-            c.customer_session_passes && c.customer_session_passes.some(p => p.remaining_count > 0);
+            c.customerSessionPasses && c.customerSessionPasses.some(p => p.remainingCount > 0);
           return (
             (filters.usableSessionPass.includes('yes') && hasUsable) ||
             (filters.usableSessionPass.includes('no') && !hasUsable)
@@ -541,8 +551,8 @@
       ) {
         checkFunctions.push(
           c =>
-            (filters.totalRevenue.from == null || c.total_revenue >= filters.totalRevenue.from) &&
-            (filters.totalRevenue.to == null || c.total_revenue <= filters.totalRevenue.to)
+            (filters.totalRevenue.from == null || c.totalRevenue >= filters.totalRevenue.from) &&
+            (filters.totalRevenue.to == null || c.totalRevenue <= filters.totalRevenue.to)
         );
       }
       // 잔여 선불액
@@ -553,9 +563,9 @@
         checkFunctions.push(
           c =>
             (filters.remainingPrepaid.from == null ||
-              c.remaining_amount >= filters.remainingPrepaid.from) &&
+              c.remainingPrepaidAmount >= filters.remainingPrepaid.from) &&
             (filters.remainingPrepaid.to == null ||
-              c.remaining_amount <= filters.remainingPrepaid.to)
+              c.remainingPrepaidAmount <= filters.remainingPrepaid.to)
         );
       }
       // 방문 횟수
@@ -565,8 +575,8 @@
       ) {
         checkFunctions.push(
           c =>
-            (filters.visitCount.from == null || c.visit_count >= filters.visitCount.from) &&
-            (filters.visitCount.to == null || c.visit_count <= filters.visitCount.to)
+            (filters.visitCount.from == null || c.visitCount >= filters.visitCount.from) &&
+            (filters.visitCount.to == null || c.visitCount <= filters.visitCount.to)
         );
       }
       // 노쇼 횟수
@@ -576,15 +586,15 @@
       ) {
         checkFunctions.push(
           c =>
-            (filters.noShowCount.from == null || c.noshow_count >= filters.noShowCount.from) &&
-            (filters.noShowCount.to == null || c.noshow_count <= filters.noShowCount.to)
+            (filters.noShowCount.from == null || c.noShowCount >= filters.noShowCount.from) &&
+            (filters.noShowCount.to == null || c.noShowCount <= filters.noShowCount.to)
         );
       }
       // 최초 등록일
       if (filters.registrationDate?.mode && filters.registrationDate.mode !== 'none') {
         checkFunctions.push(c => {
-          if (!c.created_at) return false;
-          const createdAt = new Date(c.created_at);
+          if (!c.createdAt) return false;
+          const createdAt = new Date(c.createdAt);
           createdAt.setHours(0, 0, 0, 0);
           const mode = filters.registrationDate.mode;
           const date1 = filters.registrationDate.date1
@@ -618,8 +628,8 @@
       // 최근 방문일
       if (filters.recentVisitDate?.mode && filters.recentVisitDate.mode !== 'none') {
         checkFunctions.push(c => {
-          if (!c.recent_visit_date) return false;
-          const recentVisitDate = new Date(c.recent_visit_date);
+          if (!c.recentVisitDate) return false;
+          const recentVisitDate = new Date(c.recentVisitDate);
           recentVisitDate.setHours(0, 0, 0, 0);
           const mode = filters.recentVisitDate.mode;
           const date1 = filters.recentVisitDate.date1
@@ -663,12 +673,18 @@
       }
     }
 
-    // 정렬 로직은 필터링 후에 적용
+    return data;
+  });
+
+  const sortedCustomers = computed(() => {
+    const data = [...filteredCustomers.value];
+
+    // 정렬 로직
     if (sortableKeys.includes(sortKey.value)) {
       data.sort((a, b) => {
         let aValue = a[sortKey.value];
         let bValue = b[sortKey.value];
-        if (sortKey.value === 'recent_visit_date') {
+        if (sortKey.value === 'recentVisitDate' || sortKey.value === 'createdAt') {
           return sortOrder.value === 'asc'
             ? (aValue || '').localeCompare(bValue || '')
             : (bValue || '').localeCompare(aValue || '');
@@ -681,28 +697,45 @@
           : String(bValue).localeCompare(String(aValue));
       });
     } else {
-      data.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      // 안전장치: sortKey가 유효하지 않을 경우 기본 정렬 (최신순)
+      data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     }
-
     return data;
   });
 
-  const total = computed(() => filteredData.value.length);
+  const total = computed(() => sortedCustomers.value.length);
   const totalPages = computed(() => Math.ceil(total.value / pageSize.value));
   const pagedData = computed(() => {
     const start = (page.value - 1) * pageSize.value;
-    return filteredData.value.slice(start, start + pageSize.value);
+    return sortedCustomers.value.slice(start, start + pageSize.value);
+  });
+
+  const processedPagedData = computed(() => {
+    return pagedData.value.map(customer => {
+      const genderMap = { M: '남성', F: '여성' };
+      const formatDate = dateString => {
+        if (!dateString) return '-';
+        return dateString.split('T')[0];
+      };
+
+      return {
+        ...customer,
+        gender: genderMap[customer.gender] || customer.gender,
+        createdAt: formatDate(customer.createdAt),
+        noshowCount: customer.noshowCount ?? '-',
+        staffName: customer.staffName || '-',
+      };
+    });
   });
 
   const showDropdown = ref(false);
   const checkboxDropdownRef = ref(null);
-
   const isAllSelected = computed(() => {
-    if (filteredData.value.length === 0) return false;
-    return selectedIds.value.length === filteredData.value.length;
+    if (sortedCustomers.value.length === 0) return false;
+    return selectedIds.value.length === sortedCustomers.value.length;
   });
   const isPageSelected = computed(() => {
-    const pageIds = pagedData.value.map(item => item.customer_id);
+    const pageIds = pagedData.value.map(item => item.customerId);
     if (pageIds.length === 0) return false;
     return pageIds.every(id => selectedIds.value.includes(id)) && !isAllSelected.value;
   });
@@ -712,7 +745,7 @@
       selectedIds.value = [];
       showDropdown.value = false;
     } else if (isPageSelected.value) {
-      const pageIds = pagedData.value.map(item => item.customer_id);
+      const pageIds = pagedData.value.map(item => item.customerId);
       selectedIds.value = selectedIds.value.filter(id => !pageIds.includes(id));
       showDropdown.value = false;
     } else {
@@ -722,9 +755,9 @@
   }
   function selectAll(mode) {
     if (mode === 'all') {
-      selectedIds.value = filteredData.value.map(item => item.customer_id);
+      selectedIds.value = sortedCustomers.value.map(item => item.customerId);
     } else {
-      const pageIds = pagedData.value.map(item => item.customer_id);
+      const pageIds = pagedData.value.map(item => item.customerId);
       selectedIds.value = Array.from(new Set([...selectedIds.value, ...pageIds]));
     }
     showDropdown.value = false;
@@ -737,10 +770,10 @@
       showGradeTagDropdown.value = false;
     }
   }
-  onMounted(() => {
+  onMounted(async () => {
     document.addEventListener('click', handleClickOutside);
+    await metadataStore.loadMetadata();
     loadCustomers();
-    loadMetaData();
   });
   onBeforeUnmount(() => {
     document.removeEventListener('click', handleClickOutside);
@@ -777,10 +810,11 @@
     const pills = [];
     const filters = activeFilters.value;
 
+    let pillSeq = 0;
     const addPill = (key, label, valueText, value) => {
       if (valueText !== null && valueText !== undefined && valueText !== '') {
-        const idValue = typeof value === 'object' && value !== null ? JSON.stringify(value) : value;
-        pills.push({ id: `${key}_${idValue}`, key, value, label, valueText });
+        pillSeq += 1;
+        pills.push({ id: `${key}_${pillSeq}`, key, value, label, valueText });
       }
     };
 
@@ -789,7 +823,7 @@
     }
     if (filters.tags?.length > 0) {
       const tagNames = filters.tags.map(
-        id => tags.value.find(t => t.tag_id === id)?.tag_name || `ID:${id}`
+        id => tags.value.find(t => t.tagId === id)?.tagName || `ID:${id}`
       );
       addPill('tags', '태그', tagNames.join(', '), filters.tags);
     }
@@ -965,33 +999,6 @@
       toastRef.value?.success(err.message || '고객 데이터를 불러오는데 실패했습니다.');
     } finally {
       loading.value = false;
-    }
-  }
-
-  async function loadMetaData() {
-    const shopId = authStoreMeta.shopId?.value || authStoreMeta.shopId || 1;
-
-    // 태그
-    try {
-      tags.value = await tagsAPI.getTagsByShop(shopId);
-    } catch (e) {
-      tags.value = [];
-    }
-
-    // 등급
-    try {
-      grades.value = await gradesAPI.getGradesByShop(shopId);
-    } catch (e) {
-      grades.value = [];
-    }
-
-    // 직원
-    try {
-      const res = await getStaff({ page: 1, size: 1000, isActive: true });
-      const list = res.data?.data?.staffList || [];
-      staff.value = list.map(s => ({ id: s.staffId || s.id, name: s.staffName || s.name }));
-    } catch (e) {
-      staff.value = [];
     }
   }
 </script>

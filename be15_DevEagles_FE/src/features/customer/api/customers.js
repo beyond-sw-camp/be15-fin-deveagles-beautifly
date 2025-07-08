@@ -19,8 +19,7 @@ class CustomersAPI {
       const response = await api.get(url);
       logger.response('GET', url, response.status, response.data);
 
-      const customers = Array.isArray(response.data?.data) ? response.data.data : [];
-      return customers.map(c => this.transformCustomerListData(c));
+      return Array.isArray(response.data?.data) ? response.data.data : [];
     } catch (error) {
       logger.error('GET', `${BASE_URL}/shop/${shopId}`, error);
       throw this.handleApiError(error);
@@ -67,11 +66,15 @@ class CustomersAPI {
   /**
    * 고객 수정
    */
-  async updateCustomer(customerId, updateData) {
+  async updateCustomer(customerId, updateData, shopId) {
     try {
+      if (!customerId) {
+        throw new Error('customerId is required for updating.');
+      }
       const url = `${BASE_URL}/${customerId}`;
-      logger.request('PUT', url, updateData);
-      const response = await api.put(url, updateData);
+      const params = { shopId };
+      logger.request('PUT', url, updateData, params);
+      const response = await api.put(url, updateData, { params });
       logger.response('PUT', url, response.status, response.data);
       return response.data?.data ?? null;
     } catch (error) {
@@ -98,36 +101,48 @@ class CustomersAPI {
   }
 
   /**
+   * 고객에게 태그 추가
+   * @param {number} customerId 고객 ID
+   * @param {number} tagId 태그 ID
+   * @param {number} shopId 매장 ID
+   */
+  async addTagToCustomer(customerId, tagId, shopId) {
+    try {
+      const url = `${BASE_URL}/${customerId}/tags/${tagId}`;
+      const params = { shopId };
+      logger.request('POST', url, params);
+      const response = await api.post(url, null, { params });
+      logger.response('POST', url, response.status, response.data);
+      return response.data;
+    } catch (error) {
+      logger.error('POST', `${BASE_URL}/${customerId}/tags/${tagId}`, error);
+      throw this.handleApiError(error);
+    }
+  }
+
+  /**
+   * 고객에게서 태그 제거
+   * @param {number} customerId 고객 ID
+   * @param {number} tagId 태그 ID
+   * @param {number} shopId 매장 ID
+   */
+  async removeTagFromCustomer(customerId, tagId, shopId) {
+    try {
+      const url = `${BASE_URL}/${customerId}/tags/${tagId}`;
+      const params = { shopId };
+      logger.request('DELETE', url, params);
+      const response = await api.delete(url, { params });
+      logger.response('DELETE', url, response.status, response.data);
+      return response.data;
+    } catch (error) {
+      logger.error('DELETE', `${BASE_URL}/${customerId}/tags/${tagId}`, error);
+      throw this.handleApiError(error);
+    }
+  }
+
+  /**
    * 백엔드 CustomerListResponse -> 프론트 데이터 포맷 변환
    */
-  transformCustomerListData(backendData) {
-    // 성별 한글 변환
-    const genderMap = { M: '남성', F: '여성' };
-
-    return {
-      customer_id: backendData.customerId,
-      customer_name: backendData.customerName,
-      phone_number: backendData.phoneNumber,
-      staff_id: backendData.staffId,
-      staff_name: backendData.staffId ? `직원 ${backendData.staffId}` : '',
-      memo: backendData.memo,
-      visit_count: backendData.visitCount,
-      total_revenue: backendData.totalRevenue,
-      remaining_amount: backendData.remainingPrepaidAmount,
-      recent_visit_date: backendData.recentVisitDate,
-      birthdate: backendData.birthdate,
-      gender: genderMap[backendData.gender] || backendData.gender,
-      customer_grade_name: backendData.customerGradeName,
-      discount_rate: backendData.discountRate,
-      tags: Array.isArray(backendData.tags)
-        ? backendData.tags.map(t => ({
-            tag_id: t.tagId,
-            tag_name: t.tagName,
-            color_code: t.colorCode,
-          }))
-        : [],
-    };
-  }
 
   /**
    * API 에러 처리 공통 함수

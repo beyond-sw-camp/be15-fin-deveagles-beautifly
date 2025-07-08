@@ -37,7 +37,7 @@
               v-model="formData.targetCustomerGrades"
               label="고객 등급"
               placeholder="등급을 선택하세요"
-              :options="customerGradeTagOptions"
+              :options="gradeOptions"
               size="sm"
             />
           </div>
@@ -46,6 +46,7 @@
               v-model="formData.targetTags"
               label="고객 태그"
               placeholder="태그를 선택하세요"
+              :options="tagOptions"
               size="sm"
             />
           </div>
@@ -396,8 +397,12 @@
     treatmentOptions,
     messageTemplateOptions,
     couponOptions,
-    customerGradeTagOptions,
   } from '../constants/workflowOptions.js';
+
+  import { ref, onMounted } from 'vue';
+  import { useAuthStore } from '@/store/auth.js';
+  import GradesAPI from '@/features/customer/api/grades.js';
+  import TagsAPI from '@/features/customer/api/tags.js';
 
   export default {
     name: 'WorkflowConfigSidebar',
@@ -448,6 +453,31 @@
       'updateActionConfig',
     ],
     setup(props, { emit }) {
+      // Auth store for shopId
+      const authStore = useAuthStore();
+
+      // Dynamic options
+      const gradeOptions = ref([]);
+      const tagOptions = ref([]);
+
+      onMounted(async () => {
+        try {
+          const grades = await GradesAPI.getGradesByShop(authStore.shopId);
+          gradeOptions.value = grades.map(g => ({
+            tag_name: g.name,
+            color_code: '#6B7280',
+          }));
+
+          const tags = await TagsAPI.getTagsByShop(authStore.shopId);
+          tagOptions.value = tags.map(t => ({
+            tag_name: t.tag_name,
+            color_code: t.color_code || '#6B7280',
+          }));
+        } catch (error) {
+          console.error('워크플로우 사이드바 옵션 로드 실패', error);
+        }
+      });
+
       // Event handlers for new compact selectors
       const handleCouponSelected = coupons => {
         // Single coupon selection - get first coupon
@@ -477,7 +507,8 @@
         treatmentOptions,
         messageTemplateOptions,
         couponOptions,
-        customerGradeTagOptions,
+        gradeOptions,
+        tagOptions,
         handleCouponSelected,
         handleTemplateSelected,
       };

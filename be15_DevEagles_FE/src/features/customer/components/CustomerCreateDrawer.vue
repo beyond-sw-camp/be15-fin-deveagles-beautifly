@@ -58,10 +58,12 @@
       </div>
       <div class="form-row">
         <label class="form-label">담당자</label>
-        <select v-model="form.staff_name" class="form-input">
-          <option value="" disabled>담당자 선택</option>
-          <option value="담당자 없음">담당자 없음</option>
-          <option v-for="staff in staffOptions" :key="staff" :value="staff">{{ staff }}</option>
+        <select v-model="form.staff_id" class="form-input">
+          <option :value="null" disabled>담당자 선택</option>
+          <option :value="null">담당자 없음</option>
+          <option v-for="staff in staffOptions" :key="staff.id" :value="staff.id">
+            {{ staff.name }}
+          </option>
         </select>
       </div>
       <div class="form-row">
@@ -86,9 +88,10 @@
           :close-on-select="false"
           :searchable="true"
           :create-option="false"
+          :hide-selected="false"
           label="tag_name"
-          value-prop="tag_name"
-          track-by="tag_name"
+          value-prop="tag_id"
+          track-by="tag_id"
           placeholder="태그 선택"
           class="multiselect-custom"
         />
@@ -105,15 +108,29 @@
       <div class="form-row">
         <label class="form-label"> 등급<span class="required">*</span> </label>
         <select
-          v-model="form.grade"
+          v-model="form.grade_id"
           class="form-input"
           :class="{ 'input-error': errors.grade }"
           @blur="validateField('grade')"
         >
-          <option value="" disabled>등급 선택</option>
-          <option v-for="grade in gradeOptions" :key="grade" :value="grade">{{ grade }}</option>
+          <option :value="null" disabled>등급 선택</option>
+          <option v-for="grade in gradeOptions" :key="grade.id" :value="grade.id">
+            {{ grade.name }}
+          </option>
         </select>
         <div v-if="errors.grade" class="error-message">{{ errors.grade }}</div>
+      </div>
+      <div class="form-row form-row-checkbox">
+        <label class="form-label-checkbox">
+          <input v-model="form.marketingConsent" type="checkbox" class="form-checkbox" />
+          <span>마케팅 정보 수신 동의</span>
+        </label>
+      </div>
+      <div class="form-row form-row-checkbox">
+        <label class="form-label-checkbox">
+          <input v-model="form.notificationConsent" type="checkbox" class="form-checkbox" />
+          <span>알림(예약 등) 수신 동의</span>
+        </label>
       </div>
     </form>
     <template #footer>
@@ -128,17 +145,14 @@
 </template>
 
 <script setup>
-  import { ref, watch, defineEmits, defineProps, nextTick, onMounted } from 'vue';
+  import { ref, watch, defineEmits, defineProps, nextTick, onMounted, computed } from 'vue';
   import BaseDrawer from '@/components/common/BaseDrawer.vue';
   import BaseButton from '@/components/common/BaseButton.vue';
   import Multiselect from '@vueform/multiselect';
   import PrimeDatePicker from '@/components/common/PrimeDatePicker.vue'; // 반드시 추가!
   import '@vueform/multiselect/themes/default.css';
   import { useAuthStore } from '@/store/auth.js';
-  import tagsAPI from '../api/tags.js';
-  import gradesAPI from '../api/grades.js';
-  import { getStaff } from '@/features/staffs/api/staffs.js';
-  import channelsAPI from '../api/channels.js';
+  import { useMetadataStore } from '@/store/metadata.js';
 
   const props = defineProps({
     modelValue: { type: Boolean, default: false },
@@ -155,76 +169,28 @@
   );
   watch(visible, v => emit('update:modelValue', v));
 
-  const staffOptions = ref([]);
-  const tagOptions = ref([]);
-  const gradeOptions = ref([]);
-  const acquisitionChannelOptions = ref([]);
-  const lastStaffFetchTime = ref(0);
-  const STAFF_CACHE_DURATION = 5 * 60 * 1000; // 5분
-
-  // 메타데이터 로드 (태그 / 등급 / 직원 / 유입채널)
-  const authStore = useAuthStore();
-
-  async function loadChannels() {
-    try {
-      const shopId = authStore.shopId?.value || authStore.shopId || 1;
-      const channels = await channelsAPI.getChannelsByShop(shopId);
-      acquisitionChannelOptions.value = channels;
-    } catch (e) {
-      console.warn('유입채널 목록 로드 실패:', e);
-      acquisitionChannelOptions.value = [];
-    }
-  }
-
-  async function loadStaffs() {
-    const now = Date.now();
-    if (staffOptions.value.length > 0 && now - lastStaffFetchTime.value < STAFF_CACHE_DURATION) {
-      return staffOptions.value;
-    }
-
-    try {
-      const res = await getStaff({ page: 1, size: 1000, isActive: true, keyword: '' });
-      const list = res.data?.data?.staffList || [];
-      staffOptions.value = list.map(s => s.staffName || s.staff_name || '');
-      lastStaffFetchTime.value = now;
-      return staffOptions.value;
-    } catch (e) {
-      console.warn('직원 목록 로드 실패:', e);
-      return [];
-    }
-  }
-
-  async function loadMeta() {
-    const shopId = authStore.shopId?.value || authStore.shopId || 1;
-
-    try {
-      const [tags, grades] = await Promise.all([
-        tagsAPI.getTagsByShop(shopId),
-        gradesAPI.getGradesByShop(shopId),
-      ]);
-      tagOptions.value = tags;
-      gradeOptions.value = grades.map(g => g.gradeName || g.name);
-    } catch (e) {
-      console.warn('메타데이터 로드 실패:', e);
-    }
-  }
-
-  onMounted(async () => {
-    await Promise.all([loadMeta(), loadStaffs(), loadChannels()]);
-  });
+  const metadataStore = useMetadataStore();
+  const staffOptions = computed(() => metadataStore.staff);
+  const tagOptions = computed(() => metadataStore.tags);
+  const gradeOptions = computed(() => metadataStore.grades);
+  const acquisitionChannelOptions = computed(() => metadataStore.channels);
 
   const today = new Date().toISOString().slice(0, 10);
+
+  const authStore = useAuthStore();
 
   const initialForm = () => ({
     name: '',
     phone: '',
     gender: '',
     birthdate: '',
-    staff_name: '',
+    staff_id: null,
     channel_id: null,
     tags: [],
     memo: '',
-    grade: '기본등급',
+    grade_id: null,
+    marketingConsent: false,
+    notificationConsent: false,
   });
   const form = ref(initialForm());
   const errors = ref({ name: '', phone: '', grade: '' });
@@ -237,7 +203,7 @@
         errors.value.phone = '올바른 형식으로 작성해주세요';
       else errors.value.phone = '';
     }
-    if (field === 'grade') errors.value.grade = !form.value.grade ? '등급을 선택해주세요' : '';
+    if (field === 'grade') errors.value.grade = !form.value.grade_id ? '등급을 선택해주세요' : '';
   }
 
   function validateAndSubmit() {
@@ -246,25 +212,45 @@
     validateField('grade');
     if (!errors.value.name && !errors.value.phone && !errors.value.grade) {
       const payload = { ...form.value };
-      payload.phone = payload.phone.replace(/-/g, '');
+
+      // 필드명 매핑
+      payload.shopId = authStore.shopId;
+      payload.customerName = payload.name;
+      delete payload.name;
+      payload.phoneNumber = payload.phone?.replace(/-/g, '');
+      delete payload.phone;
+
       if (payload.channel_id != null) {
         payload.channelId = payload.channel_id;
         delete payload.channel_id;
+      }
+      if (payload.staff_id != null) {
+        payload.staffId = payload.staff_id;
+        delete payload.staff_id;
+      }
+      if (payload.grade_id != null) {
+        payload.customerGradeId = payload.grade_id;
+        delete payload.grade_id;
+      } else {
+        const defaultGrade = gradeOptions.value.find(g => g.name === '기본등급');
+        if (defaultGrade) {
+          payload.customerGradeId = defaultGrade.id;
+        }
       }
       if (payload.birthdate) {
         const d = new Date(payload.birthdate);
         payload.birthdate = d.toISOString().split('T')[0];
       }
-      payload.tags = payload.tags.map(
-        tagName =>
-          tagOptions.value.find(opt => opt.tag_name === tagName) || {
-            tag_name: tagName,
-            color_code: '#ccc',
-          }
-      );
+      // 태그는 숫자 ID 배열로 전송
+      payload.tags = Array.isArray(payload.tags) ? payload.tags : [];
       // gender enum 변환
       if (payload.gender === '남성') payload.gender = 'M';
       else if (payload.gender === '여성') payload.gender = 'F';
+
+      // staff_name, grade 속성 제거
+      delete payload.staff_name;
+      delete payload.grade;
+
       emit('create', payload);
       visible.value = false;
       resetForm();
@@ -278,6 +264,10 @@
     form.value = initialForm();
     errors.value = { name: '', phone: '', grade: '' };
   }
+
+  onMounted(async () => {
+    await metadataStore.loadMetadata();
+  });
 </script>
 
 <style>
@@ -352,5 +342,24 @@
     justify-content: flex-end;
     margin-top: 0;
     margin-bottom: 0;
+  }
+  .form-row-checkbox {
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+  }
+  .form-label-checkbox {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    color: #333;
+  }
+  .form-checkbox {
+    width: 16px;
+    height: 16px;
+    margin-right: 8px;
+    accent-color: #364f6b;
   }
 </style>

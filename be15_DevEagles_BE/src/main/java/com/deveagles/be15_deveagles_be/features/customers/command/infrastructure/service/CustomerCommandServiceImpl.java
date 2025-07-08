@@ -6,9 +6,9 @@ import com.deveagles.be15_deveagles_be.features.customers.command.application.dt
 import com.deveagles.be15_deveagles_be.features.customers.command.application.dto.request.UpdateCustomerRequest;
 import com.deveagles.be15_deveagles_be.features.customers.command.application.dto.response.CustomerCommandResponse;
 import com.deveagles.be15_deveagles_be.features.customers.command.application.service.CustomerCommandService;
+import com.deveagles.be15_deveagles_be.features.customers.command.application.service.CustomerTagService;
 import com.deveagles.be15_deveagles_be.features.customers.command.domain.aggregate.Customer;
 import com.deveagles.be15_deveagles_be.features.customers.command.domain.repository.CustomerRepository;
-import com.deveagles.be15_deveagles_be.features.customers.command.infrastructure.repository.CustomerJpaRepository;
 import com.deveagles.be15_deveagles_be.features.customers.query.service.CustomerQueryService;
 import com.deveagles.be15_deveagles_be.features.messages.command.application.service.AutomaticMessageTriggerService;
 import com.deveagles.be15_deveagles_be.features.messages.command.domain.aggregate.AutomaticEventType;
@@ -25,44 +25,42 @@ public class CustomerCommandServiceImpl implements CustomerCommandService {
 
   private final CustomerRepository customerRepository;
   private final CustomerQueryService customerQueryService;
-  private final CustomerJpaRepository customerJpaRepository;
   private final AutomaticMessageTriggerService automaticMessageTriggerService;
+  private final CustomerTagService customerTagService;
 
   @Override
   public CustomerCommandResponse createCustomer(CreateCustomerRequest request) {
     Customer customer =
         Customer.builder()
-            .customerGradeId(request.customerGradeId())
             .shopId(request.shopId())
-            .staffId(request.staffId())
             .customerName(request.customerName())
             .phoneNumber(request.phoneNumber())
-            .memo(request.memo())
-            .birthdate(request.birthdate())
             .gender(request.gender())
+            .birthdate(request.birthdate())
+            .customerGradeId(request.customerGradeId())
+            .staffId(request.staffId())
+            .channelId(request.channelId())
+            .memo(request.memo())
             .marketingConsent(request.marketingConsent())
             .notificationConsent(request.notificationConsent())
-            .channelId(request.channelId())
             .build();
 
-    if (Boolean.TRUE.equals(request.marketingConsent())) {
-      customer.updateMarketingConsent(true);
-    }
-
     Customer savedCustomer = customerRepository.save(customer);
-    customerJpaRepository.flush();
-
-    // 3. 자동발신 트리거 실행
-    automaticMessageTriggerService.triggerAutomaticSend(
-        savedCustomer, AutomaticEventType.NEW_CUSTOMER);
-    // Elasticsearch 동기화
     customerQueryService.syncCustomerToElasticsearch(savedCustomer.getId());
 
+    if (request.tags() != null && !request.tags().isEmpty()) {
+      request
+          .tags()
+          .forEach(
+              tagId ->
+                  customerTagService.addTagToCustomer(
+                      savedCustomer.getId(), tagId, request.shopId()));
+    }
+
     log.info(
-        "새 고객 생성됨: ID={}, 매장ID={}, 이름={}",
-        savedCustomer.getId(),
-        savedCustomer.getShopId(),
-        savedCustomer.getCustomerName());
+        "자동 발송 메시지 실행 - 이벤트: {}, 고객ID: {}", AutomaticEventType.NEW_CUSTOMER, savedCustomer.getId());
+    automaticMessageTriggerService.triggerAutomaticSend(
+        savedCustomer, AutomaticEventType.NEW_CUSTOMER);
 
     return CustomerCommandResponse.from(savedCustomer);
   }
