@@ -3,9 +3,11 @@ package com.deveagles.be15_deveagles_be.features.customers.command.infrastructur
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 
 import com.deveagles.be15_deveagles_be.common.exception.BusinessException;
 import com.deveagles.be15_deveagles_be.common.exception.ErrorCode;
@@ -14,7 +16,10 @@ import com.deveagles.be15_deveagles_be.features.customers.command.application.dt
 import com.deveagles.be15_deveagles_be.features.customers.command.application.dto.response.CustomerCommandResponse;
 import com.deveagles.be15_deveagles_be.features.customers.command.domain.aggregate.Customer;
 import com.deveagles.be15_deveagles_be.features.customers.command.domain.repository.CustomerRepository;
+import com.deveagles.be15_deveagles_be.features.customers.command.infrastructure.repository.CustomerJpaRepository;
 import com.deveagles.be15_deveagles_be.features.customers.query.service.CustomerQueryService;
+import com.deveagles.be15_deveagles_be.features.messages.command.application.service.AutomaticMessageTriggerService;
+import com.deveagles.be15_deveagles_be.features.messages.command.domain.aggregate.AutomaticEventType;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -31,7 +36,8 @@ class CustomerCommandServiceImplTest {
 
   @Mock private CustomerRepository customerRepository;
   @Mock private CustomerQueryService customerQueryService;
-
+  @Mock private CustomerJpaRepository customerJpaRepository;
+  @Mock private AutomaticMessageTriggerService automaticMessageTriggerService;
   @InjectMocks private CustomerCommandServiceImpl customerCommandService;
 
   @Test
@@ -72,6 +78,8 @@ class CustomerCommandServiceImplTest {
         .existsByPhoneNumberAndShopId(request.phoneNumber(), request.shopId());
     then(customerRepository).should().save(any(Customer.class));
     then(customerQueryService).should().syncCustomerToElasticsearch(savedCustomer.getId());
+    verify(automaticMessageTriggerService)
+        .triggerAutomaticSend(any(), eq(AutomaticEventType.NEW_CUSTOMER));
   }
 
   @Test
