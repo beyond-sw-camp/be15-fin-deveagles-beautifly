@@ -82,4 +82,28 @@ public class Shop {
   public void setOwner(Long ownerId) {
     this.ownerId = ownerId;
   }
+
+  public void setName(String shopName) {
+    this.shopName = shopName;
+  }
+
+  public void setShopAddress(String address) {
+    this.address = address;
+  }
+
+  public void setShopDetailAddress(String detailAddress) {
+    this.detailAddress = detailAddress;
+  }
+
+  public void setIndustry(Long industryId) {
+    this.industryId = industryId;
+  }
+
+  public void setPhone(String phoneNumber) {
+    this.phoneNumber = phoneNumber;
+  }
+
+  public void setBizNumber(String businessNumber) {
+    this.businessNumber = businessNumber;
+  }
 }

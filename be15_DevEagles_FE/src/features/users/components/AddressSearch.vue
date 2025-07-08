@@ -12,6 +12,7 @@
         @update:model-value="val => emit('update:address', val)"
         @keydown.enter="$emit('blur')"
         @blur="$emit('validate:address')"
+        @focus="emit('clearError', 'address')"
       />
       <BaseButton class="search-button" @click="openAddressSearch">주소 검색</BaseButton>
     </div>
@@ -22,6 +23,7 @@
       placeholder="상세 주소 입력"
       @update:model-value="val => emit('update:detailAddress', val)"
       @blur="$emit('validate:detailAddress')"
+      @focus="emit('clearError', 'detailAddress')"
     />
   </div>
 </template>
@@ -52,6 +54,7 @@
     'update:detailAddress',
     'validate:address',
     'validate:detailAddress',
+    'clearError',
   ]);
 
   const openAddressSearch = () => {
