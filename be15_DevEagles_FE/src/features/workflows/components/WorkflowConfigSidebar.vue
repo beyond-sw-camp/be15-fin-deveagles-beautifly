@@ -462,16 +462,16 @@
 
       onMounted(async () => {
         try {
-          const grades = await GradesAPI.getGradesByShop(authStore.shopId);
+          const grades = await GradesAPI.getGradesByShop();
           gradeOptions.value = grades.map(g => ({
-            tag_name: g.name,
-            color_code: '#6B7280',
+            tagName: g.name,
+            colorCode: '#6B7280',
           }));
 
-          const tags = await TagsAPI.getTagsByShop(authStore.shopId);
+          const tags = await TagsAPI.getTagsByShop();
           tagOptions.value = tags.map(t => ({
-            tag_name: t.tag_name,
-            color_code: t.color_code || '#6B7280',
+            tagName: t.tagName,
+            colorCode: t.colorCode || '#6B7280',
           }));
         } catch (error) {
           console.error('워크플로우 사이드바 옵션 로드 실패', error);
