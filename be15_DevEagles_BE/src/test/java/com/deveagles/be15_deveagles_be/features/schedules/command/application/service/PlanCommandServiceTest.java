@@ -28,12 +28,13 @@ class PlanCommandServiceTest {
 
   @Mock private RegularPlanRepository regularPlanRepository;
 
+  private final Long shopId = 1L;
+
   @Test
   @DisplayName("단기 일정 등록 성공")
   void createPlan_success() {
     CreatePlanRequest request =
         new CreatePlanRequest(
-            1L,
             1L,
             "회의",
             "정기 회의",
@@ -44,7 +45,7 @@ class PlanCommandServiceTest {
         Plan.builder()
             .planId(100L)
             .staffId(request.staffId())
-            .shopId(request.shopId())
+            .shopId(shopId)
             .planTitle(request.planTitle())
             .planMemo(request.planMemo())
             .planStartAt(request.planStartAt())
@@ -53,7 +54,7 @@ class PlanCommandServiceTest {
 
     when(planRepository.save(any(Plan.class))).thenReturn(savedPlan);
 
-    Long result = planCommandService.createPlan(request);
+    Long result = planCommandService.createPlan(shopId, request);
 
     assertThat(result).isEqualTo(100L);
     verify(planRepository).save(any(Plan.class));
@@ -64,7 +65,6 @@ class PlanCommandServiceTest {
   void createRegularPlanWeekly_success() {
     CreateRegularPlanRequest request =
         new CreateRegularPlanRequest(
-            1L,
             1L,
             "매주 회의",
             null,
@@ -77,7 +77,7 @@ class PlanCommandServiceTest {
         RegularPlan.builder()
             .regularPlanId(200L)
             .staffId(request.staffId())
-            .shopId(request.shopId())
+            .shopId(shopId)
             .regularPlanTitle(request.regularPlanTitle())
             .monthlyPlan(request.monthlyPlan())
             .weeklyPlan(request.weeklyPlan())
@@ -88,7 +88,7 @@ class PlanCommandServiceTest {
 
     when(regularPlanRepository.save(any(RegularPlan.class))).thenReturn(saved);
 
-    Long result = planCommandService.createRegularPlan(request);
+    Long result = planCommandService.createRegularPlan(shopId, request);
 
     assertThat(result).isEqualTo(200L);
     verify(regularPlanRepository).save(any(RegularPlan.class));
@@ -99,13 +99,13 @@ class PlanCommandServiceTest {
   void createRegularPlanMonthly_success() {
     CreateRegularPlanRequest request =
         new CreateRegularPlanRequest(
-            1L, 1L, "매달 회의", 15, null, "월간 회의", LocalTime.of(10, 0), LocalTime.of(11, 30));
+            1L, "매달 회의", 15, null, "월간 회의", LocalTime.of(10, 0), LocalTime.of(11, 30));
 
     RegularPlan saved =
         RegularPlan.builder()
             .regularPlanId(200L)
             .staffId(request.staffId())
-            .shopId(request.shopId())
+            .shopId(shopId)
             .regularPlanTitle(request.regularPlanTitle())
             .monthlyPlan(request.monthlyPlan())
             .weeklyPlan(request.weeklyPlan())
@@ -116,7 +116,7 @@ class PlanCommandServiceTest {
 
     when(regularPlanRepository.save(any(RegularPlan.class))).thenReturn(saved);
 
-    Long result = planCommandService.createRegularPlan(request);
+    Long result = planCommandService.createRegularPlan(shopId, request);
 
     assertThat(result).isEqualTo(200L);
     verify(regularPlanRepository).save(any(RegularPlan.class));
@@ -126,7 +126,8 @@ class PlanCommandServiceTest {
   @DisplayName("plan + regular 다건 삭제 성공")
   void deleteMixedSchedules_success() {
     List<DeleteScheduleRequest> requests =
-        List.of(new DeleteScheduleRequest(1L, "plan"), new DeleteScheduleRequest(2L, "regular"));
+        List.of(
+            new DeleteScheduleRequest(1L, "plan"), new DeleteScheduleRequest(2L, "regular_plan"));
 
     Plan p = Plan.builder().planId(1L).build();
     RegularPlan r = RegularPlan.builder().regularPlanId(2L).build();
@@ -134,7 +135,7 @@ class PlanCommandServiceTest {
     when(planRepository.findAllById(List.of(1L))).thenReturn(List.of(p));
     when(regularPlanRepository.findAllById(List.of(2L))).thenReturn(List.of(r));
 
-    planCommandService.deleteMixedSchedules(requests);
+    planCommandService.deleteMixedSchedules(shopId, requests);
 
     verify(planRepository).deleteAllInBatch(List.of(p));
     verify(regularPlanRepository).deleteAllInBatch(List.of(r));
@@ -147,7 +148,7 @@ class PlanCommandServiceTest {
 
     when(planRepository.findAllById(List.of(1L))).thenReturn(List.of());
 
-    assertThatThrownBy(() -> planCommandService.deleteMixedSchedules(requests))
+    assertThatThrownBy(() -> planCommandService.deleteMixedSchedules(shopId, requests))
         .isInstanceOf(BusinessException.class)
         .hasMessageContaining(ErrorCode.PLAN_NOT_FOUND.getMessage());
   }
@@ -155,11 +156,11 @@ class PlanCommandServiceTest {
   @Test
   @DisplayName("regular 일부 없으면 예외")
   void deleteMixedSchedules_regularNotFound() {
-    List<DeleteScheduleRequest> requests = List.of(new DeleteScheduleRequest(2L, "regular"));
+    List<DeleteScheduleRequest> requests = List.of(new DeleteScheduleRequest(2L, "regular_plan"));
 
     when(regularPlanRepository.findAllById(List.of(2L))).thenReturn(List.of());
 
-    assertThatThrownBy(() -> planCommandService.deleteMixedSchedules(requests))
+    assertThatThrownBy(() -> planCommandService.deleteMixedSchedules(shopId, requests))
         .isInstanceOf(BusinessException.class)
         .hasMessageContaining(ErrorCode.REGULAR_PLAN_NOT_FOUND.getMessage());
   }
@@ -169,7 +170,7 @@ class PlanCommandServiceTest {
   void deleteMixedSchedules_invalidType() {
     List<DeleteScheduleRequest> requests = List.of(new DeleteScheduleRequest(3L, "invalid"));
 
-    assertThatThrownBy(() -> planCommandService.deleteMixedSchedules(requests))
+    assertThatThrownBy(() -> planCommandService.deleteMixedSchedules(shopId, requests))
         .isInstanceOf(BusinessException.class)
         .hasMessageContaining(ErrorCode.INVALID_SCHEDULE_TYPE.getMessage());
   }
@@ -180,13 +181,12 @@ class PlanCommandServiceTest {
     CreatePlanRequest request =
         new CreatePlanRequest(
             1L,
-            1L,
             "오류",
             "시간 역순",
             LocalDateTime.of(2025, 6, 25, 14, 0),
             LocalDateTime.of(2025, 6, 25, 10, 0));
 
-    assertThatThrownBy(() -> planCommandService.createPlan(request))
+    assertThatThrownBy(() -> planCommandService.createPlan(shopId, request))
         .isInstanceOf(BusinessException.class)
         .hasMessageContaining(ErrorCode.INVALID_RESERVATION_TIME_RANGE.getMessage());
   }
@@ -196,15 +196,15 @@ class PlanCommandServiceTest {
   void createRegularPlan_repeatTypeConflict() {
     CreateRegularPlanRequest bothNull =
         new CreateRegularPlanRequest(
-            1L, 1L, "없음", null, null, "메모", LocalTime.of(9, 0), LocalTime.of(10, 0));
+            1L, "없음", null, null, "메모", LocalTime.of(9, 0), LocalTime.of(10, 0));
     CreateRegularPlanRequest bothExist =
         new CreateRegularPlanRequest(
-            1L, 1L, "둘다", 15, DayOfWeekEnum.FRI, "메모", LocalTime.of(9, 0), LocalTime.of(10, 0));
+            1L, "둘다", 15, DayOfWeekEnum.FRI, "메모", LocalTime.of(9, 0), LocalTime.of(10, 0));
 
-    assertThatThrownBy(() -> planCommandService.createRegularPlan(bothNull))
+    assertThatThrownBy(() -> planCommandService.createRegularPlan(shopId, bothNull))
         .isInstanceOf(BusinessException.class);
 
-    assertThatThrownBy(() -> planCommandService.createRegularPlan(bothExist))
+    assertThatThrownBy(() -> planCommandService.createRegularPlan(shopId, bothExist))
         .isInstanceOf(BusinessException.class);
   }
 
@@ -215,7 +215,6 @@ class PlanCommandServiceTest {
     CreatePlanRequest request =
         new CreatePlanRequest(
             1L,
-            1L,
             "수정제목",
             "수정메모",
             LocalDateTime.of(2025, 6, 25, 11, 0),
@@ -225,7 +224,7 @@ class PlanCommandServiceTest {
         Plan.builder()
             .planId(planId)
             .staffId(1L)
-            .shopId(1L)
+            .shopId(shopId)
             .planTitle("기존제목")
             .planMemo("기존메모")
             .planStartAt(LocalDateTime.of(2025, 6, 25, 9, 0))
@@ -235,6 +234,7 @@ class PlanCommandServiceTest {
     when(planRepository.findById(planId)).thenReturn(java.util.Optional.of(origin));
 
     planCommandService.switchSchedule(
+        shopId,
         new UpdatePlanScheduleRequest(ScheduleType.PLAN, planId, ScheduleType.PLAN, request, null));
 
     assertThat(origin.getPlanTitle()).isEqualTo("수정제목");
@@ -249,7 +249,6 @@ class PlanCommandServiceTest {
     CreatePlanRequest request =
         new CreatePlanRequest(
             1L,
-            1L,
             "단기",
             "전환됨",
             LocalDateTime.of(2025, 6, 26, 13, 0),
@@ -259,6 +258,7 @@ class PlanCommandServiceTest {
     when(planRepository.save(any(Plan.class))).thenReturn(Plan.builder().planId(999L).build());
 
     planCommandService.switchSchedule(
+        shopId,
         new UpdatePlanScheduleRequest(
             ScheduleType.REGULAR_PLAN, id, ScheduleType.PLAN, request, null));
 
@@ -273,13 +273,14 @@ class PlanCommandServiceTest {
 
     CreateRegularPlanRequest request =
         new CreateRegularPlanRequest(
-            1L, 1L, "정기", null, DayOfWeekEnum.WED, "메모", LocalTime.of(9, 0), LocalTime.of(10, 0));
+            1L, "정기", null, DayOfWeekEnum.WED, "메모", LocalTime.of(9, 0), LocalTime.of(10, 0));
 
     when(planRepository.existsById(id)).thenReturn(true);
     when(regularPlanRepository.save(any(RegularPlan.class)))
         .thenReturn(RegularPlan.builder().regularPlanId(888L).build());
 
     planCommandService.switchSchedule(
+        shopId,
         new UpdatePlanScheduleRequest(
             ScheduleType.PLAN, id, ScheduleType.REGULAR_PLAN, null, request));
 

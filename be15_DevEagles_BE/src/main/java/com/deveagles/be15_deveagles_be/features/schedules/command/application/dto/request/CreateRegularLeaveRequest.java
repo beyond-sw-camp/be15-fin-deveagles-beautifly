@@ -4,7 +4,6 @@ import com.deveagles.be15_deveagles_be.features.schedules.command.domain.aggrega
 
 public record CreateRegularLeaveRequest(
     Long staffId,
-    Long shopId,
     String regularLeaveTitle,
     Integer monthlyLeave,
     DayOfWeekEnum weeklyLeave,

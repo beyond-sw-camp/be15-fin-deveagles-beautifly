@@ -3,6 +3,7 @@ package com.deveagles.be15_deveagles_be.features.schedules.command.application.s
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+import com.deveagles.be15_deveagles_be.common.events.ReservationCreatedEvent;
 import com.deveagles.be15_deveagles_be.common.exception.BusinessException;
 import com.deveagles.be15_deveagles_be.features.customers.query.dto.response.CustomerIdResponse;
 import com.deveagles.be15_deveagles_be.features.customers.query.service.CustomerQueryService;
@@ -21,6 +22,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.*;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.test.util.ReflectionTestUtils;
 
 class ReservationServiceTest {
@@ -30,6 +32,8 @@ class ReservationServiceTest {
   @Mock private ReservationDetailRepository reservationDetailRepository;
 
   @Mock private CustomerQueryService customerQueryService;
+
+  @Mock private ApplicationEventPublisher eventPublisher;
 
   @InjectMocks private ReservationService reservationService;
 
@@ -79,6 +83,7 @@ class ReservationServiceTest {
     assertThat(resultId).isEqualTo(123L);
     verify(reservationRepository).save(any(Reservation.class));
     verify(reservationDetailRepository, times(2)).save(any(ReservationDetail.class));
+    verify(eventPublisher).publishEvent(any(ReservationCreatedEvent.class));
   }
 
   @Test
@@ -105,6 +110,7 @@ class ReservationServiceTest {
     assertThat(resultId).isEqualTo(456L);
     verify(reservationRepository).save(any(Reservation.class));
     verify(reservationDetailRepository, times(2)).save(any(ReservationDetail.class));
+    verify(eventPublisher).publishEvent(any(ReservationCreatedEvent.class));
   }
 
   @Test
@@ -115,7 +121,6 @@ class ReservationServiceTest {
         new CreateReservationFullRequest(
             1L,
             2L,
-            99L,
             "담당자 메모",
             "고객 메모",
             LocalDateTime.now().plusDays(1),

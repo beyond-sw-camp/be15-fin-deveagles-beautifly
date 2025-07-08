@@ -4,7 +4,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 public record CreateReservationFullRequest(
-    Long shopId,
     Long staffId,
     Long customerId, // null이면 미등록 고객
     String staffMemo,
