@@ -6,8 +6,13 @@ import com.deveagles.be15_deveagles_be.features.schedules.command.application.se
 import com.deveagles.be15_deveagles_be.features.shops.command.application.dto.request.ShopCreateRequest;
 import com.deveagles.be15_deveagles_be.features.shops.command.application.dto.request.ValidBizNumberRequest;
 import com.deveagles.be15_deveagles_be.features.shops.command.application.dto.response.GetIndustryResponse;
+import com.deveagles.be15_deveagles_be.features.shops.command.application.dto.response.GetShopResponse;
+import com.deveagles.be15_deveagles_be.features.shops.command.domain.aggregate.Industry;
+import com.deveagles.be15_deveagles_be.features.shops.command.domain.aggregate.SNS;
 import com.deveagles.be15_deveagles_be.features.shops.command.domain.aggregate.Shop;
 import com.deveagles.be15_deveagles_be.features.shops.command.repository.ShopRepository;
+import com.deveagles.be15_deveagles_be.features.shops.command.repository.SnsRepository;
+import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,6 +25,7 @@ public class ShopCommandServiceImpl implements ShopCommandService {
 
   private final ShopRepository shopRepository;
   private final IndustryRepository industryRepository;
+  private final SnsRepository snsRepository;
   private final ReservationSettingInitializer reservationSettingInitializer;
 
   @Override
@@ -64,9 +70,35 @@ public class ShopCommandServiceImpl implements ShopCommandService {
     return GetIndustryResponse.builder().industryList(industryRepository.findAll()).build();
   }
 
+  @Override
   public void validateShopExists(Long shopId) {
     if (!shopRepository.existsById(shopId)) {
       throw new BusinessException(ErrorCode.SHOP_NOT_FOUNT);
     }
+  }
+
+  @Override
+  public GetShopResponse getShop(Long shopId) {
+
+    Shop shop =
+        shopRepository
+            .findByShopId(shopId)
+            .orElseThrow(() -> new BusinessException(ErrorCode.SHOP_NOT_FOUNT));
+
+    List<Industry> industryList = industryRepository.findAll();
+
+    List<SNS> snsList = snsRepository.findByShopId(shopId);
+
+    return GetShopResponse.builder()
+        .shopName(shop.getShopName())
+        .address(shop.getAddress())
+        .detailAddress(shop.getDetailAddress())
+        .phoneNumber(shop.getPhoneNumber())
+        .bizNumber(shop.getBusinessNumber())
+        .description(shop.getShopDescription())
+        .industryId(shop.getIndustryId())
+        .industryList(industryList)
+        .snsList(snsList)
+        .build();
   }
 }
