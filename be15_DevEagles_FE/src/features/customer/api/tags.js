@@ -8,14 +8,12 @@ const BASE_URL = '/customers/tags';
 class TagsAPI {
   /**
    * 매장별 태그 목록 조회
-   * @param {number} shopId
    * @returns {Promise<Array<{tag_id:number,tag_name:string,color_code:string}>>}
    */
-  async getTagsByShop(shopId) {
+  async getTagsByShop() {
     try {
-      const params = { shopId };
-      logger.request('GET', BASE_URL, params);
-      const response = await api.get(BASE_URL, { params });
+      logger.request('GET', BASE_URL);
+      const response = await api.get(BASE_URL);
       logger.response('GET', BASE_URL, response.status, response.data);
       const tags = Array.isArray(response.data?.data) ? response.data.data : [];
       return tags.map(t => ({
@@ -31,13 +29,13 @@ class TagsAPI {
 
   /**
    * 태그 생성
-   * @param {{shopId:number, tagName:string, colorCode:string}} payload
+   * @param {{tagName:string, colorCode:string, shopId:number}} payload
    * @returns {Promise<number>} 새 태그 ID
    */
-  async createTag({ shopId, tagName, colorCode }) {
+  async createTag({ tagName, colorCode, shopId }) {
     try {
       logger.request('POST', BASE_URL);
-      const body = { shopId, tagName, colorCode };
+      const body = { tagName, colorCode, shopId };
       const res = await api.post(BASE_URL, body);
       logger.response('POST', BASE_URL, res.status, res.data);
       return res.data?.data;
@@ -50,12 +48,12 @@ class TagsAPI {
   /**
    * 태그 수정
    * @param {number} tagId
-   * @param {{shopId:number, tagName:string, colorCode:string}} payload
+   * @param {{tagName:string, colorCode:string, shopId:number}} payload
    */
-  async updateTag(tagId, { shopId, tagName, colorCode }) {
+  async updateTag(tagId, { tagName, colorCode, shopId }) {
     try {
       const url = `${BASE_URL}/${tagId}`;
-      const body = { shopId, tagName, colorCode };
+      const body = { tagName, colorCode, shopId };
       logger.request('PUT', url, body);
       const res = await api.put(url, body);
       logger.response('PUT', url, res.status, res.data);

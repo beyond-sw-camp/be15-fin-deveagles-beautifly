@@ -58,6 +58,7 @@
   import BaseDrawer from '@/components/common/BaseDrawer.vue';
   import BaseButton from '@/components/common/BaseButton.vue';
   import BaseToast from '@/components/common/BaseToast.vue';
+  import { useAuthStore } from '@/store/auth.js';
 
   const props = defineProps({
     modelValue: { type: Boolean, required: true },
@@ -65,6 +66,7 @@
   });
   const emit = defineEmits(['update:modelValue', 'update']);
 
+  const authStore = useAuthStore();
   const colorOptions = [
     '#ff4d4f',
     '#ff9800',
@@ -101,6 +103,7 @@
       ...props.tag,
       tagName: tagName.value.trim(),
       colorCode: colorCode.value,
+      shopId: authStore.shopId,
     });
     toastRef.value?.success('태그가 수정되었습니다.');
     emit('update:modelValue', false);

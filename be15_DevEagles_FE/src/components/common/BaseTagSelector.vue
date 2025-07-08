@@ -8,9 +8,9 @@
       :close-on-select="false"
       :searchable="true"
       :create-option="false"
-      label="tag_name"
-      value-prop="tag_name"
-      track-by="tag_name"
+      label="tagName"
+      value-prop="tagName"
+      track-by="tagName"
       :placeholder="placeholder"
       :class="['multiselect-custom', `multiselect-${size}`]"
       @change="handleChange"
@@ -53,12 +53,12 @@
       options: {
         type: Array,
         default: () => [
-          { tag_name: 'VIP', color_code: '#FFD700' },
-          { tag_name: '신규', color_code: '#00BFFF' },
-          { tag_name: '단골', color_code: '#90ee90' },
-          { tag_name: 'VVIP', color_code: '#FF69B4' },
-          { tag_name: '재방문', color_code: '#FFB347' },
-          { tag_name: '이벤트', color_code: '#B0E0E6' },
+          { tagName: 'VIP', colorCode: '#FFD700' },
+          { tagName: '신규', colorCode: '#00BFFF' },
+          { tagName: '단골', colorCode: '#90ee90' },
+          { tagName: 'VVIP', colorCode: '#FF69B4' },
+          { tagName: '재방문', colorCode: '#FFB347' },
+          { tagName: '이벤트', colorCode: '#B0E0E6' },
         ],
       },
     },

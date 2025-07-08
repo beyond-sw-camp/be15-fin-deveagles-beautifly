@@ -22,17 +22,12 @@
         </div>
         <div class="modal-body">
           <div class="grade-list-wrapper" @dragover.prevent>
-            <!-- 기본등급: 드래그핸들 위치에 빈공간, 등급명/적립률 두 줄 -->
+            <!-- 기본등급: 드래그핸들 위치에 빈공간, 등급명/할인율 두 줄 -->
             <div v-if="defaultGrade" :key="defaultGrade.id" class="grade-item">
               <span class="drag-handle drag-handle-disabled"></span>
               <div class="grade-main-col">
                 <span class="grade-name">{{ defaultGrade.name }}</span>
-                <span class="grade-rates">
-                  카드 {{ defaultGrade.card ?? 0 }}% / 현금 {{ defaultGrade.cash ?? 0 }}% /
-                  네이버페이 {{ defaultGrade.naverpay ?? 0 }}% / 지역화폐
-                  {{ defaultGrade.localpay ?? 0 }}% / 선불권 {{ defaultGrade.prepaid ?? 0 }}% /
-                  횟수권 {{ defaultGrade.session_pass ?? 0 }}%
-                </span>
+                <span class="grade-rates"> 할인율 {{ defaultGrade.discountRate ?? 0 }}% </span>
               </div>
               <div class="grade-actions">
                 <button class="action-btn" @click="openEditDrawer(defaultGrade)">
@@ -41,7 +36,7 @@
                 </button>
               </div>
             </div>
-            <!-- 나머지 등급: 드래그 가능, 핸들 표시, 등급명/적립률 두 줄 -->
+            <!-- 나머지 등급: 드래그 가능, 핸들 표시, 등급명/할인율 한 줄 -->
             <div
               v-for="(grade, idx) in otherGrades"
               :key="grade.id"
@@ -54,11 +49,7 @@
               <span class="drag-handle">☰</span>
               <div class="grade-main-col">
                 <span class="grade-name">{{ grade.name }}</span>
-                <span class="grade-rates">
-                  카드 {{ grade.card ?? 0 }}% / 현금 {{ grade.cash ?? 0 }}% / 네이버페이
-                  {{ grade.naverpay ?? 0 }}% / 지역화폐 {{ grade.localpay ?? 0 }}% / 선불권
-                  {{ grade.prepaid ?? 0 }}% / 횟수권 {{ grade.session_pass ?? 0 }}%
-                </span>
+                <span class="grade-rates"> 할인율 {{ grade.discountRate ?? 0 }}% </span>
               </div>
               <div class="grade-actions">
                 <button class="action-btn" @click="openEditDrawer(grade)">
@@ -101,6 +92,7 @@
   import BaseToast from '@/components/common/BaseToast.vue';
   import BaseConfirm from '@/components/common/BaseConfirm.vue';
   import { useMetadataStore } from '@/store/metadata.js';
+  import { useAuthStore } from '@/store/auth.js';
   import { storeToRefs } from 'pinia';
 
   const props = defineProps({
@@ -109,6 +101,7 @@
   const emit = defineEmits(['update:modelValue']);
 
   const metadataStore = useMetadataStore();
+  const authStore = useAuthStore();
   const { grades } = storeToRefs(metadataStore);
 
   const showAddDrawer = ref(false);
@@ -150,7 +143,8 @@
     try {
       await metadataStore.createGrade({
         name: newGrade.name,
-        discountRate: newGrade.card ?? 0,
+        discountRate: newGrade.discountRate ?? 0,
+        shopId: authStore.shopId,
       });
       toastRef.value?.success('고객 등급이 생성되었습니다.');
     } catch (e) {
@@ -169,7 +163,8 @@
     try {
       await metadataStore.updateGrade(editedGrade.id, {
         name: editedGrade.name,
-        discountRate: editedGrade.card ?? 0,
+        discountRate: editedGrade.discountRate ?? 0,
+        shopId: authStore.shopId,
       });
       toastRef.value?.success('고객 등급이 수정되었습니다.');
     } catch (e) {
@@ -211,12 +206,15 @@
     height: 100vh;
     background: rgba(0, 0, 0, 0.3);
     z-index: 1000;
+    display: flex;
+    justify-content: flex-end;
   }
   .modal-panel {
     position: fixed;
     top: 0;
-    left: 240px;
-    width: calc(100% - 240px);
+    left: unset;
+    right: 0;
+    width: 480px;
     height: 100vh;
     background: #fff;
     display: flex;

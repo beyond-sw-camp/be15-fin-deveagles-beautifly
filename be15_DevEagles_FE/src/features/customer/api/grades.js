@@ -8,19 +8,20 @@ const BASE_URL = '/customers/grades';
 class GradesAPI {
   /**
    * 매장별 고객등급 목록 조회
-   * @param {number} shopId
    * @returns {Promise<Array<{id:number,name:string,discountRate:number}>>}
    */
-  async getGradesByShop(shopId) {
+  async getGradesByShop() {
     try {
-      const url = `${BASE_URL}/shop/${shopId}`;
+      const url = `${BASE_URL}/all`;
       logger.request('GET', url);
       const response = await api.get(url);
       logger.response('GET', url, response.status, response.data);
       const grades = Array.isArray(response.data?.data) ? response.data.data : [];
       return grades.map(g => ({
         id: g.id,
+        gradeId: g.id,
         name: g.customerGradeName,
+        gradeName: g.customerGradeName,
         card: g.discountRate,
         cash: g.discountRate,
         naverpay: g.discountRate,
@@ -31,23 +32,23 @@ class GradesAPI {
         is_deletable: g.customerGradeName !== '기본등급',
       }));
     } catch (error) {
-      logger.error('GET', `${BASE_URL}/shop/${shopId}`, error);
+      logger.error('GET', `${BASE_URL}/all`, error);
       throw new Error('고객등급 목록 조회 실패');
     }
   }
 
   /**
    * 고객등급 생성
-   * @param {object} payload { shopId:number, name:string, discountRate:number }
+   * @param {object} payload { name:string, discountRate:number, shopId:number }
    * @returns {Promise<number>} 새로 생성된 gradeId
    */
-  async createGrade({ shopId, name, discountRate }) {
+  async createGrade({ name, discountRate, shopId }) {
     try {
       const url = `${BASE_URL}`;
       const body = {
-        shopId,
         customerGradeName: name,
         discountRate,
+        shopId,
       };
       logger.request('POST', url, body);
       const res = await api.post(url, body);
@@ -62,15 +63,15 @@ class GradesAPI {
   /**
    * 고객등급 수정
    * @param {number} gradeId
-   * @param {object} payload { shopId:number, name:string, discountRate:number }
+   * @param {object} payload { name:string, discountRate:number, shopId:number }
    */
-  async updateGrade(gradeId, { shopId, name, discountRate }) {
+  async updateGrade(gradeId, { name, discountRate, shopId }) {
     try {
       const url = `${BASE_URL}/${gradeId}`;
       const body = {
-        shopId,
         customerGradeName: name,
         discountRate,
+        shopId,
       };
       logger.request('PUT', url, body);
       const res = await api.put(url, body);

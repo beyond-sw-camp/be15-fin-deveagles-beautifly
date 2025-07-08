@@ -72,6 +72,7 @@
   import BaseToast from '@/components/common/BaseToast.vue';
   import BaseConfirm from '@/components/common/BaseConfirm.vue';
   import { useMetadataStore } from '@/store/metadata.js';
+  import { useAuthStore } from '@/store/auth.js';
   import { storeToRefs } from 'pinia';
 
   const props = defineProps({
@@ -80,6 +81,7 @@
   const emit = defineEmits(['update:modelValue']);
 
   const metadataStore = useMetadataStore();
+  const authStore = useAuthStore();
   const { tags } = storeToRefs(metadataStore);
 
   const showAddDrawer = ref(false);
@@ -99,6 +101,7 @@
       await metadataStore.createTag({
         tagName: newTag.tagName,
         colorCode: newTag.colorCode,
+        shopId: authStore.shopId,
       });
       toastRef.value?.success('태그가 생성되었습니다.');
     } catch (e) {
@@ -119,6 +122,7 @@
       await metadataStore.updateTag(editedTag.tagId, {
         tagName: editedTag.tagName,
         colorCode: editedTag.colorCode,
+        shopId: authStore.shopId,
       });
       toastRef.value?.success('태그가 수정되었습니다.');
     } catch (e) {
@@ -180,12 +184,15 @@
     height: 100vh;
     background: rgba(0, 0, 0, 0.3);
     z-index: 1000;
+    display: flex;
+    justify-content: flex-end;
   }
   .modal-panel {
     position: fixed;
     top: 0;
-    left: 240px;
-    width: calc(100% - 240px);
+    left: unset;
+    right: 0;
+    width: 480px;
     height: 100vh;
     background: #fff;
     display: flex;

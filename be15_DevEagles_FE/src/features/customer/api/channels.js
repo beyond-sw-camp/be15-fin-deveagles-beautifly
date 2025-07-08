@@ -8,10 +8,9 @@ const BASE_URL = '/customers/acquisition-channels';
 const channelsAPI = {
   /**
    * 매장별 유입채널 목록 조회
-   * @param {number} shopId 매장 ID
    * @returns {Promise<Array>} 유입채널 목록
    */
-  async getChannelsByShop(shopId) {
+  async getChannelsByShop() {
     try {
       logger.request('GET', `${BASE_URL}/all`);
       const response = await api.get(`${BASE_URL}/all`);

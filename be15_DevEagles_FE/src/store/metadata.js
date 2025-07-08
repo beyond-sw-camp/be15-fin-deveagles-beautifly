@@ -13,35 +13,34 @@ export const useMetadataStore = defineStore('metadata', () => {
   const grades = ref([]);
   const staff = ref([]);
   const channels = ref([]);
+  const isLoading = ref(false);
+  const metadataLoaded = ref(false);
+  const authStore = useAuthStore();
 
-  let loadedShopId = null;
-  let loadingPromise = null;
-  let metadataLoaded = false;
-
-  async function loadMetadata() {
-    const authStore = useAuthStore();
-    const shopId = authStore.shopId?.value || authStore.shopId || 1;
-
-    if (loadedShopId === shopId && metadataLoaded) {
+  async function loadMetadata(force = false) {
+    if (!force && metadataLoaded.value) {
       return;
     }
 
-    if (loadingPromise) {
-      return loadingPromise;
+    if (isLoading.value) {
+      return;
     }
 
-    loadingPromise = (async () => {
+    isLoading.value = true;
+    try {
       // Tags
       try {
-        tags.value = await tagsAPI.getTagsByShop(shopId);
-      } catch (_) {
+        tags.value = await tagsAPI.getTagsByShop();
+      } catch (error) {
+        console.error('Failed to load tags:', error);
         tags.value = [];
       }
 
       // Grades
       try {
-        grades.value = await gradesAPI.getGradesByShop(shopId);
-      } catch (_) {
+        grades.value = await gradesAPI.getGradesByShop();
+      } catch (error) {
+        console.error('Failed to load grades:', error);
         grades.value = [];
       }
 
@@ -50,65 +49,73 @@ export const useMetadataStore = defineStore('metadata', () => {
         const res = await getStaff({ page: 1, size: 1000, isActive: true, keyword: '' });
         const list = res.data?.data?.staffList || [];
         staff.value = list.map(s => ({ id: s.staffId || s.id, name: s.staffName || s.name }));
-      } catch (_) {
+      } catch (error) {
+        console.error('Failed to load staff:', error);
         staff.value = [];
       }
 
       // Acquisition channels
       try {
-        channels.value = await channelsAPI.getChannelsByShop(shopId);
-      } catch (_) {
+        channels.value = await channelsAPI.getChannelsByShop();
+      } catch (error) {
+        console.error('Failed to load channels:', error);
         channels.value = [];
       }
 
-      loadedShopId = shopId;
-      metadataLoaded = true;
-      loadingPromise = null;
-    })();
-
-    return loadingPromise;
+      metadataLoaded.value = true;
+    } finally {
+      isLoading.value = false;
+    }
   }
 
   // ---------------------- Grade CRUD --------------------------------------
   async function createGrade({ name, discountRate }) {
-    const authStore = useAuthStore();
-    const shopId = authStore.shopId?.value || authStore.shopId || 1;
-    const id = await gradesAPI.createGrade({ shopId, name, discountRate });
-    await loadMetadata();
+    const id = await gradesAPI.createGrade({
+      name,
+      discountRate,
+      shopId: authStore.shopId,
+    });
+    await loadMetadata(true); // Force reload
     return id;
   }
 
   async function updateGrade(gradeId, { name, discountRate }) {
-    const authStore = useAuthStore();
-    const shopId = authStore.shopId?.value || authStore.shopId || 1;
-    await gradesAPI.updateGrade(gradeId, { shopId, name, discountRate });
-    await loadMetadata();
+    await gradesAPI.updateGrade(gradeId, {
+      name,
+      discountRate,
+      shopId: authStore.shopId,
+    });
+    await loadMetadata(true); // Force reload
   }
 
   async function deleteGrade(gradeId) {
     await gradesAPI.deleteGrade(gradeId);
-    await loadMetadata();
+    await loadMetadata(true); // Force reload
   }
 
   // ---------------------- Tag CRUD ----------------------------------------
   async function createTag({ tagName, colorCode }) {
-    const authStore = useAuthStore();
-    const shopId = authStore.shopId?.value || authStore.shopId || 1;
-    const id = await tagsAPI.createTag({ shopId, tagName, colorCode });
-    await loadMetadata();
+    const id = await tagsAPI.createTag({
+      tagName,
+      colorCode,
+      shopId: authStore.shopId,
+    });
+    await loadMetadata(true); // Force reload
     return id;
   }
 
   async function updateTag(tagId, { tagName, colorCode }) {
-    const authStore = useAuthStore();
-    const shopId = authStore.shopId?.value || authStore.shopId || 1;
-    await tagsAPI.updateTag(tagId, { shopId, tagName, colorCode });
-    await loadMetadata();
+    await tagsAPI.updateTag(tagId, {
+      tagName,
+      colorCode,
+      shopId: authStore.shopId,
+    });
+    await loadMetadata(true); // Force reload
   }
 
   async function deleteTag(tagId) {
     await tagsAPI.deleteTag(tagId);
-    await loadMetadata();
+    await loadMetadata(true); // Force reload
   }
 
   return {
@@ -117,6 +124,8 @@ export const useMetadataStore = defineStore('metadata', () => {
     grades,
     staff,
     channels,
+    isLoading,
+    metadataLoaded,
     // actions
     loadMetadata,
     createGrade,
