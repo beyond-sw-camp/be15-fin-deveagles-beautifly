@@ -8,7 +8,10 @@ import com.deveagles.be15_deveagles_be.features.customers.command.application.dt
 import com.deveagles.be15_deveagles_be.features.customers.command.application.service.CustomerCommandService;
 import com.deveagles.be15_deveagles_be.features.customers.command.domain.aggregate.Customer;
 import com.deveagles.be15_deveagles_be.features.customers.command.domain.repository.CustomerRepository;
+import com.deveagles.be15_deveagles_be.features.customers.command.infrastructure.repository.CustomerJpaRepository;
 import com.deveagles.be15_deveagles_be.features.customers.query.service.CustomerQueryService;
+import com.deveagles.be15_deveagles_be.features.messages.command.application.service.AutomaticMessageTriggerService;
+import com.deveagles.be15_deveagles_be.features.messages.command.domain.aggregate.AutomaticEventType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -22,6 +25,8 @@ public class CustomerCommandServiceImpl implements CustomerCommandService {
 
   private final CustomerRepository customerRepository;
   private final CustomerQueryService customerQueryService;
+  private final CustomerJpaRepository customerJpaRepository;
+  private final AutomaticMessageTriggerService automaticMessageTriggerService;
 
   @Override
   public CustomerCommandResponse createCustomer(CreateCustomerRequest request) {
@@ -45,7 +50,11 @@ public class CustomerCommandServiceImpl implements CustomerCommandService {
     }
 
     Customer savedCustomer = customerRepository.save(customer);
+    customerJpaRepository.flush();
 
+    // 3. 자동발신 트리거 실행
+    automaticMessageTriggerService.triggerAutomaticSend(
+        savedCustomer, AutomaticEventType.NEW_CUSTOMER);
     // Elasticsearch 동기화
     customerQueryService.syncCustomerToElasticsearch(savedCustomer.getId());
 

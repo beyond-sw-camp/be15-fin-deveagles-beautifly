@@ -29,24 +29,26 @@
   import BaseButton from '@/components/common/BaseButton.vue';
   import StaffForm from '@/features/staffs/components/StaffForm.vue';
   import StaffPermission from '@/features/staffs/components/StaffPermission.vue';
-  import { useRoute, useRouter } from 'vue-router';
+  import { useRouter } from 'vue-router';
   import { getStaffDetail, putStaffDetail } from '@/features/staffs/api/staffs.js';
   import BaseToast from '@/components/common/BaseToast.vue';
 
-  const route = useRoute();
+  const props = defineProps({
+    staffId: [String, Number],
+  });
+
   const router = useRouter();
   const toastRef = ref();
 
   const staffFormRef = ref();
   const originalStaff = ref(null);
-  const staffId = route.params.staffId;
   const staff = ref(null);
   const profileFile = ref(null);
   const profilePreview = ref('');
 
   const fetchStaffDetail = async () => {
     try {
-      const res = await getStaffDetail(staffId);
+      const res = await getStaffDetail(props.staffId);
       staff.value = res.data.data;
       originalStaff.value = JSON.parse(JSON.stringify(res.data.data)); // 깊은 복사
       profilePreview.value = res.data.data.profileUrl;
@@ -91,10 +93,7 @@
         ? formatDate(current.joinedDate)
         : formatDate(origin.joinedDate);
 
-    change.leftDate =
-      formatDate(current.leftDate) !== formatDate(origin.leftDate)
-        ? formatDate(current.leftDate)
-        : formatDate(origin.leftDate);
+    change.leftDate = current.working === true ? null : formatDate(current.leftDate);
 
     change.permissions = current.permissions || [];
 
@@ -112,6 +111,7 @@
     }
 
     try {
+      const { staffId } = props;
       await putStaffDetail({
         staffId,
         formData,

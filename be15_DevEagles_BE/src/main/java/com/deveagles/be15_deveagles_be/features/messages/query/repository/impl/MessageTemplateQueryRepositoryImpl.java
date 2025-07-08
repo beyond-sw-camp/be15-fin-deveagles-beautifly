@@ -1,5 +1,6 @@
 package com.deveagles.be15_deveagles_be.features.messages.query.repository.impl;
 
+import com.deveagles.be15_deveagles_be.features.messages.command.domain.aggregate.AutomaticEventType;
 import com.deveagles.be15_deveagles_be.features.messages.command.domain.aggregate.MessageTemplate;
 import com.deveagles.be15_deveagles_be.features.messages.command.domain.aggregate.QMessageTemplate;
 import com.deveagles.be15_deveagles_be.features.messages.query.repository.MessageTemplateQueryRepository;
@@ -47,6 +48,24 @@ public class MessageTemplateQueryRepositoryImpl implements MessageTemplateQueryR
             .selectFrom(template)
             .where(template.templateId.eq(id), template.deletedAt.isNull())
             .fetchOne();
+
+    return Optional.ofNullable(result);
+  }
+
+  @Override
+  public Optional<MessageTemplate> findActiveTemplate(Long shopId, AutomaticEventType triggerType) {
+    QMessageTemplate template = QMessageTemplate.messageTemplate;
+
+    MessageTemplate result =
+        queryFactory
+            .selectFrom(template)
+            .where(
+                template.shopId.eq(shopId),
+                template.deletedAt.isNull(),
+                template.automaticEventType.eq(triggerType) // ✅ 핵심 조건
+                )
+            .orderBy(template.createdAt.desc()) // 최신 템플릿 우선
+            .fetchFirst();
 
     return Optional.ofNullable(result);
   }

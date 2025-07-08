@@ -223,14 +223,14 @@
     calendarOptions.value.events = props.schedules.map(item => {
       const baseEvent = {
         id: item.id,
-        title: item.title,
+        title: item.title ?? (item.type === 'reservation' ? '미등록 고객' : '제목 없음'),
         start: item.start,
         end: item.end,
         extendedProps: {
           type: item.type,
           status: item.status,
           staffName: item.staffName,
-          customer: item.customer,
+          customer: item.customer ?? '미등록 고객',
           service: item.service,
           timeRange: item.timeRange,
           memo: item.memo,

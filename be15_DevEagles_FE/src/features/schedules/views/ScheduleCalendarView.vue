@@ -230,7 +230,7 @@
         type: item.scheduleType.toLowerCase(),
         status: item.status,
         staffName: item.staffName,
-        customer: item.customerName,
+        customer: item.customerName ?? '미등록 고객',
         service: item.items,
         memo: item.memo,
         staffColor: item.staffColor,
