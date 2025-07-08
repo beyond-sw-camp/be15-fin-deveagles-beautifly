@@ -1,6 +1,5 @@
 package com.deveagles.be15_deveagles_be.features.users.command.application.dto.response;
 
-import com.deveagles.be15_deveagles_be.features.auth.command.domain.aggregate.AccessAuth;
 import java.sql.Date;
 import java.util.List;
 import lombok.Builder;
@@ -18,6 +17,7 @@ public class StaffInfoResponse {
   private Date joinedDate;
   private Date leftDate;
   private String description;
-  private List<AccessAuth> accessList;
+  private List<StaffPermissions> permissions;
   private String colorCode;
+  private String profileUrl;
 }

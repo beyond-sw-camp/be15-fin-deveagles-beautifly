@@ -1,9 +1,11 @@
 """Main ETL pipeline orchestrator."""
 
 import asyncio
-from datetime import datetime
-from typing import Dict, List, Optional
+from datetime import datetime, timedelta
+from typing import Dict, List, Optional, Any
 from concurrent.futures import ThreadPoolExecutor
+import pandas as pd
+import logging
 
 from analytics.core.logging import get_logger
 from .base import BaseETLPipeline, ETLResult
@@ -11,21 +13,155 @@ from .config import ETLConfig
 from .extractors import (
     CustomerExtractor, 
     VisitExtractor, 
-    VisitServiceExtractor
+    VisitServiceExtractor,
+    ServiceExtractor
+)
+from .beautifly_extractors import (
+    BeautiflyCustomerExtractor, 
+    BeautiflyReservationExtractor,
+    BeautiflyServiceExtractor
 )
 from .transformers import (
     CustomerAnalyticsTransformer,
     VisitAnalyticsTransformer,
     ServicePreferenceTransformer,
-    ServiceTagsTransformer
+    ServiceTagsTransformer,
+    DataTransformer
 )
 from .loaders import (
     CustomerAnalyticsLoader,
     VisitAnalyticsLoader,
     ServicePreferenceLoader,
-    ServiceTagsLoader
+    ServiceTagsLoader,
+    DataLoader
 )
 
+logger = logging.getLogger(__name__)
+
+class CRMDataPipeline(BaseETLPipeline):
+    """CRM 데이터 ETL 파이프라인."""
+
+    def __init__(self, config=None):
+        super().__init__(config)
+        self.customer_extractor = CustomerExtractor(config)
+        self.visit_extractor = VisitExtractor(config)
+        self.service_extractor = ServiceExtractor(config)
+        self.visit_service_extractor = VisitServiceExtractor(config)
+        self.transformer = DataTransformer(config)
+        self.loader = DataLoader(config)
+
+    def extract_customer_data(self, start_date: datetime = None, end_date: datetime = None) -> pd.DataFrame:
+        """고객 데이터 추출."""
+        customer_data = pd.concat(list(self.customer_extractor.extract(start_date, end_date)))
+        return customer_data
+
+    def extract_visit_data(self, start_date: datetime = None, end_date: datetime = None) -> pd.DataFrame:
+        """방문 데이터 추출."""
+        visit_data = pd.concat(list(self.visit_extractor.extract(start_date, end_date)))
+        return visit_data
+
+    def extract_service_data(self, start_date: datetime = None, end_date: datetime = None) -> pd.DataFrame:
+        """서비스 데이터 추출."""
+        service_data = pd.concat(list(self.service_extractor.extract(start_date, end_date)))
+        return service_data
+
+    def extract_visit_service_data(self, start_date: datetime = None, end_date: datetime = None) -> pd.DataFrame:
+        """방문별 서비스 데이터 추출."""
+        visit_service_data = pd.concat(list(self.visit_service_extractor.extract(start_date, end_date)))
+        return visit_service_data
+
+    def run(self, start_date: datetime = None, end_date: datetime = None) -> Dict[str, Any]:
+        """ETL 파이프라인 실행."""
+        try:
+            # 데이터 추출
+            customer_data = self.extract_customer_data(start_date, end_date)
+            visit_data = self.extract_visit_data(start_date, end_date)
+            service_data = self.extract_service_data(start_date, end_date)
+            visit_service_data = self.extract_visit_service_data(start_date, end_date)
+
+            # 데이터 변환
+            transformed_data = self.transformer.transform({
+                'customers': customer_data,
+                'visits': visit_data,
+                'services': service_data,
+                'visit_services': visit_service_data
+            })
+
+            # 데이터 적재
+            load_results = self.loader.load(transformed_data)
+
+            return {
+                'status': 'success',
+                'extracted_records': {
+                    'customers': len(customer_data),
+                    'visits': len(visit_data),
+                    'services': len(service_data),
+                    'visit_services': len(visit_service_data)
+                },
+                'load_results': load_results
+            }
+
+        except Exception as e:
+            logger.error(f"ETL pipeline failed: {str(e)}")
+            raise
+
+class BeautiflyDataPipeline(BaseETLPipeline):
+    """Beautifly 데이터 ETL 파이프라인."""
+
+    def __init__(self, config=None):
+        super().__init__(config)
+        self.customer_extractor = BeautiflyCustomerExtractor(config)
+        self.reservation_extractor = BeautiflyReservationExtractor(config)
+        self.service_extractor = BeautiflyServiceExtractor(config)
+        self.transformer = DataTransformer(config)
+        self.loader = DataLoader(config)
+
+    def extract_customer_data(self, start_date: datetime = None, end_date: datetime = None) -> pd.DataFrame:
+        """고객 데이터 추출."""
+        customer_data = pd.concat(list(self.customer_extractor.extract(start_date, end_date)))
+        return customer_data
+
+    def extract_reservation_data(self, start_date: datetime = None, end_date: datetime = None) -> pd.DataFrame:
+        """예약 데이터 추출."""
+        reservation_data = pd.concat(list(self.reservation_extractor.extract(start_date, end_date)))
+        return reservation_data
+
+    def extract_service_data(self, start_date: datetime = None, end_date: datetime = None) -> pd.DataFrame:
+        """서비스 데이터 추출."""
+        service_data = pd.concat(list(self.service_extractor.extract(start_date, end_date)))
+        return service_data
+
+    def run(self, start_date: datetime = None, end_date: datetime = None) -> Dict[str, Any]:
+        """ETL 파이프라인 실행."""
+        try:
+            # 데이터 추출
+            customer_data = self.extract_customer_data(start_date, end_date)
+            reservation_data = self.extract_reservation_data(start_date, end_date)
+            service_data = self.extract_service_data(start_date, end_date)
+
+            # 데이터 변환
+            transformed_data = self.transformer.transform({
+                'customers': customer_data,
+                'reservations': reservation_data,
+                'services': service_data
+            })
+
+            # 데이터 적재
+            load_results = self.loader.load(transformed_data)
+
+            return {
+                'status': 'success',
+                'extracted_records': {
+                    'customers': len(customer_data),
+                    'reservations': len(reservation_data),
+                    'services': len(service_data)
+                },
+                'load_results': load_results
+            }
+
+        except Exception as e:
+            logger.error(f"ETL pipeline failed: {str(e)}")
+            raise
 
 class ETLPipeline(BaseETLPipeline):
     """고객 분석 ETL 파이프라인."""

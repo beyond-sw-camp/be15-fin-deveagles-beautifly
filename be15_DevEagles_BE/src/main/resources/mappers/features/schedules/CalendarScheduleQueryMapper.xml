@@ -26,7 +26,7 @@
                 c.customer_name AS customerName
                 FROM reservation r
                 JOIN staff s ON r.staff_id = s.staff_id
-                JOIN customer c ON r.customer_id = c.customer_id
+                LEFT JOIN customer c ON r.customer_id = c.customer_id
                 LEFT JOIN reservation_detail rd ON r.reservation_id = rd.reservation_id
                 LEFT JOIN secondary_item si ON rd.secondary_item_id = si.secondary_item_id
                 WHERE r.deleted_at IS NULL
@@ -119,7 +119,7 @@
                 c.customer_name AS customerName
                 FROM reservation r
                 JOIN staff s ON r.staff_id = s.staff_id
-                JOIN customer c ON r.customer_id = c.customer_id
+                LEFT JOIN customer c ON r.customer_id = c.customer_id
                 LEFT JOIN reservation_detail rd ON r.reservation_id = rd.reservation_id
                 LEFT JOIN secondary_item si ON rd.secondary_item_id = si.secondary_item_id
                 WHERE r.deleted_at IS NULL

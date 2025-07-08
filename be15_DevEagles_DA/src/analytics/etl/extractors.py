@@ -6,10 +6,10 @@ import pandas as pd
 from sqlalchemy import text
 
 from analytics.core.database import get_crm_db
-from .base import BaseExtractor
+from .base_extractors import BaseDataExtractor
 
 
-class CRMDataExtractor(BaseExtractor):
+class CRMDataExtractor(BaseDataExtractor):
     """CRM 데이터베이스 기본 추출기."""
     
     def __init__(self, config=None):
@@ -55,61 +55,55 @@ class CRMDataExtractor(BaseExtractor):
             raise
 
 
-class CustomerExtractor(CRMDataExtractor):
+class CustomerExtractor(BaseDataExtractor):
     """고객 데이터 추출기."""
     
     def extract(self, start_date: datetime = None, end_date: datetime = None) -> Iterator[pd.DataFrame]:
         """고객 데이터 추출."""
-        base_query = """
+        query = """
         SELECT 
-            id as customer_id,
-            name,
-            phone,
-            email,
-            birth_date,
-            gender,
-            address,
-            memo,
-            is_active,
-            created_at,
-            updated_at
-        FROM customers
-        WHERE is_active = 1
+            c.id as customer_id,
+            c.name,
+            c.phone,
+            c.email,
+            c.birth_date,
+            c.gender,
+            c.address,
+            c.memo,
+            c.is_active,
+            c.created_at,
+            c.updated_at
+        FROM customers c
+        WHERE c.is_active = true
         """
-        
+
         params = {}
-        
-        if start_date and end_date:
-            # 증분 처리: 생성/수정된 고객만
-            base_query += " AND (created_at >= :start_date OR updated_at >= :start_date)"
-            base_query += " AND (created_at <= :end_date OR updated_at <= :end_date)"
-            params.update({
-                "start_date": start_date,
-                "end_date": end_date
-            })
-        
-        base_query += " ORDER BY id"
-        
-        self.log_start("customer_extract", start_date=start_date, end_date=end_date)
-        
-        return self.execute_query_chunked(base_query, params)
+        if start_date:
+            query += " AND c.updated_at >= :start_date"
+            params['start_date'] = start_date
+        if end_date:
+            query += " AND c.updated_at <= :end_date"
+            params['end_date'] = end_date
+
+        return self.execute_query_chunked(query, params)
     
     def get_last_update_time(self) -> Optional[datetime]:
-        """고객 테이블의 마지막 업데이트 시간."""
-        query = "SELECT MAX(updated_at) as last_update FROM customers"
+        """마지막 고객 데이터 업데이트 시간 조회."""
+        query = """
+        SELECT MAX(updated_at) as last_update
+        FROM customers
+        WHERE is_active = true
+        """
         result = self.execute_query(query)
-        
-        if not result.empty and result.iloc[0]['last_update']:
-            return result.iloc[0]['last_update']
-        return None
+        return result.iloc[0]['last_update'] if not result.empty else None
 
 
-class VisitExtractor(CRMDataExtractor):
+class VisitExtractor(BaseDataExtractor):
     """방문 데이터 추출기."""
     
     def extract(self, start_date: datetime = None, end_date: datetime = None) -> Iterator[pd.DataFrame]:
-        """방문 데이터 추출 (서비스 정보 포함)."""
-        base_query = """
+        """방문 데이터 추출."""
+        query = """
         SELECT 
             v.id as visit_id,
             v.customer_id,
@@ -119,107 +113,84 @@ class VisitExtractor(CRMDataExtractor):
             v.discount_amount,
             v.final_amount,
             v.payment_method,
-            v.memo as visit_memo,
+            v.memo,
             v.status,
             v.created_at,
             v.updated_at,
-            -- 서비스 정보 (JSON 집계)
-            COUNT(vs.id) as service_count,
-            GROUP_CONCAT(DISTINCT s.category) as service_categories,
-            GROUP_CONCAT(s.name) as service_names,
-            SUM(vs.quantity) as total_service_quantity
+            e.name as employee_name
         FROM visits v
-        LEFT JOIN visit_services vs ON v.id = vs.visit_id
-        LEFT JOIN services s ON vs.service_id = s.id
+        LEFT JOIN employees e ON v.employee_id = e.id
         WHERE v.status = 'completed'
         """
-        
+
         params = {}
-        
-        if start_date and end_date:
-            base_query += " AND v.visit_date >= :start_date AND v.visit_date <= :end_date"
-            params.update({
-                "start_date": start_date,
-                "end_date": end_date
-            })
-        
-        base_query += """
-        GROUP BY v.id, v.customer_id, v.employee_id, v.visit_date, 
-                 v.total_amount, v.discount_amount, v.final_amount,
-                 v.payment_method, v.memo, v.status, v.created_at, v.updated_at
-        ORDER BY v.visit_date, v.id
-        """
-        
-        self.log_start("visit_extract", start_date=start_date, end_date=end_date)
-        
-        return self.execute_query_chunked(base_query, params)
+        if start_date:
+            query += " AND v.visit_date >= :start_date"
+            params['start_date'] = start_date
+        if end_date:
+            query += " AND v.visit_date <= :end_date"
+            params['end_date'] = end_date
+
+        return self.execute_query_chunked(query, params)
     
     def get_last_update_time(self) -> Optional[datetime]:
-        """방문 테이블의 마지막 업데이트 시간."""
+        """마지막 방문 데이터 업데이트 시간 조회."""
         query = """
-        SELECT MAX(GREATEST(v.updated_at, COALESCE(vs.updated_at, v.updated_at))) as last_update
-        FROM visits v
-        LEFT JOIN visit_services vs ON v.id = vs.visit_id
+        SELECT MAX(updated_at) as last_update
+        FROM visits
+        WHERE status = 'completed'
         """
         result = self.execute_query(query)
-        
-        if not result.empty and result.iloc[0]['last_update']:
-            return result.iloc[0]['last_update']
-        return None
+        return result.iloc[0]['last_update'] if not result.empty else None
 
 
-class ServiceExtractor(CRMDataExtractor):
+class ServiceExtractor(BaseDataExtractor):
     """서비스 데이터 추출기."""
     
     def extract(self, start_date: datetime = None, end_date: datetime = None) -> Iterator[pd.DataFrame]:
         """서비스 데이터 추출."""
-        base_query = """
+        query = """
         SELECT 
-            id as service_id,
-            name,
-            category,
-            price,
-            duration_minutes,
-            description,
-            is_active,
-            created_at,
-            updated_at
-        FROM services
-        WHERE is_active = 1
+            s.id as service_id,
+            s.name,
+            s.category,
+            s.price,
+            s.duration_minutes,
+            s.description,
+            s.is_active,
+            s.created_at,
+            s.updated_at
+        FROM services s
+        WHERE s.is_active = true
         """
-        
+
         params = {}
-        
-        if start_date and end_date:
-            base_query += " AND (created_at >= :start_date OR updated_at >= :start_date)"
-            base_query += " AND (created_at <= :end_date OR updated_at <= :end_date)"
-            params.update({
-                "start_date": start_date,
-                "end_date": end_date
-            })
-        
-        base_query += " ORDER BY id"
-        
-        self.log_start("service_extract", start_date=start_date, end_date=end_date)
-        
-        return self.execute_query_chunked(base_query, params)
+        if start_date:
+            query += " AND s.updated_at >= :start_date"
+            params['start_date'] = start_date
+        if end_date:
+            query += " AND s.updated_at <= :end_date"
+            params['end_date'] = end_date
+
+        return self.execute_query_chunked(query, params)
     
     def get_last_update_time(self) -> Optional[datetime]:
-        """서비스 테이블의 마지막 업데이트 시간."""
-        query = "SELECT MAX(updated_at) as last_update FROM services"
+        """마지막 서비스 데이터 업데이트 시간 조회."""
+        query = """
+        SELECT MAX(updated_at) as last_update
+        FROM services
+        WHERE is_active = true
+        """
         result = self.execute_query(query)
-        
-        if not result.empty and result.iloc[0]['last_update']:
-            return result.iloc[0]['last_update']
-        return None
+        return result.iloc[0]['last_update'] if not result.empty else None
 
 
-class VisitServiceExtractor(CRMDataExtractor):
-    """방문-서비스 상세 데이터 추출기."""
+class VisitServiceExtractor(BaseDataExtractor):
+    """방문별 서비스 데이터 추출기."""
     
     def extract(self, start_date: datetime = None, end_date: datetime = None) -> Iterator[pd.DataFrame]:
-        """방문별 서비스 상세 데이터 추출."""
-        base_query = """
+        """방문별 서비스 데이터 추출."""
+        query = """
         SELECT 
             vs.id as visit_service_id,
             vs.visit_id,
@@ -230,46 +201,36 @@ class VisitServiceExtractor(CRMDataExtractor):
             vs.total_price,
             vs.discount_amount,
             vs.final_price,
-            vs.memo as service_memo,
+            vs.memo,
             vs.created_at,
             vs.updated_at,
-            -- 방문 정보
-            v.customer_id,
-            v.visit_date,
-            -- 서비스 정보
             s.name as service_name,
-            s.category as service_category
+            s.category as service_category,
+            e.name as employee_name
         FROM visit_services vs
-        INNER JOIN visits v ON vs.visit_id = v.id
-        INNER JOIN services s ON vs.service_id = s.id
+        JOIN services s ON vs.service_id = s.id
+        LEFT JOIN employees e ON vs.employee_id = e.id
+        JOIN visits v ON vs.visit_id = v.id
         WHERE v.status = 'completed'
         """
-        
+
         params = {}
-        
-        if start_date and end_date:
-            base_query += " AND v.visit_date >= :start_date AND v.visit_date <= :end_date"
-            params.update({
-                "start_date": start_date,
-                "end_date": end_date
-            })
-        
-        base_query += " ORDER BY v.visit_date, vs.visit_id, vs.id"
-        
-        self.log_start("visit_service_extract", start_date=start_date, end_date=end_date)
-        
-        return self.execute_query_chunked(base_query, params)
+        if start_date:
+            query += " AND vs.created_at >= :start_date"
+            params['start_date'] = start_date
+        if end_date:
+            query += " AND vs.created_at <= :end_date"
+            params['end_date'] = end_date
+
+        return self.execute_query_chunked(query, params)
     
     def get_last_update_time(self) -> Optional[datetime]:
-        """방문-서비스 테이블의 마지막 업데이트 시간."""
+        """마지막 방문별 서비스 데이터 업데이트 시간 조회."""
         query = """
         SELECT MAX(vs.updated_at) as last_update
         FROM visit_services vs
-        INNER JOIN visits v ON vs.visit_id = v.id
+        JOIN visits v ON vs.visit_id = v.id
         WHERE v.status = 'completed'
         """
         result = self.execute_query(query)
-        
-        if not result.empty and result.iloc[0]['last_update']:
-            return result.iloc[0]['last_update']
-        return None 
+        return result.iloc[0]['last_update'] if not result.empty else None 

@@ -5,7 +5,7 @@ import sys
 from pathlib import Path
 
 # 프로젝트 루트를 Python 경로에 추가
-sys.path.insert(0, str(Path(__file__).parent / "src"))
+sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
 
 def test_analytics_db():
     """Analytics 데이터베이스 테스트."""

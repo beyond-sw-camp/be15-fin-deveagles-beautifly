@@ -19,12 +19,12 @@ public class LeaveQueryService {
 
   private final LeaveQueryMapper leaveQueryMapper;
 
-  public PagedResult<LeaveListResponse> getLeaveList(LeaveListRequest request) {
+  public PagedResult<LeaveListResponse> getLeaveList(Long shopId, LeaveListRequest request) {
     int offset = request.page() * request.size();
 
     List<LeaveListResponse> leaves =
         leaveQueryMapper.findLeaves(
-            request.shopId(),
+            shopId,
             request.from(),
             request.to(),
             request.leaveType(),
@@ -34,7 +34,7 @@ public class LeaveQueryService {
 
     int total =
         leaveQueryMapper.countLeaves(
-            request.shopId(), request.from(), request.to(), request.leaveType(), request.staffId());
+            shopId, request.from(), request.to(), request.leaveType(), request.staffId());
 
     return new PagedResult<>(
         leaves,

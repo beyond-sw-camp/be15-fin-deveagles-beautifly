@@ -5,7 +5,6 @@ import java.time.LocalTime;
 
 public record CreateRegularPlanRequest(
     Long staffId,
-    Long shopId,
     String regularPlanTitle,
     Integer monthlyPlan,
     DayOfWeekEnum weeklyPlan,

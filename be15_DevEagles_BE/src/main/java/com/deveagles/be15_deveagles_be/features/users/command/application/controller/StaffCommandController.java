@@ -3,6 +3,8 @@ package com.deveagles.be15_deveagles_be.features.users.command.application.contr
 import com.deveagles.be15_deveagles_be.common.dto.ApiResponse;
 import com.deveagles.be15_deveagles_be.features.auth.command.application.model.CustomUser;
 import com.deveagles.be15_deveagles_be.features.users.command.application.dto.request.CreateStaffRequest;
+import com.deveagles.be15_deveagles_be.features.users.command.application.dto.request.PutStaffRequest;
+import com.deveagles.be15_deveagles_be.features.users.command.application.dto.response.StaffInfoResponse;
 import com.deveagles.be15_deveagles_be.features.users.command.application.service.StaffCommandService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -34,5 +36,28 @@ public class StaffCommandController {
     staffCommandService.staffCreate(customUser.getShopId(), staffRequest, profile);
 
     return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(null));
+  }
+
+  @Transactional
+  @GetMapping("/{staffId}")
+  public ResponseEntity<ApiResponse<StaffInfoResponse>> getStaffDetail(
+      @AuthenticationPrincipal CustomUser customUser, @PathVariable Long staffId) {
+
+    StaffInfoResponse response = staffCommandService.getStaffDetail(staffId);
+
+    return ResponseEntity.ok().body(ApiResponse.success(response));
+  }
+
+  @Transactional
+  @PostMapping("/{staffId}")
+  public ResponseEntity<ApiResponse<Void>> putStaffDetail(
+      @AuthenticationPrincipal CustomUser customUser,
+      @PathVariable Long staffId,
+      @RequestPart("staffRequest") @Valid PutStaffRequest staffRequest,
+      @RequestPart(value = "profile", required = false) MultipartFile profile) {
+
+    staffCommandService.putStaffDetail(staffId, staffRequest, profile);
+
+    return ResponseEntity.ok().body(ApiResponse.success(null));
   }
 }

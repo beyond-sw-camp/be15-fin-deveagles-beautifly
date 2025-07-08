@@ -26,7 +26,7 @@
         :data="staffList"
         :hover="true"
         :striped="true"
-        :row-key="'id'"
+        :row-key="'staffId'"
         @click-row="goToDetail"
       >
         <!-- 이름 셀 커스터마이징 -->
@@ -106,7 +106,6 @@
 
       staffList.value = res.data.data.staffList;
       totalCount.value = res.data.data.pagination.totalItems;
-      totalPages.value = res.data.data.pagination.totalPages;
     } catch (err) {
       toastRef.value?.error?.('직원 목록 조회에 실패했습니다.');
     }
@@ -129,7 +128,7 @@
   };
 
   const goToDetail = staff => {
-    router.push({ name: 'StaffDetail', params: { id: staff.id } });
+    router.push({ name: 'StaffDetail', params: { staffId: staff.staffId } });
   };
   onMounted(() => {
     fetchStaff();

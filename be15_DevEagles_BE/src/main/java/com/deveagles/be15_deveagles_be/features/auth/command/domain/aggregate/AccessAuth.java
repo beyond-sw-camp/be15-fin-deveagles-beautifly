@@ -52,4 +52,11 @@ public class AccessAuth {
   public void setActive(boolean isActive) {
     this.isActive = isActive;
   }
+
+  public void updateAccess(boolean isActive, boolean canRead, boolean canWrite, boolean canDelete) {
+    this.isActive = isActive;
+    this.canRead = canRead;
+    this.canWrite = canWrite;
+    this.canDelete = canDelete;
+  }
 }

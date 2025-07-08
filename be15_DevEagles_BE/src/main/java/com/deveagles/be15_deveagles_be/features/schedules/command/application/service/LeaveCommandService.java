@@ -21,11 +21,11 @@ public class LeaveCommandService {
   private final RegularLeaveRepository regularLeaveRepository;
 
   @Transactional
-  public Long createLeave(CreateLeaveRequest request) {
+  public Long createLeave(Long shopId, CreateLeaveRequest request) {
     Leave leave =
         Leave.builder()
             .staffId(request.staffId())
-            .shopId(request.shopId())
+            .shopId(shopId)
             .leaveTitle(request.leaveTitle())
             .leaveAt(request.leaveAt())
             .leaveMemo(request.leaveMemo())
@@ -34,7 +34,7 @@ public class LeaveCommandService {
   }
 
   @Transactional
-  public void updateLeave(Long leaveId, UpdateLeaveRequest request) {
+  public void updateLeave(Long shopId, Long leaveId, UpdateLeaveRequest request) {
     Leave leave =
         leaveRepository
             .findById(leaveId)
@@ -44,7 +44,7 @@ public class LeaveCommandService {
   }
 
   @Transactional
-  public Long createRegularLeave(CreateRegularLeaveRequest request) {
+  public Long createRegularLeave(Long shopId, CreateRegularLeaveRequest request) {
     boolean hasMonthly = request.monthlyLeave() != null;
     boolean hasWeekly = request.weeklyLeave() != null;
 
@@ -55,7 +55,7 @@ public class LeaveCommandService {
     RegularLeave regularLeave =
         RegularLeave.builder()
             .staffId(request.staffId())
-            .shopId(request.shopId())
+            .shopId(shopId)
             .regularLeaveTitle(request.regularLeaveTitle())
             .monthlyLeave(request.monthlyLeave())
             .weeklyLeave(request.weeklyLeave())
@@ -66,7 +66,8 @@ public class LeaveCommandService {
   }
 
   @Transactional
-  public void updateRegularLeave(Long regularLeaveId, UpdateRegularLeaveRequest request) {
+  public void updateRegularLeave(
+      Long shopId, Long regularLeaveId, UpdateRegularLeaveRequest request) {
     RegularLeave regularLeave =
         regularLeaveRepository
             .findById(regularLeaveId)
@@ -80,7 +81,7 @@ public class LeaveCommandService {
   }
 
   @Transactional
-  public void deleteMixedLeaves(List<DeleteScheduleRequest> requests) {
+  public void deleteMixedLeaves(Long shopId, List<DeleteScheduleRequest> requests) {
     if (requests == null || requests.isEmpty()) return;
 
     List<Long> leaveIds = new ArrayList<>();
@@ -90,7 +91,7 @@ public class LeaveCommandService {
       String type = req.type().toLowerCase(Locale.ROOT);
       if ("leave".equals(type)) {
         leaveIds.add(req.id());
-      } else if ("regular".equals(type)) {
+      } else if ("regular_leave".equals(type)) {
         regularLeaveIds.add(req.id());
       } else {
         throw new BusinessException(ErrorCode.INVALID_SCHEDULE_TYPE);
@@ -115,15 +116,17 @@ public class LeaveCommandService {
   }
 
   @Transactional
-  public void switchSchedule(UpdateLeaveScheduleRequest request) {
+  public void switchSchedule(Long shopId, UpdateLeaveScheduleRequest request) {
     ScheduleType fromType = request.fromType();
     ScheduleType toType = request.toType();
 
     if (fromType == toType) {
       switch (fromType) {
-        case LEAVE -> updateLeave(request.fromId(), request.leaveRequest().toUpdateRequest());
+        case LEAVE ->
+            updateLeave(shopId, request.fromId(), request.leaveRequest().toUpdateRequest());
         case REGULAR_LEAVE ->
-            updateRegularLeave(request.fromId(), request.regularLeaveRequest().toUpdateRequest());
+            updateRegularLeave(
+                shopId, request.fromId(), request.regularLeaveRequest().toUpdateRequest());
         default -> throw new BusinessException(ErrorCode.INVALID_SCHEDULE_TYPE);
       }
       return;
@@ -146,8 +149,8 @@ public class LeaveCommandService {
     }
 
     switch (toType) {
-      case LEAVE -> createLeave(request.leaveRequest());
-      case REGULAR_LEAVE -> createRegularLeave(request.regularLeaveRequest());
+      case LEAVE -> createLeave(shopId, request.leaveRequest());
+      case REGULAR_LEAVE -> createRegularLeave(shopId, request.regularLeaveRequest());
       default -> throw new BusinessException(ErrorCode.INVALID_SCHEDULE_TYPE);
     }
   }

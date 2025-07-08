@@ -27,6 +27,7 @@ public enum ErrorCode implements ErrorCodeType {
   DUPLICATE_SEND_AUTH_EXCEPTION(
       "11004", "이미 인증 메일을 발송했습니다. 잠시 후 다시 시도해주세요.", HttpStatus.BAD_REQUEST),
   INVALID_AUTH_CODE("11005", "유효한 인증이 아닙니다.", HttpStatus.BAD_REQUEST),
+  STAFF_NOT_FOUND("11006", "존재하지 않는 직원입니다.", HttpStatus.NOT_FOUND),
 
   // 매장 관련 에러 (20000번대)
   SHOP_NOT_FOUNT("20001", "매장이 존재하지 않습니다.", HttpStatus.NOT_FOUND),
@@ -50,6 +51,13 @@ public enum ErrorCode implements ErrorCodeType {
   SMS_NOT_FOUND("40007", "해당 메시지가 없습니다.", HttpStatus.BAD_REQUEST),
   TEMPLATE_NOT_FOUND("40008", "해당 템플릿이 없습니다.", HttpStatus.BAD_REQUEST),
   TEMPLATE_ACCESS_DENIED("40009", "해당 템플릿을 수정할 수 있는 권한이 없습니다.", HttpStatus.UNAUTHORIZED),
+  SMS_SHOP_MISMATCH("40010", "해당 매장에서 접근할 수 없는 메시지입니다.", HttpStatus.BAD_REQUEST),
+  INVALID_MESSAGET_TYPE("40011", "해당 메시지는 예약 메시지가 아닙니다.", HttpStatus.BAD_REQUEST),
+  ALREADY_SENT_OR_CANCELED("40012", "해당 메시지는 취소됐거나 이미 발송된 메시지입니다.", HttpStatus.BAD_REQUEST),
+  INVALID_SCHEDULED_TIME("40013", "예약 발송 시간은 현재 시간 이후여야 합니다.", HttpStatus.BAD_REQUEST),
+  INVALID_MESSAGE_CANCEL_CONDITION("40014", "예약 취소가 불가능한 상태입니다", HttpStatus.BAD_REQUEST),
+  AUTOMATIC_TEMPLATE_ALREADY_EXISTS(
+      "40015", "이미 동일한 이벤트 타입으로 메시지가 등록 되어 있습니다.", HttpStatus.BAD_REQUEST),
   // 쿠폰 관련 에러 (50000번대)
   COUPON_NOT_FOUND("50001", "쿠폰을 찾을 수 없습니다", HttpStatus.NOT_FOUND),
   COUPON_CODE_DUPLICATE("50002", "이미 존재하는 쿠폰 코드입니다", HttpStatus.CONFLICT),
@@ -81,6 +89,10 @@ public enum ErrorCode implements ErrorCodeType {
   RESERVATION_SETTING_ALREADY_EXISTS("70004", "이미 예약 설정이 존재합니다", HttpStatus.BAD_REQUEST),
   SHOP_NOT_FOUND("70005", "매장을 찾을 수 없습니다", HttpStatus.NOT_FOUND),
   RESERVATION_SETTING_NOT_FOUND("70006", "예약 설정이 존재하지 않습니다.", HttpStatus.NOT_FOUND),
+  // 예약 관련 에러 (71000번대)
+  RESERVATION_NOT_FOUND("71001", "예약을 찾을 수 없습니다", HttpStatus.NOT_FOUND),
+  MODIFY_NOT_ALLOWED_FOR_PAID_RESERVATION(
+      "71002", "PAID 상태의 예약은 수정할 수 없습니다", HttpStatus.BAD_REQUEST),
   // 일정 삭제 관련 에러 (72000번대)
   PLAN_NOT_FOUND("72001", "단기 일정이 존재하지 않습니다", HttpStatus.NOT_FOUND),
   REGULAR_PLAN_NOT_FOUND("72002", "정기 일정이 존재하지 않습니다", HttpStatus.NOT_FOUND),
