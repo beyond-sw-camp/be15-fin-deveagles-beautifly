@@ -6,4 +6,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface ShopRepository extends JpaRepository<Shop, Long> {
   Optional<Shop> findByBusinessNumber(String s);
+
+  Optional<Shop> findByShopId(Long shopId);
 }

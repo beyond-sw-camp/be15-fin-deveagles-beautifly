@@ -27,6 +27,7 @@
       @update:detail-address="val => (form.detailAddress = val)"
       @validate:address="addressChecked"
       @validate:detail-address="detailAddressChecked"
+      @clear-error="clearError"
     />
 
     <div class="label-row">
