@@ -59,7 +59,7 @@ public class CustomerQueryServiceImpl implements CustomerQueryService {
   public List<CustomerResponse> getCustomersByShopId(Long shopId) {
     return customerJpaRepository.findByShopIdAndDeletedAtIsNull(shopId).stream()
         .map(CustomerResponse::from)
-        .collect(Collectors.toList());
+        .toList();
   }
 
   @Override
@@ -142,9 +142,7 @@ public class CustomerQueryServiceImpl implements CustomerQueryService {
         jpaQuery
             .innerJoin(tagByCustomer)
             .on(customer.id.eq(tagByCustomer.customerId))
-            .where(
-                tagByCustomer.tagId.in(
-                    query.tagIds().stream().map(Long::valueOf).collect(Collectors.toList())));
+            .where(tagByCustomer.tagId.in(query.tagIds().stream().map(Long::valueOf).toList()));
       }
 
       // 성별 필터링
@@ -183,7 +181,8 @@ public class CustomerQueryServiceImpl implements CustomerQueryService {
       }
 
       // 페이징 적용
-      long total = jpaQuery.fetchCount();
+      List<Customer> countResult = jpaQuery.fetch();
+      long total = countResult.size();
       List<Customer> customers =
           jpaQuery.offset(pageable.getOffset()).limit(pageable.getPageSize()).fetch();
 
@@ -199,7 +198,7 @@ public class CustomerQueryServiceImpl implements CustomerQueryService {
                           c.getCustomerGradeId(),
                           null, // customerGradeName은 나중에 조인으로 가져오도록 수정
                           c.getGender()))
-              .collect(Collectors.toList());
+              .toList();
 
       Pagination pagination =
           Pagination.builder()

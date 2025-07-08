@@ -2,6 +2,7 @@ package com.deveagles.be15_deveagles_be.features.customers.command.infrastructur
 
 import com.deveagles.be15_deveagles_be.common.exception.BusinessException;
 import com.deveagles.be15_deveagles_be.common.exception.ErrorCode;
+import com.deveagles.be15_deveagles_be.features.auth.command.application.model.CustomUser;
 import com.deveagles.be15_deveagles_be.features.customers.command.application.dto.request.CreateCustomerRequest;
 import com.deveagles.be15_deveagles_be.features.customers.command.application.dto.request.UpdateCustomerRequest;
 import com.deveagles.be15_deveagles_be.features.customers.command.application.dto.response.CustomerCommandResponse;
@@ -14,6 +15,7 @@ import com.deveagles.be15_deveagles_be.features.messages.command.application.ser
 import com.deveagles.be15_deveagles_be.features.messages.command.domain.aggregate.AutomaticEventType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,9 +32,11 @@ public class CustomerCommandServiceImpl implements CustomerCommandService {
 
   @Override
   public CustomerCommandResponse createCustomer(CreateCustomerRequest request) {
+    Long currentShopId = getCurrentShopId();
+
     Customer customer =
         Customer.builder()
-            .shopId(request.shopId())
+            .shopId(currentShopId)
             .customerName(request.customerName())
             .phoneNumber(request.phoneNumber())
             .gender(request.gender())
@@ -53,8 +57,7 @@ public class CustomerCommandServiceImpl implements CustomerCommandService {
           .tags()
           .forEach(
               tagId ->
-                  customerTagService.addTagToCustomer(
-                      savedCustomer.getId(), tagId, request.shopId()));
+                  customerTagService.addTagToCustomer(savedCustomer.getId(), tagId, currentShopId));
     }
 
     log.info(
@@ -78,6 +81,23 @@ public class CustomerCommandServiceImpl implements CustomerCommandService {
         request.memo(),
         request.gender(),
         request.channelId());
+
+    // 추가 필드 업데이트
+    if (request.staffId() != null) {
+      customer.updateStaff(request.staffId());
+    }
+    if (request.customerGradeId() != null) {
+      customer.updateGrade(request.customerGradeId());
+    }
+    if (request.birthdate() != null) {
+      customer.updateBirthdate(request.birthdate());
+    }
+    if (request.marketingConsent() != null) {
+      customer.updateMarketingConsent(request.marketingConsent());
+    }
+    if (request.notificationConsent() != null) {
+      customer.updateNotificationConsent(request.notificationConsent());
+    }
 
     Customer updatedCustomer = customerRepository.save(customer);
 
@@ -160,8 +180,10 @@ public class CustomerCommandServiceImpl implements CustomerCommandService {
     return CustomerCommandResponse.from(updatedCustomer);
   }
 
-  // TODO: 실제 구현에서는 SecurityContext에서 shopId 가져오기
+  // SecurityContext에서 현재 사용자의 shopId 가져오기
   private Long getCurrentShopId() {
-    return 1L; // 임시값
+    CustomUser user =
+        (CustomUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+    return user.getShopId();
   }
 }
