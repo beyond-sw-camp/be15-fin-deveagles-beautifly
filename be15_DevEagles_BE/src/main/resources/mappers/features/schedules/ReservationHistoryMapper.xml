@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.deveagles.be15_deveagles_be.features.schedules.query.mapper.ReservationHistoryMapper">
+
+    <select id="getReservationHistoryList"
+            resultType="com.deveagles.be15_deveagles_be.features.schedules.query.dto.response.ReservationHistoryResponse">
+        SELECT
+            r.reservation_id AS reservationId,
+            c.customer_name AS customerName,
+            GROUP_CONCAT(si.secondary_item_name SEPARATOR ', ') AS itemNames,
+            s.staff_name AS staffName,
+            r.reservation_start_at AS reservationStartAt,
+            CASE
+                WHEN r.deleted_at IS NOT NULL THEN '삭제'
+                WHEN r.created_at = r.modified_at THEN '등록'
+                ELSE '수정'
+                END AS historyType,
+            CASE
+                WHEN r.deleted_at IS NOT NULL THEN r.deleted_at
+                ELSE r.modified_at
+                END AS historyAt
+        FROM reservation r
+                 LEFT JOIN reservation_detail d ON r.reservation_id = d.reservation_id
+                 LEFT JOIN secondary_item si ON d.secondary_item_id = si.secondary_item_id
+                 LEFT JOIN customer c ON r.customer_id = c.customer_id
+                 LEFT JOIN staff s ON r.staff_id = s.staff_id
+        WHERE r.shop_id = #{shopId}
+        GROUP BY r.reservation_id
+        ORDER BY historyAt DESC
+            LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countReservationHistories" resultType="long">
+        SELECT COUNT(DISTINCT r.reservation_id)
+        FROM reservation r
+        WHERE r.shop_id = #{shopId}
+    </select>
+
+</mapper>
