@@ -696,6 +696,8 @@
 </script>
 
 <style scoped>
+  @import '@/assets/css/styleguide.css';
+
   .header {
     display: flex;
     align-items: center;
@@ -880,7 +882,7 @@
     top: -4px;
     right: -4px;
     background-color: var(--color-warning-300);
-    color: white;
+    color: var(--color-neutral-white);
     font-size: 10px;
     font-weight: bold;
     padding: 2px 5px;
