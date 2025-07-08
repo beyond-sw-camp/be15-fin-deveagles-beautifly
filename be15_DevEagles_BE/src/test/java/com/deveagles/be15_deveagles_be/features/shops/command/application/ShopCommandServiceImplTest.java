@@ -2,11 +2,14 @@ package com.deveagles.be15_deveagles_be.features.shops.command.application;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.verify;
 
 import com.deveagles.be15_deveagles_be.common.exception.BusinessException;
 import com.deveagles.be15_deveagles_be.common.exception.ErrorCode;
 import com.deveagles.be15_deveagles_be.features.schedules.command.application.service.ReservationSettingInitializer;
+import com.deveagles.be15_deveagles_be.features.shops.command.application.dto.request.PutShopRequest;
 import com.deveagles.be15_deveagles_be.features.shops.command.application.dto.request.ShopCreateRequest;
+import com.deveagles.be15_deveagles_be.features.shops.command.application.dto.request.SnsRequest;
 import com.deveagles.be15_deveagles_be.features.shops.command.application.dto.request.ValidBizNumberRequest;
 import com.deveagles.be15_deveagles_be.features.shops.command.application.dto.response.GetShopResponse;
 import com.deveagles.be15_deveagles_be.features.shops.command.application.service.IndustryRepository;
@@ -17,6 +20,7 @@ import com.deveagles.be15_deveagles_be.features.shops.command.domain.aggregate.S
 import com.deveagles.be15_deveagles_be.features.shops.command.domain.aggregate.Shop;
 import com.deveagles.be15_deveagles_be.features.shops.command.repository.ShopRepository;
 import com.deveagles.be15_deveagles_be.features.shops.command.repository.SnsRepository;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -85,7 +89,7 @@ public class ShopCommandServiceImplTest {
     assertEquals("1234567890", result.getBusinessNumber());
     assertEquals("프리미엄 헤어샵", result.getShopDescription());
 
-    Mockito.verify(reservationSettingInitializer).initDefault(1L);
+    verify(reservationSettingInitializer).initDefault(1L);
   }
 
   @Test
@@ -131,7 +135,7 @@ public class ShopCommandServiceImplTest {
 
     // then
     assertEquals(ownerId, shop.getOwnerId());
-    Mockito.verify(shopRepository).save(shop);
+    verify(shopRepository).save(shop);
   }
 
   @Test
@@ -196,5 +200,76 @@ public class ShopCommandServiceImplTest {
     assertThat(response.getAddress()).isEqualTo("서울시 강남구");
     assertThat(response.getIndustryList()).hasSize(2);
     assertThat(response.getSnsList()).hasSize(2);
+  }
+
+  @Test
+  void putShop_변경사항_있을_때() {
+    // given
+    Long shopId = 1L;
+    Shop existingShop =
+        Shop.builder()
+            .shopId(shopId)
+            .shopName("기존이름")
+            .address("기존주소")
+            .detailAddress("기존상세주소")
+            .industryId(1L)
+            .phoneNumber("01011112222")
+            .businessNumber("1234567890")
+            .build();
+
+    PutShopRequest request =
+        new PutShopRequest(
+            "새이름",
+            "새주소",
+            "새상세주소",
+            2L,
+            "01099998888",
+            "9998877777",
+            List.of(new SnsRequest(10L, "INSTA", "https://insta.com/newshop")));
+
+    SNS existingSns = SNS.builder().snsId(10L).shopId(shopId).build();
+
+    // when
+    Mockito.when(shopRepository.findByShopId(shopId)).thenReturn(Optional.of(existingShop));
+    Mockito.when(snsRepository.findBySnsIdIn(List.of(10L))).thenReturn(List.of(existingSns));
+
+    shopCommandService.putShop(shopId, request);
+
+    // then
+    verify(shopRepository).save(existingShop);
+    verify(snsRepository).findBySnsIdIn(List.of(10L));
+    verify(snsRepository).save(existingSns);
+
+    assertThat(existingShop.getShopName()).isEqualTo("새이름");
+    assertThat(existingShop.getPhoneNumber()).isEqualTo("01099998888");
+  }
+
+  @Test
+  void putShop_snsList_비어있을때() {
+    // given
+    Long shopId = 1L;
+    Shop shop =
+        Shop.builder()
+            .shopId(shopId)
+            .shopName("이름")
+            .address("주소")
+            .detailAddress("상세주소")
+            .industryId(1L)
+            .phoneNumber("010-0000-0000")
+            .businessNumber("000-00-00000")
+            .build();
+
+    PutShopRequest request =
+        new PutShopRequest(
+            "이름", "주소", "상세주소", 1L, "01000000000", "0000000000", Collections.emptyList());
+
+    // when
+    Mockito.when(shopRepository.findByShopId(shopId)).thenReturn(Optional.of(shop));
+
+    shopCommandService.putShop(shopId, request);
+
+    // then
+    verify(shopRepository).save(shop);
+    verify(snsRepository).deleteByShopId(shopId);
   }
 }

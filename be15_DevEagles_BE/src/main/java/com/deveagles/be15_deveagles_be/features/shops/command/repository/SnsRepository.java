@@ -6,4 +6,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface SnsRepository extends JpaRepository<SNS, Long> {
   List<SNS> findByShopId(Long shopId);
+
+  List<SNS> findBySnsIdIn(List<Long> existingSnsIds);
+
+  void deleteByShopId(Long shopId);
 }

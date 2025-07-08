@@ -58,3 +58,5 @@ export const validBizNumber = params => api.post(`/shops/valid-biz`, params);
 export const getIndustry = () => api.get(`/shops/get-industry`);
 
 export const getShop = () => api.get(`/shops`);
+
+export const putShop = params => api.put(`/shops`, params);
