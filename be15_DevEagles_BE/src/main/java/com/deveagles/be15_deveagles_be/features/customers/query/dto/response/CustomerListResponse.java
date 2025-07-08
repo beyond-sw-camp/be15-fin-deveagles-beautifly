@@ -4,10 +4,12 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.AllArgsConstructor;
 
 @Getter
 @Setter
@@ -23,17 +25,13 @@ public class CustomerListResponse {
   private LocalDate recentVisitDate;
   private LocalDate birthdate;
   private String gender;
-  private Long customerGradeId;
-  private String customerGradeName;
-  private int discountRate;
-  private Long staffId;
-  private String staffName;
-  private Long acquisitionChannelId;
-  private String acquisitionChannelName;
   private Integer remainingPrepaidAmount;
   private int noshowCount;
   private LocalDateTime createdAt;
   private final List<TagInfo> tags = new ArrayList<>();
+  private StaffInfo staff;
+  private CustomerGradeInfo customerGrade;
+  private AcquisitionChannelInfo acquisitionChannel;
 
   public CustomerListResponse(
       Long customerId,
@@ -45,10 +43,39 @@ public class CustomerListResponse {
       LocalDate recentVisitDate,
       LocalDate birthdate,
       String gender,
+      Integer remainingPrepaidAmount,
+      int noshowCount,
+      LocalDateTime createdAt) {
+    this.customerId = customerId;
+    this.customerName = customerName;
+    this.phoneNumber = phoneNumber;
+    this.memo = memo;
+    this.visitCount = visitCount;
+    this.totalRevenue = totalRevenue;
+    this.recentVisitDate = recentVisitDate;
+    this.birthdate = birthdate;
+    this.gender = gender;
+    this.remainingPrepaidAmount = remainingPrepaidAmount;
+    this.noshowCount = noshowCount;
+    this.createdAt = createdAt;
+  }
+
+  public CustomerListResponse(
+      Long customerId,
+      String customerName,
+      String phoneNumber,
+      String memo,
+      int visitCount,
+      int totalRevenue,
+      LocalDate recentVisitDate,
+      LocalDate birthdate,
+      String gender,
+      Long customerGradeId,
       String customerGradeName,
-      int discountRate,
+      Integer discountRate,
       Long staffId,
       String staffName,
+      Long acquisitionChannelId,
       String acquisitionChannelName,
       Integer remainingPrepaidAmount,
       int noshowCount,
@@ -62,11 +89,19 @@ public class CustomerListResponse {
     this.recentVisitDate = recentVisitDate;
     this.birthdate = birthdate;
     this.gender = gender;
-    this.customerGradeName = customerGradeName;
-    this.discountRate = discountRate;
-    this.staffId = staffId;
-    this.staffName = staffName;
-    this.acquisitionChannelName = acquisitionChannelName;
+    this.staff = StaffInfo.builder()
+        .staffId(staffId)
+        .staffName(staffName)
+        .build();
+    this.customerGrade = CustomerGradeInfo.builder()
+        .customerGradeId(customerGradeId)
+        .customerGradeName(customerGradeName)
+        .discountRate(discountRate)
+        .build();
+    this.acquisitionChannel = AcquisitionChannelInfo.builder()
+        .acquisitionChannelId(acquisitionChannelId)
+        .acquisitionChannelName(acquisitionChannelName)
+        .build();
     this.remainingPrepaidAmount = remainingPrepaidAmount;
     this.noshowCount = noshowCount;
     this.createdAt = createdAt;
@@ -85,5 +120,33 @@ public class CustomerListResponse {
       this.tagName = tagName;
       this.colorCode = colorCode;
     }
+  }
+
+  @Getter
+  @NoArgsConstructor
+  @AllArgsConstructor
+  @Builder
+  public static class StaffInfo {
+    private Long staffId;
+    private String staffName;
+  }
+
+  @Getter
+  @NoArgsConstructor
+  @AllArgsConstructor
+  @Builder
+  public static class CustomerGradeInfo {
+    private Long customerGradeId;
+    private String customerGradeName;
+    private Integer discountRate;
+  }
+
+  @Getter
+  @NoArgsConstructor
+  @AllArgsConstructor
+  @Builder
+  public static class AcquisitionChannelInfo {
+    private Long acquisitionChannelId;
+    private String acquisitionChannelName;
   }
 }

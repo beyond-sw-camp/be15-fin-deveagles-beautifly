@@ -6,7 +6,6 @@ import java.util.List;
 
 public record CreateCustomerRequest(
     Long customerGradeId,
-    Long shopId,
     Long staffId,
     String customerName,
     String phoneNumber,
