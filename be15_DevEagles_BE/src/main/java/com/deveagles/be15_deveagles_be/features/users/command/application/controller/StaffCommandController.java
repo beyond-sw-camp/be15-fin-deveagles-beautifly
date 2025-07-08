@@ -13,7 +13,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -26,7 +25,6 @@ public class StaffCommandController {
 
   private final StaffCommandService staffCommandService;
 
-  @Transactional
   @PostMapping()
   public ResponseEntity<ApiResponse<Void>> staffCreate(
       @AuthenticationPrincipal CustomUser customUser,
@@ -38,7 +36,6 @@ public class StaffCommandController {
     return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(null));
   }
 
-  @Transactional
   @GetMapping("/{staffId}")
   public ResponseEntity<ApiResponse<StaffInfoResponse>> getStaffDetail(
       @AuthenticationPrincipal CustomUser customUser, @PathVariable Long staffId) {
@@ -48,7 +45,6 @@ public class StaffCommandController {
     return ResponseEntity.ok().body(ApiResponse.success(response));
   }
 
-  @Transactional
   @PostMapping("/{staffId}")
   public ResponseEntity<ApiResponse<Void>> putStaffDetail(
       @AuthenticationPrincipal CustomUser customUser,

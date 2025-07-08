@@ -14,7 +14,7 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 @RequiredArgsConstructor
-public class StaffRepositoryImpl implements StaffQueryRepository {
+public class StaffQueryRepositoryImpl implements StaffQueryRepository {
 
   private final JPAQueryFactory queryFactory;
 
