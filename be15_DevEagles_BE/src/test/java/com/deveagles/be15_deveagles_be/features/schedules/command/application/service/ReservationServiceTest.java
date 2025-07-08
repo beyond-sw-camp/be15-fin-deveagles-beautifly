@@ -57,11 +57,12 @@ class ReservationServiceTest {
   }
 
   @Test
-  @DisplayName("기존 고객이 존재할 경우 - 고객 ID 사용 및 이벤트 발행")
+  @DisplayName("기존 고객이 존재할 경우 - 고객 ID 사용")
   void createReservationWithExistingCustomer() {
     // given
     CreateReservationRequest request = buildRequest();
 
+    // customerQueryService가 반환할 DTO
     CustomerIdResponse customerIdResponse = new CustomerIdResponse(99L);
 
     when(customerQueryService.findCustomerIdByPhoneNumber("01012345678", 1L))
@@ -86,7 +87,7 @@ class ReservationServiceTest {
   }
 
   @Test
-  @DisplayName("고객이 없을 경우 - 임시 고객 메모 생성 및 이벤트 발행")
+  @DisplayName("고객이 없을 경우 - 임시 고객 메모 생성")
   void createReservationWithNewCustomer() {
     // given
     CreateReservationRequest request = buildRequest();
@@ -188,7 +189,10 @@ class ReservationServiceTest {
     Long reservationId = 1L;
 
     Reservation reservation =
-        Reservation.builder().reservationId(reservationId).shopId(999L).build();
+        Reservation.builder()
+            .reservationId(reservationId)
+            .shopId(999L) // 실제 매장 ID
+            .build();
 
     when(reservationRepository.findById(reservationId)).thenReturn(Optional.of(reservation));
 
@@ -199,7 +203,7 @@ class ReservationServiceTest {
     // then
     assertThatThrownBy(() -> reservationService.updateReservation(1L, reservationId, request))
         .isInstanceOf(BusinessException.class)
-        .hasMessageContaining("예약을 찾을 수 없습니다");
+        .hasMessageContaining("예약을 찾을 수 없습니다"); // ErrorCode.RESERVATION_NOT_FOUND 메시지 기준
   }
 
   @Test
@@ -243,6 +247,6 @@ class ReservationServiceTest {
                 reservationService.changeReservationStatus(
                     1L, reservationId, ReservationStatusName.CONFIRMED))
         .isInstanceOf(BusinessException.class)
-        .hasMessageContaining("PAID 상태의 예약은 수정할 수 없습니다");
+        .hasMessageContaining("PAID 상태의 예약은 수정할 수 없습니다"); // MODIFY_NOT_ALLOWED_FOR_PAID_RESERVATION
   }
 }
