@@ -3,6 +3,7 @@ package com.deveagles.be15_deveagles_be.features.schedules.command.application.s
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+import com.deveagles.be15_deveagles_be.common.events.ReservationCreatedEvent;
 import com.deveagles.be15_deveagles_be.common.exception.BusinessException;
 import com.deveagles.be15_deveagles_be.features.customers.query.dto.response.CustomerIdResponse;
 import com.deveagles.be15_deveagles_be.features.customers.query.service.CustomerQueryService;
@@ -21,6 +22,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.*;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.test.util.ReflectionTestUtils;
 
 class ReservationServiceTest {
@@ -30,6 +32,8 @@ class ReservationServiceTest {
   @Mock private ReservationDetailRepository reservationDetailRepository;
 
   @Mock private CustomerQueryService customerQueryService;
+
+  @Mock private ApplicationEventPublisher eventPublisher;
 
   @InjectMocks private ReservationService reservationService;
 
@@ -53,12 +57,11 @@ class ReservationServiceTest {
   }
 
   @Test
-  @DisplayName("기존 고객이 존재할 경우 - 고객 ID 사용")
+  @DisplayName("기존 고객이 존재할 경우 - 고객 ID 사용 및 이벤트 발행")
   void createReservationWithExistingCustomer() {
     // given
     CreateReservationRequest request = buildRequest();
 
-    // customerQueryService가 반환할 DTO
     CustomerIdResponse customerIdResponse = new CustomerIdResponse(99L);
 
     when(customerQueryService.findCustomerIdByPhoneNumber("01012345678", 1L))
@@ -79,10 +82,11 @@ class ReservationServiceTest {
     assertThat(resultId).isEqualTo(123L);
     verify(reservationRepository).save(any(Reservation.class));
     verify(reservationDetailRepository, times(2)).save(any(ReservationDetail.class));
+    verify(eventPublisher).publishEvent(any(ReservationCreatedEvent.class));
   }
 
   @Test
-  @DisplayName("고객이 없을 경우 - 임시 고객 메모 생성")
+  @DisplayName("고객이 없을 경우 - 임시 고객 메모 생성 및 이벤트 발행")
   void createReservationWithNewCustomer() {
     // given
     CreateReservationRequest request = buildRequest();
@@ -105,6 +109,7 @@ class ReservationServiceTest {
     assertThat(resultId).isEqualTo(456L);
     verify(reservationRepository).save(any(Reservation.class));
     verify(reservationDetailRepository, times(2)).save(any(ReservationDetail.class));
+    verify(eventPublisher).publishEvent(any(ReservationCreatedEvent.class));
   }
 
   @Test
@@ -183,10 +188,7 @@ class ReservationServiceTest {
     Long reservationId = 1L;
 
     Reservation reservation =
-        Reservation.builder()
-            .reservationId(reservationId)
-            .shopId(999L) // 실제 매장 ID
-            .build();
+        Reservation.builder().reservationId(reservationId).shopId(999L).build();
 
     when(reservationRepository.findById(reservationId)).thenReturn(Optional.of(reservation));
 
@@ -197,7 +199,7 @@ class ReservationServiceTest {
     // then
     assertThatThrownBy(() -> reservationService.updateReservation(1L, reservationId, request))
         .isInstanceOf(BusinessException.class)
-        .hasMessageContaining("예약을 찾을 수 없습니다"); // ErrorCode.RESERVATION_NOT_FOUND 메시지 기준
+        .hasMessageContaining("예약을 찾을 수 없습니다");
   }
 
   @Test
@@ -241,6 +243,6 @@ class ReservationServiceTest {
                 reservationService.changeReservationStatus(
                     1L, reservationId, ReservationStatusName.CONFIRMED))
         .isInstanceOf(BusinessException.class)
-        .hasMessageContaining("PAID 상태의 예약은 수정할 수 없습니다"); // MODIFY_NOT_ALLOWED_FOR_PAID_RESERVATION
+        .hasMessageContaining("PAID 상태의 예약은 수정할 수 없습니다");
   }
 }
