@@ -25,11 +25,6 @@ public class CustomerCommandServiceImpl implements CustomerCommandService {
 
   @Override
   public CustomerCommandResponse createCustomer(CreateCustomerRequest request) {
-    // 중복 전화번호 검증
-    if (customerRepository.existsByPhoneNumberAndShopId(request.phoneNumber(), request.shopId())) {
-      throw new BusinessException(ErrorCode.CUSTOMER_PHONE_DUPLICATE);
-    }
-
     Customer customer =
         Customer.builder()
             .customerGradeId(request.customerGradeId())
@@ -44,6 +39,10 @@ public class CustomerCommandServiceImpl implements CustomerCommandService {
             .notificationConsent(request.notificationConsent())
             .channelId(request.channelId())
             .build();
+
+    if (Boolean.TRUE.equals(request.marketingConsent())) {
+      customer.updateMarketingConsent(true);
+    }
 
     Customer savedCustomer = customerRepository.save(customer);
 
@@ -93,6 +92,9 @@ public class CustomerCommandServiceImpl implements CustomerCommandService {
     customer.softDelete();
     customerRepository.save(customer);
     log.info("고객 삭제됨: ID={}, 매장ID={}", customerId, shopId);
+
+    // Elasticsearch 동기화
+    customerQueryService.syncCustomerToElasticsearch(customerId);
   }
 
   @Override
