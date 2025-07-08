@@ -39,4 +39,14 @@ public interface CustomerMembershipMapper {
 
   long countExpiringSessionPassCustomers(
       Long shopId, CustomerExpiringSessionPassFilterRequest request);
+
+  // 고객 선불권 상세 조회
+  List<CustomerPrepaidPassDetailInfo> findPrepaidPassDetailsByCustomerId(Long customerId);
+
+  // 고객 횟수권 상세 조회
+  List<CustomerSessionPassDetailInfo> findSessionPassDetailsByCustomerId(Long customerId);
+
+  List<CustomerPrepaidPassDetailInfo> findExpiredOrUsedUpPrepaidPasses(Long customerId);
+
+  List<CustomerSessionPassDetailInfo> findExpiredOrUsedUpSessionPasses(Long customerId);
 }

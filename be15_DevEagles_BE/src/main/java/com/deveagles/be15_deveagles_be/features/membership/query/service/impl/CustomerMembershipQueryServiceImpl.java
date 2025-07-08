@@ -2,9 +2,7 @@ package com.deveagles.be15_deveagles_be.features.membership.query.service.impl;
 
 import com.deveagles.be15_deveagles_be.common.dto.Pagination;
 import com.deveagles.be15_deveagles_be.features.membership.query.dto.request.CustomerMemebershipFilterRequest;
-import com.deveagles.be15_deveagles_be.features.membership.query.dto.response.CustomerMembershipResponse;
-import com.deveagles.be15_deveagles_be.features.membership.query.dto.response.CustomerMembershipResult;
-import com.deveagles.be15_deveagles_be.features.membership.query.dto.response.SessionPassInfo;
+import com.deveagles.be15_deveagles_be.features.membership.query.dto.response.*;
 import com.deveagles.be15_deveagles_be.features.membership.query.mapper.CustomerMembershipMapper;
 import com.deveagles.be15_deveagles_be.features.membership.query.service.CustomerMembershipQueryService;
 import java.util.List;
@@ -67,5 +65,26 @@ public class CustomerMembershipQueryServiceImpl implements CustomerMembershipQue
             .build();
 
     return CustomerMembershipResult.builder().list(list).pagination(pagination).build();
+  }
+
+  @Override
+  public List<CustomerPrepaidPassDetailInfo> getPrepaidPassDetailsByCustomerId(Long customerId) {
+    return customerMembershipMapper.findPrepaidPassDetailsByCustomerId(customerId);
+  }
+
+  @Override
+  public List<CustomerSessionPassDetailInfo> getSessionPassDetailsByCustomerId(Long customerId) {
+    return customerMembershipMapper.findSessionPassDetailsByCustomerId(customerId);
+  }
+
+  @Override
+  public CustomerExpiringMembershipResult getExpiredOrUsedUpMemberships(Long customerId) {
+    List<CustomerPrepaidPassDetailInfo> prepaidList =
+        customerMembershipMapper.findExpiredOrUsedUpPrepaidPasses(customerId);
+
+    List<CustomerSessionPassDetailInfo> sessionList =
+        customerMembershipMapper.findExpiredOrUsedUpSessionPasses(customerId);
+
+    return CustomerExpiringMembershipResult.builder().Plist(prepaidList).SList(sessionList).build();
   }
 }

@@ -12,11 +12,16 @@
         c.customer_id,
         c.customer_name,
         c.phone_number,
-        SUM(cpp.remaining_amount) AS total_remaining_amount
+        SUM(CASE
+        WHEN cpp.expiration_date >= CURRENT_DATE
+        THEN cpp.remaining_amount
+        ELSE 0
+        END) AS total_remaining_amount
         FROM customer c
         JOIN customer_prepaid_pass cpp ON c.customer_id = cpp.customer_id
         WHERE c.shop_id = #{shopId}
         AND cpp.expiration_date IS NOT NULL
+        AND cpp.deleted_at IS NULL
         <if test="request.startDate != null">
             AND cpp.expiration_date &gt;= #{request.startDate}
         </if>
@@ -25,15 +30,15 @@
         </if>
         GROUP BY c.customer_id, c.customer_name, c.phone_number
         <if test="request.minRemainingAmount != null">
-            HAVING SUM(cpp.remaining_amount) &gt;= #{request.minRemainingAmount}
+            HAVING SUM(CASE WHEN cpp.expiration_date &gt;= CURRENT_DATE THEN cpp.remaining_amount ELSE 0 END) &gt;= #{request.minRemainingAmount}
         </if>
         <if test="request.maxRemainingAmount != null">
             <choose>
                 <when test="request.minRemainingAmount != null">
-                    AND SUM(cpp.remaining_amount) &lt;= #{request.maxRemainingAmount}
+                    AND SUM(CASE WHEN cpp.expiration_date &gt;= CURRENT_DATE THEN cpp.remaining_amount ELSE 0 END) &lt;= #{request.maxRemainingAmount}
                 </when>
                 <otherwise>
-                    HAVING SUM(cpp.remaining_amount) &lt;= #{request.maxRemainingAmount}
+                    HAVING SUM(CASE WHEN cpp.expiration_date &gt;= CURRENT_DATE THEN cpp.remaining_amount ELSE 0 END) &lt;= #{request.maxRemainingAmount}
                 </otherwise>
             </choose>
         </if>
@@ -49,6 +54,7 @@
         JOIN customer_prepaid_pass cpp ON c.customer_id = cpp.customer_id
         WHERE c.shop_id = #{shopId}
         AND cpp.expiration_date IS NOT NULL
+        AND cpp.deleted_at IS NULL
         <if test="request.startDate != null">
             AND cpp.expiration_date &gt;= #{request.startDate}
         </if>
@@ -57,21 +63,20 @@
         </if>
         GROUP BY c.customer_id
         <if test="request.minRemainingAmount != null">
-            HAVING SUM(cpp.remaining_amount) &gt;= #{request.minRemainingAmount}
+            HAVING SUM(CASE WHEN cpp.expiration_date &gt;= CURRENT_DATE THEN cpp.remaining_amount ELSE 0 END) &gt;= #{request.minRemainingAmount}
         </if>
         <if test="request.maxRemainingAmount != null">
             <choose>
                 <when test="request.minRemainingAmount != null">
-                    AND SUM(cpp.remaining_amount) &lt;= #{request.maxRemainingAmount}
+                    AND SUM(CASE WHEN cpp.expiration_date &gt;= CURRENT_DATE THEN cpp.remaining_amount ELSE 0 END) &lt;= #{request.maxRemainingAmount}
                 </when>
                 <otherwise>
-                    HAVING SUM(cpp.remaining_amount) &lt;= #{request.maxRemainingAmount}
+                    HAVING SUM(CASE WHEN cpp.expiration_date &gt;= CURRENT_DATE THEN cpp.remaining_amount ELSE 0 END) &lt;= #{request.maxRemainingAmount}
                 </otherwise>
             </choose>
         </if>
         ) AS filtered
     </select>
-
 
     <!-- 고객별 만료 예정 선불권 리스트 조회 -->
     <select id="findExpiringPrepaidPassesByCustomerId"
