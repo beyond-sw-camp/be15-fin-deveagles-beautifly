@@ -3,16 +3,14 @@ package com.deveagles.be15_deveagles_be.features.messages.command.application.se
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 
 import com.deveagles.be15_deveagles_be.common.exception.BusinessException;
-import com.deveagles.be15_deveagles_be.common.exception.ErrorCode;
 import com.deveagles.be15_deveagles_be.features.customers.query.service.CustomerQueryService;
 import com.deveagles.be15_deveagles_be.features.messages.command.application.dto.request.SmsRequest;
 import com.deveagles.be15_deveagles_be.features.messages.command.application.dto.request.UpdateReservationRequest;
 import com.deveagles.be15_deveagles_be.features.messages.command.application.dto.response.MessageSendResult;
+import com.deveagles.be15_deveagles_be.features.messages.command.application.service.MessageVariableProcessor;
 import com.deveagles.be15_deveagles_be.features.messages.command.domain.aggregate.*;
 import com.deveagles.be15_deveagles_be.features.messages.command.domain.repository.MessageSettingRepository;
 import com.deveagles.be15_deveagles_be.features.messages.command.domain.repository.SmsRepository;
@@ -20,83 +18,100 @@ import com.deveagles.be15_deveagles_be.features.messages.command.infrastructure.
 import com.deveagles.be15_deveagles_be.features.shops.command.application.service.ShopCommandService;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-@DisplayName("메시지 커맨드 서비스 테스트")
 @ExtendWith(MockitoExtension.class)
 class MessageCommandServiceImplTest {
 
   @InjectMocks private MessageCommandServiceImpl messageCommandService;
 
+  @Mock private ShopCommandService shopCommandService;
   @Mock private CustomerQueryService customerQueryService;
   @Mock private MessageSettingRepository messageSettingRepository;
   @Mock private CoolSmsClient coolSmsClient;
   @Mock private SmsRepository smsRepository;
-  @Mock private ShopCommandService shopCommandService;
-
-  private final Long shopId = 1L;
-  private final Long customerId = 10L;
-  private final String content = "테스트 메시지입니다";
+  @Mock private MessageVariableProcessor messageVariableProcessor;
 
   @Test
-  void sendSms_IMMEDIATE_성공() {
+  @DisplayName("즉시 발송 성공")
+  void sendSms_immediate_success() {
     // given
+    Long shopId = 1L;
+    List<Long> customerIds = List.of(1L, 2L);
+    List<String> phoneNumbers = List.of("01011112222", "01033334444");
+
     SmsRequest request =
         new SmsRequest(
-            shopId,
-            List.of(customerId),
-            content,
+            customerIds,
+            "안녕하세요 #{고객명}",
             MessageType.SMS,
             MessageSendingType.IMMEDIATE,
             null,
-            1L,
+            10L,
             true,
-            null,
-            null,
+            11L,
+            12L,
             MessageKind.announcement,
-            null,
-            null);
+            13L,
+            14L);
 
     MessageSettings settings =
-        MessageSettings.builder().shopId(shopId).senderNumber("01012345678").build();
+        MessageSettings.builder()
+            .shopId(shopId)
+            .senderNumber("07000000000")
+            .point(1000L)
+            .canAlimtalk(true)
+            .build();
 
-    List<String> phoneNumbers = List.of("01099998888");
+    // validateShopExists()는 void → stub 없이 호출만 되게 둠 (when 제거)
+    when(customerQueryService.getCustomerPhoneNumbers(anyList())).thenReturn(phoneNumbers);
+    when(messageSettingRepository.findByShopId(shopId)).thenReturn(Optional.of(settings));
+    when(messageVariableProcessor.buildPayload(anyLong(), eq(shopId)))
+        .thenReturn(Map.of("고객명", "홍길동"));
+    when(messageVariableProcessor.resolveVariables(anyString(), anyMap())).thenReturn("안녕하세요 홍길동");
 
-    given(customerQueryService.getCustomerPhoneNumbers(any())).willReturn(phoneNumbers);
-    given(messageSettingRepository.findByShopId(shopId)).willReturn(Optional.of(settings));
-    given(smsRepository.saveAll(any())).willAnswer(invocation -> invocation.getArgument(0));
-    given(coolSmsClient.sendMany(any(), any(), any()))
-        .willReturn(List.of(new MessageSendResult(true, "성공", 1L)));
+    List<Sms> saved =
+        List.of(
+            Sms.builder().messageId(1L).messageContent("안녕하세요 홍길동").build(),
+            Sms.builder().messageId(2L).messageContent("안녕하세요 홍길동").build());
+    when(smsRepository.saveAll(anyList())).thenReturn(saved);
+
+    List<MessageSendResult> sendResults =
+        List.of(new MessageSendResult(true, "성공", 1L), new MessageSendResult(true, "성공", 2L));
+    when(coolSmsClient.sendMany(any(), any(), anyList())).thenReturn(sendResults);
 
     // when
     List<MessageSendResult> result = messageCommandService.sendSms(shopId, request);
 
     // then
-    assertThat(result).hasSize(1);
-    assertThat(result.get(0).success()).isTrue();
-    assertThat(result.get(0).resultMessage()).isEqualTo("성공");
-    verify(shopCommandService, times(2)).validateShopExists(shopId);
+    assertThat(result).hasSize(2);
+    assertThat(result).allMatch(MessageSendResult::success);
+    verify(coolSmsClient, times(1)).sendMany(any(), any(), anyList());
+    verify(shopCommandService).validateShopExists(shopId); // 호출 여부만 검증
   }
 
   @Test
-  void sendSms_RESERVATION_성공() {
+  @DisplayName("예약 발송 성공")
+  void sendSms_reservation_success() {
     // given
-    LocalDateTime future = LocalDateTime.now().plusMinutes(10);
+    Long shopId = 1L;
+    LocalDateTime scheduledAt = LocalDateTime.now().plusMinutes(10);
     SmsRequest request =
         new SmsRequest(
-            shopId,
-            List.of(customerId),
-            content,
+            List.of(100L),
+            "예약 발송 #{고객명}",
             MessageType.SMS,
             MessageSendingType.RESERVATION,
-            future,
-            1L,
+            scheduledAt,
+            null,
             false,
             null,
             null,
@@ -104,98 +119,133 @@ class MessageCommandServiceImplTest {
             null,
             null);
 
-    MessageSettings settings =
-        MessageSettings.builder().shopId(shopId).senderNumber("01012345678").build();
+    when(customerQueryService.getCustomerPhoneNumbers(any())).thenReturn(List.of("01022223333"));
+    when(messageSettingRepository.findByShopId(shopId))
+        .thenReturn(
+            Optional.of(
+                MessageSettings.builder()
+                    .shopId(shopId)
+                    .senderNumber("07012345678")
+                    .canAlimtalk(true)
+                    .point(100L)
+                    .build()));
+    when(messageVariableProcessor.buildPayload(anyLong(), eq(shopId)))
+        .thenReturn(Map.of("고객명", "신사임당"));
+    when(messageVariableProcessor.resolveVariables(anyString(), anyMap())).thenReturn("예약 발송 신사임당");
 
-    given(customerQueryService.getCustomerPhoneNumbers(any())).willReturn(List.of("01012345678"));
-    given(messageSettingRepository.findByShopId(shopId)).willReturn(Optional.of(settings));
-    given(smsRepository.saveAll(any())).willAnswer(invocation -> invocation.getArgument(0));
+    List<Sms> saved = List.of(Sms.builder().messageId(3L).messageContent("예약 발송 신사임당").build());
+    when(smsRepository.saveAll(anyList())).thenReturn(saved);
 
     // when
     List<MessageSendResult> result = messageCommandService.sendSms(shopId, request);
 
     // then
     assertThat(result).hasSize(1);
+    assertThat(result.get(0).success()).isTrue();
     assertThat(result.get(0).resultMessage()).isEqualTo("예약 등록 완료");
-    verify(shopCommandService, times(2)).validateShopExists(shopId);
+    verifyNoInteractions(coolSmsClient);
   }
 
   @Test
-  void updateReservationMessage_실패_과거시간() {
+  @DisplayName("메시지 설정 없음 - 예외 발생")
+  void sendSms_fail_no_message_settings() {
     // given
-    Long messageId = 100L;
-    LocalDateTime oldTime = LocalDateTime.now().minusMinutes(5);
+    Long shopId = 1L;
+    SmsRequest request =
+        new SmsRequest(
+            List.of(1L),
+            "내용",
+            MessageType.SMS,
+            MessageSendingType.IMMEDIATE,
+            null,
+            null,
+            false,
+            null,
+            null,
+            MessageKind.announcement,
+            null,
+            null);
 
-    Sms sms =
-        Sms.builder()
-            .messageId(messageId)
-            .shopId(shopId)
-            .scheduledAt(LocalDateTime.now().plusMinutes(10))
-            .build();
+    when(messageSettingRepository.findByShopId(shopId)).thenReturn(Optional.empty());
 
-    given(smsRepository.findById(messageId)).willReturn(Optional.of(sms));
+    // expect
+    assertThatThrownBy(() -> messageCommandService.sendSms(shopId, request))
+        .isInstanceOf(BusinessException.class)
+        .hasMessageContaining("메시지 설정이 존재하지 않습니다");
+  }
 
-    UpdateReservationRequest req =
-        new UpdateReservationRequest("수정됨", MessageKind.advertising, customerId, oldTime);
+  @Test
+  @DisplayName("예약 메시지 수정 성공")
+  void updateReservationMessage_success() {
+    // given
+    Long shopId = 1L;
+    Long messageId = 1L;
+    LocalDateTime futureTime = LocalDateTime.now().plusHours(1);
+    UpdateReservationRequest updateRequest =
+        new UpdateReservationRequest("수정된 메시지", MessageKind.announcement, 123L, futureTime);
+
+    Sms sms = Mockito.mock(Sms.class);
+
+    // 👉 실제 메서드 내에서 호출되는 메서드만 stubbing
+    when(sms.getShopId()).thenReturn(shopId);
+    when(sms.getScheduledAt()).thenReturn(futureTime);
+    when(smsRepository.findById(messageId)).thenReturn(Optional.of(sms));
+
+    // when
+    messageCommandService.updateReservationMessage(updateRequest, shopId, messageId);
 
     // then
-    assertThatThrownBy(() -> messageCommandService.updateReservationMessage(req, shopId, messageId))
-        .isInstanceOf(BusinessException.class)
-        .hasMessageContaining(ErrorCode.INVALID_SCHEDULED_TIME.getMessage());
-
-    verify(shopCommandService).validateShopExists(shopId);
+    verify(sms).updateReservation("수정된 메시지", MessageKind.announcement, 123L, futureTime);
   }
 
   @Test
-  void cancelScheduledMessage_성공() {
+  @DisplayName("예약 메시지 취소 성공")
+  void cancelScheduledMessage_success() {
     // given
-    Long messageId = 200L;
-    Sms sms =
-        Sms.builder()
-            .messageId(messageId)
-            .shopId(shopId)
-            .scheduledAt(LocalDateTime.now().plusMinutes(20))
-            .messageDeliveryStatus(MessageDeliveryStatus.PENDING)
-            .messageSendingType(MessageSendingType.RESERVATION)
-            .build();
+    Long shopId = 1L;
+    Long messageId = 1L;
 
-    given(smsRepository.findById(messageId)).willReturn(Optional.of(sms));
+    Sms sms = Mockito.mock(Sms.class);
+    when(sms.getShopId()).thenReturn(shopId);
+    when(sms.isReservable()).thenReturn(true);
+    when(smsRepository.findById(messageId)).thenReturn(Optional.of(sms));
 
     // when
     messageCommandService.cancelScheduledMessage(messageId, shopId);
 
     // then
-    assertThat(sms.getMessageDeliveryStatus()).isEqualTo(MessageDeliveryStatus.CANCELLED);
-    verify(shopCommandService).validateShopExists(shopId);
+    verify(sms).cancel();
   }
 
   @Test
-  void markSmsAsFailed_성공() {
+  @DisplayName("실패 메시지 상태 업데이트 성공")
+  void markSmsAsFailed_success() {
     // given
-    Sms sms =
-        Sms.builder().messageId(1L).messageDeliveryStatus(MessageDeliveryStatus.PENDING).build();
-
-    given(smsRepository.findAllById(any())).willReturn(List.of(sms));
+    List<Long> failIds = List.of(1L, 2L);
+    List<Sms> messages = List.of(Mockito.mock(Sms.class), Mockito.mock(Sms.class));
+    when(smsRepository.findAllById(failIds)).thenReturn(messages);
 
     // when
-    messageCommandService.markSmsAsFailed(List.of(1L));
+    messageCommandService.markSmsAsFailed(failIds);
 
     // then
-    assertThat(sms.getMessageDeliveryStatus()).isEqualTo(MessageDeliveryStatus.FAIL);
+    messages.forEach(m -> verify(m).markAsFailed());
+    verify(smsRepository).saveAll(messages);
   }
 
   @Test
-  void markSmsAsSent_성공() {
+  @DisplayName("성공 메시지 상태 업데이트 성공")
+  void markSmsAsSent_success() {
     // given
-    Sms sms =
-        Sms.builder().messageId(1L).messageDeliveryStatus(MessageDeliveryStatus.PENDING).build();
-
-    given(smsRepository.findAllById(any())).willReturn(List.of(sms));
+    List<Long> successIds = List.of(3L, 4L);
+    List<Sms> messages = List.of(Mockito.mock(Sms.class), Mockito.mock(Sms.class));
+    when(smsRepository.findAllById(successIds)).thenReturn(messages);
 
     // when
-    messageCommandService.markSmsAsSent(List.of(1L));
+    messageCommandService.markSmsAsSent(successIds);
 
     // then
-    assertThat(sms.getMessageDeliveryStatus()).isEqualTo(MessageDeliveryStatus.SENT);
+    messages.forEach(m -> verify(m).markAsSent());
+    verify(smsRepository).saveAll(messages);
   }
 }

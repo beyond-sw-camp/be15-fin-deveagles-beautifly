@@ -1,8 +1,10 @@
 package com.deveagles.be15_deveagles_be.features.shops.command.application.controller;
 
 import com.deveagles.be15_deveagles_be.common.dto.ApiResponse;
+import com.deveagles.be15_deveagles_be.features.auth.command.application.model.CustomUser;
 import com.deveagles.be15_deveagles_be.features.shops.command.application.dto.request.ValidBizNumberRequest;
 import com.deveagles.be15_deveagles_be.features.shops.command.application.dto.response.GetIndustryResponse;
+import com.deveagles.be15_deveagles_be.features.shops.command.application.dto.response.GetShopResponse;
 import com.deveagles.be15_deveagles_be.features.shops.command.application.service.ShopCommandService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -10,6 +12,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 @Slf4j
@@ -21,6 +25,7 @@ public class ShopCommandController {
 
   private final ShopCommandService shopCommandService;
 
+  @Transactional
   @PostMapping("/valid-biz")
   public ResponseEntity<ApiResponse<Boolean>> validLoginId(
       @RequestBody @Valid ValidBizNumberRequest validRequest) {
@@ -30,10 +35,21 @@ public class ShopCommandController {
     return ResponseEntity.status(HttpStatus.OK).body(ApiResponse.success(is_valid));
   }
 
+  @Transactional
   @GetMapping("/get-industry")
   public ResponseEntity<ApiResponse<GetIndustryResponse>> getIndustry() {
 
     GetIndustryResponse response = shopCommandService.getIndustry();
+
+    return ResponseEntity.ok().body(ApiResponse.success(response));
+  }
+
+  @Transactional
+  @GetMapping()
+  public ResponseEntity<ApiResponse<GetShopResponse>> getShop(
+      @AuthenticationPrincipal CustomUser customUser) {
+
+    GetShopResponse response = shopCommandService.getShop(customUser.getShopId());
 
     return ResponseEntity.ok().body(ApiResponse.success(response));
   }

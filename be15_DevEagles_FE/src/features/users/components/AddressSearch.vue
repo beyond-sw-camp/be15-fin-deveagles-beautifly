@@ -33,9 +33,18 @@
   const props = defineProps({
     address: String,
     detailAddress: String,
-    isRequired: Function,
-    errorAddress: String,
-    errorDetail: String,
+    isRequired: {
+      type: Function,
+      default: () => {},
+    },
+    errorAddress: {
+      type: String,
+      default: '',
+    },
+    errorDetail: {
+      type: String,
+      default: '',
+    },
   });
 
   const emit = defineEmits([
