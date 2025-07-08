@@ -1,7 +1,7 @@
 <template>
   <Teleport to="body">
     <div class="edit-modal-layer">
-      <BaseModal v-model="isVisible" title="회원권 수정">
+      <BaseModal v-model="isVisible" title="회원권 수정" :z-index="1500">
         <div class="edit-form">
           <!-- 조건부 필드: 선불권 -->
           <div v-if="type === 'PREPAID'" class="form-group">
@@ -15,7 +15,7 @@
           </div>
 
           <!-- 조건부 필드: 횟수권 -->
-          <div v-if="type === 'COUNT'" class="form-group">
+          <div v-if="type === 'SESSION'" class="form-group">
             <BaseForm
               v-model.number="remaining"
               label="잔여 횟수"
@@ -27,7 +27,12 @@
           <!-- 공통 필드: 만료일 -->
           <div class="form-group">
             <label>만료일</label>
-            <PrimeDatePicker v-model="expiry" placeholder="날짜 선택" append-to="body" />
+            <PrimeDatePicker
+              v-model="expiry"
+              placeholder="날짜 선택"
+              append-to="body"
+              :base-z-index="2000"
+            />
           </div>
         </div>
 
@@ -96,7 +101,7 @@
       remaining: remaining.value,
       expiry: expiry.value,
     });
-    emit('updated'); // ✅ 부모에게 알림
+    emit('updated');
     isVisible.value = false;
   };
 </script>
@@ -105,7 +110,7 @@
   .edit-modal-layer {
     position: fixed;
     inset: 0;
-    z-index: 11000;
+    z-index: 1100;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -129,15 +134,5 @@
     justify-content: flex-end;
     gap: 8px;
     padding: 0 1.5rem 1rem;
-  }
-</style>
-
-<style>
-  .modal-backdrop {
-    z-index: 11000;
-  }
-
-  .p-datepicker {
-    z-index: 99999 !important;
   }
 </style>
