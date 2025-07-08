@@ -8,12 +8,14 @@ import com.deveagles.be15_deveagles_be.features.users.query.application.service.
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @Slf4j
@@ -29,15 +31,19 @@ public class StaffQueryController {
   @GetMapping()
   public ResponseEntity<ApiResponse<StaffsListResponse>> getStaff(
       @AuthenticationPrincipal CustomUser customUser,
-      @ModelAttribute GetStaffsListRequest request) {
+      @ModelAttribute GetStaffsListRequest request,
+      @RequestParam(value = "shopId", required = false) Long shopId) {
+
+    Long targetShopId = customUser != null ? customUser.getShopId() : shopId;
+
+    if (targetShopId == null) {
+      return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+          .body(ApiResponse.failure("UNAUTHORIZED", "로그인이 필요합니다."));
+    }
 
     StaffsListResponse response =
         staffQueryService.getStaff(
-            customUser.getShopId(),
-            request.size(),
-            request.page(),
-            request.keyword(),
-            request.isActive());
+            targetShopId, request.size(), request.page(), request.keyword(), request.isActive());
 
     return ResponseEntity.ok().body(ApiResponse.success(response));
   }
