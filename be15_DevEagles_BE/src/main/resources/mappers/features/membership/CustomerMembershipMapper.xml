@@ -158,8 +158,12 @@
     </select>
 
     <!-- session_passes 는 따로 조회 -->
-    <select id="findSessionPassesByCustomerId" resultType="com.deveagles.be15_deveagles_be.features.membership.query.dto.response.SessionPassInfo">
-        SELECT DISTINCT sp.session_pass_name AS sessionPassName
+    <select id="findSessionPassesByCustomerId"
+            resultType="com.deveagles.be15_deveagles_be.features.membership.query.dto.response.SessionPassInfo">
+        SELECT DISTINCT
+            sp.session_pass_name AS sessionPassName,
+            csp.remaining_count AS remainingCount,
+            csp.expiration_date AS expirationDate
         FROM customer_session_pass csp
                  JOIN session_pass sp ON csp.session_pass_id = sp.session_pass_id
         WHERE csp.customer_id = #{customerId}

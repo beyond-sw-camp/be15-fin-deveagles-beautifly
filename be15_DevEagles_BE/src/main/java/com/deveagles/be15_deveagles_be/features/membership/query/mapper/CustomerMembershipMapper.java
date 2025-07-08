@@ -1,8 +1,9 @@
 package com.deveagles.be15_deveagles_be.features.membership.query.mapper;
 
+import com.deveagles.be15_deveagles_be.features.membership.query.dto.request.CustomerExpiringPrepaidPassFilterRequest;
+import com.deveagles.be15_deveagles_be.features.membership.query.dto.request.CustomerExpiringSessionPassFilterRequest;
 import com.deveagles.be15_deveagles_be.features.membership.query.dto.request.CustomerMemebershipFilterRequest;
-import com.deveagles.be15_deveagles_be.features.membership.query.dto.response.CustomerMembershipResponse;
-import com.deveagles.be15_deveagles_be.features.membership.query.dto.response.SessionPassInfo;
+import com.deveagles.be15_deveagles_be.features.membership.query.dto.response.*;
 import java.util.List;
 import org.apache.ibatis.annotations.Mapper;
 
@@ -20,4 +21,22 @@ public interface CustomerMembershipMapper {
       Long shopId, CustomerMemebershipFilterRequest filter, int offset);
 
   long countCustomerMemberships(Long shopId, CustomerMemebershipFilterRequest filter);
+
+  // 고객 선불권 조회 만료(예정)
+  List<CustomerExpiringPrepaidPassResponse> findExpiringPrepaidPassCustomers(
+      Long shopId, CustomerExpiringPrepaidPassFilterRequest request, int offset);
+
+  List<PrepaidPassInfo> findExpiringPrepaidPassesByCustomerId(Long customerId);
+
+  long countExpiringPrepaidPassCustomers(
+      Long shopId, CustomerExpiringPrepaidPassFilterRequest request);
+
+  // 고객 횟수권 조회 만료(예정)
+  List<CustomerExpiringSessionPassResponse> findExpiringSessionPassCustomers(
+      Long shopId, CustomerExpiringSessionPassFilterRequest request, int offset);
+
+  List<SessionPassInfo> findExpiringSessionPassesByCustomerId(Long customerId);
+
+  long countExpiringSessionPassCustomers(
+      Long shopId, CustomerExpiringSessionPassFilterRequest request);
 }

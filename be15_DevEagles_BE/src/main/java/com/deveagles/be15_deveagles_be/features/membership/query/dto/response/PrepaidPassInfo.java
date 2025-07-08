@@ -6,8 +6,8 @@ import lombok.Getter;
 
 @Getter
 @Builder
-public class SessionPassInfo {
-  private String sessionPassName;
-  private Integer remainingCount;
+public class PrepaidPassInfo {
+  private String prepaidPassName;
+  private Integer remainingAmount;
   private Date expirationDate;
 }
