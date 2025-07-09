@@ -60,57 +60,58 @@
         :pagination="false"
         :sticky-header="true"
       >
-        <template #cell-CARD="{ value }">
-          {{ formatCurrency(value.CARD) }}
-          <div class="incentive-amount">({{ formatCurrency(value.CARD_INCENTIVE) }})</div>
+        <!-- 카드 -->
+        <template #cell-CARD="{ item }">
+          {{ formatCurrency(item?.CARD ?? 0) }}
+          <div class="incentive-amount">({{ formatCurrency(item?.CARD_INCENTIVE ?? 0) }})</div>
         </template>
 
         <!-- 현금 -->
-        <template #cell-CASH="{ value }">
-          {{ formatCurrency(value.CASH) }}
-          <div class="incentive-amount">({{ formatCurrency(value.CASH_INCENTIVE) }})</div>
+        <template #cell-CASH="{ item }">
+          {{ formatCurrency(item?.CASH ?? 0) }}
+          <div class="incentive-amount">({{ formatCurrency(item?.CASH_INCENTIVE ?? 0) }})</div>
         </template>
 
         <!-- 네이버페이 -->
-        <template #cell-NAVER_PAY="{ value }">
-          {{ formatCurrency(value.NAVER_PAY) }}
-          <div class="incentive-amount">({{ formatCurrency(value.NAVER_PAY_INCENTIVE) }})</div>
+        <template #cell-NAVER_PAY="{ item }">
+          {{ formatCurrency(item?.NAVER_PAY ?? 0) }}
+          <div class="incentive-amount">({{ formatCurrency(item?.NAVER_PAY_INCENTIVE ?? 0) }})</div>
         </template>
 
         <!-- 지역화폐 -->
-        <template #cell-LOCAL="{ value }">
-          {{ formatCurrency(value.LOCAL) }}
-          <div class="incentive-amount">({{ formatCurrency(value.LOCAL_INCENTIVE) }})</div>
+        <template #cell-LOCAL="{ item }">
+          {{ formatCurrency(item?.LOCAL ?? 0) }}
+          <div class="incentive-amount">({{ formatCurrency(item?.LOCAL_INCENTIVE ?? 0) }})</div>
         </template>
 
         <!-- 할인 -->
-        <template #cell-DISCOUNT="{ value }">
-          {{ formatCurrency(value.DISCOUNT) }}
+        <template #cell-DISCOUNT="{ item }">
+          {{ formatCurrency(item?.DISCOUNT ?? 0) }}
         </template>
 
         <!-- 쿠폰 -->
-        <template #cell-COUPON="{ value }">
-          {{ formatCurrency(value.COUPON) }}
+        <template #cell-COUPON="{ item }">
+          {{ formatCurrency(item?.COUPON ?? 0) }}
         </template>
 
         <!-- 선불권 -->
-        <template #cell-PREPAID="{ value }">
-          {{ formatCurrency(value.PREPAID) }}
+        <template #cell-PREPAID="{ item }">
+          {{ formatCurrency(item?.PREPAID ?? 0) }}
         </template>
 
         <!-- 총 실매출 -->
-        <template #cell-totalSales="{ value }">
-          {{ formatCurrency(value.totalSales) }}
+        <template #cell-totalSales="{ item }">
+          {{ formatCurrency(item?.totalSales ?? 0) }}
         </template>
 
         <!-- 총 공제 -->
-        <template #cell-totalDeductions="{ value }">
-          {{ formatCurrency(value.totalDeductions) }}
+        <template #cell-totalDeductions="{ item }">
+          {{ formatCurrency(item?.totalDeductions ?? 0) }}
         </template>
 
         <!-- 최종 실매출 -->
-        <template #cell-finalSales="{ value }">
-          {{ formatCurrency(value.finalSales) }}
+        <template #cell-finalSales="{ item }">
+          {{ formatCurrency(item?.finalSales ?? 0) }}
         </template>
       </BaseTable>
     </div>
@@ -156,6 +157,7 @@
   import TargetSalesSettingModal from '@/features/staffsales/components/TargetSalesSettingModal.vue';
   import { getStaffSales } from '@/features/staffsales/api/staffsales.js';
   import BaseToast from '@/components/common/BaseToast.vue';
+  import dayjs from 'dayjs';
 
   const toastRef = ref();
   const activeTab = ref('직원별 결산');
@@ -209,19 +211,23 @@
     }
   });
 
+  const formatToISODate = date => {
+    return dayjs(date).format('YYYY-MM-DD');
+  };
+
   const getFormattedDates = () => {
     if (searchMode.value === 'MONTH') {
       const start = new Date(selectedMonth.value);
       return {
-        startDate: start.toISOString().slice(0, 10),
+        startDate: formatToISODate(start),
         endDate: null,
       };
     } else {
       const start = selectedRange.value?.[0];
       const end = selectedRange.value?.[1];
       return {
-        startDate: start ? start.toISOString().slice(0, 10) : null,
-        endDate: end ? end.toISOString().slice(0, 10) : null,
+        startDate: formatToISODate(start),
+        endDate: formatToISODate(end),
       };
     }
   };
@@ -229,6 +235,7 @@
   const fetchStaffSales = async () => {
     loading.value = true;
     try {
+      staffSalesApiData.value = null;
       const { startDate, endDate } = getFormattedDates();
       const payload = {
         searchMode: searchMode.value,
@@ -277,6 +284,10 @@
           CASH: 0,
           NAVER_PAY: 0,
           LOCAL: 0,
+          CARD_INCENTIVE: 0,
+          CASH_INCENTIVE: 0,
+          NAVER_PAY_INCENTIVE: 0,
+          LOCAL_INCENTIVE: 0,
           DISCOUNT: 0,
           COUPON: 0,
           PREPAID: 0,
@@ -285,13 +296,14 @@
           finalSales: 0,
         };
 
-        payment.netSalesList?.forEach(({ paymentMethod, netAmount }) => {
+        payment.netSalesList?.forEach(({ paymentsMethod, amount, incentiveAmount }) => {
           if (
-            paymentMethod !== 'PREPAID' &&
-            Object.prototype.hasOwnProperty.call(row, paymentMethod)
+            paymentsMethod !== 'PREPAID' &&
+            Object.prototype.hasOwnProperty.call(row, paymentsMethod)
           ) {
-            row[paymentMethod] += netAmount;
-            row.totalSales += netAmount;
+            row[paymentsMethod] += amount;
+            row[`${paymentsMethod}_INCENTIVE`] += incentiveAmount;
+            row.totalSales += amount;
           }
         });
 
@@ -302,7 +314,7 @@
           }
         });
 
-        row.finalSales = row.totalSales - row.totalDeductions;
+        row.finalSales = (row.totalSales || 0) - (row.totalDeductions || 0);
         result.push(row);
         isFirstRow = false;
       });
@@ -315,6 +327,10 @@
       CASH: 0,
       NAVER_PAY: 0,
       LOCAL: 0,
+      CARD_INCENTIVE: 0,
+      CASH_INCENTIVE: 0,
+      NAVER_PAY_INCENTIVE: 0,
+      LOCAL_INCENTIVE: 0,
       DISCOUNT: 0,
       COUPON: 0,
       PREPAID: 0,
@@ -324,20 +340,16 @@
     };
 
     result.forEach(row => {
-      [
-        'CARD',
-        'CASH',
-        'NAVER_PAY',
-        'LOCAL',
-        'DISCOUNT',
-        'COUPON',
-        'PREPAID',
-        'totalSales',
-        'totalDeductions',
-        'finalSales',
-      ].forEach(key => {
-        totals[key] += row[key] || 0;
+      ['CARD', 'CASH', 'NAVER_PAY', 'LOCAL'].forEach(method => {
+        totals[method] += row[method];
+        totals[`${method}_INCENTIVE`] += row[`${method}_INCENTIVE`];
       });
+
+      ['DISCOUNT', 'COUPON', 'PREPAID', 'totalSales', 'totalDeductions', 'finalSales'].forEach(
+        key => {
+          totals[key] += row[key] || 0;
+        }
+      );
     });
 
     result.push(totals);
@@ -403,9 +415,7 @@
     return '';
   };
 
-  const formatCurrency = value => {
-    return value?.toLocaleString('ko-KR') ?? '-';
-  };
+  const formatCurrency = value => (typeof value === 'number' ? value.toLocaleString('ko-KR') : '0');
 
   onMounted(() => {
     fetchStaffSales();
@@ -488,10 +498,6 @@
     flex-wrap: wrap;
     gap: 12px;
     margin-bottom: 1rem;
-  }
-  .date-picker {
-    flex-shrink: 0;
-    width: 200px;
   }
   .name-filter-input {
     height: 100%;

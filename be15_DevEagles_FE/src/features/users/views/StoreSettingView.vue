@@ -55,6 +55,11 @@
         @focus="clearError('businessNumber')"
       />
 
+      <div class="label-row">
+        <label for="description">매장 설명</label>
+      </div>
+      <BaseForm v-model="shop.description" type="textarea" :rows="4" />
+
       <div class="label-row">SNS 주소</div>
       <div class="sns-row">
         <BaseForm
@@ -124,6 +129,7 @@
     industryId: null,
     phoneNumber: '',
     bizNumber: '',
+    description: '',
     snsList: [{ snsId: null, type: '', snsAddress: '' }],
   });
 

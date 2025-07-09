@@ -157,7 +157,8 @@ public class StaffSalesQueryRepositoryImpl implements StaffSalesQueryRepository 
             sales.staffId.eq(staffId),
             sales.salesDate.between(start, end),
             primaryItem.category.eq(category),
-            sales.deletedAt.isNull())
+            sales.deletedAt.isNull(),
+            sales.isRefunded.eq(Boolean.FALSE))
         .distinct()
         .fetch();
   }
@@ -174,7 +175,8 @@ public class StaffSalesQueryRepositoryImpl implements StaffSalesQueryRepository 
         .where(
             sales.staffId.eq(staffId),
             sales.salesDate.between(start, end),
-            sales.deletedAt.isNull())
+            sales.deletedAt.isNull(),
+            sales.isRefunded.eq(Boolean.FALSE))
         .distinct()
         .fetch();
   }
@@ -191,7 +193,8 @@ public class StaffSalesQueryRepositoryImpl implements StaffSalesQueryRepository 
         .where(
             sales.staffId.eq(staffId),
             sales.salesDate.between(start, end),
-            sales.deletedAt.isNull())
+            sales.deletedAt.isNull(),
+            sales.isRefunded.eq(Boolean.FALSE))
         .distinct()
         .fetch();
   }
