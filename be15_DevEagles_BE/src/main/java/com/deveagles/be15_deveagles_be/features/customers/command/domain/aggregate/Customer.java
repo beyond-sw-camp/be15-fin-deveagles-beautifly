@@ -164,4 +164,16 @@ public class Customer {
     M,
     F
   }
+
+  public void incrementVisitCount() {
+    this.visitCount += 1;
+  }
+
+  public void addRevenue(int amount) {
+    this.totalRevenue += amount;
+  }
+
+  public void updateRecentVisitDate(LocalDate visitDate) {
+    this.recentVisitDate = visitDate;
+  }
 }

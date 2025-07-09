@@ -14,4 +14,8 @@ public class PaymentsInfo {
   @NotNull(message = "결제 수단을 입력해주세요") private PaymentsMethod paymentsMethod;
 
   @NotNull(message = "결제 금액을 입력해주세요") private Integer amount;
+
+  private Long customerPrepaidPassId;
+  private Long customerSessionPassId;
+  private Integer usedCount;
 }
