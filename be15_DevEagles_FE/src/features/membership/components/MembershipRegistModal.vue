@@ -130,6 +130,7 @@
 
 <script setup>
   import { ref, computed, onMounted, watch } from 'vue';
+  import { useAuthStore } from '@/store/auth';
   import BaseItemModal from '@/features/items/components/BaseItemModal.vue';
   import BaseForm from '@/components/common/BaseForm.vue';
   import BaseButton from '@/components/common/BaseButton.vue';
@@ -137,6 +138,7 @@
   import { getActiveAllSecondaryItems } from '@/features/items/api/items.js';
   import '@/features/membership/styles/MembershipModal.css';
 
+  const authStore = useAuthStore();
   const props = defineProps({
     modelValue: {
       type: Object,
@@ -206,7 +208,7 @@
         form.value.bonusType === 'DISSESSION_RATE' ? form.value.dissessionRate : null;
 
       const commonFields = {
-        shopId: 1, // 실제 shopId 반영 필요
+        shopId: authStore.shopId,
         secondaryItemId: form.value.secondaryItemId,
         expirationPeriod,
         expirationPeriodType,

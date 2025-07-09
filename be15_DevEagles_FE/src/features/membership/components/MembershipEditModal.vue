@@ -135,6 +135,7 @@
 
 <script setup>
   import { computed, onMounted, watch, ref } from 'vue';
+  import { useAuthStore } from '@/store/auth';
   import BaseItemModal from '@/features/items/components/BaseItemModal.vue';
   import BaseForm from '@/components/common/BaseForm.vue';
   import BaseButton from '@/components/common/BaseButton.vue';
@@ -148,6 +149,7 @@
   import { getActiveAllSecondaryItems } from '@/features/items/api/items.js';
   import '@/features/membership/styles/MembershipModal.css';
 
+  const authStore = useAuthStore();
   const props = defineProps({
     modelValue: {
       type: Object,
@@ -249,7 +251,7 @@
       const expirationPeriodType = form.value.expireUnit;
 
       const commonPayload = {
-        shopId: 1,
+        shopId: authStore.shopId,
         expirationPeriod,
         expirationPeriodType,
         bonus: form.value.bonusType === 'EXTRA_BONUS' ? form.value.extraCount : null,
