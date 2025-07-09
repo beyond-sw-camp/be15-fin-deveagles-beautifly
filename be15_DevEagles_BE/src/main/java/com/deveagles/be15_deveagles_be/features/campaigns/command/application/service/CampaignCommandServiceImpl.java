@@ -31,6 +31,8 @@ public class CampaignCommandServiceImpl implements CampaignCommandService {
             .staffId(request.getStaffId())
             .templateId(request.getTemplateId())
             .couponId(request.getCouponId())
+            .customerGradeId(request.getCustomerGradeId())
+            .tagId(request.getTagId())
             .shopId(request.getShopId())
             .build();
 
