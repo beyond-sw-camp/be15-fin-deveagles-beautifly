@@ -1,12 +1,15 @@
 package com.deveagles.be15_deveagles_be.features.sales.query.dto.response;
 
+import com.deveagles.be15_deveagles_be.features.sales.command.domain.aggregate.PaymentsMethod;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 
 @Getter
 @Builder
+@AllArgsConstructor
 public class StaffNetSalesResponse {
-
-  private String payments;
+  private PaymentsMethod paymentsMethod;
   private Integer amount;
+  private Integer incentiveAmount;
 }

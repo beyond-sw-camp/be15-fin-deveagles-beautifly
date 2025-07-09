@@ -11,4 +11,5 @@ public class StaffPaymentsSalesResponse {
   private String category;
   private List<StaffNetSalesResponse> netSalesList;
   private List<StaffSalesDeductionsResponse> deductionList;
+  private int incentiveTotal;
 }

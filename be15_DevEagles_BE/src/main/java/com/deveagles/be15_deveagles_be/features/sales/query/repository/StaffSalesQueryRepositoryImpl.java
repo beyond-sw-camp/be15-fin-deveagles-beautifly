@@ -4,6 +4,7 @@ import com.deveagles.be15_deveagles_be.features.items.command.domain.aggregate.C
 import com.deveagles.be15_deveagles_be.features.items.command.domain.aggregate.QPrimaryItem;
 import com.deveagles.be15_deveagles_be.features.items.command.domain.aggregate.QSecondaryItem;
 import com.deveagles.be15_deveagles_be.features.sales.command.domain.aggregate.*;
+import com.deveagles.be15_deveagles_be.features.sales.query.dto.response.StaffNetSalesProjection;
 import com.deveagles.be15_deveagles_be.features.sales.query.dto.response.StaffNetSalesResponse;
 import com.deveagles.be15_deveagles_be.features.sales.query.dto.response.StaffPaymentsSalesResponse;
 import com.deveagles.be15_deveagles_be.features.sales.query.dto.response.StaffSalesDeductionsResponse;
@@ -51,16 +52,17 @@ public class StaffSalesQueryRepositoryImpl implements StaffSalesQueryRepository 
 
   private StaffPaymentsSalesResponse buildSalesResponse(
       String category, List<Long> salesIds, boolean couponApplicable) {
+
     QSales sales = QSales.sales;
     QItemSales itemSales = QItemSales.itemSales;
     QPayments payments = QPayments.payments;
 
     // 결제 수단별 실매출 조회
-    List<StaffNetSalesResponse> netSalesList =
+    List<StaffNetSalesProjection> projectionList =
         queryFactory
             .select(
                 Projections.constructor(
-                    StaffNetSalesResponse.class,
+                    StaffNetSalesProjection.class,
                     payments.paymentsMethod.stringValue(),
                     payments.amount.sum()))
             .from(payments)
@@ -71,6 +73,17 @@ public class StaffSalesQueryRepositoryImpl implements StaffSalesQueryRepository 
                 payments.deletedAt.isNull())
             .groupBy(payments.paymentsMethod)
             .fetch();
+
+    List<StaffNetSalesResponse> netSalesList =
+        projectionList.stream()
+            .map(
+                p ->
+                    StaffNetSalesResponse.builder()
+                        .paymentsMethod(PaymentsMethod.valueOf(p.getPayments()))
+                        .amount(p.getAmount())
+                        .incentiveAmount(0)
+                        .build())
+            .toList();
 
     // 할인 공제
     Integer discountSum =

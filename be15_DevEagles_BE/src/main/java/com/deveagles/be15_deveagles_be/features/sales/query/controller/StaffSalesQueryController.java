@@ -3,11 +3,10 @@ package com.deveagles.be15_deveagles_be.features.sales.query.controller;
 import com.deveagles.be15_deveagles_be.common.dto.ApiResponse;
 import com.deveagles.be15_deveagles_be.features.auth.command.application.model.CustomUser;
 import com.deveagles.be15_deveagles_be.features.sales.query.dto.request.GetStaffSalesListRequest;
-import com.deveagles.be15_deveagles_be.features.sales.query.dto.response.StaffSalesListResponse;
+import com.deveagles.be15_deveagles_be.features.sales.query.dto.response.StaffSalesListResult;
 import com.deveagles.be15_deveagles_be.features.sales.query.service.StaffSalesQueryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -25,11 +24,11 @@ public class StaffSalesQueryController {
 
   @GetMapping()
   @Operation(summary = "직원별 결산 조회", description = "조회 기간(월별 / 기간별)에 따라 직원별 결산 내역을 조회합니다.")
-  public ResponseEntity<ApiResponse<List<StaffSalesListResponse>>> getStaffSales(
+  public ResponseEntity<ApiResponse<StaffSalesListResult>> getStaffSales(
       @AuthenticationPrincipal CustomUser customUser,
       @ModelAttribute GetStaffSalesListRequest request) {
 
-    List<StaffSalesListResponse> response =
+    StaffSalesListResult response =
         staffSalesQueryService.getStaffSales(customUser.getShopId(), request);
 
     return ResponseEntity.ok().body(ApiResponse.success(response));
