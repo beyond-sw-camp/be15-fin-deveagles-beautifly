@@ -1,6 +1,13 @@
 <template>
   <div class="table-container">
-    <table :class="['table', { 'table-striped': striped }, { 'table-hover': hover }]">
+    <table
+      :class="[
+        'table',
+        { 'table-striped': striped },
+        { 'table-hover': hover },
+        { 'sticky-header': stickyHeader },
+      ]"
+    >
       <!-- Table Header -->
       <thead v-if="columns.length > 0">
         <tr @click="$emit('row-click', item, $event)">
@@ -90,6 +97,11 @@
         type: [Function, String],
         default: '',
       },
+      stickyHeader: {
+        // 헤더 고정
+        type: Boolean,
+        default: false,
+      },
     },
     emits: ['row-click'],
     methods: {
@@ -114,9 +126,17 @@
 
 <style scoped>
   .table-container {
+    max-height: 600px;
+    overflow-y: auto;
     position: relative;
   }
-
+  .sticky-header thead th {
+    position: sticky;
+    top: 0;
+    background-color: white;
+    z-index: 2;
+    border-bottom: 1px solid #ccc;
+  }
   .table-empty,
   .table-loading {
     text-align: center;

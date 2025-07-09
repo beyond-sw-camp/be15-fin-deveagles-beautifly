@@ -22,4 +22,6 @@ public interface UserRepository extends JpaRepository<Staff, Long> {
   List<Staff> findAllByShopId(Long shopId);
 
   Page<Staff> findByShopId(Long shopId, Pageable pageable);
+
+  List<Staff> findByShopIdAndLeftDateIsNull(Long shopId);
 }
