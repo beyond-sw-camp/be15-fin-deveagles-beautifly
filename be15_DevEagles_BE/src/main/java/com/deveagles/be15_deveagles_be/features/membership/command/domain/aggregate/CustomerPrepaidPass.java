@@ -41,4 +41,8 @@ public class CustomerPrepaidPass {
 
   @Column(name = "deleted_at")
   private LocalDateTime deletedAt;
+
+  public void useAmount(int amount) {
+    this.remainingAmount -= amount;
+  }
 }

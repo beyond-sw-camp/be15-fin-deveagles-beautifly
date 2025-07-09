@@ -7,4 +7,6 @@ public interface CustomerPrepaidPassRepository {
   CustomerPrepaidPass save(CustomerPrepaidPass customerPrepaidPass);
 
   Optional<CustomerPrepaidPass> findById(Long customerPrepaidPassId);
+
+  Optional<CustomerPrepaidPass> findByCustomerId(Long customerId);
 }

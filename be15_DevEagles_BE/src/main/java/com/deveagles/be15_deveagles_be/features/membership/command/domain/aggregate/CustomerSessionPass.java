@@ -41,4 +41,8 @@ public class CustomerSessionPass {
 
   @Column(name = "deleted_at")
   private LocalDateTime deletedAt;
+
+  public void useCount(int count) {
+    this.remainingCount -= count;
+  }
 }

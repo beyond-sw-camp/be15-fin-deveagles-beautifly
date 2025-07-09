@@ -7,4 +7,6 @@ public interface CustomerSessionPassRepository {
   CustomerSessionPass save(CustomerSessionPass customerSessionPass);
 
   Optional<CustomerSessionPass> findById(Long customerSessionPassId);
+
+  Optional<CustomerSessionPass> findByCustomerId(Long customerId);
 }

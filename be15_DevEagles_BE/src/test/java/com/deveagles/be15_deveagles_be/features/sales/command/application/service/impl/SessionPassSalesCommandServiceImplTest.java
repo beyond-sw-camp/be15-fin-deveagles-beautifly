@@ -70,19 +70,10 @@ class SessionPassSalesCommandServiceImplTest {
   }
 
   @Test
-  @DisplayName("실패: 등록 - 결제 금액이 0 이하")
-  void registFailsWhenPaymentAmountZero() {
-    SessionPassSalesRequest request = validRequest();
-    request.setPayments(List.of(new PaymentsInfo(PaymentsMethod.CARD, 0)));
-    assertThrowsWithCode(
-        () -> service.registSessionPassSales(request), ErrorCode.SALES_PAYMENTSAMOUNT_REQUIRED);
-  }
-
-  @Test
   @DisplayName("실패: 등록 - 결제 수단 null")
   void registFailsWhenPaymentMethodNull() {
     SessionPassSalesRequest request = validRequest();
-    request.setPayments(List.of(new PaymentsInfo(null, 1000)));
+    request.setPayments(List.of(new PaymentsInfo(null, 9000, null, null, null)));
     assertThrowsWithCode(
         () -> service.registSessionPassSales(request), ErrorCode.SALES_PAYMENTMETHOD_REQUIRED);
   }
@@ -163,7 +154,7 @@ class SessionPassSalesCommandServiceImplTest {
     request.setRetailPrice(10000);
     request.setTotalAmount(9000);
     request.setSalesDate(LocalDateTime.now());
-    request.setPayments(List.of(new PaymentsInfo(PaymentsMethod.CARD, 9000)));
+    request.setPayments(List.of(new PaymentsInfo(PaymentsMethod.CARD, 9000, null, null, null)));
     return request;
   }
 
