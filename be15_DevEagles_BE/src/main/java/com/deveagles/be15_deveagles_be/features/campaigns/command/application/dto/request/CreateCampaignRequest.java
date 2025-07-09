@@ -15,7 +15,7 @@ import lombok.NoArgsConstructor;
 public class CreateCampaignRequest {
 
   @NotBlank(message = "캠페인 제목은 필수입니다.")
-  @Size(max = 30, message = "캠페인 제목은 30자 이하여야 합니다.")
+  @Size(max = 50, message = "캠페인 제목은 50자 이하여야 합니다.")
   private String campaignTitle;
 
   @Size(max = 255, message = "설명은 255자 이하여야 합니다.")
