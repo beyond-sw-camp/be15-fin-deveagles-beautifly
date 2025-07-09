@@ -54,6 +54,11 @@
   import BaseButton from '@/components/common/BaseButton.vue';
   import PrimeDatePicker from '@/components/common/PrimeDatePicker.vue';
 
+  import {
+    updateCustomerPrepaidPass,
+    updateCustomerSessionPass,
+  } from '@/features/membership/api/membership.js';
+
   const props = defineProps({
     modelValue: Boolean,
     membership: {
@@ -61,14 +66,14 @@
       required: true,
     },
   });
-  const emit = defineEmits(['update:modelValue', 'submit']);
+  const emit = defineEmits(['update:modelValue', 'updated']);
 
   const isVisible = ref(props.modelValue);
   const remaining = ref(null);
   const expiry = ref(null);
   const type = ref('');
 
-  // props.modelValue → isVisible 로 동기화
+  // props.modelValue → isVisible 동기화
   watch(
     () => props.modelValue,
     val => {
@@ -79,6 +84,7 @@
     emit('update:modelValue', val);
   });
 
+  // membership 초기화
   watch(
     () => props.membership,
     val => {
@@ -94,15 +100,26 @@
     isVisible.value = false;
   };
 
-  const submitEdit = () => {
-    emit('submit', {
-      id: props.membership.id,
-      type: type.value,
-      remaining: remaining.value,
-      expiry: expiry.value,
-    });
-    emit('updated');
-    isVisible.value = false;
+  const submitEdit = async () => {
+    try {
+      if (type.value === 'PREPAID') {
+        await updateCustomerPrepaidPass({
+          customerPrepaidPassId: props.membership.id,
+          remainingAmount: remaining.value,
+          expirationDate: expiry.value,
+        });
+      } else if (type.value === 'SESSION') {
+        await updateCustomerSessionPass({
+          customerSessionPassId: props.membership.id,
+          remainingCount: remaining.value,
+          expirationDate: expiry.value,
+        });
+      }
+      emit('updated');
+      isVisible.value = false;
+    } catch (error) {
+      console.error(error);
+    }
   };
 </script>
 

@@ -1,8 +1,8 @@
 package com.deveagles.be15_deveagles_be.features.membership.command.domain.aggregate;
 
 import jakarta.persistence.*;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Date;
 import lombok.*;
 
 @Entity
@@ -24,15 +24,18 @@ public class CustomerSessionPass {
   @Column(name = "session_pass_id", nullable = false)
   private Long sessionPassId;
 
+  @Setter
   @Column(name = "remaining_count")
   private Integer remainingCount;
 
+  @Setter
   @Column(name = "expiration_date")
-  private LocalDate expirationDate;
+  private Date expirationDate;
 
   @Column(name = "created_at", nullable = false)
   private LocalDateTime createdAt = LocalDateTime.now();
 
+  @Setter
   @Column(name = "modified_at", nullable = false)
   private LocalDateTime modifiedAt = LocalDateTime.now();
 
