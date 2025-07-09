@@ -12,12 +12,12 @@ import com.deveagles.be15_deveagles_be.features.shops.command.application.dto.re
 import com.deveagles.be15_deveagles_be.features.shops.command.application.dto.request.SnsRequest;
 import com.deveagles.be15_deveagles_be.features.shops.command.application.dto.request.ValidBizNumberRequest;
 import com.deveagles.be15_deveagles_be.features.shops.command.application.dto.response.GetShopResponse;
-import com.deveagles.be15_deveagles_be.features.shops.command.application.service.IndustryRepository;
 import com.deveagles.be15_deveagles_be.features.shops.command.application.service.ShopCommandServiceImpl;
 import com.deveagles.be15_deveagles_be.features.shops.command.domain.aggregate.Industry;
 import com.deveagles.be15_deveagles_be.features.shops.command.domain.aggregate.SNS;
 import com.deveagles.be15_deveagles_be.features.shops.command.domain.aggregate.SNSType;
 import com.deveagles.be15_deveagles_be.features.shops.command.domain.aggregate.Shop;
+import com.deveagles.be15_deveagles_be.features.shops.command.repository.IndustryRepository;
 import com.deveagles.be15_deveagles_be.features.shops.command.repository.ShopRepository;
 import com.deveagles.be15_deveagles_be.features.shops.command.repository.SnsRepository;
 import java.util.Collections;

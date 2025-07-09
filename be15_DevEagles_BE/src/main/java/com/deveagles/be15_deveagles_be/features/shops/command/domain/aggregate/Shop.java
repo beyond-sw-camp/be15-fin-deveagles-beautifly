@@ -106,4 +106,8 @@ public class Shop {
   public void setBizNumber(String businessNumber) {
     this.businessNumber = businessNumber;
   }
+
+  public void setDescription(String description) {
+    this.shopDescription = description;
+  }
 }

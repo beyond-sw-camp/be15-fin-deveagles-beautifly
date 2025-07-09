@@ -13,6 +13,7 @@ import com.deveagles.be15_deveagles_be.features.shops.command.domain.aggregate.I
 import com.deveagles.be15_deveagles_be.features.shops.command.domain.aggregate.SNS;
 import com.deveagles.be15_deveagles_be.features.shops.command.domain.aggregate.SNSType;
 import com.deveagles.be15_deveagles_be.features.shops.command.domain.aggregate.Shop;
+import com.deveagles.be15_deveagles_be.features.shops.command.repository.IndustryRepository;
 import com.deveagles.be15_deveagles_be.features.shops.command.repository.ShopRepository;
 import com.deveagles.be15_deveagles_be.features.shops.command.repository.SnsRepository;
 import java.util.*;
@@ -138,6 +139,10 @@ public class ShopCommandServiceImpl implements ShopCommandService {
 
     if (!findShop.getBusinessNumber().equals(request.bizNumber())) {
       findShop.setBizNumber(request.bizNumber());
+    }
+
+    if (!findShop.getShopDescription().equals(request.description())) {
+      findShop.setDescription(request.description());
     }
 
     shopRepository.save(findShop);
