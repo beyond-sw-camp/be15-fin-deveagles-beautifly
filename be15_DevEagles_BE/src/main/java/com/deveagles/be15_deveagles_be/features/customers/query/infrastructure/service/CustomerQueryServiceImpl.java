@@ -22,8 +22,12 @@ import com.deveagles.be15_deveagles_be.features.customers.query.service.Customer
 import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -272,8 +276,8 @@ public class CustomerQueryServiceImpl implements CustomerQueryService {
       customerJpaRepository
           .findById(customerId)
           .ifPresent(
-              customer -> {
-                CustomerDocument document = createCustomerDocumentWithGradeName(customer);
+              cust -> {
+                CustomerDocument document = createCustomerDocumentWithGradeName(cust);
                 elasticsearchRepository.save(document);
                 log.info("고객 Elasticsearch 동기화 완료: ID={}", customerId);
               });
@@ -300,30 +304,190 @@ public class CustomerQueryServiceImpl implements CustomerQueryService {
   }
 
   @Override
+  @Transactional
+  public void reindexAllCustomersWithReset(Long shopId) {
+    try {
+      log.info("매장 {} 고객 데이터 리셋 후 재인덱싱 시작", shopId);
+
+      // 1. 해당 매장의 기존 문서 삭제
+      deleteCustomerDocumentsByShopId(shopId);
+
+      // 2. 배치 처리로 재인덱싱
+      reindexCustomersByBatch(shopId);
+
+      log.info("매장 {} 고객 데이터 리셋 후 재인덱싱 완료", shopId);
+    } catch (Exception e) {
+      log.error("매장 {} 고객 데이터 리셋 후 재인덱싱 실패: {}", shopId, e.getMessage());
+      throw new RuntimeException("재인덱싱 실패", e);
+    }
+  }
+
+  @Override
+  @Transactional
+  public void reindexAllShopsCustomers() {
+    try {
+      log.info("전체 매장 고객 데이터 재인덱싱 시작");
+
+      List<Long> shopIds = customerJpaRepository.findDistinctShopIds();
+
+      for (Long shopId : shopIds) {
+        try {
+          reindexCustomersByBatch(shopId);
+          log.info("매장 {} 재인덱싱 완료", shopId);
+        } catch (Exception e) {
+          log.error("매장 {} 재인덱싱 실패: {}", shopId, e.getMessage());
+          // 다른 매장은 계속 처리
+        }
+      }
+
+      log.info("전체 매장 고객 데이터 재인덱싱 완료");
+    } catch (Exception e) {
+      log.error("전체 매장 고객 데이터 재인덱싱 실패: {}", e.getMessage());
+      throw new RuntimeException("전체 재인덱싱 실패", e);
+    }
+  }
+
+  @Override
+  @Transactional
+  public void reindexAllShopsCustomersWithReset() {
+    try {
+      log.info("전체 매장 고객 데이터 리셋 후 재인덱싱 시작");
+
+      // 1. 모든 고객 문서 삭제
+      elasticsearchRepository.deleteAll();
+      log.info("기존 고객 문서 전체 삭제 완료");
+
+      // 2. 전체 매장 재인덱싱
+      reindexAllShopsCustomers();
+
+      log.info("전체 매장 고객 데이터 리셋 후 재인덱싱 완료");
+    } catch (Exception e) {
+      log.error("전체 매장 고객 데이터 리셋 후 재인덱싱 실패: {}", e.getMessage());
+      throw new RuntimeException("전체 리셋 후 재인덱싱 실패", e);
+    }
+  }
+
+  @Override
+  public ReindexStatus getReindexStatus(String taskId) {
+    return ReindexStatus.createCompleted(taskId, 0L, 0L, LocalDateTime.now(), null);
+  }
+
+  // 배치 처리를 위한 private 메서드들
+  private void deleteCustomerDocumentsByShopId(Long shopId) {
+    try {
+      List<CustomerDocument> existingDocs =
+          elasticsearchRepository
+              .findByShopIdAndDeletedAtIsNull(shopId, PageRequest.of(0, Integer.MAX_VALUE))
+              .getContent();
+
+      if (!existingDocs.isEmpty()) {
+        elasticsearchRepository.deleteAll(existingDocs);
+        log.info("매장 {} 기존 고객 문서 {}건 삭제 완료", shopId, existingDocs.size());
+      }
+    } catch (Exception e) {
+      log.error("매장 {} 기존 고객 문서 삭제 실패: {}", shopId, e.getMessage());
+    }
+  }
+
+  private void reindexCustomersByBatch(Long shopId) {
+    final int BATCH_SIZE = 1000;
+    int page = 0;
+
+    while (true) {
+      Pageable pageable = PageRequest.of(page, BATCH_SIZE);
+      List<Customer> customers =
+          customerJpaRepository.findByShopIdAndDeletedAtIsNull(shopId, pageable);
+
+      if (customers.isEmpty()) {
+        break;
+      }
+
+      Set<Long> gradeIds =
+          customers.stream()
+              .map(Customer::getCustomerGradeId)
+              .filter(Objects::nonNull)
+              .collect(Collectors.toSet());
+
+      Map<Long, String> gradeNameMap = loadGradeNames(gradeIds);
+
+      List<CustomerDocument> documents =
+          customers.stream()
+              .map(cust -> createCustomerDocumentWithGradeMap(cust, gradeNameMap))
+              .collect(Collectors.toList());
+
+      elasticsearchRepository.saveAll(documents);
+      log.info("매장 {} 배치 {} 처리 완료: {}건", shopId, page + 1, documents.size());
+
+      page++;
+
+      if (customers.size() < BATCH_SIZE) {
+        break;
+      }
+    }
+  }
+
+  // Grade 정보를 배치로 로드하는 최적화된 메서드
+  private Map<Long, String> loadGradeNames(Set<Long> gradeIds) {
+    if (gradeIds.isEmpty()) {
+      return Collections.emptyMap();
+    }
+
+    return queryFactory
+        .select(customerGrade.id, customerGrade.customerGradeName)
+        .from(customerGrade)
+        .where(customerGrade.id.in(gradeIds))
+        .fetch()
+        .stream()
+        .collect(
+            Collectors.toMap(
+                tuple -> tuple.get(customerGrade.id),
+                tuple -> tuple.get(customerGrade.customerGradeName)));
+  }
+
+  // 최적화된 CustomerDocument 생성 메서드
+  private CustomerDocument createCustomerDocumentWithGradeMap(
+      Customer cust, Map<Long, String> gradeNameMap) {
+    String gradeName = gradeNameMap.get(cust.getCustomerGradeId());
+
+    return CustomerDocument.builder()
+        .id(cust.getShopId() + "_" + cust.getId())
+        .customerId(cust.getId())
+        .shopId(cust.getShopId())
+        .customerName(cust.getCustomerName())
+        .phoneNumber(cust.getPhoneNumber())
+        .customerGradeId(cust.getCustomerGradeId())
+        .customerGradeName(gradeName)
+        .gender(cust.getGender() != null ? cust.getGender().name() : null)
+        .deletedAt(cust.getDeletedAt())
+        .build();
+  }
+
+  @Override
   public Optional<CustomerIdResponse> findCustomerIdByPhoneNumber(String phoneNumber, Long shopId) {
     return customerJpaRepository
         .findByPhoneNumberAndShopIdAndDeletedAtIsNull(phoneNumber, shopId)
-        .map(customer -> new CustomerIdResponse(customer.getId()));
+        .map(cust -> new CustomerIdResponse(cust.getId()));
   }
 
-  private CustomerDocument createCustomerDocumentWithGradeName(Customer customer) {
+  // 기존 메서드는 개별 동기화에서만 사용
+  private CustomerDocument createCustomerDocumentWithGradeName(Customer cust) {
     String gradeName =
         queryFactory
             .select(customerGrade.customerGradeName)
             .from(customerGrade)
-            .where(customerGrade.id.eq(customer.getCustomerGradeId()))
+            .where(customerGrade.id.eq(cust.getCustomerGradeId()))
             .fetchOne();
 
     return CustomerDocument.builder()
-        .id(customer.getShopId() + "_" + customer.getId())
-        .customerId(customer.getId())
-        .shopId(customer.getShopId())
-        .customerName(customer.getCustomerName())
-        .phoneNumber(customer.getPhoneNumber())
-        .customerGradeId(customer.getCustomerGradeId())
+        .id(cust.getShopId() + "_" + cust.getId())
+        .customerId(cust.getId())
+        .shopId(cust.getShopId())
+        .customerName(cust.getCustomerName())
+        .phoneNumber(cust.getPhoneNumber())
+        .customerGradeId(cust.getCustomerGradeId())
         .customerGradeName(gradeName)
-        .gender(customer.getGender() != null ? customer.getGender().name() : null)
-        .deletedAt(customer.getDeletedAt())
+        .gender(cust.getGender() != null ? cust.getGender().name() : null)
+        .deletedAt(cust.getDeletedAt())
         .build();
   }
 

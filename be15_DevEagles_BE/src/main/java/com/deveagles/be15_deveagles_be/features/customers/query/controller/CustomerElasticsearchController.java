@@ -164,4 +164,69 @@ public class CustomerElasticsearchController {
       return ResponseEntity.ok(ApiResponse.success("엘라스틱서치 연결에 문제가 있습니다: " + e.getMessage()));
     }
   }
+
+  @Operation(
+      summary = "매장별 안전한 재인덱싱 (리셋)",
+      description = "매장의 기존 인덱스를 삭제하고 새로 생성합니다. DB 데이터를 전부 갈은 경우 사용.")
+  @ApiResponses({
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+        responseCode = "200",
+        description = "안전한 재인덱싱 성공"),
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+        responseCode = "400",
+        description = "잘못된 매장 ID")
+  })
+  @PostMapping("/reindex/reset")
+  public ResponseEntity<ApiResponse<String>> reindexCustomersWithReset(
+      @AuthenticationPrincipal CustomUser user) {
+    log.info("매장별 안전한 고객 재인덱싱 요청 - 매장ID: {}", user.getShopId());
+
+    try {
+      customerQueryService.reindexAllCustomersWithReset(user.getShopId());
+      return ResponseEntity.ok(ApiResponse.success("매장의 고객 데이터가 안전하게 재인덱싱되었습니다."));
+    } catch (Exception e) {
+      log.error("매장 안전한 재인덱싱 실패 - 매장ID: {}, 오류: {}", user.getShopId(), e.getMessage());
+      return ResponseEntity.ok(ApiResponse.success("안전한 재인덱싱 중 오류가 발생했습니다: " + e.getMessage()));
+    }
+  }
+
+  @Operation(summary = "전체 매장 재인덱싱", description = "모든 매장의 고객 데이터를 재인덱싱합니다. 시스템 관리자만 사용.")
+  @ApiResponses({
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+        responseCode = "200",
+        description = "전체 재인덱싱 성공")
+  })
+  @PostMapping("/reindex/all")
+  public ResponseEntity<ApiResponse<String>> reindexAllShopsCustomers() {
+    log.info("전체 매장 고객 재인덱싱 요청");
+
+    try {
+      customerQueryService.reindexAllShopsCustomers();
+      return ResponseEntity.ok(ApiResponse.success("모든 매장의 고객 데이터가 성공적으로 재인덱싱되었습니다."));
+    } catch (Exception e) {
+      log.error("전체 매장 재인덱싱 실패 - 오류: {}", e.getMessage());
+      return ResponseEntity.ok(ApiResponse.success("전체 재인덱싱 중 오류가 발생했습니다: " + e.getMessage()));
+    }
+  }
+
+  @Operation(
+      summary = "전체 매장 안전한 재인덱싱 (리셋)",
+      description = "모든 인덱스를 삭제하고 전체 재생성합니다. DB 전체 데이터를 갈은 경우 사용.")
+  @ApiResponses({
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+        responseCode = "200",
+        description = "전체 안전한 재인덱싱 성공")
+  })
+  @PostMapping("/reindex/all/reset")
+  public ResponseEntity<ApiResponse<String>> reindexAllShopsCustomersWithReset() {
+    log.info("전체 매장 안전한 고객 재인덱싱 요청");
+
+    try {
+      customerQueryService.reindexAllShopsCustomersWithReset();
+      return ResponseEntity.ok(ApiResponse.success("모든 매장의 고객 데이터가 안전하게 재인덱싱되었습니다."));
+    } catch (Exception e) {
+      log.error("전체 매장 안전한 재인덱싱 실패 - 오류: {}", e.getMessage());
+      return ResponseEntity.ok(ApiResponse.success("전체 안전한 재인덱싱 중 오류가 발생했습니다: " + e.getMessage()));
+    }
+  }
 }
