@@ -4,16 +4,12 @@ import com.deveagles.be15_deveagles_be.features.items.command.domain.aggregate.C
 import com.deveagles.be15_deveagles_be.features.items.command.domain.aggregate.QPrimaryItem;
 import com.deveagles.be15_deveagles_be.features.items.command.domain.aggregate.QSecondaryItem;
 import com.deveagles.be15_deveagles_be.features.sales.command.domain.aggregate.*;
-import com.deveagles.be15_deveagles_be.features.sales.query.dto.response.StaffNetSalesProjection;
-import com.deveagles.be15_deveagles_be.features.sales.query.dto.response.StaffNetSalesResponse;
-import com.deveagles.be15_deveagles_be.features.sales.query.dto.response.StaffPaymentsSalesResponse;
-import com.deveagles.be15_deveagles_be.features.sales.query.dto.response.StaffSalesDeductionsResponse;
+import com.deveagles.be15_deveagles_be.features.sales.query.dto.response.*;
+import com.querydsl.core.Tuple;
 import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
@@ -25,18 +21,23 @@ public class StaffSalesQueryRepositoryImpl implements StaffSalesQueryRepository 
 
   @Override
   public List<StaffPaymentsSalesResponse> getSalesByStaff(
-      Long staffId, LocalDateTime startDate, LocalDateTime endDate) {
+      boolean isDetail, Long staffId, LocalDateTime startDate, LocalDateTime endDate) {
 
     List<StaffPaymentsSalesResponse> result = new ArrayList<>();
 
     // 서비스/상품은 category 기준
-    result.add(
-        buildSalesResponse(
-            "SERVICE", getSalesIdsByCategory(staffId, startDate, endDate, Category.SERVICE), true));
-    result.add(
-        buildSalesResponse(
-            "PRODUCT", getSalesIdsByCategory(staffId, startDate, endDate, Category.PRODUCT), true));
-
+    if (!isDetail) {
+      result.add(
+          buildSalesResponse(
+              "SERVICE",
+              getSalesIdsByCategory(staffId, startDate, endDate, Category.SERVICE),
+              true));
+      result.add(
+          buildSalesResponse(
+              "PRODUCT",
+              getSalesIdsByCategory(staffId, startDate, endDate, Category.PRODUCT),
+              true));
+    }
     // 회수권
     result.add(
         buildSalesResponse(
@@ -197,5 +198,115 @@ public class StaffSalesQueryRepositoryImpl implements StaffSalesQueryRepository 
             sales.isRefunded.eq(Boolean.FALSE))
         .distinct()
         .fetch();
+  }
+
+  @Override
+  public List<StaffPaymentsDetailSalesResponse> getDetailSalesByStaff(
+      Long staffId, Long shopId, LocalDateTime startDate, LocalDateTime endDate) {
+
+    List<StaffPaymentsDetailSalesResponse> result = new ArrayList<>();
+
+    result.addAll(getSalesDetailByCategory(staffId, shopId, startDate, endDate, Category.SERVICE));
+    result.addAll(getSalesDetailByCategory(staffId, shopId, startDate, endDate, Category.PRODUCT));
+
+    return result;
+  }
+
+  private List<StaffPaymentsDetailSalesResponse> getSalesDetailByCategory(
+      Long staffId,
+      Long shopId,
+      LocalDateTime startDate,
+      LocalDateTime endDate,
+      Category category) {
+
+    QSales sales = QSales.sales;
+    QItemSales itemSales = QItemSales.itemSales;
+    QPrimaryItem primary = QPrimaryItem.primaryItem;
+    QSecondaryItem secondary = QSecondaryItem.secondaryItem;
+
+    List<Tuple> salesGroup =
+        queryFactory
+            .select(
+                primary.primaryItemId,
+                primary.primaryItemName,
+                secondary.secondaryItemId,
+                secondary.secondaryItemName,
+                itemSales.salesId)
+            .from(itemSales)
+            .join(secondary)
+            .on(itemSales.secondaryItemId.eq(secondary.secondaryItemId))
+            .join(secondary.primaryItem, primary)
+            .join(sales)
+            .on(itemSales.salesId.eq(sales.salesId))
+            .where(
+                itemSales.deletedAt.isNull(),
+                secondary.deletedAt.isNull(),
+                primary.deletedAt.isNull(),
+                sales.staffId.eq(staffId),
+                sales.shopId.eq(shopId),
+                sales.salesDate.between(startDate, endDate),
+                sales.isRefunded.eq(Boolean.FALSE),
+                sales.deletedAt.isNull(),
+                primary.category.eq(category))
+            .fetch();
+
+    Map<Long, Map<String, List<Long>>> grouped = new LinkedHashMap<>();
+
+    Map<Long, String> primaryNameMap = new HashMap<>();
+    for (Tuple tuple : salesGroup) {
+      Long primaryId = tuple.get(primary.primaryItemId);
+      String primaryName = tuple.get(primary.primaryItemName);
+      String secondaryName = tuple.get(secondary.secondaryItemName);
+      Long salesId = tuple.get(itemSales.salesId);
+
+      primaryNameMap.putIfAbsent(primaryId, primaryName);
+
+      grouped
+          .computeIfAbsent(primaryId, k -> new LinkedHashMap<>())
+          .computeIfAbsent(secondaryName, k -> new ArrayList<>())
+          .add(salesId);
+    }
+
+    List<StaffPaymentsDetailSalesResponse> result = new ArrayList<>();
+
+    List<StaffPrimarySalesResponse> primaryList =
+        grouped.entrySet().stream()
+            .map(
+                primaryEntry -> {
+                  Long primaryId = primaryEntry.getKey();
+                  String primaryName = primaryNameMap.get(primaryId);
+                  List<StaffSecondarySalesResponse> secondaryList =
+                      primaryEntry.getValue().entrySet().stream()
+                          .map(
+                              secondaryEntry -> {
+                                List<Long> salesIds = secondaryEntry.getValue();
+
+                                StaffPaymentsSalesResponse saleData =
+                                    buildSalesResponse(category.name(), salesIds, true);
+
+                                return StaffSecondarySalesResponse.builder()
+                                    .secondaryItemName(secondaryEntry.getKey())
+                                    .netSalesList(saleData.getNetSalesList())
+                                    .deductionList(saleData.getDeductionList())
+                                    .incentiveTotal(0)
+                                    .build();
+                              })
+                          .toList();
+
+                  return StaffPrimarySalesResponse.builder()
+                      .primaryItemId(primaryEntry.getKey())
+                      .primaryItemName(primaryName)
+                      .secondaryList(secondaryList)
+                      .build();
+                })
+            .toList();
+
+    result.add(
+        StaffPaymentsDetailSalesResponse.builder()
+            .category(category.name())
+            .primaryList(primaryList)
+            .build());
+
+    return result;
   }
 }

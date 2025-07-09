@@ -63,7 +63,7 @@ public class StaffSalesQueryServiceImplTest {
             .build();
 
     given(userRepository.findByShopIdAndLeftDateIsNull(shopId)).willReturn(List.of(staff));
-    given(staffSalesQueryRepository.getSalesByStaff(any(), any(), any()))
+    given(staffSalesQueryRepository.getSalesByStaff(false, any(), any(), any()))
         .willReturn(
             List.of(
                 StaffPaymentsSalesResponse.builder()
