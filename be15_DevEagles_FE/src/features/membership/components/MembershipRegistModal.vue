@@ -13,6 +13,17 @@
       />
     </div>
 
+    <!-- 상품 선택 (SESSION일 때만 노출) -->
+    <div v-if="form.type === 'SESSION'" class="form-group">
+      <label>상품 선택</label>
+      <BaseForm
+        v-model="form.secondaryItemId"
+        type="select"
+        :options="secondaryItemOptions"
+        placeholder="상품을 선택하세요."
+      />
+    </div>
+
     <!-- 이름 -->
     <div class="form-group">
       <label>선불권/횟수권 명</label>
@@ -118,20 +129,40 @@
 </template>
 
 <script setup>
-  import { computed, onMounted, watch } from 'vue';
+  import { ref, computed, onMounted, watch } from 'vue';
   import BaseItemModal from '@/features/items/components/BaseItemModal.vue';
   import BaseForm from '@/components/common/BaseForm.vue';
   import BaseButton from '@/components/common/BaseButton.vue';
   import { registerPrepaidPass, registerSessionPass } from '@/features/membership/api/membership';
+  import { getActiveAllSecondaryItems } from '@/features/items/api/items.js';
   import '@/features/membership/styles/MembershipModal.css';
 
-  const props = defineProps({ modelValue: Object });
+  const props = defineProps({
+    modelValue: {
+      type: Object,
+      default: () => ({}),
+    },
+  });
   const emit = defineEmits(['close', 'submit', 'update:modelValue']);
 
   const form = computed({
     get: () => props.modelValue,
     set: val => emit('update:modelValue', val),
   });
+
+  const secondaryItemOptions = ref([]);
+
+  const loadSecondaryItems = async () => {
+    try {
+      const result = await getActiveAllSecondaryItems();
+      secondaryItemOptions.value = result.map(item => ({
+        value: item.secondaryItemId,
+        text: item.secondaryItemName,
+      }));
+    } catch (err) {
+      console.error('상품 목록 불러오기 실패', err);
+    }
+  };
 
   watch(
     () => props.modelValue,
@@ -159,6 +190,7 @@
   });
 
   onMounted(() => {
+    loadSecondaryItems();
     if (!form.value.expireUnit) form.value.expireUnit = 'MONTH';
     if (form.value.bonusType === undefined || form.value.bonusType === null) {
       form.value.bonusType = '';
@@ -169,34 +201,35 @@
     try {
       const expirationPeriod = Number(form.value.expireValue);
       const expirationPeriodType = form.value.expireUnit;
-
       const bonus = form.value.bonusType === 'EXTRA_BONUS' ? form.value.extraCount : null;
       const discountRate =
         form.value.bonusType === 'DISSESSION_RATE' ? form.value.dissessionRate : null;
 
+      const commonFields = {
+        shopId: 1, // 실제 shopId 반영 필요
+        secondaryItemId: form.value.secondaryItemId,
+        expirationPeriod,
+        expirationPeriodType,
+        bonus,
+        discountRate,
+        memo: form.value.memo,
+      };
+
       if (form.value.type === 'PREPAID') {
         await registerPrepaidPass({
-          shopId: 1, // 실제 shopId 적용
+          ...commonFields,
           prepaidPassId: null,
           prepaidPassName: form.value.name,
           prepaidPassPrice: form.value.price,
-          expirationPeriod,
-          expirationPeriodType, // 그대로 전달
-          bonus,
-          discountRate,
           prepaidPassMemo: form.value.memo,
         });
       } else if (form.value.type === 'SESSION') {
         await registerSessionPass({
-          shopId: 1,
+          ...commonFields,
           sessionPassId: null,
           sessionPassName: form.value.name,
           sessionPassPrice: form.value.price,
           session: form.value.session,
-          expirationPeriod,
-          expirationPeriodType,
-          bonus,
-          discountRate,
           sessionPassMemo: form.value.memo,
         });
       } else {

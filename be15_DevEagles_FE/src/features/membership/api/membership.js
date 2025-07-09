@@ -69,6 +69,7 @@ export const getSessionPass = async () => {
 export const registerSessionPass = async ({
   shopId,
   sessionPassId,
+  secondaryItemId,
   sessionPassName,
   sessionPassPrice,
   session,
@@ -81,6 +82,7 @@ export const registerSessionPass = async ({
   const response = await api.post('/session-pass', {
     shopId,
     sessionPassId,
+    secondaryItemId,
     sessionPassName,
     sessionPassPrice,
     session,
@@ -98,6 +100,7 @@ export const registerSessionPass = async ({
 export const updateSessionPass = async ({
   sessionPassId,
   shopId,
+  secondaryItemId,
   sessionPassName,
   sessionPassPrice,
   session,
@@ -110,6 +113,7 @@ export const updateSessionPass = async ({
   const response = await api.put(`/session-pass/${sessionPassId}`, {
     shopId,
     sessionPassName,
+    secondaryItemId,
     sessionPassPrice,
     session,
     expirationPeriod,
@@ -192,9 +196,36 @@ export const getCustomerSessionPasses = async customerId => {
   return response.data.data;
 };
 
-// 만료 및 사용완료 회원권 조회
 // 만료 또는 소진된 회원권 목록 조회
 export const getExpiredOrUsedUpMemberships = async customerId => {
   const response = await api.get(`/customer-memberships/expired-or-used-up/${customerId}`);
+  return response.data.data;
+};
+
+// 고객 선불권 수정
+export const updateCustomerPrepaidPass = async ({
+  customerPrepaidPassId,
+  remainingAmount,
+  expirationDate,
+}) => {
+  const response = await api.put('/customer-prepaid-pass', {
+    customerPrepaidPassId,
+    remainingAmount,
+    expirationDate,
+  });
+  return response.data.data;
+};
+
+// 고객 횟수권 수정
+export const updateCustomerSessionPass = async ({
+  customerSessionPassId,
+  remainingCount,
+  expirationDate,
+}) => {
+  const response = await api.put('/customer-session-pass', {
+    customerSessionPassId,
+    remainingCount,
+    expirationDate,
+  });
   return response.data.data;
 };

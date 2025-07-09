@@ -13,6 +13,17 @@
       />
     </div>
 
+    <!-- 상품 선택 (SESSION일 때만 노출) -->
+    <div v-if="form.type === 'SESSION'" class="form-group">
+      <label>상품 선택</label>
+      <BaseForm
+        v-model="form.secondaryItemId"
+        type="select"
+        :options="secondaryItemOptions"
+        placeholder="상품을 선택하세요."
+      />
+    </div>
+
     <!-- 이름 -->
     <div class="form-group">
       <label>선불권/횟수권 명</label>
@@ -117,11 +128,7 @@
         </div>
       </div>
 
-      <MembershipDeleteModal
-        v-model="showDeleteModal"
-        @confirm="confirmDelete"
-        @toast="msg => emit('toast', msg)"
-      />
+      <MembershipDeleteModal v-model="showDeleteModal" @confirm="confirmDelete" />
     </template>
   </BaseItemModal>
 </template>
@@ -138,15 +145,37 @@
     deletePrepaidPass,
     deleteSessionPass,
   } from '@/features/membership/api/membership';
+  import { getActiveAllSecondaryItems } from '@/features/items/api/items.js';
   import '@/features/membership/styles/MembershipModal.css';
 
-  const props = defineProps({ modelValue: Object });
+  const props = defineProps({
+    modelValue: {
+      type: Object,
+      default: () => ({}),
+    },
+  });
+
   const emit = defineEmits(['close', 'submit', 'update:modelValue']);
+
   const showDeleteModal = ref(false);
+  const secondaryItemOptions = ref([]);
+
   const form = computed({
     get: () => props.modelValue,
     set: val => emit('update:modelValue', val),
   });
+
+  const loadSecondaryItems = async () => {
+    try {
+      const result = await getActiveAllSecondaryItems();
+      secondaryItemOptions.value = result.map(item => ({
+        value: item.secondaryItemId,
+        text: item.secondaryItemName,
+      }));
+    } catch (err) {
+      console.error('상품 목록 불러오기 실패', err);
+    }
+  };
 
   watch(
     () => form.value.bonusType,
@@ -164,6 +193,8 @@
   );
 
   onMounted(() => {
+    loadSecondaryItems();
+
     form.value.type = form.value.session != null ? 'SESSION' : 'PREPAID';
 
     if (form.value.type === 'SESSION') {
@@ -171,6 +202,7 @@
       form.value.price = form.value.sessionPassPrice;
       form.value.memo = form.value.sessionPassMemo;
       form.value.id = form.value.sessionPassId;
+      // 자기 자신에 대한 대입 제거됨
     } else {
       form.value.name = form.value.prepaidPassName;
       form.value.price = form.value.prepaidPassPrice;
@@ -217,7 +249,7 @@
       const expirationPeriodType = form.value.expireUnit;
 
       const commonPayload = {
-        shopId: 1, // 실제 shopId 설정
+        shopId: 1,
         expirationPeriod,
         expirationPeriodType,
         bonus: form.value.bonusType === 'EXTRA_BONUS' ? form.value.extraCount : null,
@@ -240,6 +272,7 @@
           sessionPassName: form.value.name,
           sessionPassPrice: form.value.price,
           session: form.value.session,
+          secondaryItemId: form.value.secondaryItemId,
         });
       } else {
         throw new Error('회원권 종류를 선택해주세요.');
@@ -263,8 +296,10 @@
         throw new Error('회원권 종류를 알 수 없습니다.');
       }
 
-      emit('delete', form.value);
-      emit('toast', '회원권이 삭제되었습니다.');
+      emit('delete', {
+        id: form.value.id,
+        type: form.value.type,
+      });
       emit('close');
       showDeleteModal.value = false;
     } catch (e) {
