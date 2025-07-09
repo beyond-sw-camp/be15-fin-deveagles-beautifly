@@ -11,4 +11,5 @@ public record PutShopRequest(
     @NotNull(message = "업종은 필수 입력값입니다.") Long industryId,
     String phoneNumber,
     String bizNumber,
+    String description,
     List<SnsRequest> snsList) {}
