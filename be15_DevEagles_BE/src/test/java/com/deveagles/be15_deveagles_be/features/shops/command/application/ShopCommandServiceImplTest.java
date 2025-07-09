@@ -12,12 +12,12 @@ import com.deveagles.be15_deveagles_be.features.shops.command.application.dto.re
 import com.deveagles.be15_deveagles_be.features.shops.command.application.dto.request.SnsRequest;
 import com.deveagles.be15_deveagles_be.features.shops.command.application.dto.request.ValidBizNumberRequest;
 import com.deveagles.be15_deveagles_be.features.shops.command.application.dto.response.GetShopResponse;
-import com.deveagles.be15_deveagles_be.features.shops.command.application.service.IndustryRepository;
 import com.deveagles.be15_deveagles_be.features.shops.command.application.service.ShopCommandServiceImpl;
 import com.deveagles.be15_deveagles_be.features.shops.command.domain.aggregate.Industry;
 import com.deveagles.be15_deveagles_be.features.shops.command.domain.aggregate.SNS;
 import com.deveagles.be15_deveagles_be.features.shops.command.domain.aggregate.SNSType;
 import com.deveagles.be15_deveagles_be.features.shops.command.domain.aggregate.Shop;
+import com.deveagles.be15_deveagles_be.features.shops.command.repository.IndustryRepository;
 import com.deveagles.be15_deveagles_be.features.shops.command.repository.ShopRepository;
 import com.deveagles.be15_deveagles_be.features.shops.command.repository.SnsRepository;
 import java.util.Collections;
@@ -215,6 +215,7 @@ public class ShopCommandServiceImplTest {
             .industryId(1L)
             .phoneNumber("01011112222")
             .businessNumber("1234567890")
+            .shopDescription("기존설명")
             .build();
 
     PutShopRequest request =
@@ -225,6 +226,7 @@ public class ShopCommandServiceImplTest {
             2L,
             "01099998888",
             "9998877777",
+            "새설명",
             List.of(new SnsRequest(10L, "INSTA", "https://insta.com/newshop")));
 
     SNS existingSns = SNS.builder().snsId(10L).shopId(shopId).build();
@@ -242,6 +244,7 @@ public class ShopCommandServiceImplTest {
 
     assertThat(existingShop.getShopName()).isEqualTo("새이름");
     assertThat(existingShop.getPhoneNumber()).isEqualTo("01099998888");
+    assertThat(existingShop.getShopDescription()).isEqualTo("새설명");
   }
 
   @Test
@@ -257,11 +260,12 @@ public class ShopCommandServiceImplTest {
             .industryId(1L)
             .phoneNumber("010-0000-0000")
             .businessNumber("000-00-00000")
+            .shopDescription("매장설명")
             .build();
 
     PutShopRequest request =
         new PutShopRequest(
-            "이름", "주소", "상세주소", 1L, "01000000000", "0000000000", Collections.emptyList());
+            "이름", "주소", "상세주소", 1L, "01000000000", "0000000000", "매장설명", Collections.emptyList());
 
     // when
     Mockito.when(shopRepository.findByShopId(shopId)).thenReturn(Optional.of(shop));
