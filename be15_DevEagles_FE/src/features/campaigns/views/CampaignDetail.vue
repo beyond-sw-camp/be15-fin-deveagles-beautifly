@@ -10,7 +10,7 @@
 
     <!-- Header -->
     <div class="page-header">
-      <h1 class="font-screen-title">{{ campaign?.name || '캠페인 상세' }}</h1>
+      <h1 class="font-screen-title">{{ campaign?.name || '' }}</h1>
     </div>
 
     <!-- Campaign Info Card -->
@@ -54,33 +54,18 @@
               <span class="label">캠페인명</span>
               <span class="value">{{ campaign?.name }}</span>
             </div>
-            <div class="detail-item">
-              <span class="label">시작일</span>
-              <span class="value">{{ formatDate(campaign?.startDate) }}</span>
-            </div>
-            <div class="detail-item">
-              <span class="label">종료일</span>
-              <span class="value">{{ formatDate(campaign?.endDate) }}</span>
-            </div>
+            <!-- 기간 항목 삭제 -->
             <div class="detail-item">
               <span class="label">상태</span>
               <span class="value">{{ getStatusText(campaign?.status) }}</span>
             </div>
             <div class="detail-item">
-              <span class="label">쿠폰</span>
-              <span class="value">
-                <button
-                  class="coupon-link"
-                  :disabled="!campaign?.couponId"
-                  @click="showCouponDetail"
-                >
-                  {{ getCouponName(campaign?.couponId) }}
-                </button>
-              </span>
-            </div>
-            <div class="detail-item full-width">
               <span class="label">설명</span>
               <span class="value">{{ campaign?.description || '설명이 없습니다.' }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="label">쿠폰</span>
+              <span class="value">{{ couponName || '쿠폰 정보 없음' }}</span>
             </div>
           </div>
         </BaseCard>
@@ -100,16 +85,14 @@
 
     <!-- Toast -->
     <BaseToast ref="toast" />
-
-    <!-- Coupon Detail Modal -->
-    <CouponDetailModal v-model="showCouponModal" :coupon-data="selectedCoupon" />
   </div>
 </template>
 
 <script>
   import { ref, onMounted } from 'vue';
   import { useRoute, useRouter } from 'vue-router';
-  import { MOCK_CAMPAIGNS, MOCK_COUPONS } from '@/constants/mockData';
+  import campaignsAPI from '../api/campaigns.js';
+  import couponsAPI from '@/features/coupons/api/coupons.js';
   import { formatPeriod, formatDate, getStatusText, getStatusBadgeType } from '@/utils/formatters';
 
   import BaseButton from '@/components/common/BaseButton.vue';
@@ -118,7 +101,6 @@
   import BaseTab from '@/components/common/BaseTab.vue';
   import BaseToast from '@/components/common/BaseToast.vue';
   import ArrowLeftIcon from '@/components/icons/ArrowLeftIcon.vue';
-  import CouponDetailModal from '@/features/coupons/components/CouponDetailModal.vue';
 
   export default {
     name: 'CampaignDetail',
@@ -129,7 +111,6 @@
       BaseTab,
       BaseToast,
       ArrowLeftIcon,
-      CouponDetailModal,
     },
     setup() {
       const route = useRoute();
@@ -140,18 +121,27 @@
       const campaign = ref(null);
       const activeTab = ref('캠페인 상세');
       const tabs = ['캠페인 상세', '성과 분석'];
-      const showCouponModal = ref(false);
-      const selectedCoupon = ref(null);
+      const couponName = ref('');
 
       // Methods
-      const loadCampaign = () => {
-        const campaignId = parseInt(route.params.id);
-        const foundCampaign = MOCK_CAMPAIGNS.find(c => c.id === campaignId);
-
-        if (foundCampaign) {
-          campaign.value = { ...foundCampaign };
-        } else {
-          toast.value?.show('캠페인을 찾을 수 없습니다.', 'error');
+      const loadCampaign = async () => {
+        try {
+          const campaignId = parseInt(route.params.id);
+          const data = await campaignsAPI.getCampaignById(campaignId);
+          campaign.value = data;
+          // 쿠폰명 조회
+          if (data.couponId) {
+            try {
+              const coupon = await couponsAPI.getCouponById(data.couponId);
+              couponName.value = coupon.name;
+            } catch {
+              couponName.value = '쿠폰 정보 없음';
+            }
+          } else {
+            couponName.value = '쿠폰 정보 없음';
+          }
+        } catch (e) {
+          toast.value?.error('캠페인을 찾을 수 없습니다.');
           router.push('/campaigns');
         }
       };
@@ -160,29 +150,9 @@
         router.push('/campaigns');
       };
 
-      const getCouponName = couponId => {
-        const coupon = MOCK_COUPONS.find(c => c.id === couponId);
-        return coupon ? coupon.name : '쿠폰 정보 없음';
-      };
-
-      const showCouponDetail = () => {
-        if (!campaign.value?.couponId) {
-          toast.value?.show('쿠폰 정보가 없습니다.', 'error');
-          return;
-        }
-
-        const coupon = MOCK_COUPONS.find(c => c.id === campaign.value.couponId);
-        if (coupon) {
-          selectedCoupon.value = coupon;
-          showCouponModal.value = true;
-        } else {
-          toast.value?.show('쿠폰을 찾을 수 없습니다.', 'error');
-        }
-      };
-
       // Lifecycle
-      onMounted(() => {
-        loadCampaign();
+      onMounted(async () => {
+        await loadCampaign();
       });
 
       return {
@@ -191,13 +161,10 @@
         activeTab,
         tabs,
         toast,
-        showCouponModal,
-        selectedCoupon,
+        couponName,
 
         // Methods
         goBack,
-        getCouponName,
-        showCouponDetail,
         formatPeriod,
         formatDate,
         getStatusText,
