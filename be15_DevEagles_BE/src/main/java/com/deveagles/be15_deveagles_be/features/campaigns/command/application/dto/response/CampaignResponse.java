@@ -28,6 +28,9 @@ public class CampaignResponse {
   private Long couponId;
   private Long shopId;
 
+  private Long customerGradeId;
+  private Long tagId;
+
   public static CampaignResponse from(Campaign campaign) {
     return CampaignResponse.builder()
         .id(campaign.getId())
@@ -41,6 +44,8 @@ public class CampaignResponse {
         .templateId(campaign.getTemplateId())
         .couponId(campaign.getCouponId())
         .shopId(campaign.getShopId())
+        .customerGradeId(campaign.getCustomerGradeId())
+        .tagId(campaign.getTagId())
         .build();
   }
 }

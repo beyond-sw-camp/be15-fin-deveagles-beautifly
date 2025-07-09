@@ -25,13 +25,17 @@ public class CreateCampaignRequest {
 
   @NotNull(message = "종료일은 필수입니다.") private LocalDate endDate;
 
-  private LocalDateTime messageSendAt;
+  @NotNull(message = "메시지 발송 시간은 필수입니다.") private LocalDateTime messageSendAt;
 
   @NotNull(message = "작성자 ID는 필수입니다.") private Long staffId;
 
   @NotNull(message = "템플릿 ID는 필수입니다.") private Long templateId;
 
   @NotNull(message = "쿠폰 ID는 필수입니다.") private Long couponId;
+
+  @NotNull(message = "고객 등급 ID는 필수입니다.") private Long customerGradeId;
+
+  @NotNull(message = "태그 ID는 필수입니다.") private Long tagId;
 
   @NotNull(message = "상점 ID는 필수입니다.") private Long shopId;
 }
