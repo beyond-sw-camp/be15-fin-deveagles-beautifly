@@ -17,7 +17,8 @@ import com.deveagles.be15_deveagles_be.features.sales.command.domain.repository.
 import com.deveagles.be15_deveagles_be.features.sales.command.domain.repository.SalesRepository;
 import com.deveagles.be15_deveagles_be.features.sales.command.domain.repository.SessionPassSalesRepository;
 import jakarta.transaction.Transactional;
-import java.time.LocalDate;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -35,7 +36,6 @@ public class SessionPassSalesCommandServiceImpl implements SessionPassSalesComma
   @Transactional
   @Override
   public void registSessionPassSales(SessionPassSalesRequest request) {
-
     if (request.getRetailPrice() < 0) {
       throw new BusinessException(ErrorCode.SALES_RETAILPRICE_REQUIRED);
     }
@@ -50,6 +50,7 @@ public class SessionPassSalesCommandServiceImpl implements SessionPassSalesComma
         throw new BusinessException(ErrorCode.SALES_PAYMENTMETHOD_REQUIRED);
       }
     }
+
     // 1. Sales 저장
     Sales sales =
         Sales.builder()
@@ -75,7 +76,7 @@ public class SessionPassSalesCommandServiceImpl implements SessionPassSalesComma
             .build();
     sessionPassSalesRepository.save(sessionPassSales);
 
-    // 3. Payment 저장
+    // 3. Payments 저장
     List<Payments> payments =
         request.getPayments().stream()
             .map(
@@ -86,10 +87,7 @@ public class SessionPassSalesCommandServiceImpl implements SessionPassSalesComma
                         .amount(p.getAmount())
                         .build())
             .toList();
-
-    for (Payments payment : payments) {
-      paymentsRepository.save(payment);
-    }
+    payments.forEach(paymentsRepository::save);
 
     // 4. 고객 횟수권 등록
     SessionPass sessionPass =
@@ -97,7 +95,7 @@ public class SessionPassSalesCommandServiceImpl implements SessionPassSalesComma
             .findById(request.getSessionPassId())
             .orElseThrow(() -> new BusinessException(ErrorCode.SESSIONPASS_NOT_FOUND));
 
-    LocalDate expirationDate =
+    Date expirationDate =
         calculateExpirationDate(
             sessionPass.getExpirationPeriod(), sessionPass.getExpirationPeriodType());
 
@@ -113,19 +111,20 @@ public class SessionPassSalesCommandServiceImpl implements SessionPassSalesComma
     customerSessionPassCommandService.registCustomerSessionPass(passRequest);
   }
 
-  private LocalDate calculateExpirationDate(int period, ExpirationPeriodType type) {
-    return switch (type) {
-      case DAY -> LocalDate.now().plusDays(period);
-      case WEEK -> LocalDate.now().plusWeeks(period);
-      case MONTH -> LocalDate.now().plusMonths(period);
-      case YEAR -> LocalDate.now().plusYears(period);
-    };
+  private Date calculateExpirationDate(int period, ExpirationPeriodType type) {
+    Calendar calendar = Calendar.getInstance();
+    switch (type) {
+      case DAY -> calendar.add(Calendar.DAY_OF_YEAR, period);
+      case WEEK -> calendar.add(Calendar.WEEK_OF_YEAR, period);
+      case MONTH -> calendar.add(Calendar.MONTH, period);
+      case YEAR -> calendar.add(Calendar.YEAR, period);
+    }
+    return calendar.getTime();
   }
 
   @Transactional
   @Override
   public void updateSessionPassSales(Long salesId, SessionPassSalesRequest request) {
-
     if (request.getRetailPrice() < 0) {
       throw new BusinessException(ErrorCode.SALES_RETAILPRICE_REQUIRED);
     }
@@ -141,7 +140,7 @@ public class SessionPassSalesCommandServiceImpl implements SessionPassSalesComma
       }
     }
 
-    // 1. 기존 Sales 엔티티 조회 및 업데이트
+    // 1. 기존 Sales 조회 및 업데이트
     Sales sales =
         salesRepository
             .findById(salesId)
@@ -159,7 +158,7 @@ public class SessionPassSalesCommandServiceImpl implements SessionPassSalesComma
         request.getSalesMemo(),
         request.getSalesDate());
 
-    // 2. 기존 SessionPassSales 삭제 후 새로 저장
+    // 2. 기존 SessionPassSales 삭제 후 저장
     sessionPassSalesRepository.deleteBySalesId(salesId);
     SessionPassSales sessionPassSales =
         SessionPassSales.builder()
@@ -170,7 +169,6 @@ public class SessionPassSalesCommandServiceImpl implements SessionPassSalesComma
 
     // 3. 기존 Payments 삭제 후 재등록
     paymentsRepository.deleteBySalesId(salesId);
-
     List<Payments> payments =
         request.getPayments().stream()
             .map(
@@ -181,9 +179,6 @@ public class SessionPassSalesCommandServiceImpl implements SessionPassSalesComma
                         .amount(p.getAmount())
                         .build())
             .toList();
-
-    for (Payments payment : payments) {
-      paymentsRepository.save(payment);
-    }
+    payments.forEach(paymentsRepository::save);
   }
 }

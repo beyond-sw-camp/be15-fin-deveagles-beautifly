@@ -4,12 +4,11 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import lombok.AllArgsConstructor;
 
 @Getter
 @Setter
@@ -89,19 +88,18 @@ public class CustomerListResponse {
     this.recentVisitDate = recentVisitDate;
     this.birthdate = birthdate;
     this.gender = gender;
-    this.staff = StaffInfo.builder()
-        .staffId(staffId)
-        .staffName(staffName)
-        .build();
-    this.customerGrade = CustomerGradeInfo.builder()
-        .customerGradeId(customerGradeId)
-        .customerGradeName(customerGradeName)
-        .discountRate(discountRate)
-        .build();
-    this.acquisitionChannel = AcquisitionChannelInfo.builder()
-        .acquisitionChannelId(acquisitionChannelId)
-        .acquisitionChannelName(acquisitionChannelName)
-        .build();
+    this.staff = StaffInfo.builder().staffId(staffId).staffName(staffName).build();
+    this.customerGrade =
+        CustomerGradeInfo.builder()
+            .customerGradeId(customerGradeId)
+            .customerGradeName(customerGradeName)
+            .discountRate(discountRate)
+            .build();
+    this.acquisitionChannel =
+        AcquisitionChannelInfo.builder()
+            .acquisitionChannelId(acquisitionChannelId)
+            .acquisitionChannelName(acquisitionChannelName)
+            .build();
     this.remainingPrepaidAmount = remainingPrepaidAmount;
     this.noshowCount = noshowCount;
     this.createdAt = createdAt;

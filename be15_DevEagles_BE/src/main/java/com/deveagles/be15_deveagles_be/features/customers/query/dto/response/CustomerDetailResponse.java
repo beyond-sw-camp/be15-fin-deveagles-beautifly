@@ -120,19 +120,18 @@ public class CustomerDetailResponse {
     this.createdAt = createdAt;
     this.modifiedAt = modifiedAt;
     this.shopId = shopId;
-    this.staff = StaffInfo.builder()
-        .staffId(staffId)
-        .staffName(staffName)
-        .build();
-    this.customerGrade = CustomerGradeInfo.builder()
-        .customerGradeId(customerGradeId)
-        .customerGradeName(customerGradeName)
-        .discountRate(discountRate)
-        .build();
-    this.acquisitionChannel = AcquisitionChannelInfo.builder()
-        .acquisitionChannelId(acquisitionChannelId)
-        .acquisitionChannelName(acquisitionChannelName)
-        .build();
+    this.staff = StaffInfo.builder().staffId(staffId).staffName(staffName).build();
+    this.customerGrade =
+        CustomerGradeInfo.builder()
+            .customerGradeId(customerGradeId)
+            .customerGradeName(customerGradeName)
+            .discountRate(discountRate)
+            .build();
+    this.acquisitionChannel =
+        AcquisitionChannelInfo.builder()
+            .acquisitionChannelId(acquisitionChannelId)
+            .acquisitionChannelName(acquisitionChannelName)
+            .build();
     this.remainingPrepaidAmount = remainingPrepaidAmount;
   }
 }

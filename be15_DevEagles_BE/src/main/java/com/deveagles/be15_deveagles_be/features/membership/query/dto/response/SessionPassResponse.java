@@ -11,6 +11,7 @@ public class SessionPassResponse {
 
   private Long sessionPassId;
   private String sessionPassName;
+  private Long secondaryItemId;
   private Integer sessionPassPrice;
   private Integer session;
   private Integer expirationPeriod;
@@ -24,6 +25,7 @@ public class SessionPassResponse {
     return SessionPassResponse.builder()
         .sessionPassId(pass.getSessionPassId())
         .sessionPassName(pass.getSessionPassName())
+        .secondaryItemId(pass.getSecondaryItemId())
         .sessionPassPrice(pass.getSessionPassPrice())
         .session(pass.getSession())
         .expirationPeriod(pass.getExpirationPeriod())

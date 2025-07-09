@@ -50,6 +50,7 @@ public class SessionPassCommandServiceImpl implements SessionPassCommandService 
     SessionPass sessionPass =
         SessionPass.builder()
             .shopId(shop)
+            .secondaryItemId(request.getSecondaryItemId())
             .sessionPassName(request.getSessionPassName())
             .sessionPassPrice(request.getSessionPassPrice())
             .session(request.getSession())
@@ -96,6 +97,7 @@ public class SessionPassCommandServiceImpl implements SessionPassCommandService 
     // 필드 수정
     sessionPass.updateSessionPass(
         request.getSessionPassName(),
+        request.getSecondaryItemId(),
         request.getSessionPassPrice(),
         request.getSession(),
         request.getExpirationPeriod(),
