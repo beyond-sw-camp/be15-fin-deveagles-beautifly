@@ -6,7 +6,7 @@
     <div class="base-table-wrapper">
       <BaseTable
         :columns="columns"
-        :data="pagedData"
+        :data="historyData"
         row-key="id"
         :striped="true"
         :hover="true"
@@ -29,176 +29,43 @@
 </template>
 
 <script setup>
-  import { ref, computed } from 'vue';
+  import { ref, computed, onMounted, watch } from 'vue';
   import BaseTable from '@/components/common/BaseTable.vue';
   import Pagination from '@/components/common/Pagination.vue';
   import ReservationDetailModal from '@/features/schedules/components/ReservationDetailModal.vue';
+  import { fetchReservationHistories } from '@/features/schedules/api/schedules.js';
 
   const columns = [
-    { key: 'customer', title: '고객 이름', width: '120px' },
-    { key: 'service', title: '시술', width: '100px' },
-    { key: 'staff', title: '담당자', width: '100px' },
-    { key: 'date', title: '예약 날짜', width: '160px' },
-    { key: 'change', title: '변경 내용', width: '100px' },
-    { key: 'changedAt', title: '변경 일시', width: '160px' },
+    { key: 'customerName', title: '고객 이름', width: '120px' },
+    { key: 'itemNames', title: '시술', width: '100px' },
+    { key: 'staffName', title: '담당자', width: '100px' },
+    { key: 'reservationStartAt', title: '예약 날짜', width: '160px' },
+    { key: 'historyType', title: '변경 내용', width: '100px' },
+    { key: 'historyAt', title: '변경 일시', width: '160px' },
   ];
 
-  const historyData = [
-    {
-      id: 1,
-      customer: '김미글',
-      service: '염펌',
-      staff: '박미글',
-      date: '2025.06.08 14시',
-      change: '삭제',
-      changedAt: '2025.06.08 11:08',
-    },
-    {
-      id: 2,
-      customer: '김미글',
-      service: '염펌',
-      staff: '박미글',
-      date: '2025.06.08 14시',
-      change: '수정',
-      changedAt: '2025.06.08 11:08',
-    },
-    {
-      id: 3,
-      customer: '김미글',
-      service: '염펌',
-      staff: '박미글',
-      date: '2025.06.08 14시',
-      change: '수정',
-      changedAt: '2025.06.08 11:08',
-    },
-    {
-      id: 4,
-      customer: '김미글',
-      service: '염펌',
-      staff: '박미글',
-      date: '2025.06.08 14시',
-      change: '삭제',
-      changedAt: '2025.06.08 11:08',
-    },
-    {
-      id: 5,
-      customer: '김미글',
-      service: '염펌',
-      staff: '박미글',
-      date: '2025.06.08 14시',
-      change: '수정',
-      changedAt: '2025.06.08 11:08',
-    },
-    {
-      id: 6,
-      customer: '김미글',
-      service: '염펌',
-      staff: '박미글',
-      date: '2025.06.08 14시',
-      change: '수정',
-      changedAt: '2025.06.08 11:08',
-    },
-    {
-      id: 7,
-      customer: '김미글',
-      service: '염펌',
-      staff: '박미글',
-      date: '2025.06.08 14시',
-      change: '삭제',
-      changedAt: '2025.06.08 11:08',
-    },
-    {
-      id: 8,
-      customer: '김미글',
-      service: '염펌',
-      staff: '박미글',
-      date: '2025.06.08 14시',
-      change: '삭제',
-      changedAt: '2025.06.08 11:08',
-    },
-    {
-      id: 9,
-      customer: '김미글',
-      service: '염펌',
-      staff: '박미글',
-      date: '2025.06.08 14시',
-      change: '삭제',
-      changedAt: '2025.06.08 11:08',
-    },
-    {
-      id: 10,
-      customer: '김미글',
-      service: '염펌',
-      staff: '박미글',
-      date: '2025.06.08 14시',
-      change: '수정',
-      changedAt: '2025.06.08 11:08',
-    },
-    {
-      id: 11,
-      customer: '김미글',
-      service: '염펌',
-      staff: '박미글',
-      date: '2025.06.08 14시',
-      change: '수정',
-      changedAt: '2025.06.08 11:08',
-    },
-    {
-      id: 12,
-      customer: '김미글',
-      service: '염펌',
-      staff: '박미글',
-      date: '2025.06.08 14시',
-      change: '삭제',
-      changedAt: '2025.06.08 11:08',
-    },
-    {
-      id: 13,
-      customer: '김미글',
-      service: '염펌',
-      staff: '박미글',
-      date: '2025.06.08 14시',
-      change: '수정',
-      changedAt: '2025.06.08 11:08',
-    },
-    {
-      id: 14,
-      customer: '김미글',
-      service: '염펌',
-      staff: '박미글',
-      date: '2025.06.08 14시',
-      change: '수정',
-      changedAt: '2025.06.08 11:08',
-    },
-    {
-      id: 15,
-      customer: '김미글',
-      service: '염펌',
-      staff: '박미글',
-      date: '2025.06.08 14시',
-      change: '삭제',
-      changedAt: '2025.06.08 11:08',
-    },
-    {
-      id: 16,
-      customer: '김미글',
-      service: '염펌',
-      staff: '박미글',
-      date: '2025.06.08 14시',
-      change: '삭제',
-      changedAt: '2025.06.08 11:08',
-    },
-  ];
-
+  const historyData = ref([]);
   const currentPage = ref(1);
   const itemsPerPage = ref(10);
+  const totalItems = ref(0);
 
-  const totalPages = computed(() => Math.ceil(historyData.length / itemsPerPage.value));
+  const totalPages = computed(() => Math.ceil(totalItems.value / itemsPerPage.value));
 
-  const pagedData = computed(() => {
-    const start = (currentPage.value - 1) * itemsPerPage.value;
-    return historyData.slice(start, start + itemsPerPage.value);
-  });
+  const fetchData = async () => {
+    try {
+      const res = await fetchReservationHistories({
+        page: currentPage.value - 1,
+        size: itemsPerPage.value,
+      });
+      historyData.value = res.content.map(item => ({
+        ...item,
+        customerName: item.customerName ?? '미등록 고객',
+      }));
+      totalItems.value = res.pagination.totalItems;
+    } catch (err) {
+      console.error('예약 변경 이력 조회 실패:', err);
+    }
+  };
 
   function handlePageChange(page) {
     currentPage.value = page;
@@ -209,7 +76,9 @@
     currentPage.value = 1;
   }
 
-  // 모달 관련
+  watch([currentPage, itemsPerPage], fetchData);
+  onMounted(fetchData);
+
   const isModalOpen = ref(false);
   const selectedReservation = ref({});
 
