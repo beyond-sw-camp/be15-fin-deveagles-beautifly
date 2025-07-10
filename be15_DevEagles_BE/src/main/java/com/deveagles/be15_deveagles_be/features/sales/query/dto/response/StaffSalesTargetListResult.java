@@ -8,5 +8,5 @@ import lombok.Getter;
 @Builder
 public class StaffSalesTargetListResult {
 
-  private List<StaffSalesTargetResponse> staffTargets;
+  private List<StaffSalesTargetResponse> staffSalesList;
 }

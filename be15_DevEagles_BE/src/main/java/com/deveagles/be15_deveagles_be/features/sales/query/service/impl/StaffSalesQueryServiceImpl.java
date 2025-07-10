@@ -222,7 +222,7 @@ public class StaffSalesQueryServiceImpl implements StaffSalesQueryService {
                 })
             .toList();
 
-    return StaffSalesTargetListResult.builder().staffTargets(staffResponse).build();
+    return StaffSalesTargetListResult.builder().staffSalesList(staffResponse).build();
   }
 
   private StaffProductTargetSalesResponse buildCombinedTargetResponse(
