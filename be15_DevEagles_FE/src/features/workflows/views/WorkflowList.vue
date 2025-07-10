@@ -34,32 +34,6 @@
       </div>
     </div>
 
-    <!-- Filters -->
-    <div class="filters-section">
-      <div class="filter-group">
-        <BaseForm
-          :model-value="searchQuery"
-          type="text"
-          placeholder="워크플로우 검색..."
-          @update:model-value="handleSearchChange"
-        />
-        <BaseForm
-          :model-value="statusFilter"
-          type="select"
-          placeholder="상태 선택"
-          :options="statusOptions"
-          @update:model-value="handleStatusFilterChange"
-        />
-        <BaseForm
-          :model-value="typeFilter"
-          type="select"
-          placeholder="유형 선택"
-          :options="typeOptions"
-          @update:model-value="handleTypeFilterChange"
-        />
-      </div>
-    </div>
-
     <!-- Workflow Table -->
     <BaseCard>
       <BaseTable :columns="tableColumns" :data="paginatedWorkflows" :loading="loading" hover>
@@ -450,5 +424,11 @@
 
   .page-header {
     align-items: flex-start;
+  }
+
+  .filter-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
   }
 </style>

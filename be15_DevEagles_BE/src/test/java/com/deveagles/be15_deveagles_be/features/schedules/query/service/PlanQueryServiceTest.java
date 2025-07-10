@@ -37,6 +37,7 @@ class PlanQueryServiceTest {
     PlanDetailResponse mockResponse =
         new PlanDetailResponse(
             planId,
+            "김민지",
             1L,
             1L,
             "회의",
@@ -71,6 +72,7 @@ class PlanQueryServiceTest {
         new RegularPlanDetailResponse(
             regularId,
             1L,
+            "김민지",
             1L,
             "매주 미팅",
             "메모",
@@ -115,6 +117,7 @@ class PlanQueryServiceTest {
         List.of(
             new PlanListResponse(
                 1L,
+                1L,
                 "김민지",
                 "회의",
                 "plan",
@@ -125,6 +128,7 @@ class PlanQueryServiceTest {
                 null),
             new PlanListResponse(
                 2L,
+                1L,
                 "김민지",
                 "정기미팅",
                 "regular",

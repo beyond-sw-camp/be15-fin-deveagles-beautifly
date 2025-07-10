@@ -10,7 +10,7 @@
       </div>
 
       <div class="modal-body">
-        <div class="left-detail">
+        <div v-if="Object.keys(leave || {}).length" class="left-detail">
           <div class="row row-select">
             <label>구분</label>
             <div class="form-control-wrapper">
@@ -33,11 +33,11 @@
             <div class="form-control-wrapper">
               <BaseForm
                 v-if="isEditMode"
-                v-model="edited.title"
+                v-model="edited.leaveTitle"
                 type="text"
                 placeholder="제목 입력"
               />
-              <span v-else>{{ reservation.title }}</span>
+              <span v-else>{{ leave.leaveTitle || '없음' }}</span>
             </div>
           </div>
 
@@ -46,15 +46,12 @@
             <div class="form-control-wrapper">
               <BaseForm
                 v-if="isEditMode"
-                v-model="edited.staff"
+                v-model="edited.staffId"
                 type="select"
-                :options="[
-                  { text: '디자이너 A', value: '디자이너 A' },
-                  { text: '디자이너 B', value: '디자이너 B' },
-                ]"
+                :options="staffOptions"
                 placeholder="담당자 선택"
               />
-              <span v-else>{{ reservation.staff || '미지정' }}</span>
+              <span v-else>{{ leave.staffName || '미지정' }}</span>
             </div>
           </div>
 
@@ -62,7 +59,7 @@
             <label>날짜</label>
             <div class="form-control-wrapper">
               <PrimeDatePicker
-                v-if="isEditMode"
+                v-if="isEditMode && edited.type === 'leave'"
                 v-model="edited.date"
                 :show-time="false"
                 :show-button-bar="true"
@@ -70,7 +67,7 @@
                 hour-format="24"
                 placeholder="날짜를 선택하세요"
               />
-              <span v-else>{{ reservation.start }}</span>
+              <span v-else>{{ displayStart }}</span>
             </div>
           </div>
 
@@ -83,7 +80,7 @@
                 type="textarea"
                 placeholder="메모 입력"
               />
-              <span v-else>{{ reservation.memo }}</span>
+              <span v-else>{{ leave.memo }}</span>
             </div>
           </div>
         </div>
@@ -113,72 +110,105 @@
   import BaseButton from '@/components/common/BaseButton.vue';
   import BaseForm from '@/components/common/BaseForm.vue';
   import PrimeDatePicker from '@/components/common/PrimeDatePicker.vue';
+  import { getStaffList, fetchScheduleDetail } from '@/features/schedules/api/schedules.js';
 
   const props = defineProps({
     modelValue: { type: Boolean, required: true },
-    reservation: { type: Object, default: () => ({}) },
+    id: { type: Number, required: true },
+    type: { type: String, required: true },
   });
   const emit = defineEmits(['update:modelValue']);
 
   const isEditMode = ref(false);
   const showMenu = ref(false);
   const edited = ref({});
+  const staffOptions = ref([]);
+  const leave = ref(null);
 
   const close = () => {
     emit('update:modelValue', false);
     isEditMode.value = false;
     showMenu.value = false;
     edited.value = {};
+    leave.value = null;
   };
 
   const handleEsc = e => {
-    if (e.key === 'Escape') {
-      close();
-    }
+    if (e.key === 'Escape') close();
   };
-
-  onMounted(() => {
+  onMounted(async () => {
     window.addEventListener('keydown', handleEsc);
+    const staffResponse = await getStaffList();
+    staffOptions.value = staffResponse.map(s => ({ text: s.staffName, value: s.staffId }));
   });
-  onBeforeUnmount(() => {
-    window.removeEventListener('keydown', handleEsc);
-  });
+  onBeforeUnmount(() => window.removeEventListener('keydown', handleEsc));
 
   watch(
     () => props.modelValue,
-    newVal => {
-      if (newVal) {
+    async val => {
+      if (val) {
         isEditMode.value = false;
         showMenu.value = false;
         edited.value = {};
+        try {
+          const response = await fetchScheduleDetail(props.type, props.id);
+          const data = response.data.data;
+
+          leave.value = {
+            leaveTitle: data.leaveTitle ?? data.title ?? '',
+            staffName: data.staffName ?? data.staff ?? '',
+            memo: data.memo ?? '',
+            startAt: props.type === 'leave' ? (data.start ?? data.leaveDate ?? '') : undefined,
+            repeatRule: props.type === 'regular_leave' ? (data.repeatRule ?? '') : undefined,
+          };
+        } catch (e) {
+          console.error('❌ 휴무 상세 조회 실패', e);
+        }
       }
-    }
+    },
+    { immediate: true }
   );
 
-  const toggleMenu = () => {
-    showMenu.value = !showMenu.value;
-  };
-
+  const toggleMenu = () => (showMenu.value = !showMenu.value);
   const handleEdit = () => {
     isEditMode.value = true;
     showMenu.value = false;
-    edited.value = { ...props.reservation };
+    edited.value = {
+      ...leave.value,
+      staffId: leave.value.staffId,
+      date: leave.value.startAt?.split('T')[0] || '',
+      leaveTitle: leave.value.leaveTitle,
+      memo: leave.value.memo,
+      type: props.type,
+    };
   };
-
   const handleDelete = () => {
     showMenu.value = false;
     if (confirm('정말 삭제하시겠습니까?')) {
       alert('삭제 요청 전송');
     }
   };
-
   const saveEdit = () => {
     alert('수정 내용 저장:\n' + JSON.stringify(edited.value, null, 2));
     isEditMode.value = false;
   };
 
   const leaveTypeLabel = computed(() => {
-    return props.reservation.type === 'regular_leave' ? '정기휴무' : '휴무';
+    return props.type === 'regular_leave' ? '정기휴무' : '휴무';
+  });
+
+  const displayStart = computed(() => {
+    if (!leave.value) return '';
+    if (props.type === 'regular_leave') {
+      return leave.value.repeatRule || '-';
+    }
+    return leave.value.startAt
+      ? new Date(leave.value.startAt).toLocaleDateString('ko-KR', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+        })
+      : '-';
   });
 </script>
 
@@ -231,10 +261,12 @@
     display: flex;
     gap: 32px;
     flex: 1;
+    min-height: 200px;
   }
 
   .left-detail {
     flex: 1;
+    display: block !important;
   }
 
   .row {

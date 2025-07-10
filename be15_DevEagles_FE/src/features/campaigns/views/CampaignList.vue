@@ -194,18 +194,8 @@
         }
       };
 
-      const loadCoupons = async () => {
-        try {
-          const res = await couponsAPI.getCoupons({ shopId: authStore.shopId, page: 0, size: 100 });
-          coupons.value = res.content;
-        } catch {
-          coupons.value = [];
-        }
-      };
-
       onMounted(() => {
         loadCampaigns();
-        loadCoupons();
       });
 
       // Local state

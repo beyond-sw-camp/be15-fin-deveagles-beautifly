@@ -1,6 +1,5 @@
 /**
  * API 에러 처리 유틸리티
- * 단일 책임: HTTP 에러를 사용자 친화적 메시지로 변환
  */
 class ApiErrorHandler {
   /**
