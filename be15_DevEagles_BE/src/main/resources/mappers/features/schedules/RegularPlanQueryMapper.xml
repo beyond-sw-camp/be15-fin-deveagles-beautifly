@@ -6,16 +6,18 @@
 <mapper namespace="com.deveagles.be15_deveagles_be.features.schedules.query.mapper.RegularPlanQueryMapper">
     <select id="findRegularPlanDetailById" resultType="com.deveagles.be15_deveagles_be.features.schedules.query.dto.response.RegularPlanDetailResponse">
         SELECT
-            regular_plan_id     AS regularPlanId,
-            staff_id            AS staffId,
-            shop_id             AS shopId,
-            regular_plan_title  AS title,
-            regular_plan_memo   AS memo,
-            monthly_plan        AS monthlyPlan,
-            weekly_plan         AS weeklyPlan,
-            regular_plan_start_at AS startAt,
-            regular_plan_end_at   AS endAt
-        FROM regular_plan
-        WHERE regular_plan_id = #{regularPlanId}
+            rp.regular_plan_id     AS regularPlanId,
+            rp.staff_id            AS staffId,
+            s.staff_name           AS staffName,
+            rp.shop_id             AS shopId,
+            rp.regular_plan_title  AS title,
+            rp.regular_plan_memo   AS memo,
+            rp.monthly_plan        AS monthlyPlan,
+            rp.weekly_plan         AS weeklyPlan,
+            rp.regular_plan_start_at AS startAt,
+            rp.regular_plan_end_at   AS endAt
+        FROM regular_plan rp
+        JOIN staff s ON rp.staff_id = s.staff_id
+        WHERE rp.regular_plan_id = #{regularPlanId}
     </select>
 </mapper>

@@ -4,6 +4,7 @@ import java.time.LocalDate;
 
 public record LeaveListResponse(
     Long id, // 단기: leaveId, 정기: regularLeaveId
+    Long staffId,
     String staffName,
     String leaveTitle,
     String leaveType, // "regular" or "leave"
