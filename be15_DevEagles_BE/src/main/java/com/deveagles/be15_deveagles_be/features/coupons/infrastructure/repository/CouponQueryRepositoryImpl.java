@@ -1,10 +1,17 @@
 package com.deveagles.be15_deveagles_be.features.coupons.infrastructure.repository;
 
 import static com.deveagles.be15_deveagles_be.features.coupons.domain.entity.QCoupon.coupon;
+import static com.deveagles.be15_deveagles_be.features.items.command.domain.aggregate.QPrimaryItem.primaryItem;
+import static com.deveagles.be15_deveagles_be.features.items.command.domain.aggregate.QSecondaryItem.secondaryItem;
+import static com.deveagles.be15_deveagles_be.features.users.command.domain.aggregate.QStaff.staff;
 
 import com.deveagles.be15_deveagles_be.features.coupons.application.query.CouponSearchQuery;
-import com.deveagles.be15_deveagles_be.features.coupons.domain.entity.Coupon;
+import com.deveagles.be15_deveagles_be.features.coupons.common.CouponDto;
 import com.deveagles.be15_deveagles_be.features.coupons.domain.repository.CouponQueryRepository;
+import com.querydsl.core.BooleanBuilder;
+import com.querydsl.core.types.OrderSpecifier;
+import com.querydsl.core.types.Projections;
+import com.querydsl.jpa.impl.JPAQueryFactory;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,10 +25,10 @@ import org.springframework.stereotype.Repository;
 @Slf4j
 public class CouponQueryRepositoryImpl implements CouponQueryRepository {
 
-  private final com.querydsl.jpa.impl.JPAQueryFactory queryFactory;
+  private final JPAQueryFactory queryFactory;
 
   @Override
-  public Page<Coupon> searchCoupons(CouponSearchQuery query, Pageable pageable) {
+  public Page<CouponDto> searchCoupons(CouponSearchQuery query, Pageable pageable) {
     log.info(
         "쿠폰 검색 시작 - 조건: 매장ID={}, 활성상태={}, 직원ID={}, 상품ID={}",
         query.getShopId(),
@@ -29,34 +36,28 @@ public class CouponQueryRepositoryImpl implements CouponQueryRepository {
         query.getStaffId(),
         query.getPrimaryItemId());
 
-    com.querydsl.core.BooleanBuilder builder = new com.querydsl.core.BooleanBuilder();
-
+    BooleanBuilder builder = new BooleanBuilder();
     builder.and(coupon.deletedAt.isNull());
 
+    // Add search conditions
     if (query.getCouponCode() != null && !query.getCouponCode().trim().isEmpty()) {
       builder.and(coupon.couponCode.containsIgnoreCase(query.getCouponCode()));
     }
-
     if (query.getCouponTitle() != null && !query.getCouponTitle().trim().isEmpty()) {
       builder.and(coupon.couponTitle.containsIgnoreCase(query.getCouponTitle()));
     }
-
     if (query.getShopId() != null) {
       builder.and(coupon.shopId.eq(query.getShopId()));
     }
-
     if (query.getStaffId() != null) {
       builder.and(coupon.staffId.eq(query.getStaffId()));
     }
-
     if (query.getPrimaryItemId() != null) {
       builder.and(coupon.primaryItemId.eq(query.getPrimaryItemId()));
     }
-
     if (query.getIsActive() != null) {
       builder.and(coupon.isActive.eq(query.getIsActive()));
     }
-
     if (query.getExpirationDateFrom() != null) {
       builder.and(coupon.expirationDate.goe(query.getExpirationDateFrom()));
     }
@@ -64,29 +65,59 @@ public class CouponQueryRepositoryImpl implements CouponQueryRepository {
       builder.and(coupon.expirationDate.loe(query.getExpirationDateTo()));
     }
 
-    com.querydsl.core.types.OrderSpecifier<?> orderSpecifier = getOrderSpecifier(query);
-
     Long totalCount = queryFactory.select(coupon.count()).from(coupon).where(builder).fetchOne();
 
-    List<Coupon> coupons =
+    log.info("쿠폰 총 개수: {}", totalCount);
+
+    OrderSpecifier<?> orderSpecifier = getOrderSpecifier(query);
+
+    List<CouponDto> coupons =
         queryFactory
-            .selectFrom(coupon)
+            .select(
+                Projections.constructor(
+                    CouponDto.class,
+                    coupon.id,
+                    coupon.couponCode,
+                    coupon.couponTitle,
+                    coupon.shopId,
+                    coupon.discountRate,
+                    coupon.expirationDate,
+                    coupon.isActive,
+                    coupon.createdAt,
+                    staff.staffId,
+                    staff.staffName,
+                    primaryItem.primaryItemId,
+                    primaryItem.primaryItemName,
+                    primaryItem.category.stringValue(),
+                    secondaryItem.secondaryItemId.longValue(),
+                    secondaryItem.secondaryItemName.stringValue()))
+            .from(coupon)
+            .leftJoin(staff)
+            .on(coupon.staffId.eq(staff.staffId))
+            .leftJoin(primaryItem)
+            .on(coupon.primaryItemId.eq(primaryItem.primaryItemId))
+            .leftJoin(secondaryItem)
+            .on(coupon.secondaryItemId.eq(secondaryItem.secondaryItemId))
             .where(builder)
             .orderBy(orderSpecifier)
             .offset(pageable.getOffset())
             .limit(pageable.getPageSize())
             .fetch();
 
-    log.info("쿠폰 검색 완료 - 총 {}개, 현재 페이지: {}", totalCount, pageable.getPageNumber());
+    log.info(
+        "쿠폰 검색 완료 - 조회된 건수: {}, 총 개수: {}, 현재 페이지: {}",
+        coupons.size(),
+        totalCount,
+        pageable.getPageNumber());
 
     return new PageImpl<>(coupons, pageable, totalCount != null ? totalCount : 0);
   }
 
-  private com.querydsl.core.types.OrderSpecifier<?> getOrderSpecifier(CouponSearchQuery query) {
+  private OrderSpecifier<?> getOrderSpecifier(CouponSearchQuery query) {
     String sortBy = query.getSortBy() != null ? query.getSortBy() : "createdAt";
     String sortDirection = query.getSortDirection() != null ? query.getSortDirection() : "desc";
 
-    com.querydsl.core.types.OrderSpecifier<?> orderSpecifier;
+    OrderSpecifier<?> orderSpecifier;
 
     switch (sortBy.toLowerCase()) {
       case "createdat":

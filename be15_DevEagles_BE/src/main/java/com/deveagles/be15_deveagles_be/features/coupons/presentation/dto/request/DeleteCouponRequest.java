@@ -13,4 +13,6 @@ import lombok.NoArgsConstructor;
 public class DeleteCouponRequest {
 
   @NotNull(message = "쿠폰 ID는 필수입니다") private Long id;
+
+  @NotNull(message = "매장 ID는 필수입니다") private Long shopId;
 }

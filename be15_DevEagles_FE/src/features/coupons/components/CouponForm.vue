@@ -15,23 +15,14 @@
     <!-- 카테고리 & 디자이너 (2열) -->
     <div class="form-row">
       <BaseForm
-        id="category"
-        v-model="formData.category"
-        label="카테고리*"
-        type="select"
-        placeholder="카테고리를 선택하세요"
-        :options="categoryOptions"
-        :error="errors.category"
-        required
-      />
-      <BaseForm
         id="designer"
-        v-model="formData.designer"
+        v-model="formData.staffId"
         label="디자이너"
         type="select"
         placeholder="디자이너를 선택하세요"
-        :options="designerOptions"
+        :options="staffOptions"
         :error="errors.designer"
+        style="width: 96%"
       />
     </div>
 
@@ -39,22 +30,24 @@
     <div class="form-row">
       <BaseForm
         id="primaryProduct"
-        v-model="formData.primaryProduct"
+        v-model="formData.primaryItemId"
         label="1차 상품*"
         type="select"
         placeholder="1차 상품을 선택하세요"
         :options="primaryProductOptions"
         :error="errors.primaryProduct"
         required
+        style="width: 96%"
       />
       <BaseForm
         id="secondaryProduct"
-        v-model="formData.secondaryProduct"
+        v-model="formData.secondaryItemId"
         label="2차 상품"
         type="select"
         placeholder="2차 상품을 선택하세요 (선택사항)"
         :options="secondaryProductOptions"
         :error="errors.secondaryProduct"
+        style="width: 96%"
       />
     </div>
 
@@ -137,6 +130,9 @@
 </template>
 
 <script>
+  import { ref, computed, watch, onMounted, nextTick } from 'vue';
+  import { useMetadataStore } from '@/store/metadata.js';
+  import { getPrimaryItems, getAllSecondaryItems } from '@/features/items/api/items.js';
   import BaseForm from '@/components/common/BaseForm.vue';
   import BaseButton from '@/components/common/BaseButton.vue';
   import PrimeDatePicker from '@/components/common/PrimeDatePicker.vue';
@@ -159,76 +155,221 @@
       },
     },
     emits: ['save', 'cancel', 'setBeforeClose'],
-    data() {
-      return {
-        formData: {
-          name: '',
-          category: '',
-          designer: '',
-          primaryProduct: '',
-          secondaryProduct: '',
-          discount: 10,
-          expiryDate: '',
-          isActive: false,
-        },
-        errors: {},
-        selectedPreset: null, // 현재 선택된 빠른 선택 기간
-        initialFormData: {}, // 초기 폼 데이터 상태
+    setup(props, { emit }) {
+      // 동적 옵션
+      const metadataStore = useMetadataStore();
+      const staffOptions = computed(() => [
+        { value: null, text: '전체 적용' },
+        ...metadataStore.staff.map(s => ({ value: s.id, text: s.name })),
+      ]);
+      const primaryProductOptions = ref([]);
+      const secondaryProductOptions = ref([]);
+      const categoryOptions = [
+        { value: '시술', text: '시술' },
+        { value: '상품', text: '상품' },
+      ];
 
-        // 날짜 빠른 선택 옵션
-        datePresets: [
-          { value: 1, text: '1개월' },
-          { value: 3, text: '3개월' },
-          { value: 6, text: '6개월' },
-          { value: 12, text: '12개월' },
-          { value: 24, text: '24개월' },
-        ],
+      // 폼 상태
+      const formData = ref({
+        name: '',
+        staffId: null,
+        primaryItemId: null,
+        secondaryItemId: null,
+        discount: 10,
+        expiryDate: '',
+        isActive: false,
+      });
+      const errors = ref({});
+      const selectedPreset = ref(null);
+      const initialFormData = ref({});
 
-        // 옵션 데이터
-        categoryOptions: [
-          { value: '시술', text: '시술' },
-          { value: '상품', text: '상품' },
-        ],
-        designerOptions: [
-          { value: '전체', text: '전체 적용' },
-          { value: '김미영', text: '김미영' },
-          { value: '박지은', text: '박지은' },
-          { value: '이수진', text: '이수진' },
-          { value: '최민호', text: '최민호' },
-          { value: '정하나', text: '정하나' },
-        ],
-        primaryProductOptions: [
-          { value: '헤어컷', text: '헤어컷' },
-          { value: '펌', text: '펌' },
-          { value: '염색', text: '염색' },
-          { value: '네일아트', text: '네일아트' },
-          { value: '메이크업', text: '메이크업' },
-          { value: '피부관리', text: '피부관리' },
-        ],
-        secondaryProductOptions: [
-          { value: '트리트먼트', text: '트리트먼트' },
-          { value: '헤드스파', text: '헤드스파' },
-          { value: '네일케어', text: '네일케어' },
-          { value: '아이브로우', text: '아이브로우' },
-          { value: '마사지', text: '마사지' },
-        ],
+      const datePresets = [
+        { value: 1, text: '1개월' },
+        { value: 3, text: '3개월' },
+        { value: 6, text: '6개월' },
+        { value: 12, text: '12개월' },
+        { value: 24, text: '24개월' },
+      ];
+
+      watch(
+        () => props.couponData,
+        newData => {
+          if (newData && props.isEditMode) {
+            formData.value = {
+              id: newData.id,
+              name: newData.name || '',
+              staffId: newData.staffId || null,
+              primaryItemId: newData.primaryItemId || null,
+              secondaryItemId: newData.secondaryItemId || null,
+              discount: newData.discount || 10,
+              expiryDate: newData.expiryDate || '',
+              isActive: newData.isActive || false,
+            };
+            selectedPreset.value = null;
+            nextTick(() => {
+              saveInitialState();
+            });
+          } else if (!props.isEditMode) {
+            resetForm();
+          }
+        }
+      );
+
+      const loadOptions = async () => {
+        await metadataStore.loadMetadata();
+        const primary = await getPrimaryItems();
+        primaryProductOptions.value = primary.map(item => ({
+          value: item.primaryItemId,
+          text: item.primaryItemName,
+        }));
+        const secondary = await getAllSecondaryItems();
+        secondaryProductOptions.value = secondary.map(item => ({
+          value: item.secondaryItemId,
+          text: item.secondaryItemName,
+        }));
       };
-    },
+      onMounted(loadOptions);
 
-    computed: {
+      const transformToBackendFormat = data => ({
+        name: data.name,
+        discount: data.discount !== null ? Number(data.discount) : null,
+        expiryDate: data.expiryDate,
+        isActive: data.isActive,
+        primaryItemId: data.primaryItemId !== null ? Number(data.primaryItemId) : null,
+        secondaryItemId: data.secondaryItemId !== null ? Number(data.secondaryItemId) : null,
+        staffId: data.staffId !== null ? Number(data.staffId) : null,
+      });
+
+      const validateForm = () => {
+        errors.value = {};
+
+        if (!formData.value.name.trim()) {
+          errors.value.name = '쿠폰명은 필수입니다.';
+        }
+
+        if (!formData.value.primaryItemId) {
+          errors.value.primaryProduct = '1차 상품 선택은 필수입니다.';
+        }
+
+        if (!formData.value.expiryDate) {
+          errors.value.expiryDate = '만료일은 필수입니다.';
+        }
+
+        if (formData.value.discount < 0 || formData.value.discount > 100) {
+          errors.value.discount = '할인율은 0%에서 100% 사이여야 합니다.';
+        }
+
+        // 만료일이 오늘보다 이후인지 확인
+        if (formData.value.expiryDate) {
+          const today = new Date();
+          const expiryDate = new Date(formData.value.expiryDate);
+          today.setHours(0, 0, 0, 0);
+          expiryDate.setHours(0, 0, 0, 0);
+
+          if (expiryDate <= today) {
+            errors.value.expiryDate = '만료일은 오늘 이후여야 합니다.';
+          }
+        }
+
+        return Object.keys(errors.value).length === 0;
+      };
+
+      // 폼 제출 핸들러
+      const handleSubmit = () => {
+        if (validateForm()) {
+          const couponData = transformToBackendFormat(formData.value);
+          emit('save', couponData);
+        }
+      };
+
+      // 취소 핸들러
+      const handleCancel = () => {
+        if (hasChanges.value) {
+          if (
+            confirm(
+              '작성하신 내용이 있습니다. 정말로 취소하시겠습니까?\n변경사항이 저장되지 않습니다.'
+            )
+          ) {
+            emit('cancel');
+          }
+        } else {
+          emit('cancel');
+        }
+      };
+
+      // 창 닫기 전 확인 (BaseWindow의 ESC/백드랍 클릭 처리용)
+      const checkBeforeClose = () => {
+        if (hasChanges.value) {
+          return confirm(
+            '작성하신 내용이 있습니다. 정말로 취소하시겠습니까?\n변경사항이 저장되지 않습니다.'
+          );
+        }
+        return true;
+      };
+
+      // 빠른 날짜 선택 설정
+      const setDatePreset = months => {
+        selectedPreset.value = months;
+        const today = new Date();
+        const futureDate = new Date(today);
+        futureDate.setMonth(futureDate.getMonth() + months);
+        futureDate.setHours(0, 0, 0, 0); // 해당 날짜의 시작 시간으로 설정
+
+        formData.value.expiryDate = futureDate;
+
+        // 유효성 검사 에러 초기화
+        if (errors.value.expiryDate) {
+          delete errors.value.expiryDate;
+        }
+      };
+
+      // 사용자 정의 날짜 변경 시 빠른 선택 해제
+      const onCustomDateChange = () => {
+        selectedPreset.value = null;
+
+        // 유효성 검사 에러 초기화
+        if (errors.value.expiryDate) {
+          delete errors.value.expiryDate;
+        }
+      };
+
+      // 폼 초기화
+      const resetForm = () => {
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        tomorrow.setHours(0, 0, 0, 0);
+
+        formData.value = {
+          name: '',
+          staffId: null,
+          primaryItemId: null,
+          secondaryItemId: null,
+          discount: 10,
+          expiryDate: null, // 기본값을 null로 설정
+          isActive: false,
+        };
+        errors.value = {};
+        selectedPreset.value = null;
+        saveInitialState();
+      };
+
+      // 초기 상태 저장
+      const saveInitialState = () => {
+        initialFormData.value = { ...formData.value };
+      };
+
       // 폼 데이터에 변경사항이 있는지 확인
-      hasChanges() {
-        if (!this.initialFormData || Object.keys(this.initialFormData).length === 0) {
+      const hasChanges = computed(() => {
+        if (!initialFormData.value || Object.keys(initialFormData.value).length === 0) {
           return false;
         }
 
         // 주요 필드들만 체크 (discount는 기본값 10이므로 제외)
         const fieldsToCheck = [
           'name',
-          'category',
-          'designer',
-          'primaryProduct',
-          'secondaryProduct',
+          'staffId',
+          'primaryItemId',
+          'secondaryItemId',
           'expiryDate',
           'isActive',
         ];
@@ -236,235 +377,48 @@
         return fieldsToCheck.some(field => {
           if (field === 'expiryDate') {
             // 날짜는 toString()으로 비교
-            const current = this.formData[field] ? this.formData[field].toString() : '';
-            const initial = this.initialFormData[field]
-              ? this.initialFormData[field].toString()
+            const current = formData.value[field] ? formData.value[field].toString() : '';
+            const initial = initialFormData.value[field]
+              ? initialFormData.value[field].toString()
               : '';
             return current !== initial;
           }
-          return this.formData[field] !== this.initialFormData[field];
+          return formData.value[field] !== initialFormData.value[field];
         });
-      },
-    },
+      });
 
-    watch: {
-      couponData: {
-        immediate: true,
-        handler(newData) {
-          if (newData && this.isEditMode) {
-            this.formData = {
-              id: newData.id,
-              name: newData.name || '',
-              category: newData.category || '',
-              designer: newData.designer || '',
-              primaryProduct: newData.product || '',
-              secondaryProduct: newData.secondaryProduct || '',
-              discount: newData.discount || 10,
-              expiryDate: newData.expiryDate || '',
-              isActive: newData.isActive || false,
-            };
-            // 편집 모드에서는 빠른 선택 상태 초기화
-            this.selectedPreset = null;
-            // 편집 모드에서는 현재 데이터를 초기 상태로 저장
-            this.$nextTick(() => {
-              this.saveInitialState();
-            });
-          } else if (!this.isEditMode) {
-            this.resetForm();
-          }
-        },
-      },
-    },
-
-    mounted() {
-      this.saveInitialState();
-      // 부모에게 beforeClose 함수 전달
-      this.$emit('setBeforeClose', this.checkBeforeClose);
-    },
-
-    methods: {
-      validateForm() {
-        this.errors = {};
-
-        if (!this.formData.name.trim()) {
-          this.errors.name = '쿠폰명은 필수입니다.';
-        }
-
-        if (!this.formData.category) {
-          this.errors.category = '카테고리 선택은 필수입니다.';
-        }
-
-        if (!this.formData.primaryProduct) {
-          this.errors.primaryProduct = '1차 상품 선택은 필수입니다.';
-        }
-
-        if (!this.formData.expiryDate) {
-          this.errors.expiryDate = '만료일은 필수입니다.';
-        }
-
-        if (this.formData.discount < 0 || this.formData.discount > 100) {
-          this.errors.discount = '할인율은 0%에서 100% 사이여야 합니다.';
-        }
-
-        // 만료일이 오늘보다 이후인지 확인
-        if (this.formData.expiryDate) {
-          const today = new Date();
-          const expiryDate = new Date(this.formData.expiryDate);
-          today.setHours(0, 0, 0, 0);
-          expiryDate.setHours(0, 0, 0, 0);
-
-          if (expiryDate <= today) {
-            this.errors.expiryDate = '만료일은 오늘 이후여야 합니다.';
-          }
-        }
-
-        return Object.keys(this.errors).length === 0;
-      },
-
-      handleSubmit() {
-        if (this.validateForm()) {
-          const couponData = this.transformToBackendFormat(this.formData);
-          this.$emit('save', couponData);
-        }
-      },
-
-      // 프론트엔드 폼 데이터를 백엔드 API 형식으로 변환
-      transformToBackendFormat(formData) {
-        return {
-          name: formData.name,
-          discount: formData.discount,
-          expiryDate: formData.expiryDate,
-          isActive: formData.isActive,
-          // 백엔드 API 호환을 위한 추가 필드들
-          category: formData.category,
-          designer: formData.designer,
-          primaryProduct: formData.primaryProduct,
-          secondaryProduct: formData.secondaryProduct,
-          // TODO: 실제 상품 ID와 직원 ID 매핑이 필요
-          primaryItemId: this.mapProductToItemId(formData.primaryProduct),
-          secondaryItemId: formData.secondaryProduct
-            ? this.mapProductToItemId(formData.secondaryProduct)
-            : null,
-          staffId:
-            formData.designer !== '전체' ? this.mapDesignerToStaffId(formData.designer) : null,
-          shopId: 1, // TODO: 실제 매장 ID
-        };
-      },
-
-      // 임시 매핑 함수들 (실제로는 별도 설정에서 가져와야 함)
-      mapProductToItemId(product) {
-        // 시술 카테고리 (ID 1-50)
-        const serviceMapping = {
-          헤어컷: 1,
-          펌: 2,
-          염색: 3,
-          네일아트: 4,
-          메이크업: 5,
-          피부관리: 6,
-        };
-
-        // 상품 카테고리 (ID 51-100)
-        const productMapping = {
-          트리트먼트: 51,
-          헤드스파: 52,
-          네일케어: 53,
-          아이브로우: 54,
-          마사지: 55,
-        };
-
-        return serviceMapping[product] || productMapping[product] || 1;
-      },
-
-      mapDesignerToStaffId(designer) {
-        const mapping = {
-          김미영: 1,
-          박지은: 2,
-          이수진: 3,
-          최민호: 4,
-          정하나: 5,
-        };
-        return mapping[designer] || null;
-      },
-
-      handleCancel() {
-        if (this.hasChanges) {
-          if (
-            confirm(
-              '작성하신 내용이 있습니다. 정말로 취소하시겠습니까?\n변경사항이 저장되지 않습니다.'
-            )
-          ) {
-            this.$emit('cancel');
-          }
-        } else {
-          this.$emit('cancel');
-        }
-      },
-
-      // 창 닫기 전 확인 (BaseWindow의 ESC/백드랍 클릭 처리용)
-      checkBeforeClose() {
-        if (this.hasChanges) {
-          return confirm(
-            '작성하신 내용이 있습니다. 정말로 취소하시겠습니까?\n변경사항이 저장되지 않습니다.'
-          );
-        }
-        return true;
-      },
-
-      handleFormSubmit(event) {
+      // 폼 제출 핸들러 (BaseForm의 @enter-key 이벤트 핸들러)
+      const handleFormSubmit = event => {
         event.preventDefault();
-        this.handleSubmit();
-      },
+        handleSubmit();
+      };
 
-      // 빠른 날짜 선택 설정
-      setDatePreset(months) {
-        this.selectedPreset = months;
-        const today = new Date();
-        const futureDate = new Date(today);
-        futureDate.setMonth(futureDate.getMonth() + months);
-        futureDate.setHours(0, 0, 0, 0); // 해당 날짜의 시작 시간으로 설정
+      // 부모에게 beforeClose 함수 전달
+      onMounted(() => {
+        emit('setBeforeClose', checkBeforeClose);
+      });
 
-        this.formData.expiryDate = futureDate;
-
-        // 유효성 검사 에러 초기화
-        if (this.errors.expiryDate) {
-          delete this.errors.expiryDate;
-        }
-      },
-
-      // 사용자 정의 날짜 변경 시 빠른 선택 해제
-      onCustomDateChange() {
-        this.selectedPreset = null;
-
-        // 유효성 검사 에러 초기화
-        if (this.errors.expiryDate) {
-          delete this.errors.expiryDate;
-        }
-      },
-
-      resetForm() {
-        const tomorrow = new Date();
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        tomorrow.setHours(0, 0, 0, 0);
-
-        this.formData = {
-          name: '',
-          category: '',
-          designer: '전체',
-          primaryProduct: '',
-          secondaryProduct: '',
-          discount: 10,
-          expiryDate: null, // 기본값을 null로 설정
-          isActive: false,
-        };
-        this.errors = {};
-        this.selectedPreset = null;
-        this.saveInitialState();
-      },
-
-      // 초기 상태 저장
-      saveInitialState() {
-        this.initialFormData = { ...this.formData };
-      },
+      return {
+        formData,
+        errors,
+        categoryOptions,
+        staffOptions,
+        primaryProductOptions,
+        secondaryProductOptions,
+        datePresets,
+        selectedPreset,
+        hasChanges,
+        transformToBackendFormat,
+        validateForm,
+        handleSubmit,
+        handleCancel,
+        checkBeforeClose,
+        setDatePreset,
+        onCustomDateChange,
+        resetForm,
+        saveInitialState,
+        handleFormSubmit,
+      };
     },
   };
 </script>

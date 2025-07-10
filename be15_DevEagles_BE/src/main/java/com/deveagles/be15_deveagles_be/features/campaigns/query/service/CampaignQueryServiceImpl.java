@@ -48,7 +48,7 @@ public class CampaignQueryServiceImpl implements CampaignQueryService {
                 response.add(
                     WebMvcLinkBuilder.linkTo(
                             WebMvcLinkBuilder.methodOn(CouponController.class)
-                                .getCouponById(campaign.getCouponId()))
+                                .getCouponById(null, (Long) campaign.getCouponId()))
                         .withRel("coupon"));
               }
 
@@ -78,7 +78,7 @@ public class CampaignQueryServiceImpl implements CampaignQueryService {
             response.add(
                 WebMvcLinkBuilder.linkTo(
                         WebMvcLinkBuilder.methodOn(CouponController.class)
-                            .getCouponById(c.getCouponId()))
+                            .getCouponById(null, c.getCouponId()))
                     .withRel("coupon"));
           }
 
