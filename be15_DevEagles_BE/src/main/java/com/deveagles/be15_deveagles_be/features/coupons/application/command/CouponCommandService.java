@@ -9,5 +9,5 @@ public interface CouponCommandService {
 
   void deleteCoupon(DeleteCouponRequest command);
 
-  CouponDto toggleCouponStatus(Long couponId);
+  CouponDto toggleCouponStatus(Long couponId, Long shopId);
 }

@@ -44,31 +44,37 @@
 
         <div class="coupon-content">
           <div class="coupon-header">
-            <div class="coupon-name">{{ coupon.name }}</div>
+            <div class="coupon-name">{{ coupon.couponTitle }}</div>
             <div class="coupon-badges">
               <BaseBadge :type="coupon.isActive ? 'success' : 'warning'" size="sm">
                 {{ coupon.isActive ? '활성' : '비활성' }}
               </BaseBadge>
-              <BaseBadge type="primary" size="sm"> {{ coupon.discount }}% </BaseBadge>
+              <BaseBadge type="primary" size="sm"> {{ coupon.discountRate }}% </BaseBadge>
             </div>
           </div>
 
           <div class="coupon-details">
             <div class="detail-item">
               <span class="detail-label">상품:</span>
-              <span class="detail-value">{{ coupon.product || coupon.primaryProduct }}</span>
+              <span class="detail-value">
+                {{ coupon.primaryItemInfo?.name }}
+                <span v-if="coupon.primaryItemInfo?.name && coupon.secondaryItemInfo?.name"
+                  >,
+                </span>
+                {{ coupon.secondaryItemInfo?.name }}
+              </span>
             </div>
             <div class="detail-item">
               <span class="detail-label">카테고리:</span>
-              <span class="detail-value">{{ coupon.category }}</span>
+              <span class="detail-value">{{ coupon.primaryItemInfo?.category }}</span>
             </div>
-            <div v-if="coupon.designer" class="detail-item">
+            <div v-if="coupon.designerInfo?.staffName" class="detail-item">
               <span class="detail-label">디자이너:</span>
-              <span class="detail-value">{{ coupon.designer }}</span>
+              <span class="detail-value">{{ coupon.designerInfo?.staffName }}</span>
             </div>
-            <div v-if="coupon.expiryDate" class="detail-item">
+            <div v-if="coupon.expirationDate" class="detail-item">
               <span class="detail-label">만료일:</span>
-              <span class="detail-value">{{ formatDate(coupon.expiryDate) }}</span>
+              <span class="detail-value">{{ formatDate(coupon.expirationDate) }}</span>
             </div>
           </div>
         </div>
@@ -85,13 +91,17 @@
 
 <script>
   import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
-  import { createLogger } from '@/plugins/logger.js';
+  import { getLogger, getErrorLogger, getPerformanceLogger } from '@/plugins/LoggerManager.js';
+  import { useToast } from '@/composables/useToast';
   import couponsAPI from '../api/coupons.js';
+  import ApiErrorHandler from '../utils/ApiErrorHandler.js';
   import BaseButton from '@/components/common/BaseButton.vue';
   import BaseBadge from '@/components/common/BaseBadge.vue';
   import PlusIcon from '@/components/icons/PlusIcon.vue';
 
-  const logger = createLogger('CouponSelectorModal');
+  const logger = getLogger('CouponSelectorModal');
+  const errorLogger = getErrorLogger();
+  const perfLogger = getPerformanceLogger();
 
   export default {
     name: 'CouponSelectorModal',
@@ -120,6 +130,40 @@
     },
     emits: ['select', 'create', 'close'],
     setup(props, { emit }) {
+      const { showToast } = useToast();
+
+      const executeWithErrorHandling = async (apiCall, context, successMessage = null) => {
+        const startTime = performance.now();
+
+        try {
+          loading.value = true;
+          logger.info(`${context} 시작`);
+
+          const result = await apiCall();
+
+          const duration = performance.now() - startTime;
+          perfLogger.measure(context, Math.round(duration));
+          logger.info(`${context} 완료`);
+
+          if (successMessage) {
+            showToast(successMessage, 'success');
+          }
+
+          return result;
+        } catch (error) {
+          const handledError = ApiErrorHandler.handleCouponError(error, context.toLowerCase());
+
+          errorLogger.apiError(context, error, {
+            duration: Math.round(performance.now() - startTime),
+          });
+
+          showToast(handledError.message, 'error');
+          throw handledError;
+        } finally {
+          loading.value = false;
+        }
+      };
+
       // State
       const searchText = ref('');
       const localSelectedCoupons = ref([]);
@@ -135,7 +179,7 @@
           // 검색어 필터링
           if (
             searchText.value &&
-            !coupon.name.toLowerCase().includes(searchText.value.toLowerCase())
+            !coupon.couponTitle.toLowerCase().includes(searchText.value.toLowerCase())
           ) {
             return false;
           }
@@ -245,24 +289,18 @@
 
       // API Methods
       const loadCoupons = async () => {
-        try {
-          loading.value = true;
-          logger.info('쿠폰 선택 모달에서 쿠폰 목록 로드 시작');
+        const response = await executeWithErrorHandling(
+          () =>
+            couponsAPI.getCoupons({
+              page: 0,
+              size: 100, // 선택 모달에서는 많은 데이터 로드
+              isActive: props.filterOptions.onlyActive ? true : undefined,
+            }),
+          '쿠폰 선택 모달에서 쿠폰 목록 로드'
+        );
 
-          const response = await couponsAPI.getCoupons({
-            page: 0,
-            size: 100, // 선택 모달에서는 많은 데이터 로드
-            isActive: props.filterOptions.onlyActive ? true : undefined,
-          });
-
-          coupons.value = response.content;
-          logger.info('쿠폰 목록 로드 완료', { count: response.content.length });
-        } catch (error) {
-          logger.error('쿠폰 목록 로드 실패', error);
-          coupons.value = [];
-        } finally {
-          loading.value = false;
-        }
+        coupons.value = response.content;
+        logger.info('쿠폰 목록 로드 완료', { count: response.content.length });
       };
 
       const handleKeyDown = event => {

@@ -12,6 +12,10 @@ public interface CouponJpaRepository extends JpaRepository<Coupon, Long> {
 
   Optional<Coupon> findByCouponCodeAndDeletedAtIsNull(String couponCode);
 
+  Optional<Coupon> findByIdAndShopIdAndDeletedAtIsNull(Long id, Long shopId);
+
+  Optional<Coupon> findByCouponCodeAndShopIdAndDeletedAtIsNull(String couponCode, Long shopId);
+
   @Query(
       "SELECT COUNT(c) > 0 FROM Coupon c WHERE c.couponCode = :couponCode AND c.deletedAt IS NULL")
   boolean existsByCouponCodeAndNotDeleted(@Param("couponCode") String couponCode);

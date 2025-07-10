@@ -126,8 +126,8 @@
 
 <style scoped>
   .table-container {
-    max-height: 600px;
-    overflow-y: auto;
+    /* max-height: 600px; */
+    /* overflow-y: auto; */
     position: relative;
   }
   .sticky-header thead th {
