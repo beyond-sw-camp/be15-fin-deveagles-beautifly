@@ -265,9 +265,9 @@ public class StaffSalesQueryServiceImplTest {
 
     // then
     assertThat(result).isNotNull();
-    assertThat(result.getStaffTargets()).hasSize(1);
+    assertThat(result.getStaffSalesList()).hasSize(1);
 
-    StaffSalesTargetResponse response = result.getStaffTargets().get(0);
+    StaffSalesTargetResponse response = result.getStaffSalesList().get(0);
     assertThat(response.getStaffId()).isEqualTo(100L);
     assertThat(response.getStaffName()).isEqualTo("승철이");
     assertThat(response.getTargetSalesList()).hasSize(2);
