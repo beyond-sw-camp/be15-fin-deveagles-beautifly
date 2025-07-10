@@ -4,13 +4,18 @@ import com.deveagles.be15_deveagles_be.features.sales.command.domain.aggregate.P
 import com.deveagles.be15_deveagles_be.features.sales.command.domain.aggregate.SearchMode;
 import com.deveagles.be15_deveagles_be.features.sales.query.dto.request.GetStaffSalesListRequest;
 import com.deveagles.be15_deveagles_be.features.sales.query.dto.response.*;
+import com.deveagles.be15_deveagles_be.features.sales.query.repository.SalesQueryRepository;
+import com.deveagles.be15_deveagles_be.features.sales.query.repository.SalesTargetQueryRepository;
 import com.deveagles.be15_deveagles_be.features.sales.query.repository.StaffSalesQueryRepository;
 import com.deveagles.be15_deveagles_be.features.sales.query.service.StaffSalesQueryService;
 import com.deveagles.be15_deveagles_be.features.sales.query.service.support.SalesCalculator;
 import com.deveagles.be15_deveagles_be.features.shops.command.domain.aggregate.ProductType;
 import com.deveagles.be15_deveagles_be.features.users.command.domain.aggregate.Staff;
 import com.deveagles.be15_deveagles_be.features.users.command.repository.UserRepository;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.YearMonth;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,6 +27,8 @@ import org.springframework.stereotype.Service;
 public class StaffSalesQueryServiceImpl implements StaffSalesQueryService {
 
   private final UserRepository userRepository;
+  private final SalesTargetQueryRepository salesTargetQueryRepository;
+  private final SalesQueryRepository salesQueryRepository;
   private final StaffSalesQueryRepository staffSalesQueryRepository;
   private final SalesCalculator salesCalculator;
 
@@ -152,6 +159,116 @@ public class StaffSalesQueryServiceImpl implements StaffSalesQueryService {
         .build();
   }
 
+  @Override
+  public StaffSalesTargetListResult getStaffSalesTarget(
+      Long shopId, GetStaffSalesListRequest request) {
+
+    boolean isPeriodMode = request.searchMode() == SearchMode.PERIOD;
+    LocalDate startDate = request.startDate();
+    LocalDate endDate = isPeriodMode ? request.endDate() : startDate;
+
+    if (!hasAnyTargetForShop(shopId, startDate, endDate)) {
+      return null; // or throw exception or custom result
+    }
+
+    List<Staff> staffList = userRepository.findAllByShopId(shopId);
+
+    List<StaffSalesTargetResponse> staffResponse =
+        staffList.stream()
+            .map(
+                staff -> {
+                  Long staffId = staff.getStaffId();
+
+                  List<StaffProductTargetSalesResponse> targetList =
+                      List.of(
+                          buildCombinedTargetResponse(
+                              shopId,
+                              staff.getStaffId(),
+                              ProductType.SERVICE,
+                              ProductType.PRODUCT,
+                              "상품",
+                              startDate,
+                              endDate,
+                              request),
+                          buildCombinedTargetResponse(
+                              shopId,
+                              staff.getStaffId(),
+                              ProductType.SESSION_PASS,
+                              ProductType.PREPAID_PASS,
+                              "회원권",
+                              startDate,
+                              endDate,
+                              request));
+
+                  int totalTarget =
+                      targetList.stream()
+                          .mapToInt(StaffProductTargetSalesResponse::getTargetAmount)
+                          .sum();
+                  int totalActual =
+                      targetList.stream()
+                          .mapToInt(StaffProductTargetSalesResponse::getTotalAmount)
+                          .sum();
+                  double totalRate =
+                      salesCalculator.calculateAchievementRate(totalActual, totalTarget);
+
+                  return StaffSalesTargetResponse.builder()
+                      .staffId(staffId)
+                      .staffName(staff.getStaffName())
+                      .targetSalesList(targetList)
+                      .totalTargetAmount(totalTarget)
+                      .totalActualAmount(totalActual)
+                      .totalAchievementRate(totalRate)
+                      .build();
+                })
+            .toList();
+
+    return StaffSalesTargetListResult.builder().staffTargets(staffResponse).build();
+  }
+
+  private StaffProductTargetSalesResponse buildCombinedTargetResponse(
+      Long shopId,
+      Long staffId,
+      ProductType type1,
+      ProductType type2,
+      String label,
+      LocalDate startDate,
+      LocalDate endDate,
+      GetStaffSalesListRequest request) {
+
+    LocalDate realEndDate = Optional.ofNullable(endDate).orElse(startDate);
+
+    int monthlyTarget1 =
+        salesTargetQueryRepository.findTargetAmount(
+            shopId, staffId, type1, YearMonth.from(startDate));
+    int monthlyTarget2 =
+        salesTargetQueryRepository.findTargetAmount(
+            shopId, staffId, type2, YearMonth.from(startDate));
+
+    int totalAmount1 =
+        salesQueryRepository.findTotalSales(shopId, staffId, type1, startDate, realEndDate);
+    int totalAmount2 =
+        salesQueryRepository.findTotalSales(shopId, staffId, type2, startDate, realEndDate);
+
+    int monthlyTotal = monthlyTarget1 + monthlyTarget2;
+    int totalSales = totalAmount1 + totalAmount2;
+
+    int adjustedTarget =
+        salesCalculator.calculateAdjustedTarget(
+            request.searchMode(),
+            monthlyTotal,
+            YearMonth.from(startDate).lengthOfMonth(),
+            getPeriodDays(startDate, Optional.ofNullable(request.endDate()).orElse(startDate)));
+
+    double achievement = salesCalculator.calculateAchievementRate(totalSales, adjustedTarget);
+
+    return StaffProductTargetSalesResponse.builder()
+        .label(label)
+        .targetAmount(adjustedTarget)
+        .totalAmount(totalSales)
+        .achievementRate(achievement)
+        .build();
+  }
+
   private LocalDateTime getStartDate(GetStaffSalesListRequest request) {
     if (request.searchMode() == SearchMode.MONTH) {
       return request.startDate().withDayOfMonth(1).atStartOfDay();
@@ -160,14 +277,37 @@ public class StaffSalesQueryServiceImpl implements StaffSalesQueryService {
   }
 
   private LocalDateTime getEndDate(GetStaffSalesListRequest request) {
-    if (request.searchMode() == SearchMode.MONTH) {
-      return request
-          .startDate()
-          .withDayOfMonth(request.startDate().lengthOfMonth())
-          .atTime(23, 59, 59);
+    LocalDate endDate =
+        getEffectiveEndDate(request.startDate(), request.endDate(), request.searchMode());
+    return endDate.atTime(23, 59, 59);
+  }
+
+  private LocalDate getEffectiveEndDate(LocalDate startDate, LocalDate endDate, SearchMode mode) {
+    if (mode == SearchMode.MONTH) {
+      return startDate.withDayOfMonth(startDate.lengthOfMonth());
     }
-    return Optional.ofNullable(request.endDate())
-        .map(d -> d.atTime(23, 59, 59))
-        .orElse(request.startDate().atTime(23, 59, 59));
+    return Optional.ofNullable(endDate).orElse(startDate);
+  }
+
+  private int getPeriodDays(LocalDate start, LocalDate end) {
+    return (int) ChronoUnit.DAYS.between(start, end) + 1;
+  }
+
+  private boolean hasAnyTargetForShop(Long shopId, LocalDate startDate, LocalDate endDate) {
+    List<YearMonth> yearMonthList = getYearMonthsInRange(startDate, endDate);
+    return salesTargetQueryRepository.existsTargetForShopInMonths(shopId, yearMonthList);
+  }
+
+  private List<YearMonth> getYearMonthsInRange(LocalDate startDate, LocalDate endDate) {
+    List<YearMonth> result = new ArrayList<>();
+    YearMonth start = YearMonth.from(startDate);
+    YearMonth end = YearMonth.from(endDate);
+
+    while (!start.isAfter(end)) {
+      result.add(start);
+      start = start.plusMonths(1);
+    }
+
+    return result;
   }
 }

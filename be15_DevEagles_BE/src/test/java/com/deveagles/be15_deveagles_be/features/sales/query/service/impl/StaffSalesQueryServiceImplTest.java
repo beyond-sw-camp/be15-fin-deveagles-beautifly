@@ -9,6 +9,8 @@ import com.deveagles.be15_deveagles_be.features.sales.command.domain.aggregate.P
 import com.deveagles.be15_deveagles_be.features.sales.command.domain.aggregate.SearchMode;
 import com.deveagles.be15_deveagles_be.features.sales.query.dto.request.GetStaffSalesListRequest;
 import com.deveagles.be15_deveagles_be.features.sales.query.dto.response.*;
+import com.deveagles.be15_deveagles_be.features.sales.query.repository.SalesQueryRepository;
+import com.deveagles.be15_deveagles_be.features.sales.query.repository.SalesTargetQueryRepository;
 import com.deveagles.be15_deveagles_be.features.sales.query.repository.StaffSalesQueryRepository;
 import com.deveagles.be15_deveagles_be.features.sales.query.service.support.SalesCalculator;
 import com.deveagles.be15_deveagles_be.features.shops.command.domain.aggregate.ProductType;
@@ -33,6 +35,10 @@ public class StaffSalesQueryServiceImplTest {
   @Mock private UserRepository userRepository;
 
   @Mock private StaffSalesQueryRepository staffSalesQueryRepository;
+
+  @Mock private SalesTargetQueryRepository salesTargetQueryRepository;
+
+  @Mock private SalesQueryRepository salesQueryRepository;
 
   @Mock private SalesCalculator salesCalculator;
 
@@ -189,5 +195,113 @@ public class StaffSalesQueryServiceImplTest {
     assertThat(response.getPaymentsDetailSalesList()).hasSize(1);
     assertThat(response.getSummary().getTotalNetSales()).isEqualTo(20000);
     assertThat(response.getSummary().getTotalIncentiveAmount()).isEqualTo(2000);
+  }
+
+  @Test
+  void getStaffSalesTarget_성공() {
+    // given
+    Long shopId = 1L;
+    LocalDate start = LocalDate.of(2024, 6, 1);
+    LocalDate end = LocalDate.of(2024, 6, 30);
+
+    GetStaffSalesListRequest request = new GetStaffSalesListRequest(SearchMode.PERIOD, start, end);
+
+    Staff staff = Staff.builder().staffId(100L).staffName("승철이").build();
+
+    given(userRepository.findAllByShopId(shopId)).willReturn(List.of(staff));
+    given(salesTargetQueryRepository.existsTargetForShopInMonths(eq(shopId), anyList()))
+        .willReturn(true);
+
+    // 상품 + 회원권에 대한 Target/Actual 매핑
+    given(
+            salesTargetQueryRepository.findTargetAmount(
+                eq(shopId), eq(100L), eq(ProductType.SERVICE), any()))
+        .willReturn(100000);
+    given(
+            salesTargetQueryRepository.findTargetAmount(
+                eq(shopId), eq(100L), eq(ProductType.PRODUCT), any()))
+        .willReturn(50000);
+    given(
+            salesTargetQueryRepository.findTargetAmount(
+                eq(shopId), eq(100L), eq(ProductType.SESSION_PASS), any()))
+        .willReturn(30000);
+    given(
+            salesTargetQueryRepository.findTargetAmount(
+                eq(shopId), eq(100L), eq(ProductType.PREPAID_PASS), any()))
+        .willReturn(20000);
+
+    given(
+            salesQueryRepository.findTotalSales(
+                eq(shopId), eq(100L), eq(ProductType.SERVICE), eq(start), eq(end)))
+        .willReturn(120000);
+    given(
+            salesQueryRepository.findTotalSales(
+                eq(shopId), eq(100L), eq(ProductType.PRODUCT), eq(start), eq(end)))
+        .willReturn(30000);
+    given(
+            salesQueryRepository.findTotalSales(
+                eq(shopId), eq(100L), eq(ProductType.SESSION_PASS), eq(start), eq(end)))
+        .willReturn(25000);
+    given(
+            salesQueryRepository.findTotalSales(
+                eq(shopId), eq(100L), eq(ProductType.PREPAID_PASS), eq(start), eq(end)))
+        .willReturn(10000);
+
+    // 합산: 상품(150000), 회원권(50000)
+    given(
+            salesCalculator.calculateAdjustedTarget(
+                eq(SearchMode.PERIOD), eq(150000), anyInt(), anyInt()))
+        .willReturn(140000);
+    given(
+            salesCalculator.calculateAdjustedTarget(
+                eq(SearchMode.PERIOD), eq(50000), anyInt(), anyInt()))
+        .willReturn(50000);
+
+    given(salesCalculator.calculateAchievementRate(150000, 140000)).willReturn(107.1);
+    given(salesCalculator.calculateAchievementRate(35000, 50000)).willReturn(70.0);
+
+    // when
+    StaffSalesTargetListResult result = staffSalesQueryService.getStaffSalesTarget(shopId, request);
+
+    // then
+    assertThat(result).isNotNull();
+    assertThat(result.getStaffTargets()).hasSize(1);
+
+    StaffSalesTargetResponse response = result.getStaffTargets().get(0);
+    assertThat(response.getStaffId()).isEqualTo(100L);
+    assertThat(response.getStaffName()).isEqualTo("승철이");
+    assertThat(response.getTargetSalesList()).hasSize(2);
+
+    StaffProductTargetSalesResponse 상품 = response.getTargetSalesList().get(0);
+    StaffProductTargetSalesResponse 회원권 = response.getTargetSalesList().get(1);
+
+    assertThat(상품.getLabel()).isEqualTo("상품");
+    assertThat(상품.getTargetAmount()).isEqualTo(140000);
+    assertThat(상품.getTotalAmount()).isEqualTo(150000);
+    assertThat(상품.getAchievementRate()).isEqualTo(107.1);
+
+    assertThat(회원권.getLabel()).isEqualTo("회원권");
+    assertThat(회원권.getTargetAmount()).isEqualTo(50000);
+    assertThat(회원권.getTotalAmount()).isEqualTo(35000);
+    assertThat(회원권.getAchievementRate()).isEqualTo(70.0);
+  }
+
+  @Test
+  void getStaffSalesTarget_목표없음() {
+    // given
+    Long shopId = 1L;
+    LocalDate start = LocalDate.of(2024, 6, 1);
+    LocalDate end = LocalDate.of(2024, 6, 30);
+    GetStaffSalesListRequest request = new GetStaffSalesListRequest(SearchMode.PERIOD, start, end);
+
+    // 목표 매출이 존재하지 않음
+    given(salesTargetQueryRepository.existsTargetForShopInMonths(eq(shopId), anyList()))
+        .willReturn(false);
+
+    // when
+    StaffSalesTargetListResult result = staffSalesQueryService.getStaffSalesTarget(shopId, request);
+
+    // then
+    assertThat(result).isNull();
   }
 }

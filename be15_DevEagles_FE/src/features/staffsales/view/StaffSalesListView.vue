@@ -186,17 +186,17 @@
     { title: '현금', key: 'CASH' },
     { title: '네이버페이', key: 'NAVER_PAY' },
     { title: '지역화폐', key: 'LOCAL' },
-    { title: '총 실매출', key: 'totalSales' },
+    { title: '실매출액', key: 'totalSales' },
     // 공제 항목
     { title: '할인', key: 'DISCOUNT' },
     { title: '쿠폰', key: 'COUPON' },
     { title: '선불권', key: 'PREPAID' },
     // 합계
     { title: '총 공제', key: 'totalDeductions' },
-    { title: '최종 실매출', key: 'finalSales' },
+    { title: '총영업액', key: 'finalSales' },
   ];
 
-  const detailCoulms = [
+  const detailColums = [
     { title: '직원 이름', key: 'name' },
     { title: '상품 구분', key: 'category' },
     { title: '1차', key: 'primary' },
@@ -206,14 +206,14 @@
     { title: '현금', key: 'CASH' },
     { title: '네이버페이', key: 'NAVER_PAY' },
     { title: '지역화폐', key: 'LOCAL' },
-    { title: '총 실매출', key: 'totalSales' },
+    { title: '실매출액', key: 'totalSales' },
     // 공제 항목
     { title: '할인', key: 'DISCOUNT' },
     { title: '쿠폰', key: 'COUPON' },
     { title: '선불권', key: 'PREPAID' },
     // 합계
     { title: '총 공제', key: 'totalDeductions' },
-    { title: '최종 실매출', key: 'finalSales' },
+    { title: '총영업액', key: 'finalSales' },
   ];
 
   const targetColumns = [
@@ -228,7 +228,7 @@
     activeTab.value === '목표매출'
       ? targetColumns
       : activeTab.value === '직원별 상세결산'
-        ? detailCoulms
+        ? detailColums
         : baseColumns
   );
 
