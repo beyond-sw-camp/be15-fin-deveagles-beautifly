@@ -44,7 +44,13 @@
         />
       </div>
       <input v-model="staffNameFilter" placeholder="직원 이름 검색" class="name-filter-input" />
-      <div class="incentive-guide">※ 괄호 안의 <span>파란 숫자</span>는 인센티브 금액입니다.</div>
+      <div :class="['incentive-guide', { goal: activeTab === '목표매출' }]">
+        <template v-if="activeTab === '목표매출'">
+          ※ <span>일할 목표 매출</span>은 월 목표 매출을 월 일수로 나누어 계산되며, 조회 기간에 맞춰
+          합산됩니다.
+        </template>
+        <template v-else> ※ 괄호 안의 <span>파란 숫자</span>는 인센티브 금액입니다. </template>
+      </div>
     </div>
     <!-- 테이블 -->
     <div class="table-wrapper">
@@ -52,68 +58,88 @@
         <BaseLoading text="정산 내역을 불러오는 중입니다..." />
       </div>
       <BaseTable
-        v-if="!loading && staffSalesApiData"
-        :columns="columns"
+        v-if="!loading && currentData.length > 0"
+        :columns="currentColumns"
         :data="currentData"
         :row-class="getRowClass"
         :scroll="{ y: '600px' }"
         :pagination="false"
         :sticky-header="true"
       >
+        <!-- 🎯 결산/상세결산 공통 SLOT -->
         <!-- 카드 -->
-        <template #cell-CARD="{ item }">
+        <template v-if="activeTab !== '목표매출'" #cell-CARD="{ item }">
           {{ formatCurrency(item?.CARD ?? 0) }}
           <div class="incentive-amount">({{ formatCurrency(item?.CARD_INCENTIVE ?? 0) }})</div>
         </template>
 
         <!-- 현금 -->
-        <template #cell-CASH="{ item }">
+        <template v-if="activeTab !== '목표매출'" #cell-CASH="{ item }">
           {{ formatCurrency(item?.CASH ?? 0) }}
           <div class="incentive-amount">({{ formatCurrency(item?.CASH_INCENTIVE ?? 0) }})</div>
         </template>
 
         <!-- 네이버페이 -->
-        <template #cell-NAVER_PAY="{ item }">
+        <template v-if="activeTab !== '목표매출'" #cell-NAVER_PAY="{ item }">
           {{ formatCurrency(item?.NAVER_PAY ?? 0) }}
           <div class="incentive-amount">({{ formatCurrency(item?.NAVER_PAY_INCENTIVE ?? 0) }})</div>
         </template>
 
         <!-- 지역화폐 -->
-        <template #cell-LOCAL="{ item }">
+        <template v-if="activeTab !== '목표매출'" #cell-LOCAL="{ item }">
           {{ formatCurrency(item?.LOCAL ?? 0) }}
           <div class="incentive-amount">({{ formatCurrency(item?.LOCAL_INCENTIVE ?? 0) }})</div>
         </template>
 
         <!-- 할인 -->
-        <template #cell-DISCOUNT="{ item }">
+        <template v-if="activeTab !== '목표매출'" #cell-DISCOUNT="{ item }">
           {{ formatCurrency(item?.DISCOUNT ?? 0) }}
         </template>
 
         <!-- 쿠폰 -->
-        <template #cell-COUPON="{ item }">
+        <template v-if="activeTab !== '목표매출'" #cell-COUPON="{ item }">
           {{ formatCurrency(item?.COUPON ?? 0) }}
         </template>
 
         <!-- 선불권 -->
-        <template #cell-PREPAID="{ item }">
+        <template v-if="activeTab !== '목표매출'" #cell-PREPAID="{ item }">
           {{ formatCurrency(item?.PREPAID ?? 0) }}
         </template>
 
-        <!-- 총 실매출 -->
-        <template #cell-totalSales="{ item }">
-          {{ formatCurrency(item?.totalSales ?? 0) }}
-        </template>
-
         <!-- 총 공제 -->
-        <template #cell-totalDeductions="{ item }">
+        <template v-if="activeTab !== '목표매출'" #cell-totalDeductions="{ item }">
           {{ formatCurrency(item?.totalDeductions ?? 0) }}
         </template>
 
         <!-- 최종 실매출 -->
-        <template #cell-finalSales="{ item }">
+        <template v-if="activeTab !== '목표매출'" #cell-finalSales="{ item }">
           {{ formatCurrency(item?.finalSales ?? 0) }}
         </template>
+
+        <!-- 총 실매출 -->
+        <template v-if="activeTab !== '목표매출'" #cell-totalSales="{ item }">
+          {{ formatCurrency(item?.totalSales ?? 0) }}
+        </template>
+
+        <!-- 📌 목표매출 전용 SLOT -->
+        <template v-if="activeTab === '목표매출'" #cell-rate="{ item }">
+          <span :class="{ 'highlight-rate': item?.rate >= 100 }">
+            {{ item?.rate?.toFixed(1) }}%
+          </span>
+        </template>
+
+        <template v-if="activeTab === '목표매출'" #cell-actual="{ item }">
+          {{ formatCurrency(item?.actual ?? 0) }}
+        </template>
+
+        <template v-if="activeTab === '목표매출'" #cell-target="{ item }">
+          {{ formatCurrency(item?.target ?? 0) }}
+        </template>
       </BaseTable>
+      <div v-else-if="!loading && activeTab === '목표매출'" class="custom-empty-box">
+        <p>등록된 목표 매출이 없습니다. 목표 매출을 설정해 주세요 😆</p>
+        <button class="copy-button">최근 목표 복사하기</button>
+      </div>
     </div>
   </div>
   <BaseSlidePanel
@@ -155,9 +181,14 @@
   import IncentiveSettingModal from '@/features/staffsales/components/IncentiveSettingModal.vue';
   import BaseSlidePanel from '@/features/staffsales/components/BaseSlidePanel.vue';
   import TargetSalesSettingModal from '@/features/staffsales/components/TargetSalesSettingModal.vue';
-  import { getStaffDetailSales, getStaffSales } from '@/features/staffsales/api/staffsales.js';
+  import {
+    getStaffDetailSales,
+    getStaffSales,
+    getStaffTargetSales,
+  } from '@/features/staffsales/api/staffsales.js';
   import BaseToast from '@/components/common/BaseToast.vue';
-  import dayjs from 'dayjs';
+  import { useStaffSales } from '@/features/staffsales/composables/useStaffSales.js';
+  import { useFlattenSales } from '@/features/staffsales/composables/useFlattenSales.js';
 
   const toastRef = ref();
   const activeTab = ref('직원별 결산');
@@ -171,12 +202,12 @@
   const staffSalesApiData = ref(null);
   const staffNameFilter = ref('');
 
-  const categoryLabelMap = {
-    PRODUCT: '상품-제품',
-    SERVICE: '상품-시술',
-    SESSION_PASS: '회원권-횟수권',
-    PREPAID_PASS: '회원권-선불권',
-  };
+  const { categoryLabelMap, formatCurrency, getFormattedDates } = useStaffSales();
+
+  const { flattenStaffSalesList, flattenDetailData, flattenTargetSales } = useFlattenSales({
+    categoryLabelMap,
+    staffNameFilter,
+  });
 
   const baseColumns = [
     { title: '직원 이름', key: 'name' },
@@ -186,17 +217,17 @@
     { title: '현금', key: 'CASH' },
     { title: '네이버페이', key: 'NAVER_PAY' },
     { title: '지역화폐', key: 'LOCAL' },
-    { title: '총 실매출', key: 'totalSales' },
+    { title: '실매출액', key: 'totalSales' },
     // 공제 항목
     { title: '할인', key: 'DISCOUNT' },
     { title: '쿠폰', key: 'COUPON' },
     { title: '선불권', key: 'PREPAID' },
     // 합계
     { title: '총 공제', key: 'totalDeductions' },
-    { title: '최종 실매출', key: 'finalSales' },
+    { title: '총영업액', key: 'finalSales' },
   ];
 
-  const detailCoulms = [
+  const detailColumns = [
     { title: '직원 이름', key: 'name' },
     { title: '상품 구분', key: 'category' },
     { title: '1차', key: 'primary' },
@@ -206,85 +237,70 @@
     { title: '현금', key: 'CASH' },
     { title: '네이버페이', key: 'NAVER_PAY' },
     { title: '지역화폐', key: 'LOCAL' },
-    { title: '총 실매출', key: 'totalSales' },
+    { title: '실매출액', key: 'totalSales' },
     // 공제 항목
     { title: '할인', key: 'DISCOUNT' },
     { title: '쿠폰', key: 'COUPON' },
     { title: '선불권', key: 'PREPAID' },
     // 합계
     { title: '총 공제', key: 'totalDeductions' },
-    { title: '최종 실매출', key: 'finalSales' },
+    { title: '총영업액', key: 'finalSales' },
   ];
 
   const targetColumns = [
     { title: '직원 이름', key: 'name' },
     { title: '분류', key: 'category' },
     { title: '목표', key: 'target' },
-    { title: '총영업액', key: 'totalSales' },
+    { title: '총영업액', key: 'actual' },
     { title: '달성률', key: 'rate' },
   ];
 
-  const columns = computed(() =>
-    activeTab.value === '목표매출'
-      ? targetColumns
-      : activeTab.value === '직원별 상세결산'
-        ? detailCoulms
-        : baseColumns
-  );
+  const currentColumns = computed(() => {
+    if (activeTab.value === '목표매출') return targetColumns;
+    if (activeTab.value === '직원별 상세결산') return detailColumns;
+    return baseColumns; // 직원별 결산
+  });
 
   const currentData = computed(() => {
     if (!staffSalesApiData.value) return [];
     switch (activeTab.value) {
       case '직원별 상세결산':
-        return flattenDetailData();
+        return flattenDetailData(staffSalesApiData.value.staffSalesList);
       case '목표매출':
-        return flattenTargetSales();
+        return flattenTargetSales(staffSalesApiData.value.staffSalesList);
       default:
-        return flattenStaffSalesList();
+        return flattenStaffSalesList(staffSalesApiData.value.staffSalesList);
     }
   });
-
-  const formatToISODate = date => {
-    return dayjs(date).format('YYYY-MM-DD');
-  };
-
-  const getFormattedDates = () => {
-    if (searchMode.value === 'MONTH') {
-      const start = new Date(selectedMonth.value);
-      return {
-        startDate: formatToISODate(start),
-        endDate: null,
-      };
-    } else {
-      const start = selectedRange.value?.[0];
-      const end = selectedRange.value?.[1];
-      return {
-        startDate: formatToISODate(start),
-        endDate: formatToISODate(end),
-      };
-    }
-  };
 
   const fetchStaffSales = async () => {
     loading.value = true;
     try {
       staffSalesApiData.value = null;
-      const { startDate, endDate } = getFormattedDates();
+      const { startDate, endDate } = getFormattedDates(
+        searchMode.value,
+        selectedMonth.value,
+        selectedRange.value
+      );
+
       const payload = {
         searchMode: searchMode.value,
         startDate,
       };
+
       if (endDate) payload.endDate = endDate;
+
       let data;
+
       if (activeTab.value === '직원별 상세결산') data = await getStaffDetailSales(payload);
-      else if (activeTab.value === '목표매출')
-        data = { data: { staffSalesList: [] } }; // todo : api 연동
+      else if (activeTab.value === '목표매출') data = await getStaffTargetSales(payload);
       else data = await getStaffSales(payload);
+
       staffSalesApiData.value = data.data.data;
     } catch (err) {
-      staffSalesApiData.value = { staffSalesList: [] };
       toastRef.value?.error?.('직원 결산 조회에 실패했습니다.');
       console.error(`직원 결산 조회 실패`, err);
+      staffSalesApiData.value = { staffSalesList: [] };
     } finally {
       loading.value = false;
     }
@@ -304,271 +320,6 @@
     }
   });
 
-  const flattenStaffSalesList = () => {
-    if (!staffSalesApiData.value?.staffSalesList) return [];
-    const result = [];
-    staffSalesApiData.value.staffSalesList.forEach(staff => {
-      if (staffNameFilter.value && !staff.staffName.includes(staffNameFilter.value.trim())) {
-        return;
-      }
-      let isFirstRow = true;
-      staff.paymentsSalesList.forEach(payment => {
-        const row = {
-          name: isFirstRow ? staff.staffName : '',
-          category: categoryLabelMap[payment.category] || payment.category,
-          CARD: 0,
-          CASH: 0,
-          NAVER_PAY: 0,
-          LOCAL: 0,
-          CARD_INCENTIVE: 0,
-          CASH_INCENTIVE: 0,
-          NAVER_PAY_INCENTIVE: 0,
-          LOCAL_INCENTIVE: 0,
-          DISCOUNT: 0,
-          COUPON: 0,
-          PREPAID: 0,
-          totalSales: 0,
-          totalDeductions: 0,
-          finalSales: 0,
-        };
-
-        payment.netSalesList?.forEach(({ paymentsMethod, amount, incentiveAmount }) => {
-          if (
-            paymentsMethod !== 'PREPAID' &&
-            Object.prototype.hasOwnProperty.call(row, paymentsMethod)
-          ) {
-            row[paymentsMethod] += amount;
-            row[`${paymentsMethod}_INCENTIVE`] += incentiveAmount;
-            row.totalSales += amount;
-          }
-        });
-
-        payment.deductionList?.forEach(({ deduction, amount }) => {
-          if (Object.prototype.hasOwnProperty.call(row, deduction)) {
-            row[deduction] += amount;
-            row.totalDeductions += amount;
-          }
-        });
-
-        row.finalSales = (row.totalSales || 0) - (row.totalDeductions || 0);
-        result.push(row);
-        isFirstRow = false;
-      });
-    });
-
-    const totals = {
-      name: '총계',
-      category: '',
-      CARD: 0,
-      CASH: 0,
-      NAVER_PAY: 0,
-      LOCAL: 0,
-      CARD_INCENTIVE: 0,
-      CASH_INCENTIVE: 0,
-      NAVER_PAY_INCENTIVE: 0,
-      LOCAL_INCENTIVE: 0,
-      DISCOUNT: 0,
-      COUPON: 0,
-      PREPAID: 0,
-      totalSales: 0,
-      totalDeductions: 0,
-      finalSales: 0,
-    };
-
-    result.forEach(row => {
-      ['CARD', 'CASH', 'NAVER_PAY', 'LOCAL'].forEach(method => {
-        totals[method] += row[method];
-        totals[`${method}_INCENTIVE`] += row[`${method}_INCENTIVE`];
-      });
-
-      ['DISCOUNT', 'COUPON', 'PREPAID', 'totalSales', 'totalDeductions', 'finalSales'].forEach(
-        key => {
-          totals[key] += row[key] || 0;
-        }
-      );
-    });
-
-    result.push(totals);
-    return result;
-  };
-
-  const flattenDetailData = () => {
-    if (!staffSalesApiData.value?.staffSalesList) return [];
-
-    const result = [];
-
-    staffSalesApiData.value.staffSalesList.forEach(staff => {
-      if (staffNameFilter.value && !staff.staffName.includes(staffNameFilter.value.trim())) {
-        return;
-      }
-
-      const staffRows = [];
-      let isFirstRow = true;
-
-      // 1. 상품(시술/제품)
-      staff.paymentsDetailSalesList.forEach(payment => {
-        const categoryLabel = categoryLabelMap[payment.category] || payment.category;
-
-        payment.primaryList?.forEach(primary => {
-          const primaryName = primary.primaryItemName;
-
-          primary.secondaryList?.forEach(secondary => {
-            const row = {
-              name: isFirstRow ? staff.staffName : '',
-              category: categoryLabel,
-              primary: primaryName,
-              secondary: secondary.secondaryItemName,
-              CARD: 0,
-              CASH: 0,
-              NAVER_PAY: 0,
-              LOCAL: 0,
-              CARD_INCENTIVE: 0,
-              CASH_INCENTIVE: 0,
-              NAVER_PAY_INCENTIVE: 0,
-              LOCAL_INCENTIVE: 0,
-              DISCOUNT: 0,
-              COUPON: 0,
-              PREPAID: 0,
-              totalSales: 0,
-              totalDeductions: 0,
-              finalSales: 0,
-            };
-
-            secondary.netSalesList?.forEach(({ paymentsMethod, amount, incentiveAmount }) => {
-              if (
-                paymentsMethod !== 'PREPAID' &&
-                Object.prototype.hasOwnProperty.call(row, paymentsMethod)
-              ) {
-                row[paymentsMethod] += amount;
-                row[`${paymentsMethod}_INCENTIVE`] += incentiveAmount;
-                row.totalSales += amount;
-              }
-            });
-
-            secondary.deductionList?.forEach(({ deduction, amount }) => {
-              if (Object.prototype.hasOwnProperty.call(row, deduction)) {
-                row[deduction] += amount;
-                row.totalDeductions += amount;
-              }
-            });
-
-            row.finalSales = row.totalSales - row.totalDeductions;
-
-            staffRows.push(row);
-            isFirstRow = false;
-          });
-        });
-      });
-
-      // 2. 회원권(횟수권/선불권)
-      staff.paymentsSalesList?.forEach(payment => {
-        const row = {
-          name: isFirstRow ? staff.staffName : '',
-          category: categoryLabelMap[payment.category] || payment.category,
-          primary: '',
-          secondary: '',
-          CARD: 0,
-          CASH: 0,
-          NAVER_PAY: 0,
-          LOCAL: 0,
-          CARD_INCENTIVE: 0,
-          CASH_INCENTIVE: 0,
-          NAVER_PAY_INCENTIVE: 0,
-          LOCAL_INCENTIVE: 0,
-          DISCOUNT: 0,
-          COUPON: 0,
-          PREPAID: 0,
-          totalSales: 0,
-          totalDeductions: 0,
-          finalSales: 0,
-        };
-
-        payment.netSalesList?.forEach(({ paymentsMethod, amount, incentiveAmount }) => {
-          if (
-            paymentsMethod !== 'PREPAID' &&
-            Object.prototype.hasOwnProperty.call(row, paymentsMethod)
-          ) {
-            row[paymentsMethod] += amount;
-            row[`${paymentsMethod}_INCENTIVE`] += incentiveAmount;
-            row.totalSales += amount;
-          }
-        });
-
-        payment.deductionList?.forEach(({ deduction, amount }) => {
-          if (Object.prototype.hasOwnProperty.call(row, deduction)) {
-            row[deduction] += amount;
-            row.totalDeductions += amount;
-          }
-        });
-
-        row.finalSales = row.totalSales - row.totalDeductions;
-
-        staffRows.push(row);
-        isFirstRow = false;
-      });
-
-      // 3. 직원별 총계
-      const summaryRow = {
-        name: '',
-        category: '총계',
-        primary: '',
-        secondary: '',
-        CARD: 0,
-        CASH: 0,
-        NAVER_PAY: 0,
-        LOCAL: 0,
-        CARD_INCENTIVE: 0,
-        CASH_INCENTIVE: 0,
-        NAVER_PAY_INCENTIVE: 0,
-        LOCAL_INCENTIVE: 0,
-        DISCOUNT: 0,
-        COUPON: 0,
-        PREPAID: 0,
-        totalSales: 0,
-        totalDeductions: 0,
-        finalSales: 0,
-      };
-
-      staffRows.forEach(row => {
-        ['CARD', 'CASH', 'NAVER_PAY', 'LOCAL'].forEach(method => {
-          summaryRow[method] += row[method];
-          summaryRow[`${method}_INCENTIVE`] += row[`${method}_INCENTIVE`];
-        });
-
-        ['DISCOUNT', 'COUPON', 'PREPAID', 'totalSales', 'totalDeductions', 'finalSales'].forEach(
-          key => {
-            summaryRow[key] += row[key] || 0;
-          }
-        );
-      });
-      result.push(...staffRows, summaryRow);
-    });
-    return result;
-  };
-
-  const flattenTargetSales = () => {
-    const result = [];
-    staffSalesApiData.value?.staffSalesList?.forEach(staff => {
-      let isFirst = true;
-      staff.items?.forEach(item => {
-        result.push({
-          name: item.category === '총 합계' ? '' : isFirst ? staff.staffName : '',
-          category: item.category,
-          target: item.target,
-          totalSales: item.totalSales,
-          rate: item.target ? calculateRate(item.target, item.totalSales) : 0,
-        });
-        isFirst = false;
-      });
-    });
-    return result;
-  };
-
-  const calculateRate = (target, actual) => {
-    if (!target || target === 0) return 0;
-    return Math.round((actual / target) * 100);
-  };
-
   const openIncentivePopup = () => {
     showIncentiveModal.value = true;
   };
@@ -582,8 +333,6 @@
     if (row.category === '총계') return 'staff-summary-row';
     return '';
   };
-
-  const formatCurrency = value => (typeof value === 'number' ? value.toLocaleString('ko-KR') : '0');
 
   onMounted(() => {
     const { startDate, endDate } = getFormattedDates();
@@ -691,8 +440,52 @@
     font-size: 13px;
     color: var(--color-gray-600);
   }
+
   .incentive-guide span {
-    color: #3f51b5;
     font-weight: 500;
+  }
+
+  .incentive-guide.goal span {
+    color: var(--color-gray-600); /* 목표매출 안내문에는 텍스트색과 동일 */
+  }
+
+  .incentive-guide:not(.goal) span {
+    color: #3f51b5; /* 기존 인센티브용 파란색 유지 */
+  }
+
+  .custom-empty-box {
+    text-align: center;
+    padding: 40px 0;
+  }
+  .custom-empty-box p {
+    margin: 4px 0;
+    color: var(--color-gray-400);
+  }
+  .custom-empty-box .copy-button {
+    margin-top: 16px;
+    padding: 10px 20px;
+    background-color: var(--color-success-300); /* 민트색 */
+    color: var(--color-neutral-white);
+    border: none;
+    border-radius: 8px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+  .custom-empty-box .copy-button:hover {
+    background-color: var(--color-success-400);
+  }
+  .highlight-rate {
+    color: var(--color-success-500);
+    font-weight: 700;
+    animation: blink 1s ease-in-out infinite alternate;
+  }
+  @keyframes blink {
+    from {
+      opacity: 1;
+    }
+    to {
+      opacity: 0.6;
+    }
   }
 </style>

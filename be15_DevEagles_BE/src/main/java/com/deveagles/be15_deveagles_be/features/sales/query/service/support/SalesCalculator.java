@@ -1,10 +1,13 @@
 package com.deveagles.be15_deveagles_be.features.sales.query.service.support;
 
 import com.deveagles.be15_deveagles_be.features.sales.command.domain.aggregate.PaymentsMethod;
+import com.deveagles.be15_deveagles_be.features.sales.command.domain.aggregate.SearchMode;
 import com.deveagles.be15_deveagles_be.features.sales.query.dto.response.*;
 import com.deveagles.be15_deveagles_be.features.shops.command.domain.aggregate.Incentive;
 import com.deveagles.be15_deveagles_be.features.shops.command.domain.aggregate.ProductType;
 import com.deveagles.be15_deveagles_be.features.shops.command.repository.IncentiveRepository;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
@@ -167,5 +170,27 @@ public class SalesCalculator {
         .forEach(i -> rateMap.put(i.getPaymentsMethod(), i.getIncentive()));
 
     return rateMap;
+  }
+
+  public int calculateAdjustedTarget(
+      SearchMode mode, int monthlyTarget, int monthDays, int periodDays) {
+    if (mode == SearchMode.MONTH) {
+      return monthlyTarget;
+    }
+
+    // 기간 기준 목표: (월목표 / 월일수) * 조회일수, 절삭
+    return BigDecimal.valueOf(monthlyTarget)
+        .divide(BigDecimal.valueOf(monthDays), 0, RoundingMode.DOWN)
+        .multiply(BigDecimal.valueOf(periodDays))
+        .intValue();
+  }
+
+  public double calculateAchievementRate(int actual, int target) {
+    if (target == 0) return 0.0;
+    return BigDecimal.valueOf(actual)
+        .divide(BigDecimal.valueOf(target), 4, RoundingMode.HALF_UP)
+        .multiply(BigDecimal.valueOf(100))
+        .setScale(2, RoundingMode.HALF_UP)
+        .doubleValue();
   }
 }
