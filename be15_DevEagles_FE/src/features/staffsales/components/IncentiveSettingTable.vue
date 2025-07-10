@@ -3,7 +3,7 @@
     <h5 class="table-title">{{ label }}</h5>
     <div class="table-body">
       <div v-for="option in paymentOptions" :key="option" class="incentive-row">
-        <span class="payment-label">{{ option }}</span>
+        <span class="payment-label">{{ paymentOptionLabels[option] }}</span>
         <input
           v-model.number="localValue[option]"
           type="number"
@@ -33,7 +33,16 @@
 
   const emit = defineEmits(['update:modelValue']);
 
-  const paymentOptions = ['카드', '현금', '네이버페이', '선불권', '횟수권', '지역화폐'];
+  const paymentOptionLabels = {
+    CARD: '카드',
+    CASH: '현금',
+    NAVER_PAY: '네이버페이',
+    PREPAID_PASS: '선불권',
+    SESSION_PASS: '횟수권',
+    LOCAL: '지역화폐',
+  };
+
+  const paymentOptions = Object.keys(paymentOptionLabels);
 
   const localValue = reactive({});
 
@@ -48,7 +57,7 @@
   );
 
   watch(
-    () => ({ ...localValue }),
+    localValue,
     val => {
       emit('update:modelValue', { ...val });
     },
@@ -58,14 +67,14 @@
 
 <style scoped>
   .incentive-table {
+    padding: 12px;
     border: 1px solid #ddd;
     border-radius: 8px;
-    padding: 12px 16px;
   }
   .table-title {
-    font-size: 14px;
-    font-weight: 600;
+    font-weight: bold;
     margin-bottom: 8px;
+    font-size: 16px;
   }
   .table-body {
     display: flex;

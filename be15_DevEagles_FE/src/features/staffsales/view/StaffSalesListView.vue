@@ -147,7 +147,7 @@
     :title="'인센티브 설정'"
     @close="showIncentiveModal = false"
   >
-    <IncentiveSettingModal ref="modalRef" />
+    <IncentiveSettingModal ref="modalRef" :incentive-data="incentiveData" />
     <template #footer>
       <div class="footer-btn-row">
         <BaseButton type="primary" @click="modalRef?.handleSave?.()">저장하기</BaseButton>
@@ -182,6 +182,7 @@
   import BaseSlidePanel from '@/features/staffsales/components/BaseSlidePanel.vue';
   import TargetSalesSettingModal from '@/features/staffsales/components/TargetSalesSettingModal.vue';
   import {
+    getIncentives,
     getStaffDetailSales,
     getStaffSales,
     getStaffTargetSales,
@@ -201,6 +202,7 @@
   const loading = ref(false);
   const staffSalesApiData = ref(null);
   const staffNameFilter = ref('');
+  const incentiveData = ref(null);
 
   const { categoryLabelMap, formatCurrency, getFormattedDates } = useStaffSales();
 
@@ -320,8 +322,15 @@
     }
   });
 
-  const openIncentivePopup = () => {
-    showIncentiveModal.value = true;
+  const openIncentivePopup = async () => {
+    try {
+      const data = await getIncentives();
+      incentiveData.value = data.data.data;
+      showIncentiveModal.value = true;
+    } catch (err) {
+      toastRef.value?.error?.('인센티브 조회에 실패했습니다.');
+      console.error(`인센티브 조회 실패 ${err}`);
+    }
   };
 
   const openTargetPopup = () => {

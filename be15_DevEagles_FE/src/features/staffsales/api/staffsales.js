@@ -5,3 +5,5 @@ export const getStaffSales = params => api.get('/staff-sales', { params });
 export const getStaffDetailSales = params => api.get(`/staff-sales/details`, { params });
 
 export const getStaffTargetSales = params => api.get(`/staff-sales/targets`, { params });
+
+export const getIncentives = () => api.get(`/staff-sales/incentive`);

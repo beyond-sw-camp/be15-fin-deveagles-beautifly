@@ -13,7 +13,7 @@
               type="radio"
               :options="[
                 { text: '일괄설정', value: 'bulk' },
-                { text: '직원별 설정', value: 'individual' },
+                { text: '직원별 설정', value: 'staff' },
               ]"
             />
           </div>
@@ -21,22 +21,26 @@
           <div v-if="mode === 'bulk'" class="section">
             <h4>전체 직원</h4>
             <div class="incentive-group">
-              <IncentiveSettingTable v-model="bulk.treatment" label="시술 판매 인센티브" />
-              <IncentiveSettingTable v-model="bulk.membership" label="회원권 판매 인센티브" />
+              <IncentiveSettingTable v-model="bulk.SERVICE" label="시술 (SERVICE)" />
+              <IncentiveSettingTable v-model="bulk.PRODUCT" label="제품 (PRODUCT)" />
+              <IncentiveSettingTable v-model="bulk.PREPAID_PASS" label="선불권 (PREPAID_PASS)" />
+              <IncentiveSettingTable v-model="bulk.SESSION_PASS" label="횟수권 (SESSION_PASS)" />
             </div>
           </div>
 
           <div v-else class="section">
             <BaseForm
-              v-model="individual.staff"
+              v-model="staff.staff"
               type="select"
               label="직원 선택"
               :options="staffOptions"
               placeholder="직원을 선택하세요"
             />
             <div class="incentive-group">
-              <IncentiveSettingTable v-model="individual.treatment" label="시술 판매 인센티브" />
-              <IncentiveSettingTable v-model="individual.membership" label="회원권 판매 인센티브" />
+              <IncentiveSettingTable v-model="staff.SERVICE" label="시술 (SERVICE)" />
+              <IncentiveSettingTable v-model="staff.PRODUCT" label="제품 (PRODUCT)" />
+              <IncentiveSettingTable v-model="staff.PREPAID_PASS" label="선불권 (PREPAID_PASS)" />
+              <IncentiveSettingTable v-model="staff.SESSION_PASS" label="횟수권 (SESSION_PASS)" />
             </div>
           </div>
         </div>
@@ -46,34 +50,85 @@
 </template>
 
 <script setup>
-  import { ref } from 'vue';
+  import { computed, ref, watch } from 'vue';
   import BaseForm from '@/components/common/BaseForm.vue';
   import BaseToggleSwitch from '@/components/common/BaseToggleSwitch.vue';
   import IncentiveSettingTable from '@/features/staffsales/components/IncentiveSettingTable.vue';
 
   defineExpose({ handleSave });
 
-  const incentiveEnabled = ref(true);
-  const mode = ref('bulk');
+  const props = defineProps({
+    incentiveData: Object,
+  });
+
+  const staffOptions = computed(() => {
+    return props.incentiveData.staffList.map(staff => ({
+      text: staff.staffName,
+      value: staff.staffId,
+    }));
+  });
+
+  const incentiveEnabled = ref(props.incentiveData.incentiveEnabled);
+  const mode = ref(props.incentiveData.incentiveType === 'BULK' ? 'bulk' : 'staff');
 
   const bulk = ref({
-    treatment: {},
-    membership: {},
+    SERVICE: {},
+    PRODUCT: {},
+    PREPAID_PASS: {},
+    SESSION_PASS: {},
   });
 
-  const individual = ref({
+  if (mode.value === 'bulk') {
+    const bulkItem = props.incentiveData.incentiveList.find(i => i.staffId === null);
+    if (bulkItem) {
+      Object.assign(bulk.value, transformIncentivesToProductMap(bulkItem.incentives));
+    }
+  }
+
+  const staff = ref({
     staff: '',
-    treatment: {},
-    membership: {},
+    SERVICE: {},
+    PRODUCT: {},
+    PREPAID_PASS: {},
+    SESSION_PASS: {},
   });
 
-  const staffOptions = [
-    { text: '홍길동', value: '홍길동' },
-    { text: '이수민', value: '이수민' },
-    { text: '박민준', value: '박민준' },
-    { text: '김지연', value: '김지연' },
-    { text: '최윤호', value: '최윤호' },
-  ];
+  watch(
+    () => staff.value.staff,
+    staffId => {
+      const matched = props.incentiveData.incentiveList.find(i => i.staffId === staffId);
+      const incentives =
+        matched?.incentives ??
+        props.incentiveData.incentiveList.find(i => i.staffId === null)?.incentives;
+
+      if (incentives) {
+        Object.assign(staff.value, {
+          ...staff.value,
+          ...transformIncentivesToProductMap(incentives),
+        });
+      }
+    }
+  );
+
+  const transformIncentivesToProductMap = incentives => {
+    const result = {
+      SERVICE: {},
+      PRODUCT: {},
+      PREPAID_PASS: {},
+      SESSION_PASS: {},
+    };
+
+    for (const [payMethod, categoryValues] of Object.entries(incentives || {})) {
+      if (!categoryValues) continue;
+
+      result.SERVICE[payMethod] = categoryValues.service ?? 0;
+      result.PRODUCT[payMethod] = categoryValues.product ?? 0;
+      result.PREPAID_PASS[payMethod] = categoryValues.prepaidPass ?? 0;
+      result.SESSION_PASS[payMethod] = categoryValues.sessionPass ?? 0;
+    }
+
+    return result;
+  };
 
   function handleSave() {
     // TODO: API 연동 또는 부모 emit 등 실제 저장 처리
@@ -81,7 +136,7 @@
       enabled: incentiveEnabled.value,
       mode: mode.value,
       bulk: bulk.value,
-      individual: individual.value,
+      staff: staff.value,
     });
   }
 </script>
