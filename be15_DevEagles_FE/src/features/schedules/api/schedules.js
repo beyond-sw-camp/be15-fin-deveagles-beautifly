@@ -93,3 +93,27 @@ export const fetchReservationRequests = async ({ page = 0, size = 10 }) => {
   });
   return response.data.data;
 };
+
+export const fetchReservationList = async ({
+  staffId,
+  reservationStatusName,
+  customerKeyword,
+  from,
+  to,
+  page = 0,
+  size = 10,
+}) => {
+  const response = await api.get('/schedules/reservations', {
+    params: {
+      staffId,
+      reservationStatusName,
+      customerKeyword,
+      from,
+      to,
+      page,
+      size,
+    },
+  });
+
+  return response.data.data;
+};

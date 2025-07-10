@@ -585,6 +585,21 @@
     background: var(--color-primary-100);
   }
 
+  .right-bar > * {
+    min-width: 160px;
+    flex-shrink: 0;
+    box-sizing: border-box;
+  }
+
+  .filter-bar {
+    display: flex;
+    justify-content: flex-end;
+    align-items: flex-start;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 24px;
+    width: 100%;
+  }
   .schedule-wrapper {
     padding: 24px;
   }
