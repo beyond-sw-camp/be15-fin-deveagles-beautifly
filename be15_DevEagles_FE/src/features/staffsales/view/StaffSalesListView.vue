@@ -155,7 +155,7 @@
   import IncentiveSettingModal from '@/features/staffsales/components/IncentiveSettingModal.vue';
   import BaseSlidePanel from '@/features/staffsales/components/BaseSlidePanel.vue';
   import TargetSalesSettingModal from '@/features/staffsales/components/TargetSalesSettingModal.vue';
-  import { getStaffSales } from '@/features/staffsales/api/staffsales.js';
+  import { getStaffDetailSales, getStaffSales } from '@/features/staffsales/api/staffsales.js';
   import BaseToast from '@/components/common/BaseToast.vue';
   import dayjs from 'dayjs';
 
@@ -171,9 +171,36 @@
   const staffSalesApiData = ref(null);
   const staffNameFilter = ref('');
 
+  const categoryLabelMap = {
+    PRODUCT: '상품-제품',
+    SERVICE: '상품-시술',
+    SESSION_PASS: '회원권-횟수권',
+    PREPAID_PASS: '회원권-선불권',
+  };
+
   const baseColumns = [
     { title: '직원 이름', key: 'name' },
     { title: '상품 구분', key: 'category' },
+    // 매출 항목
+    { title: '카드', key: 'CARD' },
+    { title: '현금', key: 'CASH' },
+    { title: '네이버페이', key: 'NAVER_PAY' },
+    { title: '지역화폐', key: 'LOCAL' },
+    { title: '총 실매출', key: 'totalSales' },
+    // 공제 항목
+    { title: '할인', key: 'DISCOUNT' },
+    { title: '쿠폰', key: 'COUPON' },
+    { title: '선불권', key: 'PREPAID' },
+    // 합계
+    { title: '총 공제', key: 'totalDeductions' },
+    { title: '최종 실매출', key: 'finalSales' },
+  ];
+
+  const detailCoulms = [
+    { title: '직원 이름', key: 'name' },
+    { title: '상품 구분', key: 'category' },
+    { title: '1차', key: 'primary' },
+    { title: '2차', key: 'secondary' },
     // 매출 항목
     { title: '카드', key: 'CARD' },
     { title: '현금', key: 'CASH' },
@@ -197,7 +224,13 @@
     { title: '달성률', key: 'rate' },
   ];
 
-  const columns = computed(() => (activeTab.value === '목표매출' ? targetColumns : baseColumns));
+  const columns = computed(() =>
+    activeTab.value === '목표매출'
+      ? targetColumns
+      : activeTab.value === '직원별 상세결산'
+        ? detailCoulms
+        : baseColumns
+  );
 
   const currentData = computed(() => {
     if (!staffSalesApiData.value) return [];
@@ -242,9 +275,12 @@
         startDate,
       };
       if (endDate) payload.endDate = endDate;
-
-      const { data } = await getStaffSales(payload);
-      staffSalesApiData.value = data.data;
+      let data;
+      if (activeTab.value === '직원별 상세결산') data = await getStaffDetailSales(payload);
+      else if (activeTab.value === '목표매출')
+        data = { data: { staffSalesList: [] } }; // todo : api 연동
+      else data = await getStaffSales(payload);
+      staffSalesApiData.value = data.data.data;
     } catch (err) {
       staffSalesApiData.value = { staffSalesList: [] };
       toastRef.value?.error?.('직원 결산 조회에 실패했습니다.');
@@ -254,9 +290,16 @@
     }
   };
 
-  watch([searchMode, selectedMonth, selectedRange], () => {
-    const { startDate, endDate } = getFormattedDates();
-    if ((searchMode.value === 'PERIOD' && startDate && endDate) || searchMode.value === 'MONTH') {
+  watch([searchMode, selectedMonth, selectedRange, activeTab], () => {
+    const isMonthValid = searchMode.value === 'MONTH';
+    const isPeriodValid =
+      searchMode.value === 'PERIOD' &&
+      Array.isArray(selectedRange.value) &&
+      selectedRange.value.length === 2 &&
+      selectedRange.value[0] &&
+      selectedRange.value[1];
+
+    if (isMonthValid || isPeriodValid) {
       fetchStaffSales();
     }
   });
@@ -264,13 +307,6 @@
   const flattenStaffSalesList = () => {
     if (!staffSalesApiData.value?.staffSalesList) return [];
     const result = [];
-    const categoryLabelMap = {
-      PRODUCT: '상품-제품',
-      SERVICE: '상품-시술',
-      SESSION_PASS: '회원권-횟수권',
-      PREPAID_PASS: '회원권-선불권',
-    };
-
     staffSalesApiData.value.staffSalesList.forEach(staff => {
       if (staffNameFilter.value && !staff.staffName.includes(staffNameFilter.value.trim())) {
         return;
@@ -357,23 +393,155 @@
   };
 
   const flattenDetailData = () => {
+    if (!staffSalesApiData.value?.staffSalesList) return [];
+
     const result = [];
-    staffSalesApiData.value?.staffSalesList?.forEach(staff => {
-      if (staff.items) {
-        staff.items.forEach(item => {
-          result.push({
-            name: item.category === '총계' ? '' : staff.staffName,
-            category: item.category,
-            card: item.card,
-            sales: item.sales,
-            prepaid: item.prepaid,
-            discount: item.discount,
-            total: item.total,
+
+    staffSalesApiData.value.staffSalesList.forEach(staff => {
+      if (staffNameFilter.value && !staff.staffName.includes(staffNameFilter.value.trim())) {
+        return;
+      }
+
+      const staffRows = [];
+      let isFirstRow = true;
+
+      // 1. 상품(시술/제품)
+      staff.paymentsDetailSalesList.forEach(payment => {
+        const categoryLabel = categoryLabelMap[payment.category] || payment.category;
+
+        payment.primaryList?.forEach(primary => {
+          const primaryName = primary.primaryItemName;
+
+          primary.secondaryList?.forEach(secondary => {
+            const row = {
+              name: isFirstRow ? staff.staffName : '',
+              category: categoryLabel,
+              primary: primaryName,
+              secondary: secondary.secondaryItemName,
+              CARD: 0,
+              CASH: 0,
+              NAVER_PAY: 0,
+              LOCAL: 0,
+              CARD_INCENTIVE: 0,
+              CASH_INCENTIVE: 0,
+              NAVER_PAY_INCENTIVE: 0,
+              LOCAL_INCENTIVE: 0,
+              DISCOUNT: 0,
+              COUPON: 0,
+              PREPAID: 0,
+              totalSales: 0,
+              totalDeductions: 0,
+              finalSales: 0,
+            };
+
+            secondary.netSalesList?.forEach(({ paymentsMethod, amount, incentiveAmount }) => {
+              if (
+                paymentsMethod !== 'PREPAID' &&
+                Object.prototype.hasOwnProperty.call(row, paymentsMethod)
+              ) {
+                row[paymentsMethod] += amount;
+                row[`${paymentsMethod}_INCENTIVE`] += incentiveAmount;
+                row.totalSales += amount;
+              }
+            });
+
+            secondary.deductionList?.forEach(({ deduction, amount }) => {
+              if (Object.prototype.hasOwnProperty.call(row, deduction)) {
+                row[deduction] += amount;
+                row.totalDeductions += amount;
+              }
+            });
+
+            row.finalSales = row.totalSales - row.totalDeductions;
+
+            staffRows.push(row);
+            isFirstRow = false;
           });
         });
-      } else {
-        result.push(staff);
-      }
+      });
+
+      // 2. 회원권(횟수권/선불권)
+      staff.paymentsSalesList?.forEach(payment => {
+        const row = {
+          name: isFirstRow ? staff.staffName : '',
+          category: categoryLabelMap[payment.category] || payment.category,
+          primary: '',
+          secondary: '',
+          CARD: 0,
+          CASH: 0,
+          NAVER_PAY: 0,
+          LOCAL: 0,
+          CARD_INCENTIVE: 0,
+          CASH_INCENTIVE: 0,
+          NAVER_PAY_INCENTIVE: 0,
+          LOCAL_INCENTIVE: 0,
+          DISCOUNT: 0,
+          COUPON: 0,
+          PREPAID: 0,
+          totalSales: 0,
+          totalDeductions: 0,
+          finalSales: 0,
+        };
+
+        payment.netSalesList?.forEach(({ paymentsMethod, amount, incentiveAmount }) => {
+          if (
+            paymentsMethod !== 'PREPAID' &&
+            Object.prototype.hasOwnProperty.call(row, paymentsMethod)
+          ) {
+            row[paymentsMethod] += amount;
+            row[`${paymentsMethod}_INCENTIVE`] += incentiveAmount;
+            row.totalSales += amount;
+          }
+        });
+
+        payment.deductionList?.forEach(({ deduction, amount }) => {
+          if (Object.prototype.hasOwnProperty.call(row, deduction)) {
+            row[deduction] += amount;
+            row.totalDeductions += amount;
+          }
+        });
+
+        row.finalSales = row.totalSales - row.totalDeductions;
+
+        staffRows.push(row);
+        isFirstRow = false;
+      });
+
+      // 3. 직원별 총계
+      const summaryRow = {
+        name: '',
+        category: '총계',
+        primary: '',
+        secondary: '',
+        CARD: 0,
+        CASH: 0,
+        NAVER_PAY: 0,
+        LOCAL: 0,
+        CARD_INCENTIVE: 0,
+        CASH_INCENTIVE: 0,
+        NAVER_PAY_INCENTIVE: 0,
+        LOCAL_INCENTIVE: 0,
+        DISCOUNT: 0,
+        COUPON: 0,
+        PREPAID: 0,
+        totalSales: 0,
+        totalDeductions: 0,
+        finalSales: 0,
+      };
+
+      staffRows.forEach(row => {
+        ['CARD', 'CASH', 'NAVER_PAY', 'LOCAL'].forEach(method => {
+          summaryRow[method] += row[method];
+          summaryRow[`${method}_INCENTIVE`] += row[`${method}_INCENTIVE`];
+        });
+
+        ['DISCOUNT', 'COUPON', 'PREPAID', 'totalSales', 'totalDeductions', 'finalSales'].forEach(
+          key => {
+            summaryRow[key] += row[key] || 0;
+          }
+        );
+      });
+      result.push(...staffRows, summaryRow);
     });
     return result;
   };
@@ -418,7 +586,10 @@
   const formatCurrency = value => (typeof value === 'number' ? value.toLocaleString('ko-KR') : '0');
 
   onMounted(() => {
-    fetchStaffSales();
+    const { startDate, endDate } = getFormattedDates();
+    if ((searchMode.value === 'PERIOD' && startDate && endDate) || searchMode.value === 'MONTH') {
+      fetchStaffSales();
+    }
   });
 </script>
 

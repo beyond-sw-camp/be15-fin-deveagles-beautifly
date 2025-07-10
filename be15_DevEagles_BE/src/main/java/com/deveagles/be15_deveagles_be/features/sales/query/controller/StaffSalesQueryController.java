@@ -3,6 +3,7 @@ package com.deveagles.be15_deveagles_be.features.sales.query.controller;
 import com.deveagles.be15_deveagles_be.common.dto.ApiResponse;
 import com.deveagles.be15_deveagles_be.features.auth.command.application.model.CustomUser;
 import com.deveagles.be15_deveagles_be.features.sales.query.dto.request.GetStaffSalesListRequest;
+import com.deveagles.be15_deveagles_be.features.sales.query.dto.response.StaffSalesDetailListResult;
 import com.deveagles.be15_deveagles_be.features.sales.query.dto.response.StaffSalesListResult;
 import com.deveagles.be15_deveagles_be.features.sales.query.service.StaffSalesQueryService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -30,6 +31,18 @@ public class StaffSalesQueryController {
 
     StaffSalesListResult response =
         staffSalesQueryService.getStaffSales(customUser.getShopId(), request);
+
+    return ResponseEntity.ok().body(ApiResponse.success(response));
+  }
+
+  @GetMapping("/details")
+  @Operation(summary = "직원별 상세 결산 조회", description = "조회기간(월별 / 기간별)에 따라 직원별 상세 결산 내역을 조회합니다.")
+  public ResponseEntity<ApiResponse<StaffSalesDetailListResult>> getStaffDetailSales(
+      @AuthenticationPrincipal CustomUser customUser,
+      @ModelAttribute GetStaffSalesListRequest request) {
+
+    StaffSalesDetailListResult response =
+        staffSalesQueryService.getStaffDetailSales(customUser.getShopId(), request);
 
     return ResponseEntity.ok().body(ApiResponse.success(response));
   }
