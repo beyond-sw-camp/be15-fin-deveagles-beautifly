@@ -6,9 +6,9 @@ import java.util.Optional;
 
 public interface CouponQueryService {
 
-  Optional<CouponResponse> getCouponById(Long id);
+  Optional<CouponResponse> getCouponById(Long id, Long shopId);
 
-  Optional<CouponResponse> getCouponByCode(String couponCode);
+  Optional<CouponResponse> getCouponByCode(String couponCode, Long shopId);
 
   PagedResult<CouponResponse> searchCoupons(CouponSearchQuery query);
 }

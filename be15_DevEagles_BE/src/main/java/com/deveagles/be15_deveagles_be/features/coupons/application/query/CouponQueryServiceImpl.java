@@ -1,7 +1,7 @@
 package com.deveagles.be15_deveagles_be.features.coupons.application.query;
 
 import com.deveagles.be15_deveagles_be.common.dto.PagedResult;
-import com.deveagles.be15_deveagles_be.features.coupons.domain.entity.Coupon;
+import com.deveagles.be15_deveagles_be.features.coupons.common.CouponDto;
 import com.deveagles.be15_deveagles_be.features.coupons.domain.repository.CouponQueryRepository;
 import com.deveagles.be15_deveagles_be.features.coupons.infrastructure.repository.CouponJpaRepository;
 import com.deveagles.be15_deveagles_be.features.coupons.presentation.dto.response.CouponResponse;
@@ -24,21 +24,20 @@ public class CouponQueryServiceImpl implements CouponQueryService {
   private final CouponQueryRepository couponQueryRepository;
 
   @Override
-  public Optional<CouponResponse> getCouponById(Long id) {
-    log.info("쿠폰 ID로 조회 - ID: {}", id);
+  public Optional<CouponResponse> getCouponById(Long id, Long shopId) {
+    log.info("쿠폰 ID로 조회 - ID: {}, 매장ID: {}", id, shopId);
 
     return couponJpaRepository
-        .findById(id)
-        .filter(coupon -> !coupon.isDeleted())
+        .findByIdAndShopIdAndDeletedAtIsNull(id, shopId)
         .map(CouponResponse::from);
   }
 
   @Override
-  public Optional<CouponResponse> getCouponByCode(String couponCode) {
-    log.info("쿠폰 코드로 조회 - 코드: {}", couponCode);
+  public Optional<CouponResponse> getCouponByCode(String couponCode, Long shopId) {
+    log.info("쿠폰 코드로 조회 - 코드: {}, 매장ID: {}", couponCode, shopId);
 
     return couponJpaRepository
-        .findByCouponCodeAndDeletedAtIsNull(couponCode)
+        .findByCouponCodeAndShopIdAndDeletedAtIsNull(couponCode, shopId)
         .map(CouponResponse::from);
   }
 
@@ -55,7 +54,7 @@ public class CouponQueryServiceImpl implements CouponQueryService {
     int size = query.getSize() != null ? query.getSize() : 10;
 
     Pageable pageable = PageRequest.of(page, size);
-    Page<Coupon> coupons = couponQueryRepository.searchCoupons(query, pageable);
+    Page<CouponDto> coupons = couponQueryRepository.searchCoupons(query, pageable);
 
     Page<CouponResponse> pageResult = coupons.map(CouponResponse::from);
 

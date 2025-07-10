@@ -1,6 +1,5 @@
 import api from '@/plugins/axios.js';
 import { getApiLogger } from '@/plugins/LoggerManager.js';
-import { MappingHelpers, DEFAULT_VALUES } from '../config/mappingConfig.js';
 import { useAuthStore } from '@/store/auth.js';
 
 const logger = getApiLogger('CouponsAPI');
@@ -13,27 +12,23 @@ class CouponsAPI {
       const authStore = useAuthStore();
       const requestData = {
         couponTitle: couponData.name,
-        shopId: couponData.shopId || MappingHelpers.getCurrentShopId(authStore.shopId),
-        staffId: couponData.staffId || MappingHelpers.getStaffIdByName(couponData.designer),
-        primaryItemId:
-          couponData.primaryItemId ||
-          MappingHelpers.getItemIdByProductName(couponData.primaryProduct) ||
-          MappingHelpers.getDefaultItemId(),
+        shopId: Number(authStore.shopId),
+        primaryItemId: couponData.primaryItemId !== null ? Number(couponData.primaryItemId) : null,
         secondaryItemId:
-          couponData.secondaryItemId ||
-          MappingHelpers.getItemIdByProductName(couponData.secondaryProduct),
-        discountRate: couponData.discount,
+          couponData.secondaryItemId !== null ? Number(couponData.secondaryItemId) : null,
+        discountRate: couponData.discount !== null ? Number(couponData.discount) : null,
         expirationDate: couponData.expiryDate
           ? new Date(couponData.expiryDate).toISOString().split('T')[0]
           : null,
         isActive: couponData.isActive || false,
+        staffId: couponData.staffId !== null ? Number(couponData.staffId) : null,
       };
 
       logger.request('POST', BASE_URL, requestData);
       const response = await api.post(BASE_URL, requestData);
       logger.response('POST', BASE_URL, response.status, response.data);
 
-      return this.transformCouponData(response.data.data);
+      return response.data.data;
     } catch (error) {
       logger.error('POST', BASE_URL, error);
       throw this.handleApiError(error);
@@ -44,24 +39,49 @@ class CouponsAPI {
   async getCoupons(searchParams = {}) {
     try {
       const params = {
-        page: searchParams.page || 0,
-        size: searchParams.size || DEFAULT_VALUES.PAGE_SIZE,
-        sortBy: searchParams.sortBy || DEFAULT_VALUES.SORT_BY,
-        sortDirection: searchParams.sortDirection || DEFAULT_VALUES.SORT_DIRECTION,
-        ...searchParams,
+        sortBy: searchParams.sortBy || 'createdAt',
+        sortDirection: searchParams.sortDirection || 'desc',
       };
 
+      // Conditionally add page and size if they exist in searchParams
+      if (searchParams.page !== undefined) {
+        params.page = searchParams.page;
+      }
+      if (searchParams.size !== undefined) {
+        params.size = searchParams.size;
+      }
+
+      // Add any other searchParams that are not page, size, sortBy, sortDirection
+      for (const key in searchParams) {
+        if (!['page', 'size', 'sortBy', 'sortDirection'].includes(key)) {
+          params[key] = searchParams[key];
+        }
+      }
+
       logger.request('GET', BASE_URL, params);
+      logger.debug('getCoupons - Request Params:', params);
       const response = await api.get(BASE_URL, { params });
       logger.response('GET', BASE_URL, response.status, response.data);
 
-      const pagedData = response.data.data;
+      // 응답 구조 확인 및 안전한 파싱
+      if (!response.data || !response.data.data) {
+        throw new Error('잘못된 응답 구조입니다.');
+      }
+
+      const data = response.data.data;
+
+      // content와 pagination 정보 추출
+      const content = Array.isArray(data.content) ? data.content : [];
+      const pagination = data.pagination || {};
+
       return {
-        content: pagedData.content.map(coupon => this.transformCouponData(coupon)),
-        totalElements: pagedData.totalElements,
-        totalPages: pagedData.totalPages,
-        page: pagedData.page,
-        size: pagedData.size,
+        content: content,
+        totalElements: pagination.totalItems ?? data.totalItems ?? 0,
+        totalPages: pagination.totalPages ?? data.totalPages ?? 0,
+        page: pagination.page ?? data.page ?? params.page,
+        size: pagination.size ?? data.size ?? params.size,
+        isFirst: pagination.isFirst ?? data.isFirst ?? params.page === 0,
+        isLast: pagination.isLast ?? data.isLast ?? false,
       };
     } catch (error) {
       logger.error('GET', BASE_URL, error);
@@ -78,7 +98,7 @@ class CouponsAPI {
       const response = await api.get(url);
       logger.response('GET', url, response.status, response.data);
 
-      return this.transformCouponData(response.data.data);
+      return response.data.data;
     } catch (error) {
       logger.error('GET', `${BASE_URL}/${id}`, error);
       throw this.handleApiError(error);
@@ -94,7 +114,7 @@ class CouponsAPI {
       const response = await api.get(url);
       logger.response('GET', url, response.status, response.data);
 
-      return this.transformCouponData(response.data.data);
+      return response.data.data;
     } catch (error) {
       logger.error('GET', `${BASE_URL}/code/${couponCode}`, error);
       throw this.handleApiError(error);
@@ -126,7 +146,7 @@ class CouponsAPI {
       const response = await api.patch(url);
       logger.response('PATCH', url, response.status, response.data);
 
-      return this.transformCouponData(response.data.data);
+      return response.data.data;
     } catch (error) {
       logger.error('PATCH', `${BASE_URL}/${id}/toggle`, error);
       throw this.handleApiError(error);
@@ -163,30 +183,6 @@ class CouponsAPI {
       logger.error('POST', `${BASE_URL}/validation/apply-simulation`, error);
       throw this.handleApiError(error);
     }
-  }
-
-  // 백엔드 데이터를 프론트엔드 형식으로 변환
-  transformCouponData(backendData) {
-    return {
-      id: backendData.id,
-      name: backendData.couponTitle,
-      couponCode: backendData.couponCode,
-      category: MappingHelpers.getCategory(backendData.primaryItemId),
-      designer: MappingHelpers.getStaffName(backendData.staffId),
-      product: MappingHelpers.getProductName(backendData.primaryItemId),
-      primaryProduct: MappingHelpers.getProductName(backendData.primaryItemId),
-      secondaryProduct: MappingHelpers.getProductName(backendData.secondaryItemId),
-      discount: backendData.discountRate,
-      expiryDate: backendData.expirationDate,
-      isActive: backendData.isActive,
-      createdAt: backendData.createdAt,
-      isExpired: backendData.isExpired,
-      isDeleted: backendData.isDeleted,
-      shopId: backendData.shopId,
-      staffId: backendData.staffId,
-      primaryItemId: backendData.primaryItemId,
-      secondaryItemId: backendData.secondaryItemId,
-    };
   }
 
   // 에러 처리
