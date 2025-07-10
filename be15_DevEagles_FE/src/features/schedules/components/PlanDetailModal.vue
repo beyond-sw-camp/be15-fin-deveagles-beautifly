@@ -1,173 +1,171 @@
 <template>
-  <div v-if="modelValue" class="overlay" @click.self="close">
-    <div class="modal-panel">
-      <div class="modal-header">
-        <div>
-          <h1>등록된 스케줄</h1>
-          <p class="type-label">{{ planTypeLabel }}</p>
+  <div>
+    <div v-if="modelValue && edited && edited.id" class="overlay" @click.self="close">
+      <div class="modal-panel">
+        <div class="modal-header">
+          <div>
+            <h1>등록된 스케줄</h1>
+            <p class="type-label">{{ planTypeLabel }}</p>
+          </div>
+          <button class="close-btn" @click="close">×</button>
         </div>
-        <button class="close-btn" @click="close">×</button>
-      </div>
 
-      <div class="modal-body">
-        <div class="left-detail">
-          <div class="row row-select">
-            <label>구분</label>
-            <div class="form-control-wrapper">
-              <BaseForm
-                v-if="isEditMode"
-                v-model="edited.type"
-                type="select"
-                :options="[
-                  { text: '일정', value: 'event' },
-                  { text: '정기일정', value: 'regular_event' },
-                ]"
-                placeholder="구분 선택"
-              />
-              <span v-else>{{ planTypeLabel }}</span>
-            </div>
-          </div>
-
-          <div class="row">
-            <label>제목</label>
-            <span v-if="!isEditMode">{{ reservation.title }}</span>
-            <BaseForm v-else v-model="edited.title" type="text" />
-          </div>
-
-          <div class="row row-select">
-            <label>담당자</label>
-            <div class="form-control-wrapper">
-              <BaseForm
-                v-if="isEditMode"
-                v-model="edited.staff"
-                type="select"
-                :options="[
-                  { text: '디자이너 A', value: '디자이너 A' },
-                  { text: '디자이너 B', value: '디자이너 B' },
-                ]"
-                placeholder="담당자 선택"
-              />
-              <span v-else>{{ reservation.staff || '미지정' }}</span>
-            </div>
-          </div>
-
-          <div class="row">
-            <label>날짜</label>
-            <div class="date-inline">
-              <template v-if="isEditMode">
-                <PrimeDatePicker
-                  v-model="edited.date"
-                  :clearable="false"
-                  :show-time="false"
-                  :show-button-bar="true"
-                  :style="{ width: '200px' }"
-                />
-                <PrimeDatePicker
-                  v-model="edited.startTime"
-                  :clearable="false"
-                  :show-time="true"
-                  :time-only="true"
-                  hour-format="24"
-                  placeholder="시작 시간"
-                  :style="{ width: '140px' }"
-                />
-                <PrimeDatePicker
-                  v-model="edited.endTime"
-                  :clearable="false"
-                  :show-time="true"
-                  :time-only="true"
-                  hour-format="24"
-                  placeholder="종료 시간"
-                  :style="{ width: '140px' }"
-                />
-                <span>소요 시간 : </span>
-                <input
-                  type="text"
-                  :value="edited.duration"
-                  readonly
-                  class="duration-input"
-                  style="width: 100px"
-                />
-                <label class="all-day-checkbox">
-                  <input v-model="edited.allDay" type="checkbox" @change="handleAllDayToggle" />
-                  <span>종일</span>
-                </label>
-              </template>
-              <template v-else>
-                <span>{{ reservation.date }}</span>
-                <span v-if="!reservation.allDay">{{ reservation.timeRange }}</span>
-                <span v-if="reservation.duration">({{ reservation.duration }} 소요)</span>
-                <span v-if="reservation.allDay">종일</span>
-              </template>
-            </div>
-          </div>
-
-          <div class="row">
-            <label>반복</label>
-            <div class="repeat-inline">
-              <template v-if="isEditMode">
+        <div class="modal-body">
+          <div class="left-detail">
+            <div class="row row-select">
+              <label>구분</label>
+              <div class="form-control-wrapper">
                 <BaseForm
-                  v-model="edited.repeat"
+                  v-if="isEditMode"
+                  v-model="edited.type"
                   type="select"
                   :options="[
-                    { text: '반복 안함', value: 'none' },
-                    { text: '매달 반복', value: 'monthly' },
-                    { text: '요일 반복', value: 'weekly' },
+                    { text: '일정', value: 'plan' },
+                    { text: '정기일정', value: 'regular_plan' },
                   ]"
-                  placeholder="반복 주기"
+                  placeholder="구분 선택"
                 />
-                <span v-if="edited.repeat !== 'none' && edited.date" class="repeat-description">
-                  {{
-                    edited.repeat === 'monthly'
-                      ? '매달 ' + new Date(edited.date).getDate() + '일 반복'
-                      : '매주 ' +
-                        ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일'][
-                          new Date(edited.date).getDay()
-                        ] +
-                        ' 반복'
-                  }}
-                </span>
-              </template>
-              <template v-else>
-                <span>
-                  {{
-                    reservation.repeat === 'none'
-                      ? '반복 안함'
-                      : reservation.repeat === 'monthly'
-                        ? '매달 ' + new Date(reservation.date).getDate() + '일 반복'
-                        : '매주 ' +
-                          ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일'][
-                            new Date(reservation.date).getDay()
-                          ] +
-                          ' 반복'
-                  }}
-                </span>
-              </template>
+                <span v-else>{{ planTypeLabel }}</span>
+              </div>
+            </div>
+
+            <div class="row">
+              <label>제목</label>
+              <span v-if="!isEditMode">{{ edited.title }}</span>
+              <BaseForm v-else v-model="edited.title" type="text" />
+            </div>
+
+            <div class="row row-select">
+              <label>담당자</label>
+              <div class="form-control-wrapper">
+                <BaseForm
+                  v-if="isEditMode"
+                  v-model="edited.staffName"
+                  type="select"
+                  :options="[
+                    { text: '디자이너 A', value: '디자이너 A' },
+                    { text: '디자이너 B', value: '디자이너 B' },
+                  ]"
+                  placeholder="담당자 선택"
+                />
+                <span v-else>{{ edited.staffName || '미지정' }}</span>
+              </div>
+            </div>
+
+            <div class="row">
+              <label>날짜</label>
+              <div class="date-inline">
+                <template v-if="isEditMode">
+                  <!-- 그대로 유지 -->
+                  <PrimeDatePicker
+                    v-model="edited.date"
+                    :clearable="false"
+                    :show-time="false"
+                    :show-button-bar="true"
+                    :style="{ width: '200px' }"
+                  />
+                  <PrimeDatePicker
+                    v-model="edited.startTime"
+                    :clearable="false"
+                    :show-time="true"
+                    :time-only="true"
+                    hour-format="24"
+                    placeholder="시작 시간"
+                    :style="{ width: '140px' }"
+                  />
+                  <PrimeDatePicker
+                    v-model="edited.endTime"
+                    :clearable="false"
+                    :show-time="true"
+                    :time-only="true"
+                    hour-format="24"
+                    placeholder="종료 시간"
+                    :style="{ width: '140px' }"
+                  />
+                  <span>소요 시간 : </span>
+                  <input
+                    type="text"
+                    :value="edited.duration"
+                    readonly
+                    class="duration-input"
+                    style="width: 100px"
+                  />
+                  <label class="all-day-checkbox">
+                    <input v-model="edited.allDay" type="checkbox" @change="handleAllDayToggle" />
+                    <span>종일</span>
+                  </label>
+                </template>
+
+                <template v-else>
+                  <span v-if="edited.timeRange">
+                    {{ edited.timeRange }}
+                    <span v-if="edited.duration"> ({{ edited.duration }} 소요) </span>
+                  </span>
+                  <span v-else>시간 정보 없음</span>
+                </template>
+              </div>
+            </div>
+
+            <div class="row">
+              <label>반복</label>
+              <div class="repeat-inline">
+                <template v-if="isEditMode">
+                  <BaseForm
+                    v-model="edited.repeat"
+                    type="select"
+                    :options="[
+                      { text: '반복 안함', value: 'none' },
+                      { text: '매달 반복', value: 'monthly' },
+                      { text: '요일 반복', value: 'weekly' },
+                    ]"
+                    placeholder="반복 주기"
+                  />
+                  <span v-if="edited.repeat !== 'none' && edited.date" class="repeat-description">
+                    {{
+                      edited.repeat === 'monthly'
+                        ? '매달 ' + new Date(edited.date).getDate() + '일 반복'
+                        : '매주 ' + koreanWeekday[new Date(edited.date).getDay()] + ' 반복'
+                    }}
+                  </span>
+                </template>
+
+                <template v-else>
+                  <template v-if="type === 'regular_plan' && edited.repeat === 'weekly'">
+                    <span>매주 {{ koreanWeekday[edited.date] || '요일 미지정' }} 반복</span>
+                  </template>
+                  <template v-else-if="type === 'regular_plan' && edited.repeat === 'monthly'">
+                    <span>매달 {{ edited.date || '일 미지정' }}일 반복</span>
+                  </template>
+                  <template v-else>
+                    <span>반복 없음</span>
+                  </template>
+                </template>
+              </div>
+            </div>
+
+            <div class="row">
+              <label>메모</label>
+              <span v-if="!isEditMode">{{ edited.memo }}</span>
+              <BaseForm v-else v-model="edited.memo" type="textarea" rows="3" />
             </div>
           </div>
-
-          <div class="row">
-            <label>메모</label>
-            <span v-if="!isEditMode">{{ reservation.memo }}</span>
-            <BaseForm v-else v-model="edited.memo" type="textarea" rows="3" />
-          </div>
         </div>
-      </div>
 
-      <div class="modal-footer">
-        <BaseButton type="error" @click="close">닫기</BaseButton>
-        <template v-if="isEditMode">
-          <BaseButton type="primary" @click="saveEdit">저장</BaseButton>
-        </template>
-        <template v-else>
-          <div class="action-dropdown">
-            <BaseButton type="primary" @click="toggleMenu">수정 / 삭제</BaseButton>
-            <ul v-if="showMenu" class="dropdown-menu">
-              <li @click="handleEdit">수정하기</li>
-              <li @click="handleDelete">삭제하기</li>
-            </ul>
-          </div>
-        </template>
+        <div class="modal-footer">
+          <BaseButton type="error" @click="close">닫기</BaseButton>
+          <template v-if="isEditMode">
+            <BaseButton type="primary" @click="saveEdit">저장</BaseButton>
+          </template>
+          <template v-else>
+            <div class="action-dropdown">
+              <BaseButton type="primary" @click="toggleMenu">수정 / 삭제</BaseButton>
+              <ul v-if="showMenu" class="dropdown-menu">
+                <li @click="handleEdit">수정하기</li>
+                <li @click="handleDelete">삭제하기</li>
+              </ul>
+            </div>
+          </template>
+        </div>
       </div>
     </div>
   </div>
@@ -175,28 +173,44 @@
 
 <script setup>
   import {
-    ref,
+    computed,
     defineProps,
     defineEmits,
-    computed,
     onMounted,
     onBeforeUnmount,
+    ref,
     watchEffect,
   } from 'vue';
   import BaseButton from '@/components/common/BaseButton.vue';
   import BaseForm from '@/components/common/BaseForm.vue';
   import PrimeDatePicker from '@/components/common/PrimeDatePicker.vue';
+  import { fetchScheduleDetail } from '@/features/schedules/api/schedules.js';
 
-  const props = defineProps({
-    modelValue: Boolean,
-    reservation: Object,
-  });
   const emit = defineEmits(['update:modelValue']);
-
   const isEditMode = ref(false);
   const showMenu = ref(false);
   const edited = ref({});
   const backup = ref({});
+
+  defineOptions({
+    name: 'PlanDetailModal',
+  });
+
+  const props = defineProps({
+    modelValue: Boolean,
+    id: [String, Number],
+    type: String,
+  });
+
+  const koreanWeekday = {
+    SUN: '일요일',
+    MON: '월요일',
+    TUE: '화요일',
+    WED: '수요일',
+    THU: '목요일',
+    FRI: '금요일',
+    SAT: '토요일',
+  };
 
   const close = () => {
     emit('update:modelValue', false);
@@ -206,33 +220,46 @@
   };
 
   const toggleMenu = () => (showMenu.value = !showMenu.value);
+
   const handleEdit = () => {
     isEditMode.value = true;
     showMenu.value = false;
-    const { date, timeRange, duration, ...rest } = props.reservation;
+
+    const { date, timeRange, duration, repeat = 'none', ...rest } = edited.value;
+
     const [startStr, endStr] = (timeRange || '').split(' - ').map(str => str.trim());
 
     const toTime = str => {
       if (!str) return null;
-      const [period, time] = str.split(' ');
-      let [h, m] = time.split(':').map(Number);
-      if (period === '오후' && h !== 12) h += 12;
-      if (period === '오전' && h === 12) h = 0;
-      const d = new Date(date);
-      d.setHours(h, m, 0, 0);
-      return d;
+      const [h, m] = str.split(':').map(Number);
+      let baseDate;
+      if (repeat === 'monthly') {
+        baseDate = new Date();
+        baseDate.setDate(Number(date));
+      } else if (repeat === 'weekly') {
+        baseDate = new Date();
+      } else {
+        baseDate = new Date(date);
+      }
+      if (isNaN(baseDate)) {
+        console.warn('⚠ Invalid base date for time parsing:', date);
+        return null;
+      }
+      baseDate.setHours(h, m, 0, 0);
+      return baseDate;
     };
 
     edited.value = {
       ...rest,
-      date: new Date(date),
+      date: repeat === 'none' ? new Date(date) : date,
       startTime: toTime(startStr),
       endTime: toTime(endStr),
       duration,
       timeRange,
       allDay: timeRange === '00:00 - 23:59',
-      repeat: props.reservation.repeat || 'none',
+      repeat,
     };
+
     backup.value = JSON.parse(JSON.stringify(edited.value));
   };
 
@@ -247,7 +274,6 @@
     alert('수정 내용 저장:\n' + JSON.stringify(edited.value, null, 2));
     isEditMode.value = false;
   };
-
   const handleAllDayToggle = () => {
     if (edited.value.allDay) {
       edited.value.startTime = new Date(edited.value.date);
@@ -260,50 +286,98 @@
     }
   };
 
-  watchEffect(() => {
-    if (edited.value.startTime && edited.value.endTime) {
-      const start = new Date(
-        0,
-        0,
-        0,
-        edited.value.startTime.getHours(),
-        edited.value.startTime.getMinutes()
-      );
-      const end = new Date(
-        0,
-        0,
-        0,
-        edited.value.endTime.getHours(),
-        edited.value.endTime.getMinutes()
-      );
+  watchEffect(async () => {
+    if (!props.id || !props.type) return;
+    const { data } = await fetchScheduleDetail(props.type, props.id);
+    const d = data.data;
 
-      const diffMs = end - start;
-      if (diffMs >= 0) {
-        const totalMinutes = Math.floor(diffMs / (1000 * 60));
-        const hours = String(Math.floor(totalMinutes / 60)).padStart(2, '0');
-        const minutes = String(totalMinutes % 60).padStart(2, '0');
-        edited.value.duration = `${hours}:${minutes}`;
+    const convert = (startStr, endStr, showDate = false) => {
+      const parseTime = str => {
+        if (/^\d{2}:\d{2}:\d{2}$/.test(str)) {
+          const today = new Date();
+          const yyyy = today.getFullYear();
+          const mm = String(today.getMonth() + 1).padStart(2, '0');
+          const dd = String(today.getDate()).padStart(2, '0');
+          return new Date(`${yyyy}-${mm}-${dd}T${str}`);
+        }
+        return new Date(str);
+      };
 
-        const formatTime = date => {
-          const h = date.getHours();
-          const m = String(date.getMinutes()).padStart(2, '0');
-          const period = h < 12 ? '오전' : '오후';
-          const hour12 = h % 12 || 12;
-          return `${period} ${hour12}:${m}`;
+      const startDate = parseTime(startStr);
+      const endDate = parseTime(endStr);
+
+      if (isNaN(startDate) || isNaN(endDate)) {
+        return {
+          timeRange: '시간 정보 없음',
+          duration: '',
         };
-
-        edited.value.timeRange = `${formatTime(edited.value.startTime)} - ${formatTime(edited.value.endTime)}`;
       }
+
+      const startTime = startDate.toTimeString().slice(0, 5);
+      const endTime = endDate.toTimeString().slice(0, 5);
+
+      const toYMD = date =>
+        `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+
+      const timeRange = showDate
+        ? toYMD(startDate) === toYMD(endDate)
+          ? `${toYMD(startDate)} ${startTime} - ${endTime}`
+          : `${toYMD(startDate)} ${startTime} ~ ${toYMD(endDate)} ${endTime}`
+        : `${startTime} - ${endTime}`;
+
+      const diffMs = endDate - startDate;
+      const minutes = Math.floor(diffMs / 60000);
+      const hours = Math.floor(minutes / 60);
+      const mins = minutes % 60;
+
+      const duration = `${hours ? `${hours}시간` : ''} ${mins ? `${mins}분` : ''}`.trim();
+
+      return {
+        timeRange,
+        duration,
+      };
+    };
+
+    let result = {
+      id: props.id,
+      type: props.type,
+      title: d.title ?? d.leaveTitle,
+      staffName: d.staffName,
+      staffId: d.staffId,
+      memo: d.memo,
+      allDay: false,
+      repeat: 'none',
+    };
+
+    if (props.type === 'regular_plan') {
+      result.type = 'regular_plan';
+      if (d.weeklyPlan) {
+        result.repeat = 'weekly';
+        result.date = d.weeklyPlan;
+      } else if (d.monthlyPlan) {
+        result.repeat = 'monthly';
+        result.date = String(d.monthlyPlan);
+      }
+      const { timeRange, duration } = convert(d.startAt, d.endAt, false);
+      result.timeRange = timeRange;
+      result.duration = duration;
+    } else {
+      result.type = 'plan';
+      const { timeRange, duration } = convert(d.startAt, d.endAt, true);
+      result.timeRange = timeRange;
+      result.duration = duration;
     }
+
+    edited.value = result;
   });
 
   const handleEsc = e => e.key === 'Escape' && close();
   onMounted(() => window.addEventListener('keydown', handleEsc));
   onBeforeUnmount(() => window.removeEventListener('keydown', handleEsc));
 
-  const planTypeLabel = computed(() =>
-    props.reservation.type === 'regular_event' ? '정기일정' : '일정'
-  );
+  const planTypeLabel = computed(() => {
+    return edited.value?.type === 'regular_plan' ? '정기일정' : '일정';
+  });
 </script>
 
 <style scoped>
