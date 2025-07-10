@@ -5,6 +5,7 @@ import com.deveagles.be15_deveagles_be.common.dto.PagedResponse;
 import com.deveagles.be15_deveagles_be.common.dto.PagedResult;
 import com.deveagles.be15_deveagles_be.common.exception.BusinessException;
 import com.deveagles.be15_deveagles_be.common.exception.ErrorCode;
+import com.deveagles.be15_deveagles_be.features.auth.command.application.model.CustomUser;
 import com.deveagles.be15_deveagles_be.features.coupons.application.command.CouponCommandService;
 import com.deveagles.be15_deveagles_be.features.coupons.application.command.CreateCouponRequest;
 import com.deveagles.be15_deveagles_be.features.coupons.application.query.CouponQueryService;
@@ -25,6 +26,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -51,9 +53,14 @@ public class CouponController {
   })
   @PostMapping
   public ResponseEntity<ApiResponse<CouponDto>> createCoupon(
+      @AuthenticationPrincipal CustomUser user,
       @Parameter(description = "쿠폰 생성 정보", required = true) @Valid @RequestBody
           CreateCouponRequest command) {
-    log.info("쿠폰 생성 요청 - 쿠폰명: {}", command.getCouponTitle());
+    log.info(
+        "쿠폰 생성 요청 - 쿠폰명: {}, 매장ID: {}, 직원ID: {}",
+        command.getCouponTitle(),
+        user.getShopId(),
+        user.getUserId());
 
     CouponDto couponDto = couponCommandService.createCoupon(command);
     return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(couponDto));
@@ -73,10 +80,12 @@ public class CouponController {
   })
   @DeleteMapping("/{id}")
   public ResponseEntity<ApiResponse<Void>> deleteCoupon(
+      @AuthenticationPrincipal CustomUser user,
       @Parameter(description = "쿠폰 ID", required = true) @PathVariable Long id) {
-    log.info("쿠폰 삭제 요청 - ID: {}", id);
+    log.info("쿠폰 삭제 요청 - ID: {}, 매장ID: {}", id, user.getShopId());
 
-    DeleteCouponRequest command = DeleteCouponRequest.builder().id(id).build();
+    DeleteCouponRequest command =
+        DeleteCouponRequest.builder().id(id).shopId(user.getShopId()).build();
     couponCommandService.deleteCoupon(command);
     return ResponseEntity.ok(ApiResponse.success(null));
   }
@@ -95,10 +104,11 @@ public class CouponController {
   })
   @PatchMapping("/{id}/toggle")
   public ResponseEntity<ApiResponse<CouponDto>> toggleCouponStatus(
+      @AuthenticationPrincipal CustomUser user,
       @Parameter(description = "쿠폰 ID", required = true) @PathVariable Long id) {
-    log.info("쿠폰 상태 토글 요청 - ID: {}", id);
+    log.info("쿠폰 상태 토글 요청 - ID: {}, 매장ID: {}", id, user.getShopId());
 
-    CouponDto couponDto = couponCommandService.toggleCouponStatus(id);
+    CouponDto couponDto = couponCommandService.toggleCouponStatus(id, user.getShopId());
     return ResponseEntity.ok(ApiResponse.success(couponDto));
   }
 
@@ -113,12 +123,13 @@ public class CouponController {
   })
   @GetMapping("/{id}")
   public ResponseEntity<ApiResponse<CouponResponse>> getCouponById(
+      @AuthenticationPrincipal CustomUser user,
       @Parameter(description = "쿠폰 ID", required = true) @PathVariable Long id) {
-    log.info("쿠폰 ID로 조회 요청 - ID: {}", id);
+    log.info("쿠폰 ID로 조회 요청 - ID: {}, 매장ID: {}", id, user.getShopId());
 
     CouponResponse coupon =
         couponQueryService
-            .getCouponById(id)
+            .getCouponById(id, user.getShopId())
             .orElseThrow(() -> new BusinessException(ErrorCode.COUPON_NOT_FOUND));
 
     return ResponseEntity.ok(ApiResponse.success(coupon));
@@ -135,13 +146,14 @@ public class CouponController {
   })
   @GetMapping("/code/{couponCode}")
   public ResponseEntity<ApiResponse<CouponResponse>> getCouponByCode(
+      @AuthenticationPrincipal CustomUser user,
       @Parameter(description = "쿠폰 코드", required = true, example = "CP241201ABCD1234") @PathVariable
           String couponCode) {
-    log.info("쿠폰 코드로 조회 요청 - 코드: {}", couponCode);
+    log.info("쿠폰 코드로 조회 요청 - 코드: {}, 매장ID: {}", couponCode, user.getShopId());
 
     CouponResponse coupon =
         couponQueryService
-            .getCouponByCode(couponCode)
+            .getCouponByCode(couponCode, user.getShopId())
             .orElseThrow(() -> new BusinessException(ErrorCode.COUPON_NOT_FOUND));
 
     return ResponseEntity.ok(ApiResponse.success(coupon));
@@ -155,12 +167,12 @@ public class CouponController {
   })
   @GetMapping
   public ResponseEntity<ApiResponse<PagedResponse<CouponResponse>>> searchCoupons(
+      @AuthenticationPrincipal CustomUser user,
       @Parameter(description = "쿠폰 코드 (부분 검색)", example = "CP241201")
           @RequestParam(required = false)
           String couponCode,
       @Parameter(description = "쿠폰명 (부분 검색)", example = "할인 쿠폰") @RequestParam(required = false)
           String couponTitle,
-      @Parameter(description = "매장 ID", example = "1") @RequestParam(required = false) Long shopId,
       @Parameter(description = "직원 ID", example = "1") @RequestParam(required = false) Long staffId,
       @Parameter(description = "상품 ID", example = "100") @RequestParam(required = false)
           Long primaryItemId,
@@ -187,30 +199,37 @@ public class CouponController {
 
     log.info(
         "쿠폰 통합 검색 요청 - 매장ID: {}, 활성상태: {}, 직원ID: {}, 상품ID: {}",
-        shopId,
+        user.getShopId(),
         isActive,
         staffId,
         primaryItemId);
 
-    CouponSearchQuery query =
-        CouponSearchQuery.builder()
-            .couponCode(couponCode)
-            .couponTitle(couponTitle)
-            .shopId(shopId)
-            .staffId(staffId)
-            .primaryItemId(primaryItemId)
-            .isActive(isActive)
-            .expirationDateFrom(expirationDateFrom)
-            .expirationDateTo(expirationDateTo)
-            .page(page)
-            .size(size)
-            .sortBy(sortBy)
-            .sortDirection(sortDirection)
-            .build();
+    try {
+      CouponSearchQuery query =
+          CouponSearchQuery.builder()
+              .couponCode(couponCode)
+              .couponTitle(couponTitle)
+              .shopId(user.getShopId())
+              .staffId(staffId)
+              .primaryItemId(primaryItemId)
+              .isActive(isActive)
+              .expirationDateFrom(expirationDateFrom)
+              .expirationDateTo(expirationDateTo)
+              .page(page)
+              .size(size)
+              .sortBy(sortBy)
+              .sortDirection(sortDirection)
+              .build();
 
-    PagedResult<CouponResponse> pagedResult = couponQueryService.searchCoupons(query);
-    PagedResponse<CouponResponse> response = PagedResponse.from(pagedResult);
+      PagedResult<CouponResponse> pagedResult = couponQueryService.searchCoupons(query);
+      PagedResponse<CouponResponse> response = PagedResponse.from(pagedResult);
 
-    return ResponseEntity.ok(ApiResponse.success(response));
+      log.info("쿠폰 검색 결과: {}건", response.getContent() != null ? response.getContent().size() : 0);
+      return ResponseEntity.ok(ApiResponse.success(response));
+    } catch (Exception e) {
+      log.error("[쿠폰 통합 검색] 500 에러 발생", e);
+      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+          .body(ApiResponse.failure("INTERNAL_ERROR", "서버 내부 오류: " + e.getMessage()));
+    }
   }
 }

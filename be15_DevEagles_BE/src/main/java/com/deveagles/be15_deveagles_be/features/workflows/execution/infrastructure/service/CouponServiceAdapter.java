@@ -22,7 +22,7 @@ public class CouponServiceAdapter {
         return false;
       }
 
-      Optional<CouponResponse> optCoupon = couponQueryService.getCouponByCode(couponCode);
+      Optional<CouponResponse> optCoupon = couponQueryService.getCouponByCode(couponCode, shopId);
 
       if (optCoupon.isEmpty()) {
         log.warn("쿠폰을 찾을 수 없습니다. couponCode: {}", couponCode);
@@ -44,12 +44,6 @@ public class CouponServiceAdapter {
       // 활성화 여부
       if (Boolean.FALSE.equals(coupon.getIsActive())) {
         log.warn("비활성화된 쿠폰입니다. couponCode: {}", couponCode);
-        return false;
-      }
-
-      // 만료 여부
-      if (Boolean.TRUE.equals(coupon.getIsExpired())) {
-        log.warn("만료된 쿠폰입니다. couponCode: {}", couponCode);
         return false;
       }
 
