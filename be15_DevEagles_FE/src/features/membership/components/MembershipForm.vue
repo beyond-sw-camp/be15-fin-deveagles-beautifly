@@ -43,7 +43,7 @@
       <BaseForm
         v-model="searchKeyword"
         type="text"
-        placeholder="고객명 검색"
+        placeholder="고객명, 전화번호 검색"
         style="width: 300px"
         @keydown.enter="applySearch"
       />

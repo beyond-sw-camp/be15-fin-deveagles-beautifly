@@ -8,18 +8,21 @@
     <select id="findSessionPassDetailsByCustomerId"
             resultType="com.deveagles.be15_deveagles_be.features.membership.query.dto.response.CustomerSessionPassDetailInfo">
         SELECT
-            cpp.customer_session_pass_id AS customerSessionPassId,
-            'session' AS membershipType,
-            pp.session_pass_name AS sessionPassName,
-            cpp.remaining_count AS remainingCount,
-            cpp.expiration_date AS expirationDate,
-            cpp.created_at AS createdAt
+        cpp.customer_session_pass_id AS customerSessionPassId,
+        'session' AS membershipType,
+        pp.session_pass_name AS sessionPassName,
+        si.secondary_item_name AS secondaryItemName,
+        cpp.remaining_count AS remainingCount,
+        cpp.expiration_date AS expirationDate,
+        cpp.created_at AS createdAt
         FROM customer_session_pass cpp
-                 JOIN session_pass pp ON cpp.session_pass_id = pp.session_pass_id
+        JOIN session_pass pp ON cpp.session_pass_id = pp.session_pass_id
+        LEFT JOIN secondary_item si ON pp.secondary_item_id = si.secondary_item_id
         WHERE cpp.customer_id = #{customerId}
-          AND cpp.remaining_count > 0
-          AND cpp.expiration_date >= CURRENT_DATE
-          AND cpp.deleted_at IS NULL
+        AND cpp.remaining_count > 0
+        AND cpp.expiration_date >= CURRENT_DATE
+        AND cpp.deleted_at IS NULL
+        AND pp.deleted_at IS NULL
     </select>
 
 </mapper>

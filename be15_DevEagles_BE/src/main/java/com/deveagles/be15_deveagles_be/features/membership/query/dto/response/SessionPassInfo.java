@@ -8,6 +8,7 @@ import lombok.Getter;
 @Builder
 public class SessionPassInfo {
   private String sessionPassName;
+  private String secondaryItemName;
   private Integer remainingCount;
   private Date expirationDate;
 }

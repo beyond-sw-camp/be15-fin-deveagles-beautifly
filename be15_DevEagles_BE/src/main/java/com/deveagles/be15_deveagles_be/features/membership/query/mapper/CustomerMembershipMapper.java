@@ -6,6 +6,7 @@ import com.deveagles.be15_deveagles_be.features.membership.query.dto.request.Cus
 import com.deveagles.be15_deveagles_be.features.membership.query.dto.response.*;
 import java.util.List;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 
 @Mapper
 public interface CustomerMembershipMapper {
@@ -18,27 +19,36 @@ public interface CustomerMembershipMapper {
 
   // 필터 조회용
   List<CustomerMembershipResponse> findCustomerMemberships(
-      Long shopId, CustomerMemebershipFilterRequest filter, int offset);
+      @Param("shopId") Long shopId,
+      @Param("filter") CustomerMemebershipFilterRequest filter,
+      @Param("offset") int offset);
 
-  long countCustomerMemberships(Long shopId, CustomerMemebershipFilterRequest filter);
+  long countCustomerMemberships(
+      @Param("shopId") Long shopId, @Param("filter") CustomerMemebershipFilterRequest filter);
 
   // 고객 선불권 조회 만료(예정)
   List<CustomerExpiringPrepaidPassResponse> findExpiringPrepaidPassCustomers(
-      Long shopId, CustomerExpiringPrepaidPassFilterRequest request, int offset);
+      @Param("shopId") Long shopId,
+      @Param("request") CustomerExpiringPrepaidPassFilterRequest request,
+      @Param("offset") int offset);
 
   List<PrepaidPassInfo> findExpiringPrepaidPassesByCustomerId(Long customerId);
 
   long countExpiringPrepaidPassCustomers(
-      Long shopId, CustomerExpiringPrepaidPassFilterRequest request);
+      @Param("shopId") Long shopId,
+      @Param("request") CustomerExpiringPrepaidPassFilterRequest request);
 
   // 고객 횟수권 조회 만료(예정)
   List<CustomerExpiringSessionPassResponse> findExpiringSessionPassCustomers(
-      Long shopId, CustomerExpiringSessionPassFilterRequest request, int offset);
+      @Param("shopId") Long shopId,
+      @Param("request") CustomerExpiringSessionPassFilterRequest request,
+      @Param("offset") int offset);
 
   List<SessionPassInfo> findExpiringSessionPassesByCustomerId(Long customerId);
 
   long countExpiringSessionPassCustomers(
-      Long shopId, CustomerExpiringSessionPassFilterRequest request);
+      @Param("shopId") Long shopId,
+      @Param("request") CustomerExpiringSessionPassFilterRequest request);
 
   // 고객 선불권 상세 조회
   List<CustomerPrepaidPassDetailInfo> findPrepaidPassDetailsByCustomerId(Long customerId);

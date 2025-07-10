@@ -113,7 +113,7 @@
       };
 
       if (props.searchKeyword) {
-        requestPayload.searchKeyword = props.searchKeyword;
+        requestPayload.customerKeyword = props.searchKeyword;
       }
 
       let response;
@@ -147,7 +147,11 @@
       const hasValidPass = passes && passes.length > 0;
 
       const joinedPassNames = hasValidPass
-        ? passes.map(p => p[passNameKey]).join(', ')
+        ? passes
+            .map(p =>
+              type === 'session' ? `(${p.secondaryItemName}) ${p.sessionPassName}` : p[passNameKey]
+            )
+            .join(', ')
         : '(만료됨)';
 
       const totalRemaining = hasValidPass
@@ -190,13 +194,8 @@
     { deep: true, immediate: true }
   );
 
-  const filteredData = computed(() => {
-    const keyword = props.searchKeyword?.trim() || '';
-    return data.value.filter(item => item.name.includes(keyword));
-  });
-
   const sortedData = computed(() => {
-    const list = [...filteredData.value];
+    const list = [...data.value]; // ✅ filteredData 제거하고 data 기준 정렬
     if (!sortKey.value) return list;
 
     return list.sort((a, b) => {
