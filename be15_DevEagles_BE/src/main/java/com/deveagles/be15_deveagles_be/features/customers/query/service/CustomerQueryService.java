@@ -45,6 +45,15 @@ public interface CustomerQueryService {
 
   void reindexAllCustomers(Long shopId);
 
+  // 추가: 안전한 재인덱싱 메서드들
+  void reindexAllCustomersWithReset(Long shopId);
+
+  void reindexAllShopsCustomers();
+
+  void reindexAllShopsCustomersWithReset();
+
+  ReindexStatus getReindexStatus(String taskId);
+
   List<String> getCustomerPhoneNumbers(List<Long> customerIds);
 
   Optional<CustomerIdResponse> findCustomerIdByPhoneNumber(String phoneNumber, Long shopId);

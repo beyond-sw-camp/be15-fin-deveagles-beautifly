@@ -16,8 +16,8 @@ public class PrepaidPassQueryServiceImpl implements PrepaidPassQueryService {
   private final PrepaidPassRepository prepaidPassRepository;
 
   @Override
-  public List<PrepaidPassResponse> getAllPrepaidPass() {
-    List<PrepaidPass> pass = prepaidPassRepository.findAllByDeletedAtIsNull();
+  public List<PrepaidPassResponse> getAllPrepaidPass(Long shopId) {
+    List<PrepaidPass> pass = prepaidPassRepository.findAllByShopId_ShopIdAndDeletedAtIsNull(shopId);
     return pass.stream().map(PrepaidPassResponse::from).collect(Collectors.toList());
   }
 }

@@ -6,6 +6,7 @@ import static org.mockito.Mockito.*;
 import com.deveagles.be15_deveagles_be.features.membership.command.domain.aggregate.PrepaidPass;
 import com.deveagles.be15_deveagles_be.features.membership.command.domain.repository.PrepaidPassRepository;
 import com.deveagles.be15_deveagles_be.features.membership.query.dto.response.PrepaidPassResponse;
+import com.deveagles.be15_deveagles_be.features.shops.command.domain.aggregate.Shop;
 import java.util.Arrays;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -29,6 +30,8 @@ class PrepaidPassQueryServiceImplTest {
   @Test
   @DisplayName("성공: 전체 선불권 목록을 조회한다")
   void getAllPrepaidPasses_shouldReturnBeautyExamples() {
+
+    Shop shop = Shop.builder().shopId(1L).build();
     // given
     PrepaidPass pass1 =
         PrepaidPass.builder()
@@ -38,6 +41,7 @@ class PrepaidPassQueryServiceImplTest {
             .expirationPeriod(365)
             .bonus(50000)
             .discountRate(0)
+            .shopId(shop)
             .prepaidPassMemo("")
             .build();
 
@@ -49,14 +53,14 @@ class PrepaidPassQueryServiceImplTest {
             .expirationPeriod(365)
             .bonus(100000)
             .discountRate(5)
+            .shopId(shop)
             .prepaidPassMemo("100만원권")
             .build();
 
-    when(prepaidPassRepository.findAllByDeletedAtIsNull()).thenReturn(Arrays.asList(pass1, pass2));
-
+    when(prepaidPassRepository.findAllByShopId_ShopIdAndDeletedAtIsNull(1L))
+        .thenReturn(Arrays.asList(pass1, pass2));
     // when
-    List<PrepaidPassResponse> result = prepaidPassQueryService.getAllPrepaidPass();
-
+    List<PrepaidPassResponse> result = prepaidPassQueryService.getAllPrepaidPass(1L);
     // then
     assertThat(result).hasSize(2);
 
@@ -70,6 +74,6 @@ class PrepaidPassQueryServiceImplTest {
     assertThat(result.get(1).getPrepaidPassPrice()).isEqualTo(1000000);
     assertThat(result.get(1).getType()).isEqualTo("PREPAID");
 
-    verify(prepaidPassRepository, times(1)).findAllByDeletedAtIsNull();
+    verify(prepaidPassRepository, times(1)).findAllByShopId_ShopIdAndDeletedAtIsNull(1L);
   }
 }

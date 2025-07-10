@@ -4,6 +4,5 @@ import com.deveagles.be15_deveagles_be.features.membership.query.dto.response.Pr
 import java.util.List;
 
 public interface PrepaidPassQueryService {
-
-  List<PrepaidPassResponse> getAllPrepaidPass();
+  List<PrepaidPassResponse> getAllPrepaidPass(Long shopId);
 }

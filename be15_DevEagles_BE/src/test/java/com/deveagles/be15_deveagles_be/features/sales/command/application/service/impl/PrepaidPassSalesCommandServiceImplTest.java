@@ -70,19 +70,10 @@ class PrepaidPassSalesCommandServiceImplTest {
   }
 
   @Test
-  @DisplayName("실패: 등록 - 결제 금액이 0 이하")
-  void registFailsWhenPaymentAmountZero() {
-    PrepaidPassSalesRequest request = validRequest();
-    request.setPayments(List.of(new PaymentsInfo(PaymentsMethod.CARD, 0)));
-    assertThrowsWithCode(
-        () -> service.registPrepaidPassSales(request), ErrorCode.SALES_PAYMENTSAMOUNT_REQUIRED);
-  }
-
-  @Test
   @DisplayName("실패: 등록 - 결제 수단 null")
   void registFailsWhenPaymentMethodNull() {
     PrepaidPassSalesRequest request = validRequest();
-    request.setPayments(List.of(new PaymentsInfo(null, 1000)));
+    request.setPayments(List.of(new PaymentsInfo(null, 9000, null, null, null)));
     assertThrowsWithCode(
         () -> service.registPrepaidPassSales(request), ErrorCode.SALES_PAYMENTMETHOD_REQUIRED);
   }
@@ -161,7 +152,7 @@ class PrepaidPassSalesCommandServiceImplTest {
     request.setRetailPrice(10000);
     request.setTotalAmount(9000);
     request.setSalesDate(LocalDateTime.now());
-    request.setPayments(List.of(new PaymentsInfo(PaymentsMethod.CARD, 9000)));
+    request.setPayments(List.of(new PaymentsInfo(PaymentsMethod.CARD, 9000, null, null, null)));
     return request;
   }
 

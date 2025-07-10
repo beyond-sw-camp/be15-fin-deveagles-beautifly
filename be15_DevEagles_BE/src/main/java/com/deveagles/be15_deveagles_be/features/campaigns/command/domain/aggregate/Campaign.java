@@ -28,10 +28,10 @@ public class Campaign {
   @Column(name = "campaign_id")
   private Long id;
 
-  @Column(name = "campaign_title", nullable = false, length = 30)
+  @Column(name = "campaign_title", nullable = false, length = 50)
   private String campaignTitle;
 
-  @Column(name = "description", length = 255)
+  @Column(name = "description", nullable = false, length = 255)
   private String description;
 
   @Column(name = "start_date", nullable = false)
@@ -40,7 +40,7 @@ public class Campaign {
   @Column(name = "end_date", nullable = false)
   private LocalDate endDate;
 
-  @Column(name = "message_send_at")
+  @Column(name = "message_send_at", nullable = false)
   private LocalDateTime messageSendAt;
 
   @CreationTimestamp
@@ -58,6 +58,12 @@ public class Campaign {
 
   @Column(name = "coupon_id", nullable = false)
   private Long couponId;
+
+  @Column(name = "customer_grade_id", nullable = false)
+  private Long customerGradeId;
+
+  @Column(name = "tag_id", nullable = false)
+  private Long tagId;
 
   @Column(name = "shop_id", nullable = false)
   private Long shopId;

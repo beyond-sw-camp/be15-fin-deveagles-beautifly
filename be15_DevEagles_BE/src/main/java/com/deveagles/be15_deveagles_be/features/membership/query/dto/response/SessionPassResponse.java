@@ -10,7 +10,9 @@ import lombok.Getter;
 public class SessionPassResponse {
 
   private Long sessionPassId;
+  private Long shopId;
   private String sessionPassName;
+  private Long secondaryItemId;
   private Integer sessionPassPrice;
   private Integer session;
   private Integer expirationPeriod;
@@ -23,7 +25,9 @@ public class SessionPassResponse {
   public static SessionPassResponse from(SessionPass pass) {
     return SessionPassResponse.builder()
         .sessionPassId(pass.getSessionPassId())
+        .shopId(pass.getShopId().getShopId())
         .sessionPassName(pass.getSessionPassName())
+        .secondaryItemId(pass.getSecondaryItemId())
         .sessionPassPrice(pass.getSessionPassPrice())
         .session(pass.getSession())
         .expirationPeriod(pass.getExpirationPeriod())

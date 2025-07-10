@@ -1,9 +1,11 @@
 package com.deveagles.be15_deveagles_be.features.customers.query.infrastructure.repository;
 
+import static com.deveagles.be15_deveagles_be.features.customers.command.domain.aggregate.QAcquisitionChannel.acquisitionChannel;
 import static com.deveagles.be15_deveagles_be.features.customers.command.domain.aggregate.QCustomer.customer;
 import static com.deveagles.be15_deveagles_be.features.customers.command.domain.aggregate.QCustomerGrade.customerGrade;
 import static com.deveagles.be15_deveagles_be.features.customers.command.domain.aggregate.QTag.tag;
 import static com.deveagles.be15_deveagles_be.features.customers.command.domain.aggregate.QTagByCustomer.tagByCustomer;
+import static com.deveagles.be15_deveagles_be.features.users.command.domain.aggregate.QStaff.staff;
 
 import com.deveagles.be15_deveagles_be.features.customers.query.dto.response.CustomerListResponse;
 import com.deveagles.be15_deveagles_be.features.customers.query.repository.CustomerListQueryRepository;
@@ -69,17 +71,25 @@ public class CustomerListQueryRepositoryImpl implements CustomerListQueryReposit
                 customer.recentVisitDate,
                 customer.birthdate,
                 customer.gender.stringValue(),
+                customerGrade.id,
                 customerGrade.customerGradeName,
-                customerGrade.discountRate,
+                customerGrade.discountRate.intValue(),
                 customer.staffId,
-                com.querydsl.core.types.dsl.Expressions.constant(
-                    0) // remainingPrepaidAmount - 임시로 0
-                ))
+                staff.staffName,
+                acquisitionChannel.id,
+                acquisitionChannel.channelName,
+                com.querydsl.core.types.dsl.Expressions.constant(0), // remainingPrepaidAmount
+                customer.noshowCount,
+                customer.createdAt))
         .from(customer)
         .innerJoin(customerGrade)
         .on(customer.customerGradeId.eq(customerGrade.id))
+        .leftJoin(acquisitionChannel)
+        .on(customer.channelId.eq(acquisitionChannel.id))
+        .leftJoin(staff)
+        .on(customer.staffId.eq(staff.staffId))
         .where(customer.shopId.eq(shopId).and(customer.deletedAt.isNull()))
-        .orderBy(customer.recentVisitDate.desc(), customer.customerName.asc());
+        .orderBy(customer.createdAt.desc(), customer.customerName.asc());
   }
 
   private List<CustomerListResponse> attachTagsToCustomers(

@@ -3,6 +3,7 @@ package com.deveagles.be15_deveagles_be.features.customers.command.application.c
 import com.deveagles.be15_deveagles_be.common.dto.ApiResponse;
 import com.deveagles.be15_deveagles_be.common.dto.PagedResponse;
 import com.deveagles.be15_deveagles_be.common.dto.PagedResult;
+import com.deveagles.be15_deveagles_be.features.auth.command.application.model.CustomUser;
 import com.deveagles.be15_deveagles_be.features.customers.command.application.dto.request.CreateCustomerGradeRequest;
 import com.deveagles.be15_deveagles_be.features.customers.command.application.dto.request.UpdateCustomerGradeRequest;
 import com.deveagles.be15_deveagles_be.features.customers.command.application.dto.response.CustomerGradeResponse;
@@ -23,6 +24,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -51,13 +53,18 @@ public class CustomerGradeController {
   })
   @PostMapping
   public ResponseEntity<ApiResponse<Long>> createCustomerGrade(
+      @AuthenticationPrincipal CustomUser user,
       @Parameter(description = "고객등급 생성 정보", required = true) @Valid @RequestBody
           CreateCustomerGradeRequest request) {
     log.info(
         "고객등급 생성 요청 - 매장ID: {}, 등급명: {}, 할인율: {}%",
-        request.getShopId(), request.getCustomerGradeName(), request.getDiscountRate());
+        user.getShopId(), request.getCustomerGradeName(), request.getDiscountRate());
 
-    Long gradeId = customerGradeCommandService.createCustomerGrade(request);
+    CreateCustomerGradeRequest requestWithShopId =
+        new CreateCustomerGradeRequest(
+            user.getShopId(), request.getCustomerGradeName(), request.getDiscountRate());
+
+    Long gradeId = customerGradeCommandService.createCustomerGrade(requestWithShopId);
     return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(gradeId));
   }
 
@@ -73,12 +80,13 @@ public class CustomerGradeController {
   })
   @GetMapping("/{gradeId}")
   public ResponseEntity<ApiResponse<CustomerGradeResponse>> getCustomerGrade(
+      @AuthenticationPrincipal CustomUser user,
       @Parameter(description = "고객등급 ID", required = true, example = "1") @PathVariable
-          Long gradeId,
-      @Parameter(description = "매장 ID", required = true, example = "1") @RequestParam Long shopId) {
-    log.info("고객등급 단건 조회 요청 - ID: {}, 매장ID: {}", gradeId, shopId);
+          Long gradeId) {
+    log.info("고객등급 단건 조회 요청 - ID: {}, 매장ID: {}", gradeId, user.getShopId());
 
-    CustomerGradeResponse response = customerGradeQueryService.getCustomerGrade(gradeId, shopId);
+    CustomerGradeResponse response =
+        customerGradeQueryService.getCustomerGrade(gradeId, user.getShopId());
     return ResponseEntity.ok(ApiResponse.success(response));
   }
 
@@ -106,13 +114,13 @@ public class CustomerGradeController {
         responseCode = "200",
         description = "전체 고객등급 조회 성공")
   })
-  @GetMapping("/shop/{shopId}")
+  @GetMapping("/all")
   public ResponseEntity<ApiResponse<List<CustomerGradeResponse>>> getAllCustomerGradesByShopId(
-      @Parameter(description = "매장 ID", required = true, example = "1") @PathVariable Long shopId) {
-    log.info("매장별 전체 고객등급 조회 요청 - 매장ID: {}", shopId);
+      @AuthenticationPrincipal CustomUser user) {
+    log.info("매장별 전체 고객등급 조회 요청 - 매장ID: {}", user.getShopId());
 
     List<CustomerGradeResponse> response =
-        customerGradeQueryService.getAllCustomerGradesByShopId(shopId);
+        customerGradeQueryService.getAllCustomerGradesByShopId(user.getShopId());
     return ResponseEntity.ok(ApiResponse.success(response));
   }
 
@@ -133,15 +141,21 @@ public class CustomerGradeController {
   })
   @PutMapping("/{gradeId}")
   public ResponseEntity<ApiResponse<Void>> updateCustomerGrade(
+      @AuthenticationPrincipal CustomUser user,
       @Parameter(description = "고객등급 ID", required = true, example = "1") @PathVariable
           Long gradeId,
       @Parameter(description = "고객등급 수정 정보", required = true) @Valid @RequestBody
           UpdateCustomerGradeRequest request) {
     log.info(
         "고객등급 수정 요청 - ID: {}, 매장ID: {}, 새 등급명: {}, 새 할인율: {}%",
-        gradeId, request.getShopId(), request.getCustomerGradeName(), request.getDiscountRate());
+        gradeId, user.getShopId(), request.getCustomerGradeName(), request.getDiscountRate());
 
-    customerGradeCommandService.updateCustomerGrade(gradeId, request);
+    // shopId를 user에서 가져와서 새로운 request 생성
+    UpdateCustomerGradeRequest requestWithShopId =
+        new UpdateCustomerGradeRequest(
+            user.getShopId(), request.getCustomerGradeName(), request.getDiscountRate());
+
+    customerGradeCommandService.updateCustomerGrade(gradeId, requestWithShopId);
     return ResponseEntity.ok(ApiResponse.success(null));
   }
 

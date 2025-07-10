@@ -1,6 +1,13 @@
 package com.deveagles.be15_deveagles_be.features.customers.command.domain.aggregate;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import lombok.AccessLevel;
@@ -71,7 +78,6 @@ public class Customer {
   private Gender gender;
 
   @Builder.Default
-  @ColumnDefault("0")
   @Column(name = "marketing_consent", nullable = false)
   private Boolean marketingConsent = false;
 
@@ -79,22 +85,21 @@ public class Customer {
   private LocalDateTime marketingConsentedAt;
 
   @Builder.Default
-  @ColumnDefault("0")
   @Column(name = "notification_consent", nullable = false)
   private Boolean notificationConsent = false;
 
   @Column(name = "last_message_sent_at")
   private LocalDateTime lastMessageSentAt;
 
-  @Column(name = "channel_id", nullable = false)
+  @Column(name = "channel_id")
   private Long channelId;
 
-  @CreationTimestamp
   @Column(name = "created_at", nullable = false, updatable = false)
+  @CreationTimestamp
   private LocalDateTime createdAt;
 
-  @UpdateTimestamp
   @Column(name = "modified_at", nullable = false)
+  @UpdateTimestamp
   private LocalDateTime modifiedAt;
 
   @Column(name = "deleted_at")
@@ -110,13 +115,27 @@ public class Customer {
     this.channelId = channelId;
   }
 
-  public void updateMarketingConsent(Boolean marketingConsent) {
-    this.marketingConsent = marketingConsent;
-    this.marketingConsentedAt = marketingConsent ? LocalDateTime.now() : null;
+  public void updateStaff(Long staffId) {
+    this.staffId = staffId;
   }
 
-  public void updateNotificationConsent(Boolean notificationConsent) {
-    this.notificationConsent = notificationConsent;
+  public void updateGrade(Long customerGradeId) {
+    this.customerGradeId = customerGradeId;
+  }
+
+  public void updateBirthdate(LocalDate birthdate) {
+    this.birthdate = birthdate;
+  }
+
+  public void updateMarketingConsent(Boolean consent) {
+    this.marketingConsent = consent;
+    if (consent) {
+      this.marketingConsentedAt = LocalDateTime.now();
+    }
+  }
+
+  public void updateNotificationConsent(Boolean consent) {
+    this.notificationConsent = consent;
   }
 
   public void addVisit(Integer revenue) {
@@ -144,5 +163,17 @@ public class Customer {
   public enum Gender {
     M,
     F
+  }
+
+  public void incrementVisitCount() {
+    this.visitCount += 1;
+  }
+
+  public void addRevenue(int amount) {
+    this.totalRevenue += amount;
+  }
+
+  public void updateRecentVisitDate(LocalDate visitDate) {
+    this.recentVisitDate = visitDate;
   }
 }

@@ -19,16 +19,16 @@
         </div>
         <div class="modal-body">
           <div class="tag-list-wrapper">
-            <div v-for="tag in tags" :key="tag.tag_id" class="tag-item">
+            <div v-for="tag in tags" :key="tag.tagId" class="tag-item">
               <div class="tag-main-col">
                 <span
                   class="tag-name"
                   :style="{
-                    backgroundColor: getLightColor(tag.color_code),
-                    color: tag.color_code,
+                    backgroundColor: getLightColor(tag.colorCode),
+                    color: tag.colorCode,
                   }"
                 >
-                  {{ tag.tag_name }}
+                  {{ tag.tagName }}
                 </span>
               </div>
               <div class="tag-actions">
@@ -71,26 +71,18 @@
   import EditTagDrawer from './EditTagDrawer.vue';
   import BaseToast from '@/components/common/BaseToast.vue';
   import BaseConfirm from '@/components/common/BaseConfirm.vue';
+  import { useMetadataStore } from '@/store/metadata.js';
+  import { useAuthStore } from '@/store/auth.js';
+  import { storeToRefs } from 'pinia';
 
   const props = defineProps({
     modelValue: { type: Boolean, required: true },
   });
   const emit = defineEmits(['update:modelValue']);
 
-  const tags = ref([
-    {
-      tag_id: 1,
-      tag_name: 'VIP',
-      color_code: '#ff4d4f', // 빨강
-      shop_id: 1,
-    },
-    {
-      tag_id: 2,
-      tag_name: '신규',
-      color_code: '#2196f3', // 파랑
-      shop_id: 1,
-    },
-  ]);
+  const metadataStore = useMetadataStore();
+  const authStore = useAuthStore();
+  const { tags } = storeToRefs(metadataStore);
 
   const showAddDrawer = ref(false);
   const showEditDrawer = ref(false);
@@ -104,14 +96,19 @@
     emit('update:modelValue', false);
   };
 
-  function onAddTag(newTag) {
-    tags.value.push({
-      ...newTag,
-      tag_id: Date.now(),
-      shop_id: 1,
-    });
-    toastRef.value?.success('태그가 생성되었습니다.');
-    showAddDrawer.value = false;
+  async function onAddTag(newTag) {
+    try {
+      await metadataStore.createTag({
+        tagName: newTag.tagName,
+        colorCode: newTag.colorCode,
+        shopId: authStore.shopId,
+      });
+      toastRef.value?.success('태그가 생성되었습니다.');
+    } catch (e) {
+      toastRef.value?.error(e.message || '태그 생성 실패');
+    } finally {
+      showAddDrawer.value = false;
+    }
   }
 
   function openEditDrawer(tag) {
@@ -119,22 +116,36 @@
     showEditDrawer.value = true;
     nextTick(() => {});
   }
-  function onEditTag(editedTag) {
-    const idx = tags.value.findIndex(t => t.tag_id === editedTag.tag_id);
-    if (idx !== -1) {
-      tags.value[idx] = { ...editedTag };
+
+  async function onEditTag(editedTag) {
+    try {
+      await metadataStore.updateTag(editedTag.tagId, {
+        tagName: editedTag.tagName,
+        colorCode: editedTag.colorCode,
+        shopId: authStore.shopId,
+      });
       toastRef.value?.success('태그가 수정되었습니다.');
+    } catch (e) {
+      toastRef.value?.error(e.message || '태그 수정 실패');
+    } finally {
+      showEditDrawer.value = false;
     }
-    showEditDrawer.value = false;
   }
+
   function deleteTag(tag) {
     tagToDelete.value = tag;
     showDeleteConfirm.value = true;
   }
-  function handleDeleteTagConfirmed() {
-    tags.value = tags.value.filter(t => t.tag_id !== tagToDelete.value.tag_id);
-    toastRef.value?.success('태그가 삭제되었습니다.');
-    showDeleteConfirm.value = false;
+
+  async function handleDeleteTagConfirmed() {
+    try {
+      await metadataStore.deleteTag(tagToDelete.value.tagId);
+      toastRef.value?.success('태그가 삭제되었습니다.');
+    } catch (e) {
+      toastRef.value?.error(e.message || '태그 삭제 실패');
+    } finally {
+      showDeleteConfirm.value = false;
+    }
   }
 
   // HEX 색상을 더 연하게 (흰색과 80% 섞기)
@@ -158,7 +169,9 @@
   const handleEsc = e => {
     if (e.key === 'Escape') close();
   };
-  onMounted(() => window.addEventListener('keydown', handleEsc));
+  onMounted(() => {
+    window.addEventListener('keydown', handleEsc);
+  });
   onBeforeUnmount(() => window.removeEventListener('keydown', handleEsc));
 </script>
 
@@ -171,12 +184,15 @@
     height: 100vh;
     background: rgba(0, 0, 0, 0.3);
     z-index: 1000;
+    display: flex;
+    justify-content: flex-end;
   }
   .modal-panel {
     position: fixed;
     top: 0;
-    left: 240px;
-    width: calc(100% - 240px);
+    left: unset;
+    right: 0;
+    width: 480px;
     height: 100vh;
     background: #fff;
     display: flex;

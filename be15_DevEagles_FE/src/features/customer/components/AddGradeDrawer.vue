@@ -26,26 +26,26 @@
         />
         <div v-if="errors.name" class="error-message">{{ errors.name }}</div>
       </div>
-      <div v-for="field in fields" :key="field.key" class="form-row">
-        <label class="form-label">{{ field.label }}<span class="required">*</span></label>
+      <div class="form-row">
+        <label class="form-label">할인율<span class="required">*</span></label>
         <div class="input-with-suffix">
           <input
-            v-model.number="form[field.key]"
+            v-model.number="form.discountRate"
             class="form-input"
             type="number"
             min="0"
             max="100"
-            :class="{ 'input-error': errors[field.key] }"
+            :class="{ 'input-error': errors.discountRate }"
             required
             @input="
-              forceInteger(field.key);
-              limitPercent(field.key);
+              forceInteger('discountRate');
+              limitPercent('discountRate');
             "
-            @blur="validateField(field.key)"
+            @blur="validateField('discountRate')"
           />
           <span class="suffix">%</span>
         </div>
-        <div v-if="errors[field.key]" class="error-message">{{ errors[field.key] }}</div>
+        <div v-if="errors.discountRate" class="error-message">{{ errors.discountRate }}</div>
       </div>
     </form>
     <template #footer>
@@ -63,12 +63,14 @@
   import { ref, watch, nextTick } from 'vue';
   import BaseDrawer from '@/components/common/BaseDrawer.vue';
   import BaseButton from '@/components/common/BaseButton.vue';
+  import { useAuthStore } from '@/store/auth.js';
 
   const props = defineProps({
     modelValue: { type: Boolean, default: false },
   });
   const emit = defineEmits(['update:modelValue', 'create']);
 
+  const authStore = useAuthStore();
   const visible = ref(props.modelValue);
   watch(
     () => props.modelValue,
@@ -79,23 +81,9 @@
   );
   watch(visible, v => emit('update:modelValue', v));
 
-  const fields = [
-    { key: 'card', label: '카드' },
-    { key: 'cash', label: '현금' },
-    { key: 'naverpay', label: '네이버페이' },
-    { key: 'localpay', label: '지역화폐' },
-    { key: 'prepaid', label: '선불권' },
-    { key: 'session_pass', label: '횟수권' },
-  ];
-
   const initialForm = () => ({
     name: '',
-    card: 0,
-    cash: 0,
-    naverpay: 0,
-    localpay: 0,
-    prepaid: 0,
-    session_pass: 0,
+    discountRate: 0,
   });
   const form = ref(initialForm());
   const errors = ref({});
@@ -103,25 +91,29 @@
   function validateField(field) {
     if (field === 'name')
       errors.value.name = !form.value.name.trim() ? '등급명을 입력해주세요' : '';
-    if (fields.map(f => f.key).includes(field)) {
-      const v = form.value[field];
+    if (field === 'discountRate') {
+      const v = form.value.discountRate;
       if (v === '' || v === null || v === undefined || isNaN(v)) {
-        errors.value[field] = '필수 입력값입니다';
+        errors.value.discountRate = '필수 입력값입니다';
       } else if (v < 0 || v > 100) {
-        errors.value[field] = '0~100 사이의 정수만 입력';
+        errors.value.discountRate = '0~100 사이의 정수만 입력';
       } else if (!Number.isInteger(v)) {
-        errors.value[field] = '정수만 입력';
+        errors.value.discountRate = '정수만 입력';
       } else {
-        errors.value[field] = '';
+        errors.value.discountRate = '';
       }
     }
   }
 
   function validateAndSubmit() {
     validateField('name');
-    fields.forEach(f => validateField(f.key));
-    if (!errors.value.name && fields.every(f => !errors.value[f.key])) {
-      emit('create', { ...form.value });
+    validateField('discountRate');
+    if (!errors.value.name && !errors.value.discountRate) {
+      emit('create', {
+        name: form.value.name,
+        discountRate: form.value.discountRate,
+        shopId: authStore.shopId,
+      });
       visible.value = false;
       resetForm();
     }

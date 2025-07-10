@@ -7,7 +7,7 @@ import java.util.Optional;
 public interface SessionPassRepository {
   SessionPass save(SessionPass sessionPass);
 
-  List<SessionPass> findAllByDeletedAtIsNull();
-
   Optional<SessionPass> findById(Long sessionPassId);
+
+  List<SessionPass> findAllByShopId_ShopIdAndDeletedAtIsNull(Long shopId);
 }

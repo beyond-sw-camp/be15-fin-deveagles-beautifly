@@ -14,6 +14,8 @@ public class SessionPassRequest {
 
   @NotNull(message = "shopId는 필수입니다.") private Long shopId;
 
+  @NotNull(message = "2차 상품 선택은 필수입니다.") private Long secondaryItemId;
+
   @NotBlank(message = "횟수권명은 필수입니다.")
   private String sessionPassName;
 

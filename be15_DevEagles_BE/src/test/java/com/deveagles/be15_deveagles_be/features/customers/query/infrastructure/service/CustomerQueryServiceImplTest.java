@@ -368,8 +368,8 @@ class CustomerQueryServiceImplTest {
         .customerName("홍길동")
         .phoneNumber("01012345678")
         .memo("테스트 고객")
-        .visitCount(5)
-        .totalRevenue(100000)
+        .visitCount(0)
+        .totalRevenue(0)
         .recentVisitDate(LocalDate.now())
         .birthdate(LocalDate.of(1990, 1, 1))
         .noshowCount(0)
@@ -388,42 +388,57 @@ class CustomerQueryServiceImplTest {
         .customerName("홍길동")
         .phoneNumber("01012345678")
         .memo("테스트 고객")
-        .visitCount(5)
-        .totalRevenue(100000)
+        .visitCount(0)
+        .totalRevenue(0)
         .recentVisitDate(LocalDate.now())
         .birthdate(LocalDate.of(1990, 1, 1))
         .noshowCount(0)
         .gender(Customer.Gender.M)
         .marketingConsent(false)
+        .marketingConsentedAt(null)
         .notificationConsent(false)
+        .lastMessageSentAt(null)
         .createdAt(LocalDateTime.now())
         .modifiedAt(LocalDateTime.now())
         .shopId(1L)
-        .staffId(1L)
-        .customerGradeName("VIP")
-        .discountRate(10)
-        .channelName("네이버 블로그")
-        .tags(List.of())
+        .staff(CustomerDetailResponse.StaffInfo.builder().staffId(1L).staffName("김직원").build())
+        .customerGrade(
+            CustomerDetailResponse.CustomerGradeInfo.builder()
+                .customerGradeId(1L)
+                .customerGradeName("일반")
+                .discountRate(0)
+                .build())
+        .acquisitionChannel(
+            CustomerDetailResponse.AcquisitionChannelInfo.builder()
+                .acquisitionChannelId(1L)
+                .acquisitionChannelName("직접 방문")
+                .build())
+        .remainingPrepaidAmount(0)
         .build();
   }
 
   private CustomerListResponse createTestCustomerListResponse() {
-    return CustomerListResponse.builder()
-        .customerId(1L)
-        .customerName("홍길동")
-        .phoneNumber("01012345678")
-        .memo("테스트 고객")
-        .visitCount(5)
-        .totalRevenue(100000)
-        .recentVisitDate(LocalDate.now())
-        .birthdate(LocalDate.of(1990, 1, 1))
-        .gender("M")
-        .customerGradeName("VIP")
-        .discountRate(10)
-        .staffId(1L)
-        .remainingPrepaidAmount(0)
-        .tags(List.of())
-        .build();
+    return new CustomerListResponse(
+        1L, // customerId
+        "홍길동", // customerName
+        "01012345678", // phoneNumber
+        "테스트 고객", // memo
+        0, // visitCount
+        0, // totalRevenue
+        LocalDate.now(), // recentVisitDate
+        LocalDate.of(1990, 1, 1), // birthdate
+        "M", // gender
+        1L, // customerGradeId
+        "일반", // customerGradeName
+        0, // discountRate
+        1L, // staffId
+        "김직원", // staffName
+        1L, // acquisitionChannelId
+        "직접 방문", // acquisitionChannelName
+        0, // remainingPrepaidAmount
+        0, // noshowCount
+        LocalDateTime.now() // createdAt
+        );
   }
 
   private CustomerDocument createTestCustomerDocument() {
@@ -434,7 +449,7 @@ class CustomerQueryServiceImplTest {
         .customerName("홍길동")
         .phoneNumber("01012345678")
         .customerGradeId(1L)
-        .customerGradeName("VIP")
+        .customerGradeName("일반")
         .gender("M")
         .deletedAt(null)
         .build();

@@ -7,7 +7,7 @@ import java.util.Optional;
 public interface PrepaidPassRepository {
   PrepaidPass save(PrepaidPass prepaidPass);
 
-  List<PrepaidPass> findAllByDeletedAtIsNull();
-
   Optional<PrepaidPass> findById(Long prepaidPassId);
+
+  List<PrepaidPass> findAllByShopId_ShopIdAndDeletedAtIsNull(Long shopId);
 }

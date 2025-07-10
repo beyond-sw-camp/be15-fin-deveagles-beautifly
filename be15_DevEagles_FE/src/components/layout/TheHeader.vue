@@ -56,12 +56,28 @@
             class="search-input"
             @focus="onSearchFocus"
             @blur="onSearchBlur"
+            @keyup.enter="executeSearch"
+            @compositionstart="handleCompositionStart"
+            @compositionend="handleCompositionEnd"
+            @input="handleInput"
           />
           <div class="search-shortcut" :class="{ visible: !isSearchFocused && !searchQuery }">
             <span class="shortcut-key">Ctrl</span>
             <span class="shortcut-plus">+</span>
             <span class="shortcut-key">K</span>
           </div>
+          <!-- 자동완성 제안 목록 -->
+          <ul v-if="showSuggestions" ref="searchListRef" class="search-suggestions">
+            <li
+              v-for="(cust, index) in searchSuggestions"
+              :key="cust.customer_id"
+              :class="['suggestion-item', { active: index === activeIndex }]"
+              @mousedown.prevent="selectSuggestion(cust)"
+            >
+              <span>{{ cust.customer_name }}</span>
+              <span class="suggestion-phone">{{ cust.phone_number }}</span>
+            </li>
+          </ul>
         </div>
 
         <!-- 새 고객 등록 버튼 -->
@@ -162,11 +178,29 @@
         </Transition>
       </div>
     </div>
+
+    <!-- 고객 상세 모달 -->
+    <Teleport to="body">
+      <CustomerDetailModal
+        v-if="showCustomerModal"
+        v-model="showCustomerModal"
+        :customer="selectedCustomer"
+        @request-delete="handleDeleteRequest"
+        @request-edit="handleEditRequest"
+      />
+      <CustomerEditDrawer
+        v-model="showEditDrawer"
+        :customer="selectedCustomer"
+        @update="handleUpdateCustomer"
+        @after-leave="handleEditDrawerAfterLeave"
+      />
+      <CustomerCreateDrawer v-model="showCreateDrawer" @create="handleCreateCustomer" />
+    </Teleport>
   </header>
 </template>
 
 <script setup>
-  import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue';
+  import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue';
   import {
     SearchIcon,
     BellIcon,
@@ -180,13 +214,18 @@
     BarChartIcon,
   } from '../icons/index.js';
   import NotificationList from '@/features/notifications/components/NotificationList.vue';
+  import CustomerDetailModal from '@/features/customer/components/CustomerDetailModal.vue';
+  import CustomerEditDrawer from '@/features/customer/components/CustomerEditDrawer.vue';
+  import CustomerCreateDrawer from '@/features/customer/components/CustomerCreateDrawer.vue';
   import { useAuthStore } from '@/store/auth.js';
   import { storeToRefs } from 'pinia';
   import { useRouter } from 'vue-router';
   import { logout } from '@/features/users/api/users.js';
+  import customersAPI from '@/features/customer/api/customers.js';
+  import { useMetadataStore } from '@/store/metadata.js';
 
   const router = useRouter();
-
+  const searchListRef = ref(null);
   const userMenuRef = ref(null);
   const searchInputRef = ref(null);
 
@@ -214,9 +253,121 @@
 
   const onSearchBlur = () => {
     isSearchFocused.value = false;
+    setTimeout(() => {
+      showSuggestions.value = false;
+    }, 150);
   };
 
-  // 키보드 단축키 처리
+  const activeIndex = ref(-1);
+
+  const sortSuggestions = (arr, keyword) => {
+    const lower = keyword.toLowerCase();
+    return arr.slice().sort((a, b) => {
+      const aName = a.customer_name.toLowerCase();
+      const bName = b.customer_name.toLowerCase();
+      const aPhone = (a.phone_number || '').toLowerCase();
+      const bPhone = (b.phone_number || '').toLowerCase();
+
+      const aStarts = aName.startsWith(lower) || aPhone.startsWith(lower);
+      const bStarts = bName.startsWith(lower) || bPhone.startsWith(lower);
+      if (aStarts && !bStarts) return -1;
+      if (!aStarts && bStarts) return 1;
+      return aName.localeCompare(bName);
+    });
+  };
+
+  watch(activeIndex, newIndex => {
+    if (newIndex === -1 || !searchListRef.value) return;
+
+    const listElement = searchListRef.value;
+    const activeElement = listElement.children[newIndex];
+
+    if (activeElement) {
+      const containerRect = listElement.getBoundingClientRect();
+      const elementRect = activeElement.getBoundingClientRect();
+
+      if (elementRect.bottom > containerRect.bottom) {
+        listElement.scrollTop += elementRect.bottom - containerRect.bottom;
+      } else if (elementRect.top < containerRect.top) {
+        listElement.scrollTop -= containerRect.top - elementRect.top;
+      }
+    }
+  });
+
+  const showCustomerModal = ref(false);
+  const selectedCustomer = ref(null);
+
+  const showCustomerDetail = async customer => {
+    if (!customer) return;
+
+    const rawId = customer.customerId || customer.customer_id;
+    if (!rawId) return;
+
+    // 자동완성 항목은 customer_id가 'auto-...' 형태일 수 있으므로 무시
+    if (typeof rawId === 'string' && rawId.startsWith('auto-')) {
+      return;
+    }
+
+    try {
+      const detail = await customersAPI.getCustomerDetail(rawId);
+      selectedCustomer.value = detail || customer;
+    } catch (err) {
+      console.warn('[Header] 고객 상세 조회 실패, 검색 결과 그대로 사용', err);
+      // 검색 결과 객체 필드 이름을 모달에서 인식하는 camelCase 구조로 일부 매핑
+      selectedCustomer.value = {
+        customerId: customer.customerId || customer.customer_id,
+        customerName: customer.customerName || customer.customer_name,
+        phoneNumber: customer.phoneNumber || customer.phone_number,
+        customerGrade: customer.customerGradeId
+          ? {
+              customerGradeId: customer.customerGradeId,
+              customerGradeName: customer.customerGradeName,
+            }
+          : undefined,
+        staff: customer.staffId
+          ? { staffId: customer.staffId, staffName: customer.staffName }
+          : undefined,
+        acquisitionChannelName:
+          customer.acquisitionChannelName || customer.acquisition_channel_name,
+      };
+    }
+
+    showCustomerModal.value = true;
+    showSuggestions.value = false;
+    searchQuery.value = '';
+  };
+
+  const handleDeleteRequest = async customerId => {
+    try {
+      const confirmed = await window.confirm('정말 이 고객을 삭제하시겠습니까?');
+      if (!confirmed) return;
+
+      await customersAPI.deleteCustomer(customerId);
+      showCustomerModal.value = false;
+      cachedCustomers.value = cachedCustomers.value.filter(c => c.customer_id !== customerId);
+    } catch (error) {
+      console.error('고객 삭제 실패:', error);
+      alert('고객 삭제에 실패했습니다.');
+    }
+  };
+
+  const handleEditRequest = customer => {
+    showCustomerModal.value = false;
+    showEditDrawer.value = true;
+  };
+
+  const selectSuggestion = customer => {
+    if (!customer) return;
+
+    if (typeof customer === 'string') {
+      searchQuery.value = customer;
+      executeSearch();
+    } else {
+      showCustomerDetail(customer);
+    }
+  };
+
+  // 키보드 이벤트 처리 개선
   const handleKeydown = event => {
     // Ctrl+K 또는 Cmd+K로 검색창 포커스
     if ((event.ctrlKey || event.metaKey) && event.key === 'k') {
@@ -225,8 +376,28 @@
     }
 
     // ESC로 검색창 블러
-    if (event.key === 'Escape' && isSearchFocused.value) {
-      searchInputRef.value?.blur();
+    if (event.key === 'Escape') {
+      if (showSuggestions.value) {
+        event.preventDefault();
+        showSuggestions.value = false;
+      } else if (isSearchFocused.value) {
+        searchInputRef.value?.blur();
+      }
+    }
+
+    // suggestion navigation
+    if (showSuggestions.value && searchSuggestions.value.length) {
+      if (event.key === 'ArrowDown') {
+        event.preventDefault();
+        activeIndex.value = (activeIndex.value + 1) % searchSuggestions.value.length;
+      } else if (event.key === 'ArrowUp') {
+        event.preventDefault();
+        activeIndex.value =
+          activeIndex.value > 0 ? activeIndex.value - 1 : searchSuggestions.value.length - 1;
+      } else if (event.key === 'Enter' && activeIndex.value >= 0) {
+        event.preventDefault();
+        selectSuggestion(searchSuggestions.value[activeIndex.value]);
+      }
     }
   };
 
@@ -251,9 +422,90 @@
     console.log('분석 모듈 열기');
   };
 
-  // 액션
+  // 상태 추가
+  const showEditDrawer = ref(false);
+  const showCreateDrawer = ref(false);
+
+  // 고객 수정 요청 처리
+  const handleUpdateCustomer = async updatedCustomerPayload => {
+    try {
+      const originalCustomer = selectedCustomer.value;
+      const originalTagIds = new Set(
+        (originalCustomer.tags || []).map(t => t.tagId).filter(Boolean)
+      );
+      const newTagIdsArr = updatedCustomerPayload.tags || [];
+      const newTagIds = new Set(newTagIdsArr);
+
+      const customerPayload = { ...updatedCustomerPayload };
+      delete customerPayload.tags;
+
+      const customerId = originalCustomer.customerId || originalCustomer.customer_id;
+      const updatedCustomer = await customersAPI.updateCustomer(customerId, customerPayload);
+
+      // Add new tags
+      for (const tagId of newTagIds) {
+        if (!originalTagIds.has(tagId)) {
+          try {
+            await customersAPI.addTagToCustomer(customerId, tagId);
+            // 메타데이터 스토어 갱신
+            await metadataStore.loadMetadata(true);
+          } catch (e) {
+            console.error(`태그 추가 실패: customerId=${customerId}, tagId=${tagId}`, e);
+          }
+        }
+      }
+
+      // Remove old tags
+      for (const tagId of originalTagIds) {
+        if (!newTagIds.has(tagId)) {
+          try {
+            await customersAPI.removeTagFromCustomer(customerId, tagId);
+            // 메타데이터 스토어 갱신
+            await metadataStore.loadMetadata(true);
+          } catch (e) {
+            console.error(`태그 제거 실패: customerId=${customerId}, tagId=${tagId}`, e);
+          }
+        }
+      }
+
+      // 리스트 새로고침
+      cachedCustomers.value = [];
+      lastFetchTime.value = 0;
+      await fetchCustomers();
+
+      showEditDrawer.value = false;
+    } catch (error) {
+      console.error('고객 정보 업데이트 실패:', error);
+      alert('고객 정보 업데이트에 실패했습니다.');
+    }
+  };
+
+  // 고객 수정 드로어 afterLeave 처리
+  const handleEditDrawerAfterLeave = () => {
+    selectedCustomer.value = null;
+  };
+
+  // 새 고객 등록 액션
   const createCustomer = () => {
-    console.log('새 고객 등록');
+    showCreateDrawer.value = true;
+  };
+
+  // 고객 생성 완료 처리
+  const handleCreateCustomer = async newCustomerPayload => {
+    try {
+      // create customer with tags in one request to reduce API calls
+      await customersAPI.createCustomer(newCustomerPayload);
+
+      // 리스트 새로고침 (캐시 초기화 후 재조회)
+      cachedCustomers.value = [];
+      lastFetchTime.value = 0;
+      await fetchCustomers();
+
+      showCreateDrawer.value = false;
+    } catch (error) {
+      console.error('고객 생성 실패:', error);
+      alert('고객 생성에 실패했습니다.');
+    }
   };
 
   // 메뉴 토글
@@ -291,7 +543,148 @@
     }
   };
 
-  onMounted(() => {
+  const searchSuggestions = ref([]);
+  const showSuggestions = ref(false);
+  const isComposing = ref(false);
+
+  // 캐시된 고객 목록
+  const cachedCustomers = ref([]);
+  const lastFetchTime = ref(0);
+  const CACHE_DURATION = 5 * 60 * 1000; // 5분
+
+  // 고객 목록 가져오기 (캐시 적용)
+  const fetchCustomers = async () => {
+    const now = Date.now();
+    if (cachedCustomers.value.length > 0 && now - lastFetchTime.value < CACHE_DURATION) {
+      return cachedCustomers.value;
+    }
+
+    try {
+      const customers = await customersAPI.getCustomersByShop();
+      cachedCustomers.value = customers;
+      lastFetchTime.value = now;
+      return customers;
+    } catch (e) {
+      console.warn('[Header] 고객 목록 조회 실패', e);
+      return [];
+    }
+  };
+
+  const handleCompositionStart = () => {
+    isComposing.value = true;
+  };
+
+  const handleCompositionEnd = () => {
+    isComposing.value = false;
+    fetchAutocomplete(searchQuery.value);
+  };
+
+  const searchTimeout = ref(null);
+  const isSearching = ref(false);
+
+  const handleInput = async event => {
+    const value = event.target.value;
+    searchQuery.value = value;
+
+    // 입력값이 없으면 검색 결과 초기화
+    if (!value || !value.trim()) {
+      searchSuggestions.value = [];
+      showSuggestions.value = false;
+      return;
+    }
+
+    // 이전 타이머 취소
+    if (searchTimeout.value) {
+      clearTimeout(searchTimeout.value);
+    }
+
+    // 새로운 타이머 설정 (300ms 디바운스)
+    searchTimeout.value = setTimeout(() => {
+      fetchAutocomplete(value);
+    }, 300);
+  };
+
+  const fetchAutocomplete = async keyword => {
+    if (!keyword || !keyword.trim()) {
+      searchSuggestions.value = [];
+      showSuggestions.value = false;
+      return;
+    }
+
+    // 이미 검색 중이면 중복 요청 방지
+    if (isSearching.value) {
+      return;
+    }
+
+    isSearching.value = true;
+
+    try {
+      let results = [];
+
+      // 키워드 검색 시도 (Elasticsearch)
+      try {
+        results = await customersAPI.searchByKeyword(keyword);
+      } catch (err) {
+        console.warn('[Header] 키워드 검색 실패', err);
+      }
+
+      // 결과가 없으면 자동완성 시도
+      if (!results.length) {
+        try {
+          const strings = await customersAPI.autocomplete(keyword);
+          results = strings.map((s, idx) => ({
+            customer_id: `auto-${idx}`,
+            customer_name: s,
+            phone_number: '',
+          }));
+        } catch (err) {
+          console.warn('[Header] 자동완성 실패', err);
+        }
+      }
+
+      // 모든 서버 검색이 실패하면 클라이언트 사이드 필터링
+      if (!results.length) {
+        const customers = await fetchCustomers();
+        const lowerKeyword = keyword?.toLowerCase() || '';
+        results =
+          customers?.filter(
+            c =>
+              (c?.customer_name || '').toLowerCase().includes(lowerKeyword) ||
+              (c?.phone_number || '').includes(lowerKeyword)
+          ) || [];
+      }
+
+      const sortedResults = sortSuggestions(results, keyword);
+      searchSuggestions.value = sortedResults;
+      showSuggestions.value = sortedResults.length > 0;
+      activeIndex.value = -1;
+    } catch (err) {
+      console.warn('[Header] 검색 오류', err);
+      searchSuggestions.value = [];
+      showSuggestions.value = false;
+    } finally {
+      isSearching.value = false;
+    }
+  };
+
+  const executeSearch = () => {
+    const keyword = searchQuery.value?.trim();
+    if (!keyword) return;
+
+    router
+      .push({
+        name: 'CustomerList',
+        query: { keyword },
+      })
+      .catch(err => {
+        console.warn('[Header] 라우팅 오류', err);
+      });
+    showSuggestions.value = false;
+  };
+
+  const metadataStore = useMetadataStore();
+
+  onMounted(async () => {
     document.addEventListener('click', handleClickOutside);
     document.addEventListener('keydown', handleKeydown);
   });
@@ -303,6 +696,8 @@
 </script>
 
 <style scoped>
+  @import '@/assets/css/styleguide.css';
+
   .header {
     display: flex;
     align-items: center;
@@ -487,7 +882,7 @@
     top: -4px;
     right: -4px;
     background-color: var(--color-warning-300);
-    color: white;
+    color: var(--color-neutral-white);
     font-size: 10px;
     font-weight: bold;
     padding: 2px 5px;
@@ -732,5 +1127,44 @@
     .header-actions {
       gap: 0.75rem;
     }
+  }
+
+  .search-suggestions {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    width: 100%;
+    background-color: var(--color-neutral-white);
+    border: 1px solid var(--color-gray-200);
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    max-height: 240px;
+    overflow-y: auto;
+    z-index: 1100;
+    scroll-behavior: smooth;
+  }
+
+  .suggestion-item {
+    padding: 0.75rem;
+    font-size: 13px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: background-color 0.15s ease;
+  }
+
+  .suggestion-item:hover,
+  .suggestion-item.active {
+    background-color: var(--color-primary-50);
+  }
+
+  .suggestion-item.active {
+    background-color: var(--color-primary-100);
+  }
+
+  .suggestion-phone {
+    color: var(--color-gray-500);
+    font-size: 12px;
   }
 </style>

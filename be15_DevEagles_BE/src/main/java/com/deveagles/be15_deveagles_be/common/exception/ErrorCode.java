@@ -81,6 +81,10 @@ public enum ErrorCode implements ErrorCodeType {
   WORKFLOW_TITLE_ALREADY_EXISTS("60002", "이미 존재하는 워크플로우 제목입니다", HttpStatus.CONFLICT),
   WORKFLOW_ACCESS_DENIED("60003", "해당 워크플로우에 대한 접근 권한이 없습니다", HttpStatus.FORBIDDEN),
   WORKFLOW_ALREADY_DELETED("60004", "이미 삭제된 워크플로우입니다", HttpStatus.BAD_REQUEST),
+  WORKFLOW_EXECUTION_FAILED("60005", "워크플로우 실행에 실패했습니다", HttpStatus.INTERNAL_SERVER_ERROR),
+  WORKFLOW_TRIGGER_VALIDATION_FAILED("60006", "워크플로우 트리거 조건이 유효하지 않습니다", HttpStatus.BAD_REQUEST),
+  WORKFLOW_ACTION_EXECUTION_FAILED(
+      "60007", "워크플로우 액션 실행에 실패했습니다", HttpStatus.INTERNAL_SERVER_ERROR),
 
   // 예약 설정 관련 에러 (70000번대)
   INVALID_RESERVATION_TIME_RANGE("70001", "예약 시작 시간은 종료 시간보다 빨라야 합니다", HttpStatus.BAD_REQUEST),
@@ -125,7 +129,8 @@ public enum ErrorCode implements ErrorCodeType {
   SESSIONPASS_NOT_FOUND("82006", "횟수권을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
   MEMBERSHIP_EXPIRATION_PERIOD_TYPE_REQUIRED(
       "82007", "회원권 유효기간 단위를 입력해주세요.", HttpStatus.BAD_REQUEST),
-
+  CUSTOMERPREPAIDPASS_NOT_FOUND("82008", "고객선불권을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+  CUSTOMERSESSIONPASS_NOT_FOUND("82009", "고객횟수권을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
   // 매출 관련 에러 (90000번대)
 
   SALES_RETAILPRICE_REQUIRED("90001", "매출정가를 입력해주세요.", HttpStatus.BAD_REQUEST),

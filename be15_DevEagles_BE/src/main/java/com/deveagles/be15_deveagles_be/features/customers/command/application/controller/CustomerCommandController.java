@@ -1,6 +1,7 @@
 package com.deveagles.be15_deveagles_be.features.customers.command.application.controller;
 
 import com.deveagles.be15_deveagles_be.common.dto.ApiResponse;
+import com.deveagles.be15_deveagles_be.features.auth.command.application.model.CustomUser;
 import com.deveagles.be15_deveagles_be.features.customers.command.application.dto.request.CreateCustomerRequest;
 import com.deveagles.be15_deveagles_be.features.customers.command.application.dto.request.UpdateCustomerRequest;
 import com.deveagles.be15_deveagles_be.features.customers.command.application.dto.response.CustomerCommandResponse;
@@ -16,6 +17,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -52,13 +54,14 @@ public class CustomerCommandController {
   })
   @PostMapping
   public ResponseEntity<ApiResponse<CustomerCommandResponse>> createCustomer(
+      @AuthenticationPrincipal CustomUser user,
       @Parameter(description = "고객 생성 정보", required = true) @Valid @RequestBody
           CreateCustomerRequest request) {
     log.info(
         "고객 생성 요청 - 이름: {}, 전화번호: {}, 매장ID: {}",
         request.customerName(),
         request.phoneNumber(),
-        request.shopId());
+        user.getShopId());
 
     CustomerCommandResponse response = customerCommandService.createCustomer(request);
     return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(response));
@@ -79,6 +82,7 @@ public class CustomerCommandController {
   })
   @PutMapping("/{customerId}")
   public ResponseEntity<ApiResponse<CustomerCommandResponse>> updateCustomer(
+      @AuthenticationPrincipal CustomUser user,
       @Parameter(description = "고객 ID", required = true) @PathVariable Long customerId,
       @Parameter(description = "고객 수정 정보", required = true) @Valid @RequestBody
           UpdateCustomerRequest request) {
@@ -92,7 +96,12 @@ public class CustomerCommandController {
             request.phoneNumber(),
             request.memo(),
             request.gender(),
-            request.channelId());
+            request.channelId(),
+            request.staffId(),
+            request.customerGradeId(),
+            request.birthdate(),
+            request.marketingConsent(),
+            request.notificationConsent());
 
     CustomerCommandResponse response = customerCommandService.updateCustomer(updatedRequest);
     return ResponseEntity.ok(ApiResponse.success(response));
@@ -112,11 +121,11 @@ public class CustomerCommandController {
   })
   @DeleteMapping("/{customerId}")
   public ResponseEntity<ApiResponse<String>> deleteCustomer(
-      @Parameter(description = "고객 ID", required = true) @PathVariable Long customerId,
-      @Parameter(description = "매장 ID", required = true) @RequestParam Long shopId) {
-    log.info("고객 삭제 요청 - 고객ID: {}, 매장ID: {}", customerId, shopId);
+      @AuthenticationPrincipal CustomUser user,
+      @Parameter(description = "고객 ID", required = true) @PathVariable Long customerId) {
+    log.info("고객 삭제 요청 - 고객ID: {}, 매장ID: {}", customerId, user.getShopId());
 
-    customerCommandService.deleteCustomer(customerId, shopId);
+    customerCommandService.deleteCustomer(customerId, user.getShopId());
     return ResponseEntity.ok(ApiResponse.success("고객이 성공적으로 삭제되었습니다."));
   }
 
@@ -132,13 +141,13 @@ public class CustomerCommandController {
   })
   @PatchMapping("/{customerId}/marketing-consent")
   public ResponseEntity<ApiResponse<CustomerCommandResponse>> updateMarketingConsent(
+      @AuthenticationPrincipal CustomUser user,
       @Parameter(description = "고객 ID", required = true) @PathVariable Long customerId,
-      @Parameter(description = "매장 ID", required = true) @RequestParam Long shopId,
       @Parameter(description = "마케팅 동의 여부", required = true) @RequestParam Boolean consent) {
-    log.info("마케팅 동의 변경 요청 - 고객ID: {}, 매장ID: {}, 동의: {}", customerId, shopId, consent);
+    log.info("마케팅 동의 변경 요청 - 고객ID: {}, 매장ID: {}, 동의: {}", customerId, user.getShopId(), consent);
 
     CustomerCommandResponse response =
-        customerCommandService.updateMarketingConsent(customerId, shopId, consent);
+        customerCommandService.updateMarketingConsent(customerId, user.getShopId(), consent);
     return ResponseEntity.ok(ApiResponse.success(response));
   }
 
@@ -154,13 +163,13 @@ public class CustomerCommandController {
   })
   @PatchMapping("/{customerId}/notification-consent")
   public ResponseEntity<ApiResponse<CustomerCommandResponse>> updateNotificationConsent(
+      @AuthenticationPrincipal CustomUser user,
       @Parameter(description = "고객 ID", required = true) @PathVariable Long customerId,
-      @Parameter(description = "매장 ID", required = true) @RequestParam Long shopId,
       @Parameter(description = "알림 동의 여부", required = true) @RequestParam Boolean consent) {
-    log.info("알림 동의 변경 요청 - 고객ID: {}, 매장ID: {}, 동의: {}", customerId, shopId, consent);
+    log.info("알림 동의 변경 요청 - 고객ID: {}, 매장ID: {}, 동의: {}", customerId, user.getShopId(), consent);
 
     CustomerCommandResponse response =
-        customerCommandService.updateNotificationConsent(customerId, shopId, consent);
+        customerCommandService.updateNotificationConsent(customerId, user.getShopId(), consent);
     return ResponseEntity.ok(ApiResponse.success(response));
   }
 
@@ -176,12 +185,13 @@ public class CustomerCommandController {
   })
   @PatchMapping("/{customerId}/visit")
   public ResponseEntity<ApiResponse<CustomerCommandResponse>> addVisit(
+      @AuthenticationPrincipal CustomUser user,
       @Parameter(description = "고객 ID", required = true) @PathVariable Long customerId,
-      @Parameter(description = "매장 ID", required = true) @RequestParam Long shopId,
       @Parameter(description = "매출액", required = true) @RequestParam Integer revenue) {
-    log.info("방문 추가 요청 - 고객ID: {}, 매장ID: {}, 매출: {}", customerId, shopId, revenue);
+    log.info("방문 추가 요청 - 고객ID: {}, 매장ID: {}, 매출: {}", customerId, user.getShopId(), revenue);
 
-    CustomerCommandResponse response = customerCommandService.addVisit(customerId, shopId, revenue);
+    CustomerCommandResponse response =
+        customerCommandService.addVisit(customerId, user.getShopId(), revenue);
     return ResponseEntity.ok(ApiResponse.success(response));
   }
 
@@ -197,11 +207,12 @@ public class CustomerCommandController {
   })
   @PatchMapping("/{customerId}/noshow")
   public ResponseEntity<ApiResponse<CustomerCommandResponse>> addNoshow(
-      @Parameter(description = "고객 ID", required = true) @PathVariable Long customerId,
-      @Parameter(description = "매장 ID", required = true) @RequestParam Long shopId) {
-    log.info("노쇼 추가 요청 - 고객ID: {}, 매장ID: {}", customerId, shopId);
+      @AuthenticationPrincipal CustomUser user,
+      @Parameter(description = "고객 ID", required = true) @PathVariable Long customerId) {
+    log.info("노쇼 추가 요청 - 고객ID: {}, 매장ID: {}", customerId, user.getShopId());
 
-    CustomerCommandResponse response = customerCommandService.addNoshow(customerId, shopId);
+    CustomerCommandResponse response =
+        customerCommandService.addNoshow(customerId, user.getShopId());
     return ResponseEntity.ok(ApiResponse.success(response));
   }
 }

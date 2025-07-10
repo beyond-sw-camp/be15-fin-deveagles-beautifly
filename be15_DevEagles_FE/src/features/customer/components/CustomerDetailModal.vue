@@ -12,8 +12,8 @@
               <!-- 상단 정보 -->
               <div class="detail-header">
                 <div class="customer-name-phone">
-                  <span class="name">{{ customer.customer_name }}</span>
-                  <span class="phone">({{ customer.phone_number }})</span>
+                  <span class="name">{{ processedCustomer.customerName }}</span>
+                  <span class="phone">({{ processedCustomer.phoneNumber }})</span>
                 </div>
                 <div class="actions">
                   <button class="icon-btn delete-btn" aria-label="삭제" @click="requestDelete">
@@ -33,37 +33,39 @@
                   <div class="info-group">
                     <div class="info-item">
                       <span class="label">이름</span>
-                      <span class="value">{{ customer.customer_name || '-' }}</span>
+                      <span class="value">{{ processedCustomer.customerName || '-' }}</span>
                     </div>
                     <div class="info-item">
                       <span class="label">연락처</span>
-                      <span class="value">{{ customer.phone_number || '-' }}</span>
+                      <span class="value">{{ processedCustomer.phoneNumber || '-' }}</span>
                     </div>
                     <div class="info-item">
                       <span class="label">성별</span>
-                      <span class="value">{{ customer.gender || '-' }}</span>
+                      <span class="value">{{ processedCustomer.gender || '-' }}</span>
                     </div>
                     <div class="info-item">
                       <span class="label">생일</span>
-                      <span class="value">{{ customer.birthdate || '-' }}</span>
+                      <span class="value">{{ processedCustomer.birthdate || '-' }}</span>
                     </div>
                     <div class="info-item">
                       <span class="label">담당자</span>
-                      <span class="value">{{ customer.staff_name || '-' }}</span>
+                      <span class="value">{{ processedCustomer.staffName }}</span>
                     </div>
                     <div class="info-item">
                       <span class="label">등급</span>
-                      <span class="value">{{ customer.customer_grade_name || '-' }}</span>
+                      <span class="value">{{ processedCustomer.customerGradeName }}</span>
                     </div>
                     <div class="info-item">
                       <span class="label">태그</span>
                       <span class="value tag-list">
-                        <template v-if="customer.tags && customer.tags.length > 0">
+                        <template
+                          v-if="processedCustomer.tags && processedCustomer.tags.length > 0"
+                        >
                           <BaseBadge
-                            v-for="tag in customer.tags"
-                            :key="tag.tag_name"
-                            :text="tag.tag_name"
-                            :style="{ backgroundColor: tag.color_code, color: '#222' }"
+                            v-for="tag in processedCustomer.tags"
+                            :key="tag.tagId"
+                            :text="tag.tagName"
+                            :style="{ backgroundColor: tag.colorCode, color: '#222' }"
                             pill
                           />
                         </template>
@@ -72,11 +74,11 @@
                     </div>
                     <div class="info-item">
                       <span class="label">메모</span>
-                      <span class="value">{{ customer.memo || '-' }}</span>
+                      <span class="value">{{ processedCustomer.memo || '-' }}</span>
                     </div>
                     <div class="info-item">
                       <span class="label">유입경로</span>
-                      <span class="value">{{ customer.acquisition_channel_name || '-' }}</span>
+                      <span class="value">{{ processedCustomer.acquisitionChannelName }}</span>
                     </div>
                   </div>
                 </div>
@@ -88,23 +90,25 @@
                   <div class="info-group">
                     <div class="info-item">
                       <span class="label">최초 등록일</span>
-                      <span class="value">{{ formatDate(customer.created_at) || '-' }}</span>
+                      <span class="value">{{ processedCustomer.createdAt || '-' }}</span>
                     </div>
                     <div class="info-item">
                       <span class="label">최근 방문일</span>
-                      <span class="value">{{ customer.recent_visit_date || '-' }}</span>
+                      <span class="value">{{ processedCustomer.recentVisitDate || '-' }}</span>
                     </div>
                     <div class="info-item">
                       <span class="label">방문 횟수</span>
-                      <span class="value">{{ customer.visit_count ?? '-' }} 회</span>
+                      <span class="value">{{ processedCustomer.visitCount ?? '-' }} 회</span>
                     </div>
                     <div class="info-item">
                       <span class="label">노쇼 횟수</span>
-                      <span class="value">{{ customer.noshow_count ?? '-' }} 회</span>
+                      <span class="value">{{ processedCustomer.noshowCount ?? '-' }} 회</span>
                     </div>
                     <div class="info-item">
                       <span class="label">누적 매출액</span>
-                      <span class="value">{{ formatCurrency(customer.total_revenue) }} 원</span>
+                      <span class="value"
+                        >{{ formatCurrency(processedCustomer.totalRevenue) }} 원</span
+                      >
                     </div>
                     <div class="info-item">
                       <span class="label">평균 매출액</span>
@@ -118,19 +122,19 @@
                   <h3 class="section-title">보유 횟수권</h3>
                   <ul
                     v-if="
-                      customer.customer_session_passes &&
-                      customer.customer_session_passes.length > 0
+                      processedCustomer.customerSessionPasses &&
+                      processedCustomer.customerSessionPasses.length > 0
                     "
                     class="pass-list"
                   >
                     <li
-                      v-for="pass in customer.customer_session_passes"
-                      :key="pass.customer_session_pass_id"
+                      v-for="pass in processedCustomer.customerSessionPasses"
+                      :key="pass.customerSessionPassId"
                       class="pass-item"
                     >
-                      <span>{{ pass.session_pass_name }}</span>
-                      <span>잔여 {{ pass.remaining_count }}회</span>
-                      <span>(~{{ pass.expiration_date }})</span>
+                      <span>{{ pass.sessionPassName }}</span>
+                      <span>잔여 {{ pass.remainingCount }}회</span>
+                      <span>(~{{ pass.expirationDate }})</span>
                     </li>
                   </ul>
                   <div v-else class="no-data">보유 내역 없음</div>
@@ -138,7 +142,7 @@
                 <div class="info-section">
                   <h3 class="section-title">잔여 선불액</h3>
                   <div class="prepaid-balance">
-                    {{ formatCurrency(customer.remaining_amount) }} 원
+                    {{ formatCurrency(processedCustomer.remainingPrepaidAmount) }} 원
                   </div>
                 </div>
               </div>
@@ -168,13 +172,38 @@
     set: value => emit('update:modelValue', value),
   });
 
+  const processedCustomer = computed(() => {
+    if (!props.customer) return null;
+
+    const genderMap = { M: '남성', F: '여성' };
+    const formatDate = dateString => {
+      if (!dateString) return '-';
+      return dateString.split('T')[0];
+    };
+
+    return {
+      ...props.customer,
+      gender: genderMap[props.customer.gender] || props.customer.gender,
+      createdAt: formatDate(props.customer.createdAt),
+      birthdate: formatDate(props.customer.birthdate),
+      noshowCount: props.customer.noshowCount ?? '-',
+      staffName: props.customer.staff?.staffName || props.customer.staffName || '-',
+      customerGradeName:
+        props.customer.customerGrade?.customerGradeName || props.customer.customerGradeName || '-',
+      acquisitionChannelName:
+        props.customer.acquisitionChannel?.acquisitionChannelName ||
+        props.customer.acquisitionChannelName ||
+        '-',
+    };
+  });
+
   const closeModal = () => {
     show.value = false;
   };
 
   const requestDelete = () => {
     if (props.customer) {
-      emit('request-delete', props.customer.customer_id);
+      emit('request-delete', props.customer.customerId);
     }
   };
 
@@ -184,22 +213,16 @@
     }
   };
 
-  const formatDate = dateString => {
-    if (!dateString) return '-';
-    const date = new Date(dateString);
-    return date.toISOString().split('T')[0];
-  };
-
   const formatCurrency = amount => {
     if (amount === null || amount === undefined || isNaN(amount)) return '0';
     return amount.toLocaleString('ko-KR');
   };
 
   const avgRevenue = computed(() => {
-    if (!props.customer || !props.customer.visit_count) {
+    if (!props.customer || !props.customer.visitCount) {
       return 0;
     }
-    const avg = props.customer.total_revenue / props.customer.visit_count;
+    const avg = props.customer.totalRevenue / props.customer.visitCount;
     return isNaN(avg) ? 0 : Math.round(avg);
   });
 </script>

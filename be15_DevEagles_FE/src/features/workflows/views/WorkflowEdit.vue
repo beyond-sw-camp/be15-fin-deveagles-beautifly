@@ -14,6 +14,8 @@
   import { useRouter, useRoute } from 'vue-router';
   import { useToast } from '@/composables/useToast';
   import WorkflowFormBase from '../components/WorkflowFormBase.vue';
+  import { getWorkflow, updateWorkflow } from '@/features/workflows/api/workflows.js';
+  import { useAuthStore } from '@/store/auth.js';
 
   export default {
     name: 'WorkflowEdit',
@@ -26,61 +28,35 @@
       const toast = useToast();
       const workflowData = ref(null);
 
-      // Mock API call to fetch workflow data
       const fetchWorkflowData = async id => {
-        try {
-          // TODO: Replace with actual API call
-          // const response = await workflowApi.getWorkflow(id);
-          // return response.data;
-
-          // Mock data for demonstration
-          return {
-            id: id,
-            title: '장기 미방문 고객 리타겟팅',
-            description: '60일 이상 미방문 고객을 위한 자동 재방문 유도 워크플로우',
-            isActive: true,
-            targetCustomerGrades: ['신규 고객', '성장 고객'],
-            targetTags: ['VIP'],
-            excludeDormantCustomers: true,
-            dormantPeriodMonths: 6,
-            excludeRecentMessageReceivers: true,
-            recentMessagePeriodDays: 30,
-            trigger: 'visit-cycle',
-            triggerCategory: 'periodic',
-            triggerConfig: {
-              visitCycleDays: 14,
-              treatmentId: 'facial-basic',
-              daysAfterTreatment: 7,
-              daysAfterRegistration: 0,
-              birthdayDaysBefore: 3,
-              visitMilestone: 10,
-              amountMilestone: 100000,
-              riskThresholdDays: 30,
-              followupDays: 7,
-            },
-            action: 'coupon-message',
-            actionConfig: {
-              messageTemplateId: 'revisit',
-              couponId: 'discount-20',
-              notificationTitle: '',
-              notificationContent: '',
-              sendTime: new Date('2024-01-01T10:00:00'),
-            },
-            createdAt: '2024-01-15T09:00:00Z',
-            updatedAt: '2024-01-20T14:30:00Z',
-          };
-        } catch (error) {
-          console.error('Failed to fetch workflow:', error);
-          throw error;
-        }
+        const authStore = useAuthStore();
+        const data = await getWorkflow(id, authStore.shopId);
+        // backend returns triggerType/actionType etc; convert to frontend fields
+        return {
+          id: data.id,
+          title: data.title,
+          description: data.description,
+          isActive: data.isActive,
+          // parse JSON fields
+          targetCustomerGrades: JSON.parse(data.targetCustomerGrades ?? '[]'),
+          targetTags: JSON.parse(data.targetTags ?? '[]'),
+          excludeDormantCustomers: data.excludeDormantCustomers,
+          dormantPeriodMonths: data.dormantPeriodMonths,
+          excludeRecentMessageReceivers: data.excludeRecentMessageReceivers,
+          recentMessagePeriodDays: data.recentMessagePeriodDays,
+          trigger: data.triggerType,
+          triggerCategory: data.triggerCategory,
+          triggerConfig: JSON.parse(data.triggerConfig ?? '{}'),
+          action: data.actionType,
+          actionConfig: JSON.parse(data.actionConfig ?? '{}'),
+        };
       };
 
-      const updateWorkflow = async formData => {
+      const updateWorkflowRequest = async formData => {
         try {
-          // TODO: Replace with actual API call
-          // await workflowApi.updateWorkflow(route.params.id, formData);
-
-          console.log('Updating workflow:', route.params.id, formData);
+          const authStore = useAuthStore();
+          const payload = { ...formData, shopId: authStore.shopId, staffId: authStore.userId };
+          await updateWorkflow(route.params.id, payload);
 
           toast.show({
             type: 'success',
@@ -129,7 +105,7 @@
 
       return {
         workflowData,
-        updateWorkflow,
+        updateWorkflow: updateWorkflowRequest,
         goBack,
       };
     },
