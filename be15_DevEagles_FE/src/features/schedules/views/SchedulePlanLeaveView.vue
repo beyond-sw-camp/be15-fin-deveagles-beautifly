@@ -22,7 +22,11 @@
     <!-- 상단 버튼 + 필터 바 -->
     <div class="top-bar-flex">
       <div class="left-bar">
-        <BaseButton type="error" :disabled="selectedIds.length === 0" @click="deleteSelected">
+        <BaseButton
+          type="error"
+          :disabled="selectedIds.length === 0"
+          @click="showConfirmModal = true"
+        >
           {{ currentTab === 'plan' ? '일정 삭제' : '휴무 삭제' }}
         </BaseButton>
       </div>
@@ -34,6 +38,7 @@
           :options="typeOptions"
           style="width: 160px"
         />
+
         <BaseForm
           v-model="selectedStaff"
           type="select"
@@ -47,10 +52,24 @@
           :clearable="true"
           :show-icon="true"
           style="width: 280px"
+          @hide="onDateRangeHide"
         />
         <BaseButton type="primary" class="fix-button-height" @click="isRegistModalOpen = true">
           {{ currentTab === 'plan' ? '일정 등록' : '휴무 등록' }}
         </BaseButton>
+
+        <BaseConfirm
+          v-model="showConfirmModal"
+          title="삭제 확인"
+          confirm-text="삭제"
+          cancel-text="취소"
+          confirm-type="error"
+          icon-type="warning"
+          @confirm="handleConfirmedDelete"
+        >
+          선택한 일정을 삭제하시겠습니까?<br />
+          삭제된 일정은 복구할 수 없습니다.
+        </BaseConfirm>
       </div>
     </div>
 
@@ -59,7 +78,7 @@
       <BaseTable
         :columns="columns"
         :data="pagedItems"
-        row-key="id"
+        :row-key="row => `${row.type}_${row.id}`"
         :striped="true"
         :hover="true"
         @row-click="handleRowClick"
@@ -68,10 +87,30 @@
           <input type="checkbox" :checked="allSelected" @change="toggleAll" />
         </template>
         <template #cell-select="{ item }">
-          <input v-model="selectedIds" type="checkbox" :value="item.id" @click.stop />
+          <input
+            v-model="selectedIds"
+            type="checkbox"
+            :value="`${item.type}_${item.id}`"
+            @click.stop
+          />
         </template>
-        <template v-if="currentTab === 'leave'" #cell-date="{ value }">
-          <div class="text-left">{{ formatDate(value) }}</div>
+
+        <template v-if="currentTab === 'leave'" #cell-date="{ item, value }">
+          <div class="text-left">
+            <template v-if="item.type === 'regular_leave'">정기 휴무</template>
+            <template v-else-if="value">{{ formatDate(value) }}</template>
+            <template v-else>-</template>
+          </div>
+        </template>
+        <template v-if="currentTab === 'plan'" #cell-start="{ item }">
+          <div class="text-left">
+            <template v-if="item.type === 'regular_plan'">
+              {{ formatRegularPlan(item.repeatDescription, item.startTime, item.endTime) }}
+            </template>
+            <template v-else>
+              {{ formatDateWithTime(item.start, item.end) }}
+            </template>
+          </div>
         </template>
       </BaseTable>
     </div>
@@ -79,17 +118,18 @@
     <BasePagination
       :current-page="currentPage"
       :total-pages="totalPages"
-      :total-items="filteredItems.length"
+      :total-items="totalItems"
       :items-per-page="itemsPerPage"
-      @page-change="page => (currentPage = page)"
+      @page-change="handlePageChange"
     />
 
     <!-- 상세 모달 -->
     <component
-      :is="currentTab === 'plan' ? PlanDetailModal : LeaveDetailModal"
-      v-if="isModalOpen"
+      :is="modalComponent"
+      v-if="modalComponent && isModalOpen"
+      :id="selectedItem?.id"
       :model-value="isModalOpen"
-      :reservation="selectedItem"
+      :type="selectedItem?.type"
       @update:model-value="closeModal"
     />
 
@@ -100,10 +140,12 @@
       :default-tab="currentTab"
     />
   </div>
+
+  <BaseToast ref="toast" />
 </template>
 
 <script setup>
-  import { ref, computed } from 'vue';
+  import { ref, computed, onMounted, watch } from 'vue';
   import BaseForm from '@/components/common/BaseForm.vue';
   import BaseTable from '@/components/common/BaseTable.vue';
   import BaseButton from '@/components/common/BaseButton.vue';
@@ -112,6 +154,16 @@
   import PlanDetailModal from '@/features/schedules/components/PlanDetailModal.vue';
   import LeaveDetailModal from '@/features/schedules/components/LeaveDetailModal.vue';
   import ScheduleRegistModal from '@/features/schedules/components/ScheduleRegistModal.vue';
+  import BaseToast from '@/components/common/BaseToast.vue';
+  import BaseConfirm from '@/components/common/BaseConfirm.vue';
+  import {
+    fetchPlanList,
+    fetchLeaveList,
+    getStaffList,
+    deletePlans,
+    deleteLeaves,
+    fetchScheduleDetail,
+  } from '@/features/schedules/api/schedules.js';
 
   const tabs = [
     { label: '일정', value: 'plan' },
@@ -119,20 +171,89 @@
   ];
   const currentTab = ref('plan');
   const currentPage = ref(1);
+  const totalPages = ref(1);
   const itemsPerPage = 10;
+  const totalItems = ref(0);
   const selectedType = ref('');
   const selectedStaff = ref('');
   const selectedIds = ref([]);
   const selectedDateRange = ref([]);
+  const selectedModalType = ref('');
   const isModalOpen = ref(false);
   const isRegistModalOpen = ref(false);
   const selectedItem = ref(null);
+  const toast = ref(null);
+  const showConfirmModal = ref(false);
 
-  const staffOptions = [
+  const planData = ref([]);
+  const leaveData = ref([]);
+  const staffList = ref([]);
+
+  const modalComponent = computed(() => {
+    if (!selectedModalType.value) return null;
+    return selectedModalType.value === 'plan'
+      ? PlanDetailModal
+      : selectedModalType.value === 'leave'
+        ? LeaveDetailModal
+        : null;
+  });
+
+  const onDateRangeHide = () => {
+    if (
+      selectedDateRange.value?.length !== 2 ||
+      !selectedDateRange.value[0] ||
+      !selectedDateRange.value[1]
+    ) {
+      selectedDateRange.value = [];
+    }
+  };
+
+  const handleConfirmedDelete = async () => {
+    const deleteRequests = selectedIds.value
+      .map(val => {
+        const parts = val.split('_');
+        const id = Number(parts.pop());
+        const type = parts.join('_');
+        return type && !isNaN(id) ? { id, type } : null;
+      })
+      .filter(Boolean);
+
+    try {
+      if (currentTab.value === 'plan') {
+        await deletePlans(deleteRequests);
+      } else {
+        await deleteLeaves(deleteRequests);
+      }
+
+      selectedIds.value = [];
+
+      currentPage.value = 1;
+      await fetchList();
+
+      toast.value?.success('삭제가 완료되었습니다.');
+    } catch (error) {
+      console.error('삭제 실패:', error);
+      toast.value?.error('삭제 중 오류가 발생했습니다.');
+    }
+  };
+
+  const handlePageChange = page => {
+    currentPage.value = page;
+    fetchList();
+  };
+
+  const loadStaffList = async () => {
+    const list = await getStaffList();
+    staffList.value = list;
+  };
+
+  const staffOptions = computed(() => [
     { text: '담당자', value: '' },
-    { text: '김이글', value: '김이글' },
-    { text: '박이글', value: '박이글' },
-  ];
+    ...staffList.value.map(staff => ({
+      text: staff.staffName,
+      value: staff.staffId,
+    })),
+  ]);
 
   const typeOptions = computed(() =>
     currentTab.value === 'plan'
@@ -148,162 +269,268 @@
         ]
   );
 
-  const planData = ref([]);
-  const mondays = ['2025-06-02', '2025-06-09', '2025-06-16', '2025-06-23', '2025-06-30'];
+  const formatDateWithTime = (startStr, endStr) => {
+    const start = new Date(startStr);
+    const end = new Date(endStr);
+    if (isNaN(start) || isNaN(end)) return '-';
 
-  for (let i = 1; i <= 15; i++) {
-    const isRegular = i % 3 !== 0;
-    const type = isRegular ? 'regular_plan' : 'plan';
-    const period = isRegular ? '정기' : '단기';
-    const staff = i % 2 === 0 ? '김이글' : '박이글';
-    const title = isRegular ? '워크숍' : '세미나';
-    const repeatDescription = isRegular
-      ? i % 2 === 0
-        ? '매달 2일 반복'
-        : '매주 월요일 반복'
-      : '반복 안함';
-    const date =
-      isRegular && repeatDescription.includes('월요일') ? mondays[Math.floor(i / 3)] : '2025-06-02';
-    const displayDate = isRegular ? date : `2025-06-${String(i).padStart(2, '0')}`;
+    const formatFull = date => {
+      const yyyy = date.getFullYear();
+      const mm = String(date.getMonth() + 1).padStart(2, '0');
+      const dd = String(date.getDate()).padStart(2, '0');
+      const day = ['일', '월', '화', '수', '목', '금', '토'][date.getDay()];
+      const time = `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+      return `${yyyy}.${mm}.${dd} (${day}) ${time}`;
+    };
 
-    planData.value.push({
-      id: i,
-      staff,
-      title,
-      type,
-      period,
-      date: displayDate,
-      timeRange: '오후 01:00 - 오후 03:00',
-      startTime: '오후 01:00',
-      endTime: '오후 03:00',
-      start: `${displayDate} 오후 01:00`,
-      end: `${displayDate} 오후 03:00`,
-      duration: '02:00',
-      repeatDescription,
-      memo: `${staff} 일정 ${title}`,
+    const formatTimeOnly = date => {
+      return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+    };
+
+    const isSameDay = start.toDateString() === end.toDateString();
+
+    return isSameDay
+      ? `${formatFull(start)} ~ ${formatTimeOnly(end)}`
+      : `${formatFull(start)} ~ ${formatFull(end)}`;
+  };
+
+  const formatRegularPlan = (repeat, startTime, endTime) => {
+    const s = startTime?.slice(0, 5) ?? '';
+    const e = endTime?.slice(0, 5) ?? '';
+    return `${repeat} ${s} ~ ${e}`;
+  };
+
+  const toKoreanWeekday = rule => {
+    if (!rule) return '';
+
+    const weekMap = {
+      MON: '월',
+      TUE: '화',
+      WED: '수',
+      THU: '목',
+      FRI: '금',
+      SAT: '토',
+      SUN: '일',
+    };
+
+    return rule.replace(/\b(MON|TUE|WED|THU|FRI|SAT|SUN)(요일)?\b/g, (_, eng) => {
+      return weekMap[eng] || eng;
     });
-  }
-  planData.value.sort((a, b) => {
-    if (a.type !== b.type) return a.type === 'regular_plan' ? -1 : 1;
-    return new Date(a.date) - new Date(b.date);
-  });
+  };
 
-  const leaveData = ref([]);
-  let mondayIndex = 0;
+  const fromDate = computed(() => selectedDateRange.value?.[0]);
+  const toDate = computed(() => selectedDateRange.value?.[1]);
 
-  for (let i = 1; i <= 15; i++) {
-    const isRegular = i % 3 === 0;
-    const type = isRegular ? 'regular_leave' : 'leave';
-    const title = isRegular ? '정기 휴무' : '휴무';
-    const staff = i % 2 === 0 ? '김이글' : '박이글';
-
-    let repeatDescription = '반복 안함';
-    let displayDate = `2025-06-${String(i).padStart(2, '0')}`;
-
-    if (isRegular) {
-      if (i % 2 === 0) {
-        repeatDescription = '매달 2일 반복';
-        displayDate = '2025-06-02';
-      } else {
-        repeatDescription = '매주 월요일 반복';
-        displayDate = mondays[mondayIndex % mondays.length];
-        mondayIndex++;
+  const fetchList = async () => {
+    try {
+      function formatDateToYMD(date) {
+        const yyyy = date.getFullYear();
+        const mm = String(date.getMonth() + 1).padStart(2, '0');
+        const dd = String(date.getDate()).padStart(2, '0');
+        return `${yyyy}-${mm}-${dd}`;
       }
-    }
 
-    leaveData.value.push({
-      id: i,
-      staff,
-      title,
-      type,
-      start: displayDate,
-      date: displayDate,
-      repeatDescription,
-    });
-  }
-  leaveData.value.sort((a, b) => {
-    if (a.type !== b.type) return a.type === 'regular_leave' ? -1 : 1;
-    return new Date(a.date) - new Date(b.date);
+      const from = fromDate.value ? formatDateToYMD(fromDate.value) : null;
+      const to = toDate.value ? formatDateToYMD(toDate.value) : null;
+
+      const params = {
+        page: currentPage.value - 1,
+        size: itemsPerPage,
+        from,
+        to,
+        staffId: selectedStaff.value ? Number(selectedStaff.value) : null,
+        ...(currentTab.value === 'plan'
+          ? selectedType.value
+            ? { planType: selectedType.value }
+            : {}
+          : selectedType.value
+            ? { leaveType: selectedType.value }
+            : {}),
+      };
+
+      if (currentTab.value === 'plan') {
+        const result = await fetchPlanList(params);
+        const content = result.content ?? [];
+        totalItems.value = result.pagination?.totalItems ?? 0;
+        leaveData.value = [];
+        planData.value = content.map(item => {
+          const isRegular = item.planType === 'regular_plan';
+
+          return {
+            id: item.id,
+            staffId: item.staffId,
+            staff: item.staffName,
+            staffName: item.staffName,
+            title: item.planTitle,
+            type: isRegular ? 'regular_plan' : 'plan',
+            period: isRegular ? '정기' : '단기',
+            date: isRegular ? null : item.startAt?.split('T')[0],
+            start: item.startAt,
+            end: item.endAt,
+            startTime: item.startTime,
+            endTime: item.endTime,
+            repeatDescription: toKoreanWeekday(item.repeatRule || '반복 안함'),
+          };
+        });
+
+        totalPages.value = result.pagination?.totalPages ?? 1;
+        currentPage.value = (result.pagination?.currentPage ?? 0) + 1;
+      } else {
+        planData.value = [];
+        const result = await fetchLeaveList(params);
+        const content = result.content ?? [];
+        totalItems.value = result.pagination?.totalItems ?? 0;
+
+        leaveData.value = content.map(item => ({
+          id: item.id,
+          staffId: item.staffId,
+          staff: item.staffName,
+          title: item.leaveTitle,
+          type: item.leaveType,
+          typeLabel: item.leaveType === 'regular_leave' ? '정기' : '단기',
+          date: item.leaveDate ?? '반복 휴무',
+          repeatDescription: toKoreanWeekday(item.repeatRule || '반복 안함'),
+        }));
+
+        totalPages.value = result.pagination?.totalPages ?? 1;
+        currentPage.value = (result.pagination?.currentPage ?? 0) + 1;
+      }
+    } catch (error) {
+      console.error('일정/휴무 목록 조회 실패:', error);
+    }
+  };
+
+  onMounted(async () => {
+    const today = new Date();
+    const sevenDaysLater = new Date();
+    sevenDaysLater.setDate(today.getDate() + 6);
+
+    selectedDateRange.value = [today, sevenDaysLater];
+
+    await loadStaffList();
+    await fetchList();
   });
 
-  const dataSource = computed(() =>
-    currentTab.value === 'plan' ? planData.value : leaveData.value
+  watch(
+    [
+      currentTab,
+      selectedType,
+      selectedStaff,
+      () => selectedDateRange.value?.[0],
+      () => selectedDateRange.value?.[1],
+    ],
+    () => {
+      currentPage.value = 1;
+      fetchList();
+    }
   );
 
-  const filteredItems = computed(() => {
-    const [fromDate, toDate] =
-      Array.isArray(selectedDateRange.value) && selectedDateRange.value.length === 2
-        ? selectedDateRange.value
-        : [null, null];
+  watch(
+    () => currentTab.value,
+    () => {
+      selectedType.value = '';
+      selectedStaff.value = '';
+      selectedDateRange.value = [];
+      selectedIds.value = [];
+      currentPage.value = 1;
 
-    return dataSource.value
-      .map(item => {
-        if (currentTab.value === 'leave') {
-          return {
-            ...item,
-            typeLabel: item.type === 'regular_leave' ? '정기' : '단기',
-          };
-        }
-        return item;
-      })
-      .filter(item => {
-        const itemDate = new Date(item.date + ' 00:00:00');
-        const isRegular = item.type === 'regular_plan' || item.type === 'regular_leave';
+      const today = new Date();
+      const sevenDaysLater = new Date();
+      sevenDaysLater.setDate(today.getDate() + 6);
+      selectedDateRange.value = [today, sevenDaysLater];
 
-        const matchesDateRange =
-          fromDate && toDate
-            ? itemDate >= new Date(fromDate) && itemDate <= endOfDay(toDate)
-            : true;
+      fetchList();
+    }
+  );
 
-        const matchesType = !selectedType.value || item.type === selectedType.value;
-        const matchesStaff = !selectedStaff.value || item.staff === selectedStaff.value;
-
-        return isRegular
-          ? matchesType && matchesStaff
-          : matchesDateRange && matchesType && matchesStaff;
-      });
-  });
-
-  function endOfDay(date) {
-    const d = new Date(date);
-    d.setHours(23, 59, 59, 999);
-    return d;
-  }
-
-  const pagedItems = computed(() => {
-    const start = (currentPage.value - 1) * itemsPerPage;
-    return filteredItems.value.slice(start, start + itemsPerPage);
-  });
-
-  const totalPages = computed(() => Math.ceil(filteredItems.value.length / itemsPerPage));
+  const pagedItems = computed(() =>
+    currentTab.value === 'plan' ? planData.value : leaveData.value
+  );
 
   const allSelected = computed(
     () =>
       pagedItems.value.length > 0 &&
-      pagedItems.value.every(item => selectedIds.value.includes(item.id))
+      pagedItems.value.every(item => selectedIds.value.includes(`${item.type}_${item.id}`))
   );
 
   const toggleAll = e => {
     if (e.target.checked) {
-      selectedIds.value = [...new Set([...selectedIds.value, ...pagedItems.value.map(i => i.id)])];
+      selectedIds.value = pagedItems.value.map(item => `${item.type}_${item.id}`);
     } else {
-      selectedIds.value = selectedIds.value.filter(id => !pagedItems.value.some(i => i.id === id));
+      selectedIds.value = [];
     }
   };
 
-  const deleteSelected = () => {
-    if (currentTab.value === 'plan') {
-      planData.value = planData.value.filter(item => !selectedIds.value.includes(item.id));
-    } else {
-      leaveData.value = leaveData.value.filter(item => !selectedIds.value.includes(item.id));
-    }
-    selectedIds.value = [];
-  };
-
-  const handleRowClick = (row, event) => {
+  const handleRowClick = async (row, event) => {
     if (event?.target?.type === 'checkbox') return;
-    selectedItem.value = row;
-    isModalOpen.value = true;
+
+    const { type, id } = row;
+
+    try {
+      const { data } = await fetchScheduleDetail(type, id);
+      const resData = data.data;
+
+      if (type === 'regular_plan') {
+        let repeat = '';
+        let date = '';
+
+        if (resData.weeklyPlan) {
+          repeat = 'weekly';
+          date = resData.weeklyPlan;
+        } else if (resData.monthlyPlan) {
+          repeat = 'monthly';
+          date = String(resData.monthlyPlan);
+        }
+
+        selectedItem.value = {
+          id,
+          type,
+          title: resData.title ?? '',
+          staff: resData.staffName ?? '',
+          memo: resData.memo ?? '',
+          repeat,
+          date,
+          startTime: resData.startTime ?? '',
+          endTime: resData.endTime ?? '',
+        };
+      } else if (type === 'plan') {
+        selectedItem.value = {
+          id,
+          type,
+          title: resData.title ?? '',
+          staff: resData.staffName ?? '',
+          memo: resData.memo ?? '',
+          start: resData.startAt ?? '',
+          end: resData.endAt ?? '',
+          startTime: '',
+          endTime: '',
+        };
+      } else if (type === 'leave') {
+        selectedItem.value = {
+          id,
+          type,
+          title: resData.leaveTitle ?? '',
+          staff: resData.staffName ?? '',
+          memo: resData.memo ?? '',
+          start: resData.leaveDate ?? '',
+        };
+      } else if (type === 'regular_leave') {
+        selectedItem.value = {
+          id,
+          type,
+          title: resData.leaveTitle ?? '',
+          staff: resData.staffName ?? '',
+          memo: resData.memo ?? '',
+          start: resData.repeatRule ?? '',
+        };
+      }
+
+      selectedModalType.value = type.includes('plan') ? 'plan' : 'leave';
+      isModalOpen.value = true;
+    } catch (e) {
+      console.error('상세 조회 실패:', e);
+      toast.value?.error('상세 정보를 불러오는 데 실패했습니다.');
+    }
   };
 
   const closeModal = () => {
@@ -330,8 +557,7 @@
           { key: 'title', title: '일정 제목', width: '160px' },
           { key: 'period', title: '정기/단기', width: '120px' },
           { key: 'repeatDescription', title: '반복 설정', width: '180px' },
-          { key: 'start', title: '시작 날짜', width: '160px' },
-          { key: 'end', title: '마감 날짜', width: '160px' },
+          { key: 'start', title: '날짜', width: '240px' },
         ]
       : [
           { key: 'select', title: '', width: '40px' },
@@ -350,21 +576,26 @@
     border: 1px solid var(--color-primary-main);
     color: var(--color-primary-main);
   }
+
   .btn-outline.btn-primary:hover {
     background: var(--color-primary-50);
   }
+
   .btn-outline.btn-primary:active {
     background: var(--color-primary-100);
   }
+
   .schedule-wrapper {
     padding: 24px;
   }
+
   .page-header {
     margin-bottom: 24px;
     display: flex;
     justify-content: space-between;
     align-items: center;
   }
+
   .top-bar-flex {
     display: flex;
     justify-content: space-between;
@@ -373,32 +604,38 @@
     flex-wrap: wrap;
     gap: 16px;
   }
+
   .left-bar {
     flex-shrink: 0;
   }
+
   .tab-bar {
     display: flex;
     gap: 12px;
     margin-bottom: 20px;
   }
+
   .right-bar {
     display: flex;
     justify-content: flex-end;
     gap: 16px;
     flex-wrap: wrap;
   }
+
   .base-table-wrapper {
     background: white;
     border-radius: 12px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
     padding: 24px;
   }
+
   .fix-button-height {
     height: 40px;
     padding: 0 16px !important;
     font-size: 14px;
     line-height: 1 !important;
   }
+
   .tab-bar :deep(.base-button.active) {
     background-color: var(--color-primary-main);
     color: white;
