@@ -8,6 +8,7 @@ import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.times;
 
 import com.deveagles.be15_deveagles_be.common.dto.PagedResult;
+import com.deveagles.be15_deveagles_be.features.coupons.common.CouponDto;
 import com.deveagles.be15_deveagles_be.features.coupons.domain.entity.Coupon;
 import com.deveagles.be15_deveagles_be.features.coupons.domain.repository.CouponQueryRepository;
 import com.deveagles.be15_deveagles_be.features.coupons.infrastructure.repository.CouponJpaRepository;
@@ -92,14 +93,49 @@ class CouponSearchQueryServiceImplTest {
     couponList = Arrays.asList(activeCoupon, inactiveCoupon);
   }
 
+  private CouponDto createCouponDto(
+      Long id,
+      String couponCode,
+      String couponTitle,
+      Long shopId,
+      Integer discountRate,
+      LocalDate expirationDate,
+      Boolean isActive,
+      LocalDateTime createdAt,
+      Long staffId,
+      String staffName,
+      Long primaryItemId,
+      String primaryItemName,
+      String primaryItemCategory,
+      Long secondaryItemId,
+      String secondaryItemName) {
+    return new CouponDto(
+        id,
+        couponCode,
+        couponTitle,
+        shopId,
+        discountRate,
+        expirationDate,
+        isActive,
+        createdAt,
+        staffId,
+        staffName,
+        primaryItemId,
+        primaryItemName,
+        primaryItemCategory,
+        secondaryItemId,
+        secondaryItemName);
+  }
+
   @Test
   @DisplayName("쿠폰 ID로 조회 성공")
   void getCouponById_성공() {
     // Given
-    given(couponJpaRepository.findById(1L)).willReturn(Optional.of(activeCoupon));
+    given(couponJpaRepository.findByIdAndShopIdAndDeletedAtIsNull(1L, 1L))
+        .willReturn(Optional.of(activeCoupon));
 
     // When
-    Optional<CouponResponse> result = couponQueryService.getCouponById(1L);
+    Optional<CouponResponse> result = couponQueryService.getCouponById(1L, 1L);
 
     // Then
     assertThat(result).isPresent();
@@ -107,37 +143,39 @@ class CouponSearchQueryServiceImplTest {
     assertThat(result.get().getCouponCode()).isEqualTo("CP241201ABCD1234");
     assertThat(result.get().getCouponTitle()).isEqualTo("활성 쿠폰");
 
-    then(couponJpaRepository).should(times(1)).findById(1L);
+    then(couponJpaRepository).should(times(1)).findByIdAndShopIdAndDeletedAtIsNull(1L, 1L);
   }
 
   @Test
   @DisplayName("쿠폰 ID로 조회 실패 - 존재하지 않는 쿠폰")
   void getCouponById_존재하지않는쿠폰_실패() {
     // Given
-    given(couponJpaRepository.findById(999L)).willReturn(Optional.empty());
+    given(couponJpaRepository.findByIdAndShopIdAndDeletedAtIsNull(999L, 1L))
+        .willReturn(Optional.empty());
 
     // When
-    Optional<CouponResponse> result = couponQueryService.getCouponById(999L);
+    Optional<CouponResponse> result = couponQueryService.getCouponById(999L, 1L);
 
     // Then
     assertThat(result).isEmpty();
 
-    then(couponJpaRepository).should(times(1)).findById(999L);
+    then(couponJpaRepository).should(times(1)).findByIdAndShopIdAndDeletedAtIsNull(999L, 1L);
   }
 
   @Test
   @DisplayName("쿠폰 ID로 조회 실패 - 삭제된 쿠폰")
   void getCouponById_삭제된쿠폰_실패() {
     // Given
-    given(couponJpaRepository.findById(3L)).willReturn(Optional.of(deletedCoupon));
+    given(couponJpaRepository.findByIdAndShopIdAndDeletedAtIsNull(3L, 1L))
+        .willReturn(Optional.empty());
 
     // When
-    Optional<CouponResponse> result = couponQueryService.getCouponById(3L);
+    Optional<CouponResponse> result = couponQueryService.getCouponById(3L, 1L);
 
     // Then
     assertThat(result).isEmpty();
 
-    then(couponJpaRepository).should(times(1)).findById(3L);
+    then(couponJpaRepository).should(times(1)).findByIdAndShopIdAndDeletedAtIsNull(3L, 1L);
   }
 
   @Test
@@ -145,17 +183,19 @@ class CouponSearchQueryServiceImplTest {
   void getCouponByCode_성공() {
     // Given
     String couponCode = "CP241201ABCD1234";
-    given(couponJpaRepository.findByCouponCodeAndDeletedAtIsNull(couponCode))
+    given(couponJpaRepository.findByCouponCodeAndShopIdAndDeletedAtIsNull(couponCode, 1L))
         .willReturn(Optional.of(activeCoupon));
 
     // When
-    Optional<CouponResponse> result = couponQueryService.getCouponByCode(couponCode);
+    Optional<CouponResponse> result = couponQueryService.getCouponByCode(couponCode, 1L);
 
     // Then
     assertThat(result).isPresent();
     assertThat(result.get().getCouponCode()).isEqualTo(couponCode);
 
-    then(couponJpaRepository).should(times(1)).findByCouponCodeAndDeletedAtIsNull(couponCode);
+    then(couponJpaRepository)
+        .should(times(1))
+        .findByCouponCodeAndShopIdAndDeletedAtIsNull(couponCode, 1L);
   }
 
   @Test
@@ -163,16 +203,18 @@ class CouponSearchQueryServiceImplTest {
   void getCouponByCode_존재하지않는코드_실패() {
     // Given
     String nonExistentCode = "NONEXISTENT";
-    given(couponJpaRepository.findByCouponCodeAndDeletedAtIsNull(nonExistentCode))
+    given(couponJpaRepository.findByCouponCodeAndShopIdAndDeletedAtIsNull(nonExistentCode, 1L))
         .willReturn(Optional.empty());
 
     // When
-    Optional<CouponResponse> result = couponQueryService.getCouponByCode(nonExistentCode);
+    Optional<CouponResponse> result = couponQueryService.getCouponByCode(nonExistentCode, 1L);
 
     // Then
     assertThat(result).isEmpty();
 
-    then(couponJpaRepository).should(times(1)).findByCouponCodeAndDeletedAtIsNull(nonExistentCode);
+    then(couponJpaRepository)
+        .should(times(1))
+        .findByCouponCodeAndShopIdAndDeletedAtIsNull(nonExistentCode, 1L);
   }
 
   @Test
@@ -188,7 +230,41 @@ class CouponSearchQueryServiceImplTest {
             .build();
 
     Pageable pageable = PageRequest.of(0, 10);
-    Page<Coupon> couponPage = new PageImpl<>(couponList, pageable, couponList.size());
+    List<CouponDto> couponDtoList =
+        Arrays.asList(
+            createCouponDto(
+                1L,
+                "CP1",
+                "Title1",
+                1L,
+                10,
+                LocalDate.now().plusDays(10),
+                true,
+                LocalDateTime.now(),
+                101L,
+                "Designer A",
+                201L,
+                "Primary A",
+                "Cat A",
+                301L,
+                "Secondary A"),
+            createCouponDto(
+                2L,
+                "CP2",
+                "Title2",
+                1L,
+                20,
+                LocalDate.now().plusDays(20),
+                false,
+                LocalDateTime.now(),
+                102L,
+                "Designer B",
+                202L,
+                "Primary B",
+                "Cat B",
+                null,
+                null));
+    Page<CouponDto> couponPage = new PageImpl<>(couponDtoList, pageable, couponDtoList.size());
 
     given(couponQueryRepository.searchCoupons(eq(query), any(Pageable.class)))
         .willReturn(couponPage);
@@ -199,6 +275,11 @@ class CouponSearchQueryServiceImplTest {
     // Then
     assertThat(result.getContent()).hasSize(2);
     assertThat(result.getPagination().getTotalItems()).isEqualTo(2);
+    assertThat(result.getContent().get(0).getDesignerInfo().getStaffName()).isEqualTo("Designer A");
+    assertThat(result.getContent().get(0).getPrimaryItemInfo().getName()).isEqualTo("Primary A");
+    assertThat(result.getContent().get(0).getPrimaryItemInfo().getCategory()).isEqualTo("Cat A");
+    assertThat(result.getContent().get(0).getSecondaryItemInfo().getName())
+        .isEqualTo("Secondary A");
 
     then(couponQueryRepository).should(times(1)).searchCoupons(eq(query), any(Pageable.class));
   }
@@ -216,9 +297,27 @@ class CouponSearchQueryServiceImplTest {
             .sortDirection("desc")
             .build();
 
-    List<Coupon> activeCoupons = Arrays.asList(activeCoupon);
     Pageable pageable = PageRequest.of(0, 10);
-    Page<Coupon> couponPage = new PageImpl<>(activeCoupons, pageable, activeCoupons.size());
+    List<CouponDto> activeCouponDtoList =
+        Arrays.asList(
+            createCouponDto(
+                1L,
+                "CP1",
+                "Title1",
+                1L,
+                10,
+                LocalDate.now().plusDays(10),
+                true,
+                LocalDateTime.now(),
+                101L,
+                "Designer A",
+                201L,
+                "Primary A",
+                "Cat A",
+                301L,
+                "Secondary A"));
+    Page<CouponDto> couponPage =
+        new PageImpl<>(activeCouponDtoList, pageable, activeCouponDtoList.size());
 
     given(couponQueryRepository.searchCoupons(eq(query), any(Pageable.class)))
         .willReturn(couponPage);
@@ -229,6 +328,7 @@ class CouponSearchQueryServiceImplTest {
     // Then
     assertThat(result.getContent()).hasSize(1);
     assertThat(result.getContent().get(0).getIsActive()).isTrue();
+    assertThat(result.getContent().get(0).getDesignerInfo().getStaffName()).isEqualTo("Designer A");
 
     then(couponQueryRepository).should(times(1)).searchCoupons(eq(query), any(Pageable.class));
   }
@@ -246,9 +346,27 @@ class CouponSearchQueryServiceImplTest {
             .sortDirection("desc")
             .build();
 
-    List<Coupon> shopCoupons = Arrays.asList(activeCoupon);
     Pageable pageable = PageRequest.of(0, 10);
-    Page<Coupon> couponPage = new PageImpl<>(shopCoupons, pageable, shopCoupons.size());
+    List<CouponDto> shopCouponDtoList =
+        Arrays.asList(
+            createCouponDto(
+                1L,
+                "CP1",
+                "Title1",
+                1L,
+                10,
+                LocalDate.now().plusDays(10),
+                true,
+                LocalDateTime.now(),
+                101L,
+                "Designer A",
+                201L,
+                "Primary A",
+                "Cat A",
+                301L,
+                "Secondary A"));
+    Page<CouponDto> couponPage =
+        new PageImpl<>(shopCouponDtoList, pageable, shopCouponDtoList.size());
 
     given(couponQueryRepository.searchCoupons(eq(query), any(Pageable.class)))
         .willReturn(couponPage);
@@ -259,6 +377,7 @@ class CouponSearchQueryServiceImplTest {
     // Then
     assertThat(result.getContent()).hasSize(1);
     assertThat(result.getContent().get(0).getShopId()).isEqualTo(1L);
+    assertThat(result.getContent().get(0).getPrimaryItemInfo().getName()).isEqualTo("Primary A");
 
     then(couponQueryRepository).should(times(1)).searchCoupons(eq(query), any(Pageable.class));
   }
@@ -276,9 +395,27 @@ class CouponSearchQueryServiceImplTest {
             .sortDirection("desc")
             .build();
 
-    List<Coupon> itemCoupons = Arrays.asList(activeCoupon);
     Pageable pageable = PageRequest.of(0, 10);
-    Page<Coupon> couponPage = new PageImpl<>(itemCoupons, pageable, itemCoupons.size());
+    List<CouponDto> itemCouponDtoList =
+        Arrays.asList(
+            createCouponDto(
+                1L,
+                "CP1",
+                "Title1",
+                1L,
+                10,
+                LocalDate.now().plusDays(10),
+                true,
+                LocalDateTime.now(),
+                101L,
+                "Designer A",
+                201L,
+                "Primary A",
+                "Cat A",
+                301L,
+                "Secondary A"));
+    Page<CouponDto> couponPage =
+        new PageImpl<>(itemCouponDtoList, pageable, itemCouponDtoList.size());
 
     given(couponQueryRepository.searchCoupons(eq(query), any(Pageable.class)))
         .willReturn(couponPage);
@@ -288,7 +425,8 @@ class CouponSearchQueryServiceImplTest {
 
     // Then
     assertThat(result.getContent()).hasSize(1);
-    assertThat(result.getContent().get(0).getPrimaryItemId()).isEqualTo(100L);
+    assertThat(result.getContent().get(0).getPrimaryItemInfo().getItemId()).isEqualTo(201L);
+    assertThat(result.getContent().get(0).getPrimaryItemInfo().getName()).isEqualTo("Primary A");
 
     then(couponQueryRepository).should(times(1)).searchCoupons(eq(query), any(Pageable.class));
   }
@@ -307,7 +445,7 @@ class CouponSearchQueryServiceImplTest {
             .build();
 
     Pageable pageable = PageRequest.of(0, 10);
-    Page<Coupon> emptyPage = new PageImpl<>(Arrays.asList(), pageable, 0);
+    Page<CouponDto> emptyPage = new PageImpl<>(Arrays.asList(), pageable, 0);
 
     given(couponQueryRepository.searchCoupons(eq(query), any(Pageable.class)))
         .willReturn(emptyPage);

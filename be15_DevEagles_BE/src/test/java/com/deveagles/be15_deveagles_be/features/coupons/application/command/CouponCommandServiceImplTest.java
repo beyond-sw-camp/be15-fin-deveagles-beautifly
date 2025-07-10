@@ -122,14 +122,17 @@ class CouponCommandServiceImplTest {
   @DisplayName("쿠폰 삭제 성공")
   void deleteCoupon_성공() {
     // Given
-    given(couponJpaRepository.findById(1L)).willReturn(Optional.of(coupon));
+    given(
+            couponJpaRepository.findByIdAndShopIdAndDeletedAtIsNull(
+                deleteCommand.getId(), deleteCommand.getShopId()))
+        .willReturn(Optional.of(coupon));
     given(couponJpaRepository.save(any(Coupon.class))).willReturn(coupon);
 
     // When
     couponCommandService.deleteCoupon(deleteCommand);
 
     // Then
-    then(couponJpaRepository).should(times(1)).findById(1L);
+    then(couponJpaRepository).should(times(1)).findByIdAndShopIdAndDeletedAtIsNull(1L, null);
     then(couponJpaRepository).should(times(1)).save(any(Coupon.class));
   }
 
@@ -137,7 +140,10 @@ class CouponCommandServiceImplTest {
   @DisplayName("쿠폰 삭제 실패 - 존재하지 않는 쿠폰")
   void deleteCoupon_존재하지않는쿠폰_실패() {
     // Given
-    given(couponJpaRepository.findById(1L)).willReturn(Optional.empty());
+    given(
+            couponJpaRepository.findByIdAndShopIdAndDeletedAtIsNull(
+                deleteCommand.getId(), deleteCommand.getShopId()))
+        .willReturn(Optional.empty());
 
     // When & Then
     assertThatThrownBy(() -> couponCommandService.deleteCoupon(deleteCommand))
@@ -166,7 +172,10 @@ class CouponCommandServiceImplTest {
             .deletedAt(LocalDateTime.now())
             .build();
 
-    given(couponJpaRepository.findById(1L)).willReturn(Optional.of(deletedCoupon));
+    given(
+            couponJpaRepository.findByIdAndShopIdAndDeletedAtIsNull(
+                deleteCommand.getId(), deleteCommand.getShopId()))
+        .willReturn(Optional.of(deletedCoupon));
 
     // When & Then
     assertThatThrownBy(() -> couponCommandService.deleteCoupon(deleteCommand))
@@ -194,17 +203,18 @@ class CouponCommandServiceImplTest {
             .createdAt(LocalDateTime.now())
             .build();
 
-    given(couponJpaRepository.findById(1L)).willReturn(Optional.of(activeCoupon));
+    given(couponJpaRepository.findByIdAndShopIdAndDeletedAtIsNull(any(Long.class), any(Long.class)))
+        .willReturn(Optional.of(activeCoupon));
     given(couponJpaRepository.save(any(Coupon.class))).willReturn(activeCoupon);
 
     // When
-    CouponDto result = couponCommandService.toggleCouponStatus(1L);
+    CouponDto result = couponCommandService.toggleCouponStatus(1L, 1L);
 
     // Then
     assertThat(result).isNotNull();
     assertThat(result.getIsActive()).isFalse(); // 비활성화됨
 
-    then(couponJpaRepository).should(times(1)).findById(1L);
+    then(couponJpaRepository).should(times(1)).findByIdAndShopIdAndDeletedAtIsNull(1L, 1L);
     then(couponJpaRepository).should(times(1)).save(any(Coupon.class));
   }
 
@@ -226,17 +236,18 @@ class CouponCommandServiceImplTest {
             .createdAt(LocalDateTime.now())
             .build();
 
-    given(couponJpaRepository.findById(1L)).willReturn(Optional.of(inactiveCoupon));
+    given(couponJpaRepository.findByIdAndShopIdAndDeletedAtIsNull(any(Long.class), any(Long.class)))
+        .willReturn(Optional.of(inactiveCoupon));
     given(couponJpaRepository.save(any(Coupon.class))).willReturn(inactiveCoupon);
 
     // When
-    CouponDto result = couponCommandService.toggleCouponStatus(1L);
+    CouponDto result = couponCommandService.toggleCouponStatus(1L, 1L);
 
     // Then
     assertThat(result).isNotNull();
     assertThat(result.getIsActive()).isTrue(); // 활성화됨
 
-    then(couponJpaRepository).should(times(1)).findById(1L);
+    then(couponJpaRepository).should(times(1)).findByIdAndShopIdAndDeletedAtIsNull(1L, 1L);
     then(couponJpaRepository).should(times(1)).save(any(Coupon.class));
   }
 
@@ -244,10 +255,11 @@ class CouponCommandServiceImplTest {
   @DisplayName("쿠폰 상태 토글 실패 - 존재하지 않는 쿠폰")
   void toggleCouponStatus_존재하지않는쿠폰_실패() {
     // Given
-    given(couponJpaRepository.findById(1L)).willReturn(Optional.empty());
+    given(couponJpaRepository.findByIdAndShopIdAndDeletedAtIsNull(any(Long.class), any(Long.class)))
+        .willReturn(Optional.empty());
 
     // When & Then
-    assertThatThrownBy(() -> couponCommandService.toggleCouponStatus(1L))
+    assertThatThrownBy(() -> couponCommandService.toggleCouponStatus(1L, 1L))
         .isInstanceOf(BusinessException.class)
         .hasFieldOrPropertyWithValue("errorCode", ErrorCode.COUPON_NOT_FOUND);
 
@@ -273,10 +285,11 @@ class CouponCommandServiceImplTest {
             .deletedAt(LocalDateTime.now())
             .build();
 
-    given(couponJpaRepository.findById(1L)).willReturn(Optional.of(deletedCoupon));
+    given(couponJpaRepository.findByIdAndShopIdAndDeletedAtIsNull(any(Long.class), any(Long.class)))
+        .willReturn(Optional.of(deletedCoupon));
 
     // When & Then
-    assertThatThrownBy(() -> couponCommandService.toggleCouponStatus(1L))
+    assertThatThrownBy(() -> couponCommandService.toggleCouponStatus(1L, 1L))
         .isInstanceOf(BusinessException.class)
         .hasFieldOrPropertyWithValue("errorCode", ErrorCode.DELETED_COUPON_OPERATION_NOT_ALLOWED);
 
