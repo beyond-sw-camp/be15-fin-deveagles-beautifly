@@ -36,6 +36,7 @@
     </div>
     <div class="calendar-wrapper">
       <ScheduleCalendar
+        ref="calendarRef"
         :schedules="calendarEvents"
         @change-date-range="handleChangeDateRange"
         @click-schedule="handleClickSchedule"
@@ -72,9 +73,12 @@
   import { useAuthStore } from '@/store/auth';
   import dayjs from 'dayjs';
 
+  const calendarRef = ref(null);
+
   const authStore = useAuthStore();
   const shopId = computed(() => authStore.shopId);
   const staffId = computed(() => authStore.userId);
+  const sidebarTrigger = ref(0);
 
   const searchText = ref('');
   const selectedService = ref('');
@@ -219,27 +223,37 @@
 
     const normalEvents = schedules.value
       .filter(item => !selected || item.scheduleType.toLowerCase() === selected)
-      .map(item => ({
-        id: item.id,
-        title: item.title,
-        start: item.startAt,
-        end: item.endAt,
-        allDay: ['leave'].includes(item.scheduleType.toLowerCase()),
-        backgroundColor: item.staffColor || 'var(--color-gray-300)',
-        textColor: 'var(--color-text-primary)',
-        type: item.scheduleType.toLowerCase(),
-        status: item.status,
-        staffName: item.staffName,
-        customer: item.customerName ?? '미등록 고객',
-        service: item.items,
-        memo: item.memo,
-        staffColor: item.staffColor,
-      }));
+      .map(item => {
+        const type = item.scheduleType.toLowerCase();
+        const isAllDay = type === 'leave';
+
+        const startDate = item.startAt.split('T')[0];
+        const endDate = dayjs(item.startAt).add(1, 'day').format('YYYY-MM-DD');
+
+        return {
+          id: item.id,
+          title: item.title,
+          start: isAllDay ? startDate : item.startAt,
+          end: isAllDay ? endDate : item.endAt,
+          allDay: isAllDay,
+          backgroundColor: item.staffColor || 'var(--color-gray-300)',
+          textColor: 'var(--color-text-primary)',
+          type,
+          status: item.status,
+          staffName: item.staffName,
+          customer: item.customerName ?? '미등록 고객',
+          service: item.items,
+          memo: item.memo,
+          staffColor: item.staffColor,
+        };
+      });
 
     const regularEvents = regularSchedules.value
       .filter(item => !selected || item.scheduleType.toLowerCase() === selected)
       .map(item => {
-        const isAllDay = item.scheduleType.toLowerCase() === 'regular_leave';
+        const type = item.scheduleType.toLowerCase();
+        const isAllDay = type === 'regular_leave';
+
         const startDate = item.startAt.split('T')[0];
         const endDate = dayjs(item.startAt).add(1, 'day').format('YYYY-MM-DD');
 
@@ -251,7 +265,7 @@
           allDay: isAllDay,
           backgroundColor: item.staffColor || 'var(--color-gray-200)',
           textColor: 'var(--color-text-primary)',
-          type: item.scheduleType.toLowerCase(),
+          type,
           staffName: item.staffName,
           memo: item.memo,
           staffColor: item.staffColor,
