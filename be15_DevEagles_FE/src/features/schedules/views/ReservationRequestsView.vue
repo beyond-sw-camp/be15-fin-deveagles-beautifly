@@ -16,7 +16,7 @@
     <div class="base-table-wrapper">
       <BaseTable
         :columns="columns"
-        :data="pagedData"
+        :data="reservationList"
         row-key="id"
         :striped="true"
         :hover="true"
@@ -53,7 +53,7 @@
     <Pagination
       :current-page="currentPage"
       :total-pages="totalPages"
-      :total-items="dummyData.length"
+      :total-items="totalItems"
       :items-per-page="itemsPerPage"
       @page-change="handlePageChange"
       @items-per-page-change="handleItemsPerPageChange"
@@ -96,7 +96,7 @@
 </template>
 
 <script setup>
-  import { ref, computed } from 'vue';
+  import { ref, computed, onMounted, watch } from 'vue';
   import Pagination from '@/components/common/Pagination.vue';
   import BaseButton from '@/components/common/BaseButton.vue';
   import BaseConfirm from '@/components/common/BaseConfirm.vue';
@@ -104,26 +104,9 @@
   import BaseToast from '@/components/common/BaseToast.vue';
   import BaseTable from '@/components/common/BaseTable.vue';
   import ReservationDetailModal from '@/features/schedules/components/ReservationDetailModal.vue';
+  import { fetchReservationRequests } from '@/features/schedules/api/schedules';
 
-  const dummyData = ref([
-    { id: 1, customer: '김미글', service: '염색', employee: '박미글', date: '2025.06.08 14시' },
-    { id: 2, customer: '이예정', service: '커트', employee: '이팀장', date: '2025.06.09 11시' },
-    { id: 3, customer: '장현수', service: '펌', employee: '박미글', date: '2025.06.10 15시' },
-    { id: 4, customer: '최유리', service: '염색', employee: '이팀장', date: '2025.06.11 13시' },
-    { id: 5, customer: '오태식', service: '커트', employee: '박미글', date: '2025.06.12 10시' },
-    { id: 6, customer: '한소희', service: '드라이', employee: '이팀장', date: '2025.06.12 17시' },
-    { id: 7, customer: '박보검', service: '펌', employee: '박미글', date: '2025.06.13 09시' },
-    { id: 8, customer: '김태희', service: '커트', employee: '이팀장', date: '2025.06.14 14시' },
-    { id: 9, customer: '서강준', service: '염색', employee: '박미글', date: '2025.06.15 11시' },
-    { id: 10, customer: '문채원', service: '펌', employee: '이팀장', date: '2025.06.16 16시' },
-    { id: 11, customer: '정해인', service: '커트', employee: '박미글', date: '2025.06.17 10시' },
-    { id: 12, customer: '김소현', service: '드라이', employee: '이팀장', date: '2025.06.18 15시' },
-    { id: 13, customer: '이준기', service: '염색', employee: '박미글', date: '2025.06.19 13시' },
-    { id: 14, customer: '윤아', service: '커트', employee: '이팀장', date: '2025.06.20 14시' },
-    { id: 15, customer: '지성', service: '펌', employee: '박미글', date: '2025.06.21 11시' },
-    { id: 16, customer: '아이유', service: '드라이', employee: '이팀장', date: '2025.06.22 17시' },
-  ]);
-
+  // 테이블 컬럼 정의
   const columns = [
     { key: 'checkbox', title: '', width: '40px' },
     { key: 'customer', title: '고객 이름' },
@@ -133,6 +116,9 @@
     { key: 'actions', title: '예약 상태 변경' },
   ];
 
+  // 상태 변수
+  const reservationList = ref([]);
+  const totalItems = ref(0);
   const currentPage = ref(1);
   const itemsPerPage = ref(10);
   const selectedIds = ref([]);
@@ -146,13 +132,43 @@
 
   let confirmCallback = () => {};
 
-  const totalPages = computed(() => Math.ceil(dummyData.value.length / itemsPerPage.value));
+  // API 데이터 호출
+  const fetchReservations = async () => {
+    const res = await fetchReservationRequests({
+      page: currentPage.value - 1,
+      size: itemsPerPage.value,
+    });
 
-  const pagedData = computed(() => {
-    const start = (currentPage.value - 1) * itemsPerPage.value;
-    return dummyData.value.slice(start, start + itemsPerPage.value);
-  });
+    reservationList.value = res.content.map(item => ({
+      id: item.reservationId,
+      customer: item.customerName ?? '미등록 고객',
+      service: item.itemNames,
+      employee: item.staffName,
+      date: formatDate(item.reservationStartAt),
+    }));
+    totalItems.value = res.pagination.totalItems;
+  };
 
+  onMounted(fetchReservations);
+  watch([currentPage, itemsPerPage], fetchReservations);
+
+  // 날짜 포맷
+  function formatDate(dateStr) {
+    const d = new Date(dateStr);
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    const hh = String(d.getHours()).padStart(2, '0');
+    return `${yyyy}.${mm}.${dd} ${hh}시`;
+  }
+
+  // 전체 페이지 수
+  const totalPages = computed(() => Math.ceil(totalItems.value / itemsPerPage.value));
+
+  // 현재 페이지 데이터
+  const pagedData = computed(() => reservationList.value);
+
+  // 전체 선택 체크박스
   const selectAll = computed({
     get() {
       return (
@@ -165,28 +181,35 @@
     },
   });
 
+  // 페이지 변경
   function handlePageChange(page) {
     currentPage.value = page;
     selectedIds.value = [];
   }
 
+  // 페이지 크기 변경
   function handleItemsPerPageChange(count) {
     itemsPerPage.value = count;
     currentPage.value = 1;
     selectedIds.value = [];
   }
 
+  // 확정 (다건)
   function confirmSelected() {
-    dummyData.value = dummyData.value.filter(item => !selectedIds.value.includes(item.id));
+    reservationList.value = reservationList.value.filter(
+      item => !selectedIds.value.includes(item.id)
+    );
     toast.value.success(`확정 완료: ${selectedIds.value.join(', ')}`);
     selectedIds.value = [];
   }
 
+  // 확정 (단건)
   function confirmSingle(id) {
-    dummyData.value = dummyData.value.filter(item => item.id !== id);
+    reservationList.value = reservationList.value.filter(item => item.id !== id);
     toast.value.success(`예약 ID ${id} 확정 완료`);
   }
 
+  // 확인 모달 열기
   function openConfirm(message, callback) {
     if (message.includes('선택된 예약') && selectedIds.value.length === 0) {
       toast.value.warning('예약을 하나 이상 선택해주세요.');
@@ -197,6 +220,7 @@
     isConfirmOpen.value = true;
   }
 
+  // 확인 모달 이벤트
   function handleConfirm() {
     confirmCallback();
   }
@@ -205,6 +229,7 @@
     confirmCallback = () => {};
   }
 
+  // 취소 모달 열기
   function openModal(item, type) {
     if (type === 'cancel') {
       cancelTarget.value = item;
@@ -212,19 +237,22 @@
     }
   }
 
+  // 취소 확정
   function confirmCancel(reason) {
-    dummyData.value = dummyData.value.filter(item => item.id !== cancelTarget.value.id);
+    reservationList.value = reservationList.value.filter(item => item.id !== cancelTarget.value.id);
     toast.value.success(`${reason}로 예약이 취소되었습니다.`);
     isCancelModalOpen.value = false;
   }
 
+  // 상세 모달 열기
   function handleRowClick(item) {
     selectedReservation.value = item;
     isDetailOpen.value = true;
   }
 
+  // 상세 모달에서 취소
   function cancelFromDetail(reservation) {
-    dummyData.value = dummyData.value.filter(item => item.id !== reservation.id);
+    reservationList.value = reservationList.value.filter(item => item.id !== reservation.id);
     toast.value.success(`예약 ID ${reservation.id} 취소 완료`);
     isDetailOpen.value = false;
   }
