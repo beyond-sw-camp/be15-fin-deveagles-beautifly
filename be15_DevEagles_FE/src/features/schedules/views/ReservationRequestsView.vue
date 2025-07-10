@@ -106,7 +106,6 @@
   import ReservationDetailModal from '@/features/schedules/components/ReservationDetailModal.vue';
   import { fetchReservationRequests } from '@/features/schedules/api/schedules';
 
-  // 테이블 컬럼 정의
   const columns = [
     { key: 'checkbox', title: '', width: '40px' },
     { key: 'customer', title: '고객 이름' },
@@ -116,7 +115,6 @@
     { key: 'actions', title: '예약 상태 변경' },
   ];
 
-  // 상태 변수
   const reservationList = ref([]);
   const totalItems = ref(0);
   const currentPage = ref(1);
@@ -132,7 +130,6 @@
 
   let confirmCallback = () => {};
 
-  // API 데이터 호출
   const fetchReservations = async () => {
     const res = await fetchReservationRequests({
       page: currentPage.value - 1,
@@ -152,7 +149,6 @@
   onMounted(fetchReservations);
   watch([currentPage, itemsPerPage], fetchReservations);
 
-  // 날짜 포맷
   function formatDate(dateStr) {
     const d = new Date(dateStr);
     const yyyy = d.getFullYear();
@@ -162,13 +158,10 @@
     return `${yyyy}.${mm}.${dd} ${hh}시`;
   }
 
-  // 전체 페이지 수
   const totalPages = computed(() => Math.ceil(totalItems.value / itemsPerPage.value));
 
-  // 현재 페이지 데이터
   const pagedData = computed(() => reservationList.value);
 
-  // 전체 선택 체크박스
   const selectAll = computed({
     get() {
       return (
@@ -181,20 +174,17 @@
     },
   });
 
-  // 페이지 변경
   function handlePageChange(page) {
     currentPage.value = page;
     selectedIds.value = [];
   }
 
-  // 페이지 크기 변경
   function handleItemsPerPageChange(count) {
     itemsPerPage.value = count;
     currentPage.value = 1;
     selectedIds.value = [];
   }
 
-  // 확정 (다건)
   function confirmSelected() {
     reservationList.value = reservationList.value.filter(
       item => !selectedIds.value.includes(item.id)
@@ -203,13 +193,11 @@
     selectedIds.value = [];
   }
 
-  // 확정 (단건)
   function confirmSingle(id) {
     reservationList.value = reservationList.value.filter(item => item.id !== id);
     toast.value.success(`예약 ID ${id} 확정 완료`);
   }
 
-  // 확인 모달 열기
   function openConfirm(message, callback) {
     if (message.includes('선택된 예약') && selectedIds.value.length === 0) {
       toast.value.warning('예약을 하나 이상 선택해주세요.');
@@ -220,7 +208,6 @@
     isConfirmOpen.value = true;
   }
 
-  // 확인 모달 이벤트
   function handleConfirm() {
     confirmCallback();
   }
@@ -229,7 +216,6 @@
     confirmCallback = () => {};
   }
 
-  // 취소 모달 열기
   function openModal(item, type) {
     if (type === 'cancel') {
       cancelTarget.value = item;
@@ -237,20 +223,17 @@
     }
   }
 
-  // 취소 확정
   function confirmCancel(reason) {
     reservationList.value = reservationList.value.filter(item => item.id !== cancelTarget.value.id);
     toast.value.success(`${reason}로 예약이 취소되었습니다.`);
     isCancelModalOpen.value = false;
   }
 
-  // 상세 모달 열기
   function handleRowClick(item) {
     selectedReservation.value = item;
     isDetailOpen.value = true;
   }
 
-  // 상세 모달에서 취소
   function cancelFromDetail(reservation) {
     reservationList.value = reservationList.value.filter(item => item.id !== reservation.id);
     toast.value.success(`예약 ID ${reservation.id} 취소 완료`);
