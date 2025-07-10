@@ -26,11 +26,7 @@
         <BaseForm
           v-model="selectedStaff"
           type="select"
-          :options="[
-            { text: '담당자', value: '' },
-            { text: '박미글', value: '박미글' },
-            { text: '이팀장', value: '이팀장' },
-          ]"
+          :options="staffOptions"
           style="width: 160px"
         />
         <BaseForm
@@ -185,11 +181,10 @@
   import ScheduleRegistModal from '@/features/schedules/components/ScheduleRegistModal.vue';
   import ReservationDetailModal from '@/features/schedules/components/ReservationDetailModal.vue';
   import BaseForm from '@/components/common/BaseForm.vue';
-  import { fetchReservationList } from '@/features/schedules/api/schedules';
+  import { fetchReservationList, getStaffList } from '@/features/schedules/api/schedules';
 
   const searchText = ref('');
   const selectedDate = ref('thisWeek');
-  const selectedStaff = ref('');
   const selectedStatus = ref('');
   const isModalOpen = ref(false);
   const isRegistModalOpen = ref(false);
@@ -202,6 +197,8 @@
   const currentPage = ref(1);
   const itemsPerPage = ref(10);
   const totalPages = ref(1);
+  const staffOptions = ref([{ text: '담당자', value: '' }]);
+  const selectedStaff = ref('');
 
   const columns = [
     { key: 'customer', title: '고객 이름', width: '120px' },
@@ -275,7 +272,24 @@
     totalPages.value = res.pagination.totalPages;
   };
 
-  onMounted(fetchReservations);
+  onMounted(async () => {
+    await fetchStaffOptions();
+    await fetchReservations();
+  });
+
+  const fetchStaffOptions = async () => {
+    try {
+      const res = await getStaffList({ isActive: true });
+      staffOptions.value.push(
+        ...res.map(staff => ({
+          text: staff.staffName,
+          value: staff.staffId,
+        }))
+      );
+    } catch (e) {
+      console.error('담당자 목록 조회 실패:', e);
+    }
+  };
 
   watch(currentPage, () => {
     fetchReservations();
