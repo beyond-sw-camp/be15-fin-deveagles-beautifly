@@ -46,6 +46,8 @@ class CampaignCommandServiceImplTest {
             1L,
             1L,
             1L,
+            1L,
+            1L,
             1L);
 
     Campaign savedCampaign =
@@ -91,6 +93,8 @@ class CampaignCommandServiceImplTest {
             LocalDate.now().plusDays(10),
             LocalDate.now().minusDays(5), // 종료일이 시작일보다 빠름
             LocalDateTime.now().plusDays(1),
+            1L,
+            1L,
             1L,
             1L,
             1L,

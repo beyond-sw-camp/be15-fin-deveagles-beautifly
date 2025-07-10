@@ -26,6 +26,9 @@ public class CampaignQueryResponse extends RepresentationModel<CampaignQueryResp
   private Long templateId;
   private Long couponId;
   private Long shopId;
+
+  private Long customerGradeId;
+  private Long tagId;
   private boolean isActive;
 
   public static CampaignQueryResponse from(Campaign campaign) {
@@ -41,6 +44,8 @@ public class CampaignQueryResponse extends RepresentationModel<CampaignQueryResp
         .templateId(campaign.getTemplateId())
         .couponId(campaign.getCouponId())
         .shopId(campaign.getShopId())
+        .customerGradeId(campaign.getCustomerGradeId())
+        .tagId(campaign.getTagId())
         .isActive(campaign.isActive())
         .build();
   }
