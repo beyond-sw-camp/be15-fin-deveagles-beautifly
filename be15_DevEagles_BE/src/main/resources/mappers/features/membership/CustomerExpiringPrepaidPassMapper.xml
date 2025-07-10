@@ -12,16 +12,18 @@
         c.customer_id,
         c.customer_name,
         c.phone_number,
-        SUM(CASE
-        WHEN cpp.expiration_date >= CURRENT_DATE
-        THEN cpp.remaining_amount
-        ELSE 0
-        END) AS total_remaining_amount
+        SUM(CASE WHEN cpp.expiration_date >= CURRENT_DATE THEN cpp.remaining_amount ELSE 0 END) AS total_remaining_amount
         FROM customer c
         JOIN customer_prepaid_pass cpp ON c.customer_id = cpp.customer_id
         WHERE c.shop_id = #{shopId}
         AND cpp.expiration_date IS NOT NULL
         AND cpp.deleted_at IS NULL
+        <if test="request.customerKeyword != null and request.customerKeyword != ''">
+            AND (
+            TRIM(c.customer_name) LIKE CONCAT('%', #{request.customerKeyword}, '%')
+            OR TRIM(c.phone_number) LIKE CONCAT('%', #{request.customerKeyword}, '%')
+            )
+        </if>
         <if test="request.startDate != null">
             AND cpp.expiration_date &gt;= #{request.startDate}
         </if>
@@ -29,18 +31,14 @@
             AND cpp.expiration_date &lt;= #{request.endDate}
         </if>
         GROUP BY c.customer_id, c.customer_name, c.phone_number
-        <if test="request.minRemainingAmount != null">
-            HAVING SUM(CASE WHEN cpp.expiration_date &gt;= CURRENT_DATE THEN cpp.remaining_amount ELSE 0 END) &gt;= #{request.minRemainingAmount}
-        </if>
-        <if test="request.maxRemainingAmount != null">
-            <choose>
-                <when test="request.minRemainingAmount != null">
-                    AND SUM(CASE WHEN cpp.expiration_date &gt;= CURRENT_DATE THEN cpp.remaining_amount ELSE 0 END) &lt;= #{request.maxRemainingAmount}
-                </when>
-                <otherwise>
-                    HAVING SUM(CASE WHEN cpp.expiration_date &gt;= CURRENT_DATE THEN cpp.remaining_amount ELSE 0 END) &lt;= #{request.maxRemainingAmount}
-                </otherwise>
-            </choose>
+        <if test="request.minRemainingAmount != null or request.maxRemainingAmount != null">
+            HAVING 1 = 1
+            <if test="request.minRemainingAmount != null">
+                AND SUM(CASE WHEN cpp.expiration_date &gt;= CURRENT_DATE THEN cpp.remaining_amount ELSE 0 END) &gt;= #{request.minRemainingAmount}
+            </if>
+            <if test="request.maxRemainingAmount != null">
+                AND SUM(CASE WHEN cpp.expiration_date &gt;= CURRENT_DATE THEN cpp.remaining_amount ELSE 0 END) &lt;= #{request.maxRemainingAmount}
+            </if>
         </if>
         ORDER BY MIN(cpp.expiration_date) ASC
         LIMIT #{offset}, #{request.size}
@@ -55,6 +53,12 @@
         WHERE c.shop_id = #{shopId}
         AND cpp.expiration_date IS NOT NULL
         AND cpp.deleted_at IS NULL
+        <if test="request.customerKeyword != null and request.customerKeyword != ''">
+            AND (
+            TRIM(c.customer_name) LIKE CONCAT('%', #{request.customerKeyword}, '%')
+            OR TRIM(c.phone_number) LIKE CONCAT('%', #{request.customerKeyword}, '%')
+            )
+        </if>
         <if test="request.startDate != null">
             AND cpp.expiration_date &gt;= #{request.startDate}
         </if>
@@ -62,18 +66,14 @@
             AND cpp.expiration_date &lt;= #{request.endDate}
         </if>
         GROUP BY c.customer_id
-        <if test="request.minRemainingAmount != null">
-            HAVING SUM(CASE WHEN cpp.expiration_date &gt;= CURRENT_DATE THEN cpp.remaining_amount ELSE 0 END) &gt;= #{request.minRemainingAmount}
-        </if>
-        <if test="request.maxRemainingAmount != null">
-            <choose>
-                <when test="request.minRemainingAmount != null">
-                    AND SUM(CASE WHEN cpp.expiration_date &gt;= CURRENT_DATE THEN cpp.remaining_amount ELSE 0 END) &lt;= #{request.maxRemainingAmount}
-                </when>
-                <otherwise>
-                    HAVING SUM(CASE WHEN cpp.expiration_date &gt;= CURRENT_DATE THEN cpp.remaining_amount ELSE 0 END) &lt;= #{request.maxRemainingAmount}
-                </otherwise>
-            </choose>
+        <if test="request.minRemainingAmount != null or request.maxRemainingAmount != null">
+            HAVING 1 = 1
+            <if test="request.minRemainingAmount != null">
+                AND SUM(CASE WHEN cpp.expiration_date &gt;= CURRENT_DATE THEN cpp.remaining_amount ELSE 0 END) &gt;= #{request.minRemainingAmount}
+            </if>
+            <if test="request.maxRemainingAmount != null">
+                AND SUM(CASE WHEN cpp.expiration_date &gt;= CURRENT_DATE THEN cpp.remaining_amount ELSE 0 END) &lt;= #{request.maxRemainingAmount}
+            </if>
         </if>
         ) AS filtered
     </select>

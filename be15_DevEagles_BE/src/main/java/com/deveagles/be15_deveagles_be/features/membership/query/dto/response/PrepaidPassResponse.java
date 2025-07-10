@@ -10,6 +10,7 @@ import lombok.Getter;
 public class PrepaidPassResponse {
 
   private Long prepaidPassId;
+  private Long shopId;
   private String prepaidPassName;
   private Integer prepaidPassPrice;
   private Integer expirationPeriod;
@@ -22,6 +23,7 @@ public class PrepaidPassResponse {
   public static PrepaidPassResponse from(PrepaidPass pass) {
     return PrepaidPassResponse.builder()
         .prepaidPassId(pass.getPrepaidPassId())
+        .shopId(pass.getShopId().getShopId())
         .prepaidPassName(pass.getPrepaidPassName())
         .prepaidPassPrice(pass.getPrepaidPassPrice())
         .expirationPeriod(pass.getExpirationPeriod())

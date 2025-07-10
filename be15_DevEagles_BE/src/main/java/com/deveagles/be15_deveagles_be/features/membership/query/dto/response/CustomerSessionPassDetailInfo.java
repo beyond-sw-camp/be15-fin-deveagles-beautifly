@@ -10,6 +10,7 @@ public class CustomerSessionPassDetailInfo {
 
   private Long customerSessionPassId;
   private String MembershipType;
+  private String secondaryItemName;
   private String sessionPassName;
   private Integer remainingCount;
   private Date expirationDate;

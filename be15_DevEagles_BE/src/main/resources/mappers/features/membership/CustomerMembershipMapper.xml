@@ -21,12 +21,21 @@
             c.phone_number AS phone_number,
             COALESCE(SUM(cp.remaining_amount), 0) AS total_remaining_prepaid_amount,
             (
-                SELECT MIN(cs.expiration_date)
-                FROM customer_session_pass cs
-                WHERE cs.customer_id = c.customer_id
-                  AND cs.remaining_count > 0
-                  AND cs.expiration_date >= CURRENT_DATE
-                  AND cs.deleted_at IS NULL
+                SELECT MIN(expiration_date)
+                FROM (
+                         SELECT cpp.expiration_date, cpp.customer_id
+                         FROM customer_prepaid_pass cpp
+                         WHERE cpp.remaining_amount > 0
+                           AND cpp.expiration_date >= CURRENT_DATE
+                           AND cpp.deleted_at IS NULL
+                         UNION ALL
+                         SELECT csp.expiration_date, csp.customer_id
+                         FROM customer_session_pass csp
+                         WHERE csp.remaining_count > 0
+                           AND csp.expiration_date >= CURRENT_DATE
+                           AND csp.deleted_at IS NULL
+                     ) AS all_exp
+                WHERE all_exp.customer_id = c.customer_id
             ) AS expiration_date
         FROM customer c
                  LEFT JOIN customer_prepaid_pass cp ON c.customer_id = cp.customer_id
@@ -85,12 +94,21 @@
         c.phone_number AS phone_number,
         COALESCE(SUM(cp.remaining_amount), 0) AS total_remaining_prepaid_amount,
         (
-        SELECT MIN(cs.expiration_date)
-        FROM customer_session_pass cs
-        WHERE cs.customer_id = c.customer_id
-        AND cs.remaining_count > 0
-        AND cs.expiration_date >= CURRENT_DATE
-        AND cs.deleted_at IS NULL
+        SELECT MIN(expiration_date)
+        FROM (
+        SELECT cpp.expiration_date, cpp.customer_id
+        FROM customer_prepaid_pass cpp
+        WHERE cpp.remaining_amount > 0
+        AND cpp.expiration_date >= CURRENT_DATE
+        AND cpp.deleted_at IS NULL
+        UNION ALL
+        SELECT csp.expiration_date, csp.customer_id
+        FROM customer_session_pass csp
+        WHERE csp.remaining_count > 0
+        AND csp.expiration_date >= CURRENT_DATE
+        AND csp.deleted_at IS NULL
+        ) AS all_exp
+        WHERE all_exp.customer_id = c.customer_id
         ) AS expiration_date
         FROM customer c
         LEFT JOIN customer_prepaid_pass cp ON c.customer_id = cp.customer_id
@@ -114,6 +132,12 @@
         AND csp.deleted_at IS NULL
         )
         )
+        <if test="filter.customerName != null and filter.customerName != ''">
+            AND (
+            c.customer_name LIKE CONCAT('%', #{filter.customerName}, '%')
+            OR c.phone_number LIKE CONCAT('%', #{filter.customerName}, '%')
+            )
+        </if>
         <if test="filter.minRemainingAmount != null">
             AND cp.remaining_amount &gt;= #{filter.minRemainingAmount}
         </if>
@@ -149,6 +173,12 @@
         AND csp.deleted_at IS NULL
         )
         )
+        <if test="filter.customerName != null and filter.customerName != ''">
+            AND (
+            c.customer_name LIKE CONCAT('%', #{filter.customerName}, '%')
+            OR c.phone_number LIKE CONCAT('%', #{filter.customerName}, '%')
+            )
+        </if>
         <if test="filter.minRemainingAmount != null">
             AND cp.remaining_amount &gt;= #{filter.minRemainingAmount}
         </if>
@@ -162,10 +192,12 @@
             resultType="com.deveagles.be15_deveagles_be.features.membership.query.dto.response.SessionPassInfo">
         SELECT DISTINCT
             sp.session_pass_name AS sessionPassName,
+            si.secondary_item_name AS secondaryItemName,
             csp.remaining_count AS remainingCount,
             csp.expiration_date AS expirationDate
         FROM customer_session_pass csp
                  JOIN session_pass sp ON csp.session_pass_id = sp.session_pass_id
+                 LEFT JOIN secondary_item si ON sp.secondary_item_id = si.secondary_item_id
         WHERE csp.customer_id = #{customerId}
           AND csp.remaining_count > 0
           AND csp.expiration_date >= CURRENT_DATE

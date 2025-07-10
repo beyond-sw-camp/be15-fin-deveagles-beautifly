@@ -160,6 +160,7 @@ export const getFilteredExpiringPrepaidPasses = async filters => {
     params: {
       minRemainingAmount: filters.minRemainingAmount,
       maxRemainingAmount: filters.maxRemainingAmount,
+      customerKeyword: filters.customerKeyword,
       startDate: filters.startDate,
       endDate: filters.endDate,
       page: filters.page ?? 1,
@@ -176,6 +177,7 @@ export const getFilteredExpiringSessionPasses = async filters => {
       minRemainingAmount: filters.minRemainingAmount,
       maxRemainingAmount: filters.maxRemainingAmount,
       startDate: filters.startDate,
+      customerKeyword: filters.customerKeyword,
       endDate: filters.endDate,
       page: filters.page ?? 1,
       size: filters.size ?? 10,

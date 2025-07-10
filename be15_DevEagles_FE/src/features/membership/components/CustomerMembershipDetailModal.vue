@@ -165,7 +165,9 @@
         })),
         ...filteredSession.map(s => ({
           id: s.customerSessionPassId,
-          name: s.sessionPassName,
+          name: s.secondaryItemName
+            ? `(${s.secondaryItemName}) ${s.sessionPassName}`
+            : s.sessionPassName,
           type: 'SESSION',
           remaining: s.remainingCount,
           expiry: formatDate(s.expirationDate),
@@ -182,7 +184,9 @@
         })),
         ...expiredSession.map(e => ({
           id: e.customerSessionPassId,
-          name: e.sessionPassName,
+          name: e.secondaryItemName
+            ? `(${e.secondaryItemName}) ${e.sessionPassName}`
+            : e.sessionPassName,
           type: 'SESSION',
           remaining: e.remainingCount,
           expiry: formatDate(e.expirationDate),

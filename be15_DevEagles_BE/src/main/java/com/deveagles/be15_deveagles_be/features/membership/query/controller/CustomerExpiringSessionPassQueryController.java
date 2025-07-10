@@ -7,9 +7,7 @@ import com.deveagles.be15_deveagles_be.features.membership.query.dto.response.Cu
 import com.deveagles.be15_deveagles_be.features.membership.query.service.CustomerExpiringSessionPassQueryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import java.util.Date;
 import lombok.RequiredArgsConstructor;
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -26,20 +24,10 @@ public class CustomerExpiringSessionPassQueryController {
   @GetMapping
   public ResponseEntity<ApiResponse<CustomerExpiringSessionPassResult>> getExpiringSessionPasses(
       @AuthenticationPrincipal CustomUser user,
-      @RequestParam(required = false) Integer minRemainingCount,
-      @RequestParam(required = false) Integer maxRemainingCount,
-      @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") Date startDate,
-      @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") Date endDate,
-      @RequestParam(defaultValue = "1") int page,
-      @RequestParam(defaultValue = "10") int size) {
-    CustomerExpiringSessionPassFilterRequest filter =
-        new CustomerExpiringSessionPassFilterRequest();
-    filter.setMinRemainingCount(minRemainingCount);
-    filter.setMaxRemainingCount(maxRemainingCount);
-    filter.setStartDate(startDate);
-    filter.setEndDate(endDate);
-    filter.setPage(page);
-    filter.setSize(size);
+      @ModelAttribute CustomerExpiringSessionPassFilterRequest filter) {
+
+    filter.setPage(Math.max(filter.getPage(), 1)); // 기본값 보장
+    filter.setSize(Math.max(filter.getSize(), 10)); // 기본값 보장
 
     CustomerExpiringSessionPassResult result =
         customerExpiringSessionPassQueryService.getExpiringSessionPasses(user.getShopId(), filter);

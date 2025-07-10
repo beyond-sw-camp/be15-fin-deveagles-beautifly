@@ -1,6 +1,7 @@
 package com.deveagles.be15_deveagles_be.features.membership.query.controller;
 
 import com.deveagles.be15_deveagles_be.common.dto.ApiResponse;
+import com.deveagles.be15_deveagles_be.features.auth.command.application.model.CustomUser;
 import com.deveagles.be15_deveagles_be.features.membership.query.dto.response.SessionPassResponse;
 import com.deveagles.be15_deveagles_be.features.membership.query.service.SessionPassQueryService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -8,6 +9,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -22,8 +24,9 @@ public class SessionPassQueryController {
 
   @Operation(summary = "횟수권 전체 조회", description = "등록된 모든 횟수권을 조회합니다.")
   @GetMapping
-  public ResponseEntity<ApiResponse<List<SessionPassResponse>>> getAllSessionPass() {
-    List<SessionPassResponse> response = sessionPassQueryService.getAllSessionPass();
-    return ResponseEntity.ok(ApiResponse.success(response));
+  public ResponseEntity<ApiResponse<List<SessionPassResponse>>> getSessionPasses(
+      @AuthenticationPrincipal CustomUser user) {
+    List<SessionPassResponse> result = sessionPassQueryService.getAllSessionPass(user.getShopId());
+    return ResponseEntity.ok(ApiResponse.success(result));
   }
 }

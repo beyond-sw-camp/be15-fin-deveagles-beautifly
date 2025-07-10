@@ -36,7 +36,7 @@
         </span>
       </template>
 
-      <!-- 만료일 정렬 + 강조 -->
+      <!-- 만료일 정렬 -->
       <template #header-expiryDate>
         <span class="sortable-header" @click="toggleSort('expiryDate')">
           만료일
@@ -49,10 +49,10 @@
         </span>
       </template>
 
+      <!-- 셀 커스터마이징 -->
       <template #cell-used="{ value }">
         <span class="ellipsis-cell" :title="value">{{ value }}</span>
       </template>
-
       <template #cell-expiryDate="{ value }">
         <span :class="{ 'text-red-500': isExpiringSoon(value) }">
           {{ value }}
@@ -97,9 +97,9 @@
   const loading = ref(false);
   const sortKey = ref(null);
   const sortOrder = ref('asc');
-
   const currentPage = ref(1);
   const pageSize = 10;
+
   const pagination = ref({
     currentPage: 1,
     totalPages: 1,
@@ -110,10 +110,16 @@
     loading.value = true;
     try {
       let result;
-      if (props.filterState?.min != null || props.filterState?.max != null) {
+      const hasSearch = props.searchKeyword?.trim();
+      const hasFilter = props.filterState?.min != null || props.filterState?.max != null;
+
+      if (hasSearch || hasFilter) {
         result = await getFilteredCustomerMemberships({
+          customerName: props.searchKeyword || null,
           minRemainingAmount: props.filterState?.min ?? null,
           maxRemainingAmount: props.filterState?.max ?? null,
+          startDate: props.filterState?.startDate ?? null,
+          endDate: props.filterState?.endDate ?? null,
           page: currentPage.value,
           size: pageSize,
         });
@@ -125,16 +131,16 @@
         id: item.customerId,
         name: item.customerName,
         phone: item.phoneNumber,
-        remaining: item.totalRemainingPrepaidAmount,
-        used: item.sessionPasses?.map(s => `(상품) ${s.sessionPassName}`).join(', ') || '-',
+        remaining: item.totalRemainingPrepaidAmount === 0 ? '-' : item.totalRemainingPrepaidAmount,
+        used: item.sessionPasses?.length
+          ? item.sessionPasses.map(s => `(${s.secondaryItemName}) ${s.sessionPassName}`).join(', ')
+          : '-',
         expiryDate: item.expirationDate || '-',
-        memberships: [],
-        usageHistory: [],
       }));
 
       pagination.value = result.pagination;
     } catch (e) {
-      console.error('회원권 전체 조회 실패', e);
+      console.error('회원권 조회 실패', e);
     } finally {
       loading.value = false;
     }
@@ -154,12 +160,8 @@
     fetchMembershipList();
   };
 
-  const filteredData = computed(() => {
-    return fullList.value.filter(member => member.name.includes(props.searchKeyword?.trim() || ''));
-  });
-
   const sortedData = computed(() => {
-    const sorted = [...filteredData.value];
+    const sorted = [...fullList.value];
     if (!sortKey.value) return sorted;
 
     return sorted.sort((a, b) => {
@@ -168,6 +170,12 @@
 
       if (sortKey.value === 'name') {
         return sortOrder.value === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+      }
+
+      if (sortKey.value === 'remaining') {
+        const aValNum = aVal === '-' ? -1 : Number(aVal);
+        const bValNum = bVal === '-' ? -1 : Number(bVal);
+        return sortOrder.value === 'asc' ? aValNum - bValNum : bValNum - aValNum;
       }
 
       if (sortKey.value === 'expiryDate') {
@@ -236,7 +244,6 @@
     font-size: 12px;
     color: #888;
   }
-
   .ellipsis-cell {
     display: inline-block;
     max-width: 280px;
