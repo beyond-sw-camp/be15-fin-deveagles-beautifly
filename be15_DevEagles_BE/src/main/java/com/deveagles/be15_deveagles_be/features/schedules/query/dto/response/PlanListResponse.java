@@ -5,6 +5,7 @@ import java.time.LocalTime;
 
 public record PlanListResponse(
     Long id,
+    Long staffId,
     String staffName,
     String planTitle,
     String planType,

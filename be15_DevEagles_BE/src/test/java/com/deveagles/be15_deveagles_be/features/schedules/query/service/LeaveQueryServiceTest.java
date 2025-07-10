@@ -43,7 +43,8 @@ class LeaveQueryServiceTest {
             LocalDate.of(2025, 6, 1), LocalDate.of(2025, 6, 30), "leave", 2L, 0, 10);
 
     List<LeaveListResponse> dummyList =
-        List.of(new LeaveListResponse(1L, "김민지", "휴무", "leave", null, LocalDate.of(2025, 6, 10)));
+        List.of(
+            new LeaveListResponse(1L, 1L, "김민지", "휴무", "leave", null, LocalDate.of(2025, 6, 10)));
 
     when(leaveQueryMapper.findLeaves(eq(1L), any(), any(), eq("leave"), eq(2L), eq(10), eq(0)))
         .thenReturn(dummyList);
