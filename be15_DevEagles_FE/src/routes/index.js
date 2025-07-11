@@ -10,6 +10,16 @@ const routes = [
   ...userRoutes,
   ...scheduleRoutes,
   ...staffRoutes,
+  {
+    // 외부 사용자에게 공개될 실제 멀티프로필 페이지 경로
+    // '/p/:shopId'는 '/p/tingkerview' 와 같이 동적으로 매장 ID를 받습니다.
+    path: '/p/:shopId',
+    name: 'PublicProfile',
+    component: () => import('@/features/profilelink/views/PublicProfileView.vue'), // 새로 만들 컴포넌트
+    meta: {
+      layout: 'blank',
+    },
+  },
 
   // 레이아웃이 있는 모든 페이지들 (중첩 라우팅)
   {
@@ -144,7 +154,7 @@ const routes = [
       {
         path: 'profile-link',
         name: 'ProfileLink',
-        component: Home,
+        component: () => import('@/features/profilelink/views/ProfileLinkView.vue'),
       },
       {
         path: 'settings/store',
