@@ -103,11 +103,7 @@ public class ChatRoomServiceImpl implements ChatRoomService {
     ChatMessage message =
         ChatMessage.builder()
             .chatroomId(roomId)
-            .sender(
-                ChatMessage.Sender.builder()
-                    .id(staffId)
-                    .name("상담사") // ✅ 프론트에서 “상담사님”으로 보여도 무방
-                    .build())
+            .sender(ChatMessage.Sender.builder().id(staffId).name("상담사").build())
             .content("상담사가 연결되었습니다. 무엇을 도와드릴까요?")
             .isCustomer(false)
             .createdAt(LocalDateTime.now())

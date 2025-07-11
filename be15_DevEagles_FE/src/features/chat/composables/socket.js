@@ -55,16 +55,25 @@ export const ensureSocketConnected = async (onReceive, onAuthError) => {
 };
 
 export const safeSubscribeToRoom = (roomId, onReceive) => {
-  if (subscriptionMap.has(roomId)) return;
+  if (!stompClient?.connected) return;
+  if (subscriptionMap.has(roomId)) return; // ✅ 이미 구독한 방은 무시
 
   const sub = stompClient.subscribe(`${SUB_PREFIX}/${roomId}`, msg => {
     const parsed = JSON.parse(msg.body);
     console.log('💬 [WebSocket 메시지 수신됨]', parsed);
-    onReceive(parsed);
+    onReceive(parsed); // ✅ 콜백 단건
   });
 
   subscriptionMap.set(roomId, sub);
   console.info(`📡 구독 완료: ${roomId}`);
+};
+
+export const subscribeToNewRoom = (roomId, onReceive) => {
+  if (!stompClient || !stompClient.connected) {
+    console.warn('🚫 아직 연결되지 않아 구독 생략됨:', roomId);
+    return;
+  }
+  safeSubscribeToRoom(roomId, onReceive);
 };
 
 export const sendSocketMessage = (roomId, message) => {

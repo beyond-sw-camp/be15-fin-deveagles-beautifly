@@ -5,7 +5,7 @@
   import ChatListView from './ChatListView.vue';
   import ListIcon from '@/components/icons/ListIcon.vue';
   import HomeIcon from '@/components/icons/HomeIcon.vue';
-  import { sendSocketMessage } from '@/features/chat/composables/socket.js';
+  import { safeSubscribeToRoom, sendSocketMessage } from '@/features/chat/composables/socket.js';
   import { useAuthStore } from '@/store/auth.js';
   import {
     createChatRoom,
@@ -40,11 +40,23 @@
   async function openNewChat() {
     try {
       const res = await createChatRoom();
-      chatStore.setCurrentRoomId(res.data.roomId);
+      const roomId = res.data.roomId;
+
+      chatStore.setCurrentRoomId(roomId);
       chatStore.clearMessages();
       currentView.value = 'chat';
 
-      await sendGreetingMessage(res.data.roomId);
+      // ✅ 중복 구독 방지
+      if (chatStore.subscribedRoomId !== roomId) {
+        safeSubscribeToRoom(roomId, msg => {
+          const from =
+            String(msg.senderId) === String(auth.userId) ? 'me' : msg.isCustomer ? 'user' : 'bot';
+          chatStore.addMessage({ from, text: msg.content });
+        });
+        chatStore.setSubscribedRoomId(roomId); // ✅ 현재 구독 중인 방 설정
+      }
+
+      await sendGreetingMessage(roomId);
       chatStore.addMessage({ type: 'switch-button' });
     } catch (e) {
       console.error('❌ 채팅방 생성 실패:', e);
@@ -94,6 +106,16 @@
       chatStore.setCurrentRoomId(chatRoomId);
       chatStore.clearMessages();
       currentView.value = 'chat';
+
+      // ✅ 구독 여부 확인
+      if (chatStore.subscribedRoomId !== chatRoomId) {
+        safeSubscribeToRoom(chatRoomId, msg => {
+          const from =
+            String(msg.senderId) === String(auth.userId) ? 'me' : msg.isCustomer ? 'user' : 'bot';
+          chatStore.addMessage({ from, text: msg.content });
+        });
+        chatStore.setSubscribedRoomId(chatRoomId); // ✅ 저장
+      }
 
       const res = await getChatMessages(chatRoomId);
       res.data.forEach(msg => {

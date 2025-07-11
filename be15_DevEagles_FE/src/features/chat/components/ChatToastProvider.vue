@@ -11,11 +11,14 @@
   const toastRef = ref(null);
 
   onMounted(() => {
-    chatStore.setToastHandler(msg => {
+    chatStore.setToastHandler(async msg => {
       console.log('[ChatToastProvider] 🔔 알림 메시지:', msg);
 
-      // BaseToast 내부에 있는 info() 메서드 활용 → 색상 및 스타일 정상 반영됨
-      toastRef.value?.success('새 메시지가 도착했습니다', {
+      // 안전하게 메시지 구성
+      const title = '새 메시지';
+      const content = msg?.content || '확인해보세요.';
+
+      toastRef.value?.success(`${title}: ${content}`, {
         duration: 5000,
         closable: true,
         showIcon: true,
@@ -23,7 +26,3 @@
     });
   });
 </script>
-
-<style scoped>
-  /* 없음 */
-</style>

@@ -58,13 +58,10 @@
   };
 
   const handleReceiveMessage = msg => {
-    console.log('🔥 [Layout 수신자 콜백 실행됨]', msg);
-
     const isMine = String(msg.senderId) === String(auth.userId);
     const isSameRoom = String(msg.chatroomId) === String(chatStore.currentRoomId);
     const isOpen = chatStore.isChatModalOpen;
 
-    // 1. 현재 열려 있는 방이면 메시지 리스트에 추가
     if (isSameRoom && isOpen) {
       chatStore.addMessage({
         from: isMine ? 'me' : msg.isCustomer ? 'user' : 'bot',
@@ -73,15 +70,15 @@
       return;
     }
 
-    // 2. 그 외 상황 → 알림 띄움
     if (!isMine) {
-      console.log('[알림 조건 통과] → triggerToast 실행:', msg);
-      chatStore.triggerToast(msg); // ✅ 여기
+      chatStore.triggerToast(msg); // ChatToastProvider가 처리
     }
   };
 
   onMounted(async () => {
     chatStore.setCurrentUserId(auth.userId);
+
+    if (chatStore.isSubscribed) return;
 
     await ensureSocketConnected(handleReceiveMessage, () => console.warn('❌ WebSocket 인증 실패'));
 
@@ -90,6 +87,7 @@
       res.data.forEach(room => {
         safeSubscribeToRoom(room.roomId, handleReceiveMessage);
       });
+      chatStore.setIsSubscribed(true);
     } catch (e) {
       console.error('❌ 채팅방 목록 조회 실패:', e);
     }
