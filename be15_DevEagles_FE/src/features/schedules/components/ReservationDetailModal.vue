@@ -176,7 +176,6 @@
   import BaseConfirm from '@/components/common/BaseConfirm.vue';
 
   const toast = ref(null);
-  // ✅ props 정의 및 변수로 선언
   const props = defineProps({
     modelValue: Boolean,
     id: Number,
@@ -190,10 +189,8 @@
     showConfirmModal.value = true;
   };
 
-  // ✅ emits
   const emit = defineEmits(['update:modelValue', 'cancelReservation']);
 
-  // ✅ 내부 상태 변수들
   const reservation = ref({});
   const edited = ref({
     customerName: '',
@@ -212,7 +209,6 @@
   const showMenu = ref(false);
   const isLoaded = ref(false);
 
-  // ✅ 예약 상태, 담당자 옵션
   const statusOptions = [
     { text: '예약 확정', value: 'CONFIRMED' },
     { text: '예약 대기', value: 'PENDING' },
@@ -241,17 +237,12 @@
     { text: '디자이너 B', value: '디자이너 B' },
   ];
 
-  // ✅ props 변경 감지하여 상세조회
   watch(
     [() => props.modelValue, () => props.id],
     async ([modelValue, id]) => {
-      console.log('🔥 watch triggered');
-      console.log('👉 modelValue:', modelValue, '👉 id:', id);
-
       if (modelValue && id) {
         try {
           const res = await fetchReservationDetail(id);
-          console.log('✅ fetchReservationDetail 응답:', res);
 
           const start = new Date(res.reservationStartAt);
           const end = new Date(res.reservationEndAt);
@@ -260,9 +251,6 @@
             ...res,
             duration: calculateDuration(start, end),
           };
-
-          // 🔍 reservation.value 콘솔 확인
-          console.log('📦 reservation.value 세팅됨:', reservation.value);
 
           edited.value = {
             customerName: res.customerName ?? '',
@@ -290,7 +278,6 @@
     { immediate: true }
   );
 
-  // ✅ 포맷된 시간 계산용 computed
   const formattedDate = computed(() => {
     return reservation.value.reservationStartAt?.split('T')[0] ?? '';
   });
@@ -301,7 +288,6 @@
     return reservation.value.reservationEndAt?.split('T')[1]?.slice(0, 5);
   });
 
-  // ✅ 소요 시간 계산 함수
   const calculateDuration = (start, end) => {
     const diffMs = end - start;
     if (diffMs > 0) {
@@ -334,7 +320,6 @@
     }
   };
 
-  // ✅ 이벤트 핸들러
   const close = () => {
     emit('update:modelValue', false);
     isEditMode.value = false;

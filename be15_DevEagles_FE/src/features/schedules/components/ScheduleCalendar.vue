@@ -67,6 +67,7 @@
     plugins: [interactionPlugin, resourceTimeGridPlugin, dayGridPlugin, timeGridPlugin],
     initialView: 'dayGridMonth',
     editable: true,
+    eventStartEditable: false,
     eventDurationEditable: false,
     locale: koLocale,
     resources: [],
