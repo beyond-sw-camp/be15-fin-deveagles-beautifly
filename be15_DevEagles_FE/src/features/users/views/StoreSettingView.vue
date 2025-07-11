@@ -5,14 +5,33 @@
       <div class="label-row">
         <label for="shopName">상점명</label>
       </div>
-      <BaseForm id="shopName" v-model="shop.shopName" placeholder="상점명을 입력해주세요." />
+      <BaseForm
+        id="shopName"
+        v-model="shop.shopName"
+        placeholder="상점명을 입력해주세요."
+        :error="errors.shopName"
+        @focus="clearError('shopName')"
+      />
 
-      <AddressSearch :address="shop.address" :detail-address="shop.detailAddress" />
+      <AddressSearch
+        v-model:address="shop.address"
+        v-model:detail-address="shop.detailAddress"
+        :error-address="errors.address"
+        :error-detail="errors.detailAddress"
+        @clear-error="clearError"
+      />
 
       <div class="label-row">
         <label for="industry">업종</label>
       </div>
-      <BaseForm id="industry" v-model="shop.industryId" type="select" :options="industryOptions" />
+      <BaseForm
+        id="industry"
+        v-model="shop.industryId"
+        type="select"
+        :options="industryOptions"
+        :error="errors.industryId"
+        @focus="clearError('industryId')"
+      />
 
       <div class="label-row">
         <label for="phoneNumber">매장 전화번호</label>
@@ -21,6 +40,8 @@
         id="phoneNumber"
         v-model="shop.phoneNumber"
         placeholder="매장 전화번호를 입력해주세요."
+        :error="errors.phoneNumber"
+        @focus="clearError('phoneNumber')"
       />
 
       <div class="label-row">
@@ -30,7 +51,14 @@
         id="bizNumber"
         v-model="shop.bizNumber"
         placeholder="사업자 등록번호를 입력해주세요."
+        :error="errors.businessNumber"
+        @focus="clearError('businessNumber')"
       />
+
+      <div class="label-row">
+        <label for="description">매장 설명</label>
+      </div>
+      <BaseForm v-model="shop.description" type="textarea" :rows="4" />
 
       <div class="label-row">SNS 주소</div>
       <div class="sns-row">
@@ -74,6 +102,15 @@
       </BaseButton>
     </div>
   </div>
+
+  <BaseModal v-model="showConfirmModal" title="매장 정보 수정">
+    <p class="modal-text">매장 정보를 수정하시겠습니까?</p>
+    <template #footer>
+      <BaseButton @click="showConfirmModal = false">취소</BaseButton>
+      <BaseButton type="primary" @click="submit"> 확인 </BaseButton>
+    </template>
+  </BaseModal>
+
   <BaseToast ref="toastRef" />
 </template>
 <script setup>
@@ -81,8 +118,9 @@
   import BaseForm from '@/components/common/BaseForm.vue';
   import BaseButton from '@/components/common/BaseButton.vue';
   import AddressSearch from '@/features/users/components/AddressSearch.vue';
-  import { getShop } from '@/features/users/api/users.js';
+  import { getShop, putShop } from '@/features/users/api/users.js';
   import BaseToast from '@/components/common/BaseToast.vue';
+  import BaseModal from '@/components/common/BaseModal.vue';
 
   const shop = ref({
     shopName: '',
@@ -91,9 +129,12 @@
     industryId: null,
     phoneNumber: '',
     bizNumber: '',
-    snsList: [{ type: '', snsAddress: '' }],
+    description: '',
+    snsList: [{ snsId: null, type: '', snsAddress: '' }],
   });
+
   const toastRef = ref();
+  const showConfirmModal = ref(false);
 
   onMounted(() => {
     fetchShop();
@@ -107,7 +148,7 @@
       const data = res.data.data;
 
       if (!Array.isArray(data.snsList) || data.snsList.length === 0) {
-        data.snsList = [{ type: '', snsAddress: '' }];
+        data.snsList = [{ snsId: null, type: '', snsAddress: '' }];
       }
 
       shop.value = data;
@@ -132,7 +173,7 @@
     if (!Array.isArray(shop.value.snsList)) {
       shop.value.snsList = [];
     }
-    shop.value.snsList.push({ type: '', snsAddress: '' });
+    shop.value.snsList.push({ snsId: null, type: '', snsAddress: '' });
   };
 
   const removeSNS = index => {
@@ -141,9 +182,88 @@
     }
   };
 
-  const handleEdit = () => {
-    console.log(`변경할 데이터: ${shop.value}`);
-    //todo 변경 api 연동
+  const errors = ref({
+    shopName: '',
+    industryId: '',
+    phoneNumber: '',
+    businessNumber: '',
+    address: '',
+    detailAddress: '',
+  });
+
+  const clearError = field => {
+    errors.value[field] = '';
+  };
+
+  const validate = () => {
+    let valid = true;
+
+    if (!shop.value.shopName) {
+      errors.value.shopName = '상점명을 입력해주세요.';
+      valid = false;
+    }
+
+    if (!shop.value.industryId) {
+      errors.value.industryId = '업종을 선택해주세요.';
+      valid = false;
+    }
+
+    if (shop.value.phoneNumber) {
+      const onlyNumberPattern = /^[0-9]+$/;
+      if (!onlyNumberPattern.test(shop.value.phoneNumber)) {
+        errors.value.phoneNumber = '숫자만 입력해주세요.';
+        valid = false;
+      } else if (shop.value.phoneNumber.length > 12) {
+        errors.value.phoneNumber = '최대 12자리까지 입력 가능합니다.';
+        valid = false;
+      } else {
+        errors.value.phoneNumber = ''; // 오류 없을 경우 초기화
+      }
+    }
+
+    if (!shop.value.address) {
+      errors.value.address = '매장 주소를 입력해주세요.';
+      valid = false;
+    }
+
+    if (!shop.value.detailAddress) {
+      errors.value.detailAddress = '매장 상세주소를 입력해주세요.';
+      valid = false;
+    }
+
+    if (shop.value.bizNumber && !/^[0-9]{10}$/.test(shop.value.bizNumber)) {
+      errors.value.businessNumber = '숫자 10자리로 입력해주세요.';
+      valid = false;
+    }
+    return valid;
+  };
+
+  const handleEdit = async () => {
+    const isValid = validate();
+    if (!isValid) {
+      toastRef.value?.error?.('매장 정보를 다시 확인해주세요.');
+      return;
+    }
+    showConfirmModal.value = true;
+  };
+
+  const submit = async () => {
+    showConfirmModal.value = false;
+
+    try {
+      const validSnsList = shop.value.snsList.filter(sns => sns.type && sns.snsAddress);
+
+      const payload = {
+        ...shop.value,
+        snsList: validSnsList.length > 0 ? validSnsList : [],
+      };
+
+      await putShop(payload);
+      toastRef.value?.success?.('매장 정보가 저장되었습니다.');
+      await fetchShop();
+    } catch (err) {
+      toastRef.value?.error?.('매장 정보 수정에 실패했습니다.');
+    }
   };
 </script>
 <style scoped>

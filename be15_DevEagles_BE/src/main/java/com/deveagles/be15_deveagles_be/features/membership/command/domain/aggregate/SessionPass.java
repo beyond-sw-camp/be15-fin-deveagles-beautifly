@@ -22,6 +22,9 @@ public class SessionPass {
   @JoinColumn(name = "shop_id", nullable = false)
   private Shop shopId;
 
+  @Column(name = "secondary_item_id", nullable = false)
+  private Long secondaryItemId;
+
   @Column(name = "session_pass_name", length = 100, nullable = false)
   private String sessionPassName;
 
@@ -58,6 +61,7 @@ public class SessionPass {
 
   public void updateSessionPass(
       String SessionPassName,
+      Long SecondaryItemId,
       Integer SessionPassPrice,
       Integer Session,
       Integer expirationPeriod,
@@ -66,6 +70,7 @@ public class SessionPass {
       Integer discountRate,
       String sessionPassMemo) {
     this.sessionPassName = SessionPassName;
+    this.secondaryItemId = SecondaryItemId;
     this.sessionPassPrice = SessionPassPrice;
     this.session = Session;
     this.expirationPeriod = expirationPeriod;

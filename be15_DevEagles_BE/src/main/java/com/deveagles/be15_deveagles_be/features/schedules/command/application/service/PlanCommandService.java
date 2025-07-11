@@ -25,7 +25,7 @@ public class PlanCommandService {
   private final PlanRepository planRepository;
   private final RegularPlanRepository regularPlanRepository;
 
-  public Long createPlan(CreatePlanRequest request) {
+  public Long createPlan(Long shopId, CreatePlanRequest request) {
     if (request.planStartAt().isAfter(request.planEndAt())) {
       throw new BusinessException(ErrorCode.INVALID_RESERVATION_TIME_RANGE);
     }
@@ -33,7 +33,7 @@ public class PlanCommandService {
     Plan plan =
         Plan.builder()
             .staffId(request.staffId())
-            .shopId(request.shopId())
+            .shopId(shopId)
             .planTitle(request.planTitle())
             .planMemo(request.planMemo())
             .planStartAt(request.planStartAt())
@@ -42,7 +42,7 @@ public class PlanCommandService {
     return planRepository.save(plan).getPlanId();
   }
 
-  public Long createRegularPlan(CreateRegularPlanRequest request) {
+  public Long createRegularPlan(Long shopId, CreateRegularPlanRequest request) {
     if (request.regularPlanStartAt().isAfter(request.regularPlanEndAt())) {
       throw new BusinessException(ErrorCode.INVALID_RESERVATION_TIME_RANGE);
     }
@@ -55,7 +55,7 @@ public class PlanCommandService {
     RegularPlan regularPlan =
         RegularPlan.builder()
             .staffId(request.staffId())
-            .shopId(request.shopId())
+            .shopId(shopId)
             .regularPlanTitle(request.regularPlanTitle())
             .monthlyPlan(request.monthlyPlan())
             .weeklyPlan(request.weeklyPlan())
@@ -68,7 +68,7 @@ public class PlanCommandService {
 
   // 일정 (단기, 정기) 다건 삭제
   @Transactional
-  public void deleteMixedSchedules(List<DeleteScheduleRequest> requests) {
+  public void deleteMixedSchedules(Long shopId, List<DeleteScheduleRequest> requests) {
     if (requests == null || requests.isEmpty()) return;
 
     List<Long> planIds = new ArrayList<>();
@@ -78,7 +78,7 @@ public class PlanCommandService {
       String type = req.type().toLowerCase(Locale.ROOT);
       if ("plan".equals(type)) {
         planIds.add(req.id());
-      } else if ("regular".equals(type)) {
+      } else if ("regular_plan".equals(type)) {
         regularPlanIds.add(req.id());
       } else {
         throw new BusinessException(ErrorCode.INVALID_SCHEDULE_TYPE);
@@ -103,13 +103,12 @@ public class PlanCommandService {
   }
 
   @Transactional
-  public void updatePlan(Long planId, CreatePlanRequest request) {
+  public void updatePlan(Long shopId, Long planId, CreatePlanRequest request) {
     Plan plan =
         planRepository
             .findById(planId)
             .orElseThrow(() -> new BusinessException(ErrorCode.PLAN_NOT_FOUND));
 
-    // 유효성 검사
     if (request.planStartAt().isAfter(request.planEndAt())) {
       throw new BusinessException(ErrorCode.INVALID_RESERVATION_TIME_RANGE);
     }
@@ -120,7 +119,7 @@ public class PlanCommandService {
   }
 
   @Transactional
-  public void updateRegularPlan(Long regularPlanId, CreateRegularPlanRequest request) {
+  public void updateRegularPlan(Long shopId, Long regularPlanId, CreateRegularPlanRequest request) {
     RegularPlan regularPlan =
         regularPlanRepository
             .findById(regularPlanId)
@@ -147,15 +146,16 @@ public class PlanCommandService {
   }
 
   @Transactional
-  public void switchSchedule(UpdatePlanScheduleRequest request) {
+  public void switchSchedule(Long shopId, UpdatePlanScheduleRequest request) {
     ScheduleType fromType = request.fromType();
     ScheduleType toType = request.toType();
 
     // 타입이 같으면 수정
     if (fromType == toType) {
       switch (fromType) {
-        case PLAN -> updatePlan(request.fromId(), request.planRequest());
-        case REGULAR_PLAN -> updateRegularPlan(request.fromId(), request.regularPlanRequest());
+        case PLAN -> updatePlan(shopId, request.fromId(), request.planRequest());
+        case REGULAR_PLAN ->
+            updateRegularPlan(shopId, request.fromId(), request.regularPlanRequest());
         default -> throw new BusinessException(ErrorCode.INVALID_SCHEDULE_TYPE);
       }
       return;
@@ -179,8 +179,8 @@ public class PlanCommandService {
     }
 
     switch (toType) {
-      case PLAN -> createPlan(request.planRequest());
-      case REGULAR_PLAN -> createRegularPlan(request.regularPlanRequest());
+      case PLAN -> createPlan(shopId, request.planRequest());
+      case REGULAR_PLAN -> createRegularPlan(shopId, request.regularPlanRequest());
       default -> throw new BusinessException(ErrorCode.INVALID_SCHEDULE_TYPE);
     }
   }

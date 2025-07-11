@@ -1,5 +1,6 @@
 package com.deveagles.be15_deveagles_be.features.shops.command.domain.aggregate;
 
+import com.deveagles.be15_deveagles_be.features.sales.command.domain.aggregate.PaymentsMethod;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -19,6 +20,10 @@ public class Incentive {
   @Column(name = "type", nullable = false)
   private ProductType type;
 
+  @Enumerated(EnumType.STRING)
+  @Column(name = "payments_method", nullable = false)
+  private PaymentsMethod paymentsMethod;
+
   @Column(name = "incentive", nullable = false)
   private int incentive;
 
@@ -32,8 +37,15 @@ public class Incentive {
   private boolean isActive = false;
 
   @Builder
-  public Incentive(ProductType type, int incentive, Long shopId, Long staffId, boolean isActive) {
+  public Incentive(
+      ProductType type,
+      PaymentsMethod paymentsMethod,
+      int incentive,
+      Long shopId,
+      Long staffId,
+      boolean isActive) {
     this.type = type;
+    this.paymentsMethod = paymentsMethod;
     this.incentive = incentive;
     this.shopId = shopId;
     this.staffId = staffId;

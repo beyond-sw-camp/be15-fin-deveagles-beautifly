@@ -22,7 +22,7 @@ public class CustomerDocument {
   @Field(type = FieldType.Long)
   private Long shopId;
 
-  @Field(type = FieldType.Text, analyzer = "standard")
+  @Field(type = FieldType.Text, analyzer = "korean_edge", searchAnalyzer = "nori")
   private String customerName;
 
   @Field(type = FieldType.Keyword)

@@ -6,6 +6,7 @@ import static org.mockito.Mockito.*;
 import com.deveagles.be15_deveagles_be.features.membership.command.domain.aggregate.SessionPass;
 import com.deveagles.be15_deveagles_be.features.membership.command.domain.repository.SessionPassRepository;
 import com.deveagles.be15_deveagles_be.features.membership.query.dto.response.SessionPassResponse;
+import com.deveagles.be15_deveagles_be.features.shops.command.domain.aggregate.Shop;
 import java.util.Arrays;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -28,8 +29,10 @@ class SessionPassQueryServiceImplTest {
 
   @Test
   @DisplayName("성공: 전체 횟수권 목록을 조회한다")
-  void getAllSessionPasses_shouldReturnBeautyExamples() {
+  void getAllSessionPasses_shouldReturnSessionExamples() {
     // given
+    Shop shop = Shop.builder().shopId(1L).build();
+
     SessionPass pass1 =
         SessionPass.builder()
             .sessionPassId(1L)
@@ -38,6 +41,7 @@ class SessionPassQueryServiceImplTest {
             .session(5)
             .expirationPeriod(90)
             .bonus(1)
+            .shopId(shop)
             .discountRate(5)
             .sessionPassMemo("피부 집중 관리")
             .build();
@@ -50,14 +54,16 @@ class SessionPassQueryServiceImplTest {
             .session(10)
             .expirationPeriod(180)
             .bonus(2)
+            .shopId(shop)
             .discountRate(8)
             .sessionPassMemo("탈모 예방 집중 케어")
             .build();
 
-    when(sessionPassRepository.findAllByDeletedAtIsNull()).thenReturn(Arrays.asList(pass1, pass2));
+    when(sessionPassRepository.findAllByShopId_ShopIdAndDeletedAtIsNull(1L))
+        .thenReturn(Arrays.asList(pass1, pass2));
 
     // when
-    List<SessionPassResponse> result = sessionPassQueryService.getAllSessionPass();
+    List<SessionPassResponse> result = sessionPassQueryService.getAllSessionPass(1L);
 
     // then
     assertThat(result).hasSize(2);
@@ -72,6 +78,6 @@ class SessionPassQueryServiceImplTest {
     assertThat(result.get(1).getSession()).isEqualTo(10);
     assertThat(result.get(1).getType()).isEqualTo("SESSION");
 
-    verify(sessionPassRepository, times(1)).findAllByDeletedAtIsNull();
+    verify(sessionPassRepository, times(1)).findAllByShopId_ShopIdAndDeletedAtIsNull(1L);
   }
 }

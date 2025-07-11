@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 
 public record PlanDetailResponse(
     Long planId,
+    String staffName,
     Long staffId,
     Long shopId,
     String title,

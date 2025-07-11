@@ -22,10 +22,12 @@ public interface CustomerElasticsearchRepository
               {"bool": {"must_not": {"exists": {"field": "deletedAt"}}}}
             ],
             "should": [
-              {"match": {"customerName": {"query": "?1", "fuzziness": "AUTO"}}},
-              {"wildcard": {"customerName.keyword": "*?1*"}},
-              {"prefix": {"phoneNumber": "?1"}},
-              {"wildcard": {"phoneNumber": "*?1*"}}
+              {"multi_match": {
+                "query": "?1",
+                "fields": ["customerName.ngram^3", "customerName^2", "phoneNumber"],
+                "type": "phrase_prefix"
+              }},
+              {"prefix": {"phoneNumber": "?1"}}
             ],
             "minimum_should_match": 1
           }
@@ -67,7 +69,7 @@ public interface CustomerElasticsearchRepository
               {"bool": {"must_not": {"exists": {"field": "deletedAt"}}}}
             ],
             "should": [
-              {"prefix": {"customerName.keyword": "?1"}},
+              {"prefix": {"customerName.ngram": "?1"}},
               {"prefix": {"phoneNumber": "?1"}}
             ],
             "minimum_should_match": 1

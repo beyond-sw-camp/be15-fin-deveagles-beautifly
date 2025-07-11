@@ -22,17 +22,12 @@
         </div>
         <div class="modal-body">
           <div class="grade-list-wrapper" @dragover.prevent>
-            <!-- 기본등급: 드래그핸들 위치에 빈공간, 등급명/적립률 두 줄 -->
+            <!-- 기본등급: 드래그핸들 위치에 빈공간, 등급명/할인율 두 줄 -->
             <div v-if="defaultGrade" :key="defaultGrade.id" class="grade-item">
               <span class="drag-handle drag-handle-disabled"></span>
               <div class="grade-main-col">
                 <span class="grade-name">{{ defaultGrade.name }}</span>
-                <span class="grade-rates">
-                  카드 {{ defaultGrade.card ?? 0 }}% / 현금 {{ defaultGrade.cash ?? 0 }}% /
-                  네이버페이 {{ defaultGrade.naverpay ?? 0 }}% / 지역화폐
-                  {{ defaultGrade.localpay ?? 0 }}% / 선불권 {{ defaultGrade.prepaid ?? 0 }}% /
-                  횟수권 {{ defaultGrade.session_pass ?? 0 }}%
-                </span>
+                <span class="grade-rates"> 할인율 {{ defaultGrade.discountRate ?? 0 }}% </span>
               </div>
               <div class="grade-actions">
                 <button class="action-btn" @click="openEditDrawer(defaultGrade)">
@@ -41,7 +36,7 @@
                 </button>
               </div>
             </div>
-            <!-- 나머지 등급: 드래그 가능, 핸들 표시, 등급명/적립률 두 줄 -->
+            <!-- 나머지 등급: 드래그 가능, 핸들 표시, 등급명/할인율 한 줄 -->
             <div
               v-for="(grade, idx) in otherGrades"
               :key="grade.id"
@@ -54,11 +49,7 @@
               <span class="drag-handle">☰</span>
               <div class="grade-main-col">
                 <span class="grade-name">{{ grade.name }}</span>
-                <span class="grade-rates">
-                  카드 {{ grade.card ?? 0 }}% / 현금 {{ grade.cash ?? 0 }}% / 네이버페이
-                  {{ grade.naverpay ?? 0 }}% / 지역화폐 {{ grade.localpay ?? 0 }}% / 선불권
-                  {{ grade.prepaid ?? 0 }}% / 횟수권 {{ grade.session_pass ?? 0 }}%
-                </span>
+                <span class="grade-rates"> 할인율 {{ grade.discountRate ?? 0 }}% </span>
               </div>
               <div class="grade-actions">
                 <button class="action-btn" @click="openEditDrawer(grade)">
@@ -100,53 +91,18 @@
   import EditGradeDrawer from './EditGradeDrawer.vue';
   import BaseToast from '@/components/common/BaseToast.vue';
   import BaseConfirm from '@/components/common/BaseConfirm.vue';
+  import { useMetadataStore } from '@/store/metadata.js';
+  import { useAuthStore } from '@/store/auth.js';
+  import { storeToRefs } from 'pinia';
 
   const props = defineProps({
     modelValue: { type: Boolean, required: true },
   });
   const emit = defineEmits(['update:modelValue']);
 
-  const grades = ref([
-    {
-      id: 1,
-      name: '기본등급',
-      card: 0,
-      cash: 0,
-      naverpay: 0,
-      localpay: 0,
-      prepaid: 0,
-      session_pass: 0,
-      is_deletable: false,
-    },
-    {
-      id: 2,
-      name: '부재녕',
-      card: 0,
-      cash: 0,
-      naverpay: 0,
-      localpay: 0,
-      prepaid: 0,
-      session_pass: 0,
-      is_deletable: true,
-    },
-    {
-      id: 3,
-      name: 'dddd',
-      card: 0,
-      cash: 0,
-      naverpay: 0,
-      localpay: 0,
-      prepaid: 0,
-      session_pass: 0,
-      is_deletable: true,
-    },
-  ]);
-
-  const customers = ref([
-    { id: 101, name: '홍길동', grade_id: 2, grade_name: '부재녕' },
-    { id: 102, name: '김철수', grade_id: 1, grade_name: '기본등급' },
-    { id: 103, name: '이영희', grade_id: 2, grade_name: '부재녕' },
-  ]);
+  const metadataStore = useMetadataStore();
+  const authStore = useAuthStore();
+  const { grades } = storeToRefs(metadataStore);
 
   const showAddDrawer = ref(false);
   const showEditDrawer = ref(false);
@@ -156,8 +112,14 @@
   const showDeleteConfirm = ref(false);
   const gradeToDelete = ref(null);
 
-  const defaultGrade = computed(() => grades.value.find(g => !g.is_deletable));
-  const otherGrades = computed(() => grades.value.filter(g => g.is_deletable));
+  const defaultGrade = computed(() => {
+    const list = Array.isArray(grades.value) ? grades.value : [];
+    return list.find(g => !g.is_deletable);
+  });
+  const otherGrades = computed(() => {
+    const list = Array.isArray(grades.value) ? grades.value : [];
+    return list.filter(g => g.is_deletable);
+  });
 
   let dragIndex = null;
   function onDragStart(idx) {
@@ -177,14 +139,19 @@
     emit('update:modelValue', false);
   };
 
-  function onAddGrade(newGrade) {
-    grades.value.push({
-      ...newGrade,
-      id: Date.now(),
-      is_deletable: true,
-    });
-    toastRef.value?.success('고객 등급이 생성되었습니다.');
-    showAddDrawer.value = false;
+  async function onAddGrade(newGrade) {
+    try {
+      await metadataStore.createGrade({
+        name: newGrade.name,
+        discountRate: newGrade.discountRate ?? 0,
+        shopId: authStore.shopId,
+      });
+      toastRef.value?.success('고객 등급이 생성되었습니다.');
+    } catch (e) {
+      toastRef.value?.error(e.message || '등급 생성 실패');
+    } finally {
+      showAddDrawer.value = false;
+    }
   }
 
   function openEditDrawer(grade) {
@@ -192,34 +159,41 @@
     showEditDrawer.value = true;
     nextTick(() => {});
   }
-  function onEditGrade(editedGrade) {
-    const idx = grades.value.findIndex(g => g.id === editedGrade.id);
-    if (idx !== -1) {
-      grades.value[idx] = { ...editedGrade };
+  async function onEditGrade(editedGrade) {
+    try {
+      await metadataStore.updateGrade(editedGrade.id, {
+        name: editedGrade.name,
+        discountRate: editedGrade.discountRate ?? 0,
+        shopId: authStore.shopId,
+      });
       toastRef.value?.success('고객 등급이 수정되었습니다.');
+    } catch (e) {
+      toastRef.value?.error(e.message || '등급 수정 실패');
+    } finally {
+      showEditDrawer.value = false;
     }
-    showEditDrawer.value = false;
   }
   function deleteGrade(grade) {
     gradeToDelete.value = grade;
     showDeleteConfirm.value = true;
   }
-  function handleDeleteGradeConfirmed() {
-    customers.value.forEach(customer => {
-      if (customer.grade_id === gradeToDelete.value.id) {
-        customer.grade_id = 1;
-        customer.grade_name = '기본등급';
-      }
-    });
-    grades.value = grades.value.filter(g => g.id !== gradeToDelete.value.id);
-    toastRef.value?.success('고객 등급이 삭제되었습니다.');
-    showDeleteConfirm.value = false;
+  async function handleDeleteGradeConfirmed() {
+    try {
+      await metadataStore.deleteGrade(gradeToDelete.value.id);
+      toastRef.value?.success('고객 등급이 삭제되었습니다.');
+    } catch (e) {
+      toastRef.value?.error(e.message || '등급 삭제 실패');
+    } finally {
+      showDeleteConfirm.value = false;
+    }
   }
 
   const handleEsc = e => {
     if (e.key === 'Escape') close();
   };
-  onMounted(() => window.addEventListener('keydown', handleEsc));
+  onMounted(() => {
+    window.addEventListener('keydown', handleEsc);
+  });
   onBeforeUnmount(() => window.removeEventListener('keydown', handleEsc));
 </script>
 
@@ -232,12 +206,15 @@
     height: 100vh;
     background: rgba(0, 0, 0, 0.3);
     z-index: 1000;
+    display: flex;
+    justify-content: flex-end;
   }
   .modal-panel {
     position: fixed;
     top: 0;
-    left: 240px;
-    width: calc(100% - 240px);
+    left: unset;
+    right: 0;
+    width: 480px;
     height: 100vh;
     background: #fff;
     display: flex;

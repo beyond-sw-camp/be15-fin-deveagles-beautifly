@@ -1,7 +1,7 @@
 <template>
   <Teleport to="body">
     <div class="edit-modal-layer">
-      <BaseModal v-model="isVisible" title="회원권 수정">
+      <BaseModal v-model="isVisible" title="회원권 수정" :z-index="1500">
         <div class="edit-form">
           <!-- 조건부 필드: 선불권 -->
           <div v-if="type === 'PREPAID'" class="form-group">
@@ -15,7 +15,7 @@
           </div>
 
           <!-- 조건부 필드: 횟수권 -->
-          <div v-if="type === 'COUNT'" class="form-group">
+          <div v-if="type === 'SESSION'" class="form-group">
             <BaseForm
               v-model.number="remaining"
               label="잔여 횟수"
@@ -27,7 +27,12 @@
           <!-- 공통 필드: 만료일 -->
           <div class="form-group">
             <label>만료일</label>
-            <PrimeDatePicker v-model="expiry" placeholder="날짜 선택" append-to="body" />
+            <PrimeDatePicker
+              v-model="expiry"
+              placeholder="날짜 선택"
+              append-to="body"
+              :base-z-index="2000"
+            />
           </div>
         </div>
 
@@ -49,6 +54,11 @@
   import BaseButton from '@/components/common/BaseButton.vue';
   import PrimeDatePicker from '@/components/common/PrimeDatePicker.vue';
 
+  import {
+    updateCustomerPrepaidPass,
+    updateCustomerSessionPass,
+  } from '@/features/membership/api/membership.js';
+
   const props = defineProps({
     modelValue: Boolean,
     membership: {
@@ -56,14 +66,14 @@
       required: true,
     },
   });
-  const emit = defineEmits(['update:modelValue', 'submit']);
+  const emit = defineEmits(['update:modelValue', 'updated']);
 
   const isVisible = ref(props.modelValue);
   const remaining = ref(null);
   const expiry = ref(null);
   const type = ref('');
 
-  // props.modelValue → isVisible 로 동기화
+  // props.modelValue → isVisible 동기화
   watch(
     () => props.modelValue,
     val => {
@@ -74,6 +84,7 @@
     emit('update:modelValue', val);
   });
 
+  // membership 초기화
   watch(
     () => props.membership,
     val => {
@@ -89,15 +100,26 @@
     isVisible.value = false;
   };
 
-  const submitEdit = () => {
-    emit('submit', {
-      id: props.membership.id,
-      type: type.value,
-      remaining: remaining.value,
-      expiry: expiry.value,
-    });
-    emit('updated'); // ✅ 부모에게 알림
-    isVisible.value = false;
+  const submitEdit = async () => {
+    try {
+      if (type.value === 'PREPAID') {
+        await updateCustomerPrepaidPass({
+          customerPrepaidPassId: props.membership.id,
+          remainingAmount: remaining.value,
+          expirationDate: expiry.value,
+        });
+      } else if (type.value === 'SESSION') {
+        await updateCustomerSessionPass({
+          customerSessionPassId: props.membership.id,
+          remainingCount: remaining.value,
+          expirationDate: expiry.value,
+        });
+      }
+      emit('updated');
+      isVisible.value = false;
+    } catch (error) {
+      console.error(error);
+    }
   };
 </script>
 
@@ -105,7 +127,7 @@
   .edit-modal-layer {
     position: fixed;
     inset: 0;
-    z-index: 11000;
+    z-index: 1100;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -129,15 +151,5 @@
     justify-content: flex-end;
     gap: 8px;
     padding: 0 1.5rem 1rem;
-  }
-</style>
-
-<style>
-  .modal-backdrop {
-    z-index: 11000;
-  }
-
-  .p-datepicker {
-    z-index: 99999 !important;
   }
 </style>

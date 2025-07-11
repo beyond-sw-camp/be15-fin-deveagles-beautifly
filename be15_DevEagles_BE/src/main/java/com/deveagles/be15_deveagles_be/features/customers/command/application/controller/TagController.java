@@ -1,6 +1,7 @@
 package com.deveagles.be15_deveagles_be.features.customers.command.application.controller;
 
 import com.deveagles.be15_deveagles_be.common.dto.ApiResponse;
+import com.deveagles.be15_deveagles_be.features.auth.command.application.model.CustomUser;
 import com.deveagles.be15_deveagles_be.features.customers.command.application.dto.request.CreateTagRequest;
 import com.deveagles.be15_deveagles_be.features.customers.command.application.dto.request.UpdateTagRequest;
 import com.deveagles.be15_deveagles_be.features.customers.command.application.dto.response.TagResponse;
@@ -18,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -46,15 +48,19 @@ public class TagController {
   })
   @PostMapping
   public ResponseEntity<ApiResponse<Long>> createTag(
+      @AuthenticationPrincipal CustomUser user,
       @Parameter(description = "태그 생성 정보", required = true) @Valid @RequestBody
           CreateTagRequest request) {
     log.info(
         "태그 생성 요청 - 매장ID: {}, 태그명: {}, 색상코드: {}",
-        request.getShopId(),
+        user.getShopId(),
         request.getTagName(),
         request.getColorCode());
 
-    Long tagId = tagCommandService.createTag(request);
+    CreateTagRequest requestWithShopId =
+        new CreateTagRequest(user.getShopId(), request.getTagName(), request.getColorCode());
+
+    Long tagId = tagCommandService.createTag(requestWithShopId);
     return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(tagId));
   }
 
@@ -70,11 +76,11 @@ public class TagController {
   })
   @GetMapping("/{tagId}")
   public ResponseEntity<ApiResponse<TagResponse>> getTag(
-      @Parameter(description = "태그 ID", required = true, example = "1") @PathVariable Long tagId,
-      @Parameter(description = "매장 ID", required = true, example = "1") @RequestParam Long shopId) {
-    log.info("태그 단건 조회 요청 - ID: {}, 매장ID: {}", tagId, shopId);
+      @AuthenticationPrincipal CustomUser user,
+      @Parameter(description = "태그 ID", required = true, example = "1") @PathVariable Long tagId) {
+    log.info("태그 단건 조회 요청 - ID: {}, 매장ID: {}", tagId, user.getShopId());
 
-    TagResponse response = tagQueryService.getTag(tagId, shopId);
+    TagResponse response = tagQueryService.getTag(tagId, user.getShopId());
     return ResponseEntity.ok(ApiResponse.success(response));
   }
 
@@ -86,10 +92,10 @@ public class TagController {
   })
   @GetMapping
   public ResponseEntity<ApiResponse<List<TagResponse>>> getAllTags(
-      @Parameter(description = "매장 ID", required = true, example = "1") @RequestParam Long shopId) {
-    log.info("매장별 전체 태그 조회 요청 - 매장ID: {}", shopId);
+      @AuthenticationPrincipal CustomUser user) {
+    log.info("매장별 전체 태그 조회 요청 - 매장ID: {}", user.getShopId());
 
-    List<TagResponse> response = tagQueryService.getAllTagsByShopId(shopId);
+    List<TagResponse> response = tagQueryService.getAllTagsByShopId(user.getShopId());
     return ResponseEntity.ok(ApiResponse.success(response));
   }
 
@@ -110,17 +116,22 @@ public class TagController {
   })
   @PutMapping("/{tagId}")
   public ResponseEntity<ApiResponse<Void>> updateTag(
+      @AuthenticationPrincipal CustomUser user,
       @Parameter(description = "태그 ID", required = true, example = "1") @PathVariable Long tagId,
       @Parameter(description = "태그 수정 정보", required = true) @Valid @RequestBody
           UpdateTagRequest request) {
     log.info(
         "태그 수정 요청 - ID: {}, 매장ID: {}, 새 태그명: {}, 새 색상코드: {}",
         tagId,
-        request.getShopId(),
+        user.getShopId(),
         request.getTagName(),
         request.getColorCode());
 
-    tagCommandService.updateTag(tagId, request);
+    // shopId를 user에서 가져와서 새로운 request 생성
+    UpdateTagRequest requestWithShopId =
+        new UpdateTagRequest(user.getShopId(), request.getTagName(), request.getColorCode());
+
+    tagCommandService.updateTag(tagId, requestWithShopId);
     return ResponseEntity.ok(ApiResponse.success(null));
   }
 

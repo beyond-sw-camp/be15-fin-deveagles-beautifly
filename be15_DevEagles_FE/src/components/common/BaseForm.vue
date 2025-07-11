@@ -26,7 +26,8 @@
       :class="{ 'input-error': error }"
       :value="modelValue"
       v-bind="$attrs"
-      @change="$emit('update:modelValue', $event.target.value)"
+      style="width: 96% !important; min-width: 0; max-width: 100%; box-sizing: border-box"
+      @change="handleSelectChange($event)"
     >
       <option v-if="placeholder" value="" disabled selected>{{ placeholder }}</option>
       <option v-for="option in options" :key="option.value" :value="option.value">
@@ -136,6 +137,15 @@
     methods: {
       handleEnterKey(event) {
         this.$emit('enterKey', event);
+      },
+      handleSelectChange(event) {
+        let value = event.target.value;
+        // 실제 옵션 중 number 타입이 있으면 number로 변환
+        const matched = this.options.find(opt => String(opt.value) === value);
+        if (matched && typeof matched.value === 'number') {
+          value = Number(value);
+        }
+        this.$emit('update:modelValue', value);
       },
       handleCheckboxChange(value) {
         if (Array.isArray(this.modelValue)) {

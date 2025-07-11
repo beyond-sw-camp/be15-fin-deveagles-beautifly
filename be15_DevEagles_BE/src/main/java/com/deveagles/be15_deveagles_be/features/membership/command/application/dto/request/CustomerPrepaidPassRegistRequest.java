@@ -1,7 +1,7 @@
 package com.deveagles.be15_deveagles_be.features.membership.command.application.dto.request;
 
 import jakarta.validation.constraints.NotNull;
-import java.time.LocalDate;
+import java.util.Date;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -17,5 +17,5 @@ public class CustomerPrepaidPassRegistRequest {
 
   @NotNull(message = "충전금액은 필수입니다.") private Integer remainingAmount;
 
-  @NotNull(message = "유효기간은 필수입니다.") private LocalDate expirationDate;
+  @NotNull(message = "유효기간은 필수입니다.") private Date expirationDate;
 }

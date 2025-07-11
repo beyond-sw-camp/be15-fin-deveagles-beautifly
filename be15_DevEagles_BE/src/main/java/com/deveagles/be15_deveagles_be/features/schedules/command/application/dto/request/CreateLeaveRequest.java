@@ -3,7 +3,7 @@ package com.deveagles.be15_deveagles_be.features.schedules.command.application.d
 import java.time.LocalDate;
 
 public record CreateLeaveRequest(
-    Long staffId, Long shopId, String leaveTitle, LocalDate leaveAt, String leaveMemo) {
+    Long staffId, String leaveTitle, LocalDate leaveAt, String leaveMemo) {
   public UpdateLeaveRequest toUpdateRequest() {
     return new UpdateLeaveRequest(leaveTitle, leaveAt, leaveMemo);
   }

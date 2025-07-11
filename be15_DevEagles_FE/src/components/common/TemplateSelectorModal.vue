@@ -36,17 +36,14 @@
     </div>
 
     <!-- 템플릿 생성 모달 -->
-    <TemplateCreateModal
-      v-model="showCreateModal"
-      :available-coupons="availableCoupons"
-      @submit="handleTemplateCreated"
-    />
+    <TemplateCreateModal v-model="showCreateModal" @submit="handleTemplateCreated" />
   </div>
 </template>
 
 <script>
   import { ref, computed, onMounted, onUnmounted } from 'vue';
-  import { messageTemplateOptions } from '@/features/workflows/constants/workflowOptions.js';
+  import api from '@/plugins/axios';
+  import { useAuthStore } from '@/store/auth.js';
   import BaseButton from '@/components/common/BaseButton.vue';
   import PlusIcon from '@/components/icons/PlusIcon.vue';
   import TemplateCreateModal from '@/features/messages/components/modal/TemplateCreateModal.vue';
@@ -74,12 +71,25 @@
       const selectedTemplateLocal = ref(props.selectedTemplate);
       const showCreateModal = ref(false);
 
-      const templates = ref(
-        messageTemplateOptions.map(opt => ({
-          ...opt,
-          type: opt.value.split('-')[0] || 'general',
-        }))
-      );
+      const templates = ref([]);
+
+      const loadTemplates = async () => {
+        try {
+          const authStore = useAuthStore();
+          const params = { size: 100, page: 0 }; // 큰 페이지로 전체 로드
+          const res = await api.get('/message/templates', { params });
+          const arr = res.data?.data?.content ?? res.data?.data ?? [];
+          templates.value = arr.map(t => ({
+            value: t.templateId,
+            text: t.templateName,
+            content: t.templateContent,
+            type: (t.templateType || '').toLowerCase(),
+            data: t,
+          }));
+        } catch (error) {
+          console.error('메시지 템플릿 불러오기 실패', error);
+        }
+      };
 
       const filteredTemplates = computed(() => {
         if (!searchText.value) return templates.value;
@@ -101,11 +111,9 @@
 
       const getTypeText = type => {
         const typeMap = {
-          welcome: '환영',
-          revisit: '재방문',
-          coupon: '쿠폰',
-          birthday: '생일',
-          follow: '사후관리',
+          advertising: '광고',
+          announcement: '안내',
+          etc: '기타',
         };
         return typeMap[type] || '일반';
       };
@@ -150,6 +158,7 @@
 
       onMounted(() => {
         document.addEventListener('keydown', handleKeyDown);
+        loadTemplates();
       });
 
       onUnmounted(() => {

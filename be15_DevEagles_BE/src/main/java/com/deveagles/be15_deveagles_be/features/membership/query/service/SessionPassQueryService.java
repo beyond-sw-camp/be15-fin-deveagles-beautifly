@@ -4,5 +4,5 @@ import com.deveagles.be15_deveagles_be.features.membership.query.dto.response.Se
 import java.util.List;
 
 public interface SessionPassQueryService {
-  List<SessionPassResponse> getAllSessionPass();
+  List<SessionPassResponse> getAllSessionPass(Long shopId);
 }

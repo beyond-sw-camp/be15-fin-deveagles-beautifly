@@ -66,7 +66,12 @@
     font-weight: bold;
     font-size: 16px;
   }
-
+  .footer-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 0 1.5rem 1rem;
+  }
   .range-inputs {
     display: flex;
     gap: 1rem;

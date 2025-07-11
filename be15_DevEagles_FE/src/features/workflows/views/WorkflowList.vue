@@ -34,32 +34,6 @@
       </div>
     </div>
 
-    <!-- Filters -->
-    <div class="filters-section">
-      <div class="filter-group">
-        <BaseForm
-          :model-value="searchQuery"
-          type="text"
-          placeholder="워크플로우 검색..."
-          @update:model-value="handleSearchChange"
-        />
-        <BaseForm
-          :model-value="statusFilter"
-          type="select"
-          placeholder="상태 선택"
-          :options="statusOptions"
-          @update:model-value="handleStatusFilterChange"
-        />
-        <BaseForm
-          :model-value="typeFilter"
-          type="select"
-          placeholder="유형 선택"
-          :options="typeOptions"
-          @update:model-value="handleTypeFilterChange"
-        />
-      </div>
-    </div>
-
     <!-- Workflow Table -->
     <BaseCard>
       <BaseTable :columns="tableColumns" :data="paginatedWorkflows" :loading="loading" hover>
@@ -170,11 +144,10 @@
 </template>
 
 <script>
-  import { ref, computed } from 'vue';
+  import { ref, computed, onMounted } from 'vue';
   import { useRouter } from 'vue-router';
   import { useListManagement } from '@/composables/useListManagement';
   import { MESSAGES } from '@/constants/messages';
-  import { MOCK_WORKFLOWS } from '@/constants/mockData';
   import { formatDate } from '@/utils/formatters';
   import BaseButton from '@/components/common/BaseButton.vue';
   import BaseForm from '@/components/common/BaseForm.vue';
@@ -187,6 +160,12 @@
   import BaseTable from '@/components/common/BaseTable.vue';
   import TrashIcon from '@/components/icons/TrashIcon.vue';
   import EditIcon from '@/components/icons/EditIcon.vue';
+  import {
+    searchWorkflows,
+    toggleWorkflowStatus as apiToggleStatus,
+    deleteWorkflow as apiDelete,
+  } from '@/features/workflows/api/workflows.js';
+  import { useAuthStore } from '@/store/auth.js';
 
   export default {
     name: 'WorkflowList',
@@ -205,6 +184,7 @@
     },
     setup() {
       const router = useRouter();
+      const authStore = useAuthStore();
 
       // List management composable
       const {
@@ -224,7 +204,7 @@
         showNotImplemented,
       } = useListManagement({
         itemName: MESSAGES.WORKFLOW.ITEM_NAME,
-        initialItems: MOCK_WORKFLOWS,
+        initialItems: [],
         itemsPerPage: 12,
       });
 
@@ -316,7 +296,15 @@
       const editWorkflow = workflow => {
         router.push(`/workflows/edit/${workflow.id}`);
       };
-      const toggleWorkflowStatus = workflow => toggleItemStatus(workflow);
+      const toggleWorkflowStatus = async workflow => {
+        try {
+          await apiToggleStatus(workflow.id);
+          workflow.isActive = !workflow.isActive;
+          toggleItemStatus(workflow);
+        } catch (err) {
+          console.error('상태 토글 실패', err);
+        }
+      };
       const deleteWorkflow = (workflow, event) => deleteItem(workflow, event);
 
       const getStatusText = workflow => {
@@ -343,6 +331,37 @@
       const handleTypeFilterChange = value => {
         typeFilter.value = value;
         resetPageOnFilterChange();
+      };
+
+      // 서버에서 워크플로우 목록 가져오기
+      const fetchWorkflows = async () => {
+        try {
+          loading.value = true;
+          // authStore.shopId는 searchWorkflows 내부에서 기본값으로 병합됨
+          const res = await searchWorkflows({ page: 0, size: 100 });
+          const items = res?.content ?? res ?? [];
+          workflows.value.splice(0, workflows.value.length, ...items);
+        } catch (err) {
+          console.error('워크플로우 목록 조회 실패', err);
+        } finally {
+          loading.value = false;
+        }
+      };
+
+      onMounted(() => {
+        fetchWorkflows();
+      });
+
+      // confirmDelete wrapper to call API
+      const confirmDeleteWrapper = async () => {
+        if (selectedWorkflow.value) {
+          try {
+            await apiDelete(selectedWorkflow.value.id, authStore.shopId, authStore.userId);
+            confirmDelete();
+          } catch (err) {
+            console.error('삭제 실패', err);
+          }
+        }
       };
 
       return {
@@ -380,7 +399,7 @@
         editWorkflow,
         toggleWorkflowStatus,
         deleteWorkflow,
-        confirmDelete,
+        confirmDelete: confirmDeleteWrapper,
         cancelDelete,
         handlePageChange,
         handleSearchChange,
@@ -405,5 +424,11 @@
 
   .page-header {
     align-items: flex-start;
+  }
+
+  .filter-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
   }
 </style>

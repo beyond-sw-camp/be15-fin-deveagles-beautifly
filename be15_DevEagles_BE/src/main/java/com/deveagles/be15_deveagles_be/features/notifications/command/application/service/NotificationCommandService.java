@@ -3,6 +3,7 @@ package com.deveagles.be15_deveagles_be.features.notifications.command.applicati
 import com.deveagles.be15_deveagles_be.features.notifications.command.application.dto.CreateNotificationRequest;
 import com.deveagles.be15_deveagles_be.features.notifications.command.domain.aggregate.Notification;
 import com.deveagles.be15_deveagles_be.features.notifications.command.domain.repository.NotificationRepository;
+import com.deveagles.be15_deveagles_be.features.notifications.query.application.dto.NotificationResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,7 +15,13 @@ public class NotificationCommandService {
 
   private final NotificationRepository notificationRepository;
 
-  public void create(CreateNotificationRequest request) {
+  /**
+   * 알림을 생성하고, 생성된 알림 정보를 DTO로 반환합니다.
+   *
+   * @param request 알림 생성에 필요한 정보
+   * @return 생성된 알림의 상세 정보가 담긴 DTO
+   */
+  public NotificationResponse create(CreateNotificationRequest request) {
     Notification notification =
         Notification.builder()
             .shopId(request.getShopId())
@@ -22,6 +29,15 @@ public class NotificationCommandService {
             .title(request.getTitle())
             .content(request.getContent())
             .build();
-    notificationRepository.save(notification);
+
+    Notification savedNotification = notificationRepository.save(notification);
+
+    return new NotificationResponse(
+        savedNotification.getNotificationId(),
+        savedNotification.getTitle(),
+        savedNotification.getContent(),
+        savedNotification.getType(),
+        savedNotification.isRead(),
+        savedNotification.getCreatedAt());
   }
 }

@@ -16,8 +16,8 @@ public class SessionPassQueryServiceImpl implements SessionPassQueryService {
   private final SessionPassRepository sessionPassRepository;
 
   @Override
-  public List<SessionPassResponse> getAllSessionPass() {
-    List<SessionPass> pass = sessionPassRepository.findAllByDeletedAtIsNull();
+  public List<SessionPassResponse> getAllSessionPass(Long shopId) {
+    List<SessionPass> pass = sessionPassRepository.findAllByShopId_ShopIdAndDeletedAtIsNull(shopId);
     return pass.stream().map(SessionPassResponse::from).collect(Collectors.toList());
   }
 }

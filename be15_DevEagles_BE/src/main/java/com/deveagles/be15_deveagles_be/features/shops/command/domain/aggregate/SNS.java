@@ -8,6 +8,7 @@ import lombok.*;
 @Table(name = "sns")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
+@Builder
 public class SNS {
 
   @Id
@@ -32,7 +33,9 @@ public class SNS {
     this.shopId = shopId;
   }
 
-  public void setAddress(String snsAddress) {
+  public void setSns(SNSType type, String snsAddress) {
+
+    this.type = type;
     this.snsAddress = snsAddress;
   }
 }

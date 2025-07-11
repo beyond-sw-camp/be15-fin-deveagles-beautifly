@@ -38,6 +38,7 @@ class SessionPassCommandServiceImplTest {
   void registSessionPass_success() {
     SessionPassRequest request = new SessionPassRequest();
     request.setShopId(1L);
+    request.setSecondaryItemId(100L);
     request.setSessionPassName("컷트 10회권");
     request.setSessionPassPrice(150000);
     request.setExpirationPeriod(90);
@@ -156,6 +157,7 @@ class SessionPassCommandServiceImplTest {
     Long id = 1L;
     SessionPassRequest request = new SessionPassRequest();
     request.setShopId(1L);
+    request.setSecondaryItemId(100L);
     request.setSessionPassName("여름 이벤트권");
     request.setSessionPassPrice(80000);
     request.setSession(10);
@@ -174,7 +176,7 @@ class SessionPassCommandServiceImplTest {
 
     verify(existing)
         .updateSessionPass(
-            "여름 이벤트권", 80000, 10, 90, ExpirationPeriodType.DAY, 2, 15, "10회 + 2회 보너스");
+            "여름 이벤트권", 100L, 80000, 10, 90, ExpirationPeriodType.DAY, 2, 15, "10회 + 2회 보너스");
     verify(sessionPassRepository).save(existing);
   }
 

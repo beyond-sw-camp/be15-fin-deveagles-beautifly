@@ -109,11 +109,13 @@
 </template>
 
 <script>
-  import { ref, computed } from 'vue';
+  import { ref, computed, onMounted } from 'vue';
   import { useRouter } from 'vue-router';
   import { useListManagement } from '@/composables/useListManagement';
   import { MESSAGES } from '@/constants/messages';
-  import { MOCK_CAMPAIGNS, MOCK_COUPONS } from '@/constants/mockData';
+  import campaignsAPI from '../api/campaigns.js';
+  import couponsAPI from '@/features/coupons/api/coupons.js';
+  import { useAuthStore } from '@/store/auth.js';
   import { formatPeriod, getStatusText, getStatusBadgeType } from '@/utils/formatters';
   import BaseButton from '@/components/common/BaseButton.vue';
   import BaseWindow from '@/components/common/BaseWindow.vue';
@@ -126,6 +128,7 @@
 
   import TrashIcon from '@/components/icons/TrashIcon.vue';
   import CampaignForm from '../components/CampaignForm.vue';
+  import { useToast } from '@/composables/useToast';
 
   export default {
     name: 'CampaignList',
@@ -144,6 +147,9 @@
     },
     setup() {
       const router = useRouter();
+      const authStore = useAuthStore();
+      const coupons = ref([]);
+      const couponCache = ref({});
 
       // List management composable
       const {
@@ -156,16 +162,40 @@
         totalPages,
         itemsPerPage,
         paginatedItems: paginatedCampaigns,
+        items,
         deleteItem,
         confirmDelete,
         cancelDelete,
         handlePageChange,
         handleItemsPerPageChange,
-        addItem,
       } = useListManagement({
         itemName: MESSAGES.CAMPAIGN.ITEM_NAME,
-        initialItems: MOCK_CAMPAIGNS,
+        initialItems: [],
         itemsPerPage: 10,
+      });
+
+      const { showToast } = useToast();
+
+      // Campaigns 데이터 로드
+      const loadCampaigns = async () => {
+        try {
+          loading.value = true;
+          const result = await campaignsAPI.getCampaigns({ shopId: 1, page: 0, size: 100 });
+          items.value = result.content.map(item => ({
+            ...item,
+            templateId: item.templateId ?? item.template_id,
+            customerGradeId: item.customerGradeId ?? item.customer_grade_id,
+            tagId: item.tagId ?? item.tag_id,
+          }));
+        } catch (e) {
+          console.error(e);
+        } finally {
+          loading.value = false;
+        }
+      };
+
+      onMounted(() => {
+        loadCampaigns();
       });
 
       // Local state
@@ -196,16 +226,49 @@
         showModal.value = false;
       };
 
-      const handleSaveCampaign = campaignData => {
-        addItem(campaignData);
-        closeModal();
+      const handleSaveCampaign = async campaignData => {
+        try {
+          await campaignsAPI.createCampaign(campaignData);
+          await loadCampaigns();
+          showToast('캠페인이 생성되었습니다.', 'success');
+        } catch (e) {
+          console.error(e);
+        } finally {
+          closeModal();
+        }
       };
 
       const deleteCampaign = (campaign, event) => deleteItem(campaign, event);
 
+      const confirmDeleteWrapper = async () => {
+        if (selectedCampaignForDelete.value) {
+          try {
+            await campaignsAPI.deleteCampaign(selectedCampaignForDelete.value.id);
+            await loadCampaigns();
+            showToast('캠페인이 삭제되었습니다.', 'success');
+          } catch (e) {
+            console.error(e);
+          }
+        }
+        confirmDelete();
+      };
+
       const getCouponName = couponId => {
-        const coupon = MOCK_COUPONS.find(c => c.id === couponId);
-        return coupon ? coupon.name : '쿠폰 정보 없음';
+        if (!couponId) return '쿠폰 정보 없음';
+        const coupon = (Array.isArray(coupons.value) ? coupons.value : []).find(
+          c => String(c.id) === String(couponId)
+        );
+        if (coupon) return coupon.name;
+        if (couponCache.value[couponId]) return couponCache.value[couponId];
+        couponsAPI
+          .getCouponById(couponId)
+          .then(c => {
+            couponCache.value[couponId] = c.name;
+          })
+          .catch(() => {
+            couponCache.value[couponId] = '쿠폰 정보 없음';
+          });
+        return '쿠폰 정보 없음';
       };
 
       // Row click handler
@@ -237,7 +300,7 @@
         closeModal,
         handleSaveCampaign,
         deleteCampaign,
-        confirmDelete,
+        confirmDelete: confirmDeleteWrapper,
         cancelDelete,
         handlePageChange,
         handleItemsPerPageChange,

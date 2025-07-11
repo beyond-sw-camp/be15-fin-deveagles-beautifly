@@ -12,6 +12,8 @@
   import { useRouter } from 'vue-router';
   import { useToast } from '@/composables/useToast';
   import WorkflowFormBase from '../components/WorkflowFormBase.vue';
+  import { createWorkflow } from '@/features/workflows/api/workflows.js';
+  import { useAuthStore } from '@/store/auth.js';
 
   export default {
     name: 'WorkflowCreate',
@@ -28,8 +30,9 @@
 
       const saveWorkflow = async formData => {
         try {
-          // TODO: API 호출로 워크플로우 저장
-          console.log('Saving workflow:', formData);
+          const authStore = useAuthStore();
+          const payload = { ...formData, shopId: authStore.shopId, staffId: authStore.userId };
+          await createWorkflow(payload);
 
           toast.show({
             type: 'success',

@@ -25,8 +25,8 @@ public class SalesTarget {
   @Column(name = "membership", nullable = false)
   private boolean membership = false;
 
-  @Column(name = "service", nullable = false)
-  private boolean service = false;
+  @Column(name = "items", nullable = false)
+  private boolean items = false;
 
   @Column(name = "sales", nullable = false)
   private int sales;
@@ -45,7 +45,7 @@ public class SalesTarget {
       Long staffId,
       Long shopId,
       boolean membership,
-      boolean service,
+      boolean items,
       int sales,
       Date targetYear,
       int targetMonth,
@@ -53,7 +53,7 @@ public class SalesTarget {
     this.staffId = staffId;
     this.shopId = shopId;
     this.membership = membership;
-    this.service = service;
+    this.items = items;
     this.sales = sales;
     this.targetYear = targetYear;
     this.targetMonth = targetMonth;
