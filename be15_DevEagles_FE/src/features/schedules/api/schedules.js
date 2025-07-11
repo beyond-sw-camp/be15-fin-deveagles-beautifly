@@ -124,5 +124,5 @@ export const fetchReservationDetail = async id => {
 };
 
 export const deleteReservation = async reservationId => {
-  await api.delete(`/schedules/${reservationId}`);
+  await api.delete(`/schedules/reservations/${reservationId}`);
 };

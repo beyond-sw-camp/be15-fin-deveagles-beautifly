@@ -143,7 +143,7 @@
                 <BaseButton type="primary" @click="toggleMenu">수정 / 삭제</BaseButton>
                 <ul v-if="showMenu" class="dropdown-menu">
                   <li @click="handleEdit">수정하기</li>
-                  <li @click="handleDelete">삭제하기</li>
+                  <li @click="openDeleteConfirm">삭제하기</li>
                 </ul>
               </div>
             </template>
@@ -152,6 +152,18 @@
       </div>
     </div>
   </div>
+  <BaseToast ref="toast" />
+
+  <BaseConfirm
+    v-model="showConfirmModal"
+    title="예약 삭제"
+    message="정말 이 예약을 삭제하시겠습니까?"
+    confirm-text="삭제"
+    cancel-text="취소"
+    confirm-type="error"
+    icon-type="error"
+    @confirm="handleDelete"
+  />
 </template>
 
 <script setup>
@@ -159,8 +171,11 @@
   import BaseButton from '@/components/common/BaseButton.vue';
   import BaseForm from '@/components/common/BaseForm.vue';
   import PrimeDatePicker from '@/components/common/PrimeDatePicker.vue';
-  import { fetchReservationDetail } from '@/features/schedules/api/schedules.js';
+  import { fetchReservationDetail, deleteReservation } from '@/features/schedules/api/schedules.js';
+  import BaseToast from '@/components/common/BaseToast.vue';
+  import BaseConfirm from '@/components/common/BaseConfirm.vue';
 
+  const toast = ref(null);
   // ✅ props 정의 및 변수로 선언
   const props = defineProps({
     modelValue: Boolean,
@@ -170,9 +185,13 @@
       default: false,
     },
   });
+  const openDeleteConfirm = () => {
+    showMenu.value = false;
+    showConfirmModal.value = true;
+  };
 
   // ✅ emits
-  const emit = defineEmits(['update:modelValue']);
+  const emit = defineEmits(['update:modelValue', 'cancelReservation']);
 
   // ✅ 내부 상태 변수들
   const reservation = ref({});
@@ -343,7 +362,20 @@
     isEditMode.value = true;
   };
 
-  const handleDelete = () => alert('삭제 요청');
+  const showConfirmModal = ref(false);
+  const handleDelete = async () => {
+    if (!props.id) return;
+
+    try {
+      await deleteReservation(props.id);
+      toast.value?.success('삭제가 완료되었습니다.');
+      close();
+    } catch (e) {
+      console.error('❌ 삭제 실패:', e);
+      toast.value?.error('삭제 중 오류가 발생했습니다.');
+    }
+  };
+
   const saveEdit = () => {
     alert('수정 요청: ' + JSON.stringify(edited.value, null, 2));
     isEditMode.value = false;
