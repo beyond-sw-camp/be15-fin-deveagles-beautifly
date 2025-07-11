@@ -24,6 +24,7 @@
         LEFT JOIN secondary_item si ON rd.secondary_item_id = si.secondary_item_id
         WHERE r.shop_id = #{req.shopId}
         AND r.deleted_at IS NULL
+        AND r.reservation_status_name != 'PAID'
         <if test="req.staffId != null">
             AND r.staff_id = #{req.staffId}
         </if>
@@ -47,6 +48,7 @@
         FROM reservation r
         LEFT JOIN customer c ON r.customer_id = c.customer_id
         WHERE r.deleted_at IS NULL
+            AND r.reservation_status_name != 'PAID'
         <if test="req.shopId != null">
             AND r.shop_id = #{req.shopId}
         </if>

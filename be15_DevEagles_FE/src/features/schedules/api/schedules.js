@@ -79,3 +79,50 @@ export const fetchScheduleDetail = async (type, id) => {
       throw new Error('Invalid schedule type');
   }
 };
+
+export const fetchReservationHistories = async ({ page = 0, size = 10 }) => {
+  const response = await api.get('/schedules/reservations/history', {
+    params: { page, size },
+  });
+  return response.data.data;
+};
+
+export const fetchReservationRequests = async ({ page = 0, size = 10 }) => {
+  const response = await api.get('/schedules/reservations/requests', {
+    params: { page, size },
+  });
+  return response.data.data;
+};
+
+export const fetchReservationList = async ({
+  staffId,
+  reservationStatusName,
+  customerKeyword,
+  from,
+  to,
+  page = 0,
+  size = 10,
+}) => {
+  const response = await api.get('/schedules/reservations', {
+    params: {
+      staffId,
+      reservationStatusName,
+      customerKeyword,
+      from,
+      to,
+      page,
+      size,
+    },
+  });
+
+  return response.data.data;
+};
+
+export const fetchReservationDetail = async id => {
+  const response = await api.get(`/schedules/reservations/${id}`);
+  return response.data.data;
+};
+
+export const deleteReservation = async reservationId => {
+  await api.delete(`/schedules/reservations/${reservationId}`);
+};
