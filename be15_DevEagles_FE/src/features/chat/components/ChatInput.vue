@@ -2,47 +2,49 @@
   import { ref } from 'vue';
 
   const emit = defineEmits(['send']);
-  const input = ref('');
+  const text = ref('');
 
-  function handleSend() {
-    if (input.value.trim()) {
-      emit('send', input.value.trim());
-      input.value = '';
-    }
+  function handleSubmit() {
+    if (!text.value.trim()) return;
+    emit('send', text.value.trim());
+    text.value = '';
   }
 </script>
 
 <template>
-  <div class="chat-input-wrapper">
+  <form class="chat-input" @submit.prevent="handleSubmit">
     <input
-      v-model="input"
-      class="chat-input"
+      v-model="text"
       type="text"
-      placeholder="메시지를 입력하세요"
-      @keydown.enter="handleSend"
+      placeholder="메시지를 입력하세요..."
+      class="chat-text-input"
+      autofocus
+      autocomplete="off"
     />
-    <button class="chat-send-btn" @click="handleSend">전송</button>
-  </div>
+    <button type="submit" class="chat-send-btn">전송</button>
+  </form>
 </template>
 
 <style scoped>
-  .chat-input-wrapper {
+  .chat-input {
     display: flex;
     gap: 0.5rem;
   }
-  .chat-input {
+  .chat-text-input {
     flex: 1;
-    padding: 0.5rem;
-    border: 1px solid #ccc;
-    border-radius: 6px;
+    padding: 0.5rem 0.75rem;
     font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    outline: none;
   }
   .chat-send-btn {
-    padding: 0.5rem 1rem;
     background-color: var(--color-primary-main);
     color: white;
+    padding: 0.5rem 1rem;
     border: none;
-    border-radius: 6px;
+    font-size: 14px;
+    border-radius: 8px;
     cursor: pointer;
   }
 </style>

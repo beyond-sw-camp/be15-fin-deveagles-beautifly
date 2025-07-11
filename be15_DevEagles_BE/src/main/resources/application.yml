@@ -152,6 +152,13 @@ spring:
     activate:
       on-profile: dev
 
+  # mongodb
+  data:
+    mongodb:
+      uri: ${MONGODB_URI}
+      auto-index-creation: true
+
+
   # 개발용 데이터소스 설정 (기본값으로 로컬 DB 사용)
   datasource:
     hikari:
