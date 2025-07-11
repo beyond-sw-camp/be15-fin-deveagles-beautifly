@@ -122,8 +122,8 @@
 
     <ReservationDetailModal
       v-if="isDetailOpen"
+      :id="selectedReservation"
       v-model="isDetailOpen"
-      :reservation="selectedReservation"
       @cancel-reservation="handleCancelFromDetail"
     />
     <Pagination
@@ -191,7 +191,7 @@
   const modalType = ref('confirm');
   const modalTitle = ref('');
   const toast = ref(null);
-  let selectedReservation = null;
+  const selectedReservation = ref(null);
   const reservations = ref([]);
   const totalItems = ref(0);
   const currentPage = ref(1);
@@ -317,7 +317,7 @@
     }
   );
   function openModal(item, type) {
-    selectedReservation = item;
+    selectedReservation.value = item.id;
     modalType.value = type;
     modalTitle.value = type === 'confirm' ? '예약 확정' : '예약 취소 사유 선택';
     isModalOpen.value = true;
@@ -329,8 +329,8 @@
   }
 
   function confirmCancel(reason) {
-    if (!selectedReservation) return;
-    selectedReservation.status = reason === '고객에 의한 예약 취소' ? 'CBC' : 'CBS';
+    if (!selectedReservation.value) return;
+    selectedReservation.value.status = reason === '고객에 의한 예약 취소' ? 'CBC' : 'CBS';
     toast.value.success('예약이 취소되었습니다.');
     isModalOpen.value = false;
   }
@@ -338,7 +338,8 @@
   const isDetailOpen = ref(false);
 
   function openDetail(item) {
-    selectedReservation = item;
+    selectedReservation.value = item.id;
+    console.log('🔍 선택된 예약 ID:', selectedReservation.value);
     isDetailOpen.value = true;
   }
 
@@ -349,8 +350,8 @@
   }
 
   function onConfirm() {
-    if (!selectedReservation) return;
-    selectedReservation.status = '예약 확정';
+    if (!selectedReservation.value) return;
+    selectedReservation.value.status = '예약 확정';
     toast.value.success('예약이 확정되었습니다.');
     isModalOpen.value = false;
   }

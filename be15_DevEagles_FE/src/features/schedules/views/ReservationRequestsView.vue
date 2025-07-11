@@ -86,8 +86,8 @@
 
     <ReservationDetailModal
       v-if="selectedReservation"
+      :id="selectedReservation"
       v-model="isDetailOpen"
-      :reservation="selectedReservation"
       @cancel-reservation="cancelFromDetail"
     />
 
@@ -230,7 +230,7 @@
   }
 
   function handleRowClick(item) {
-    selectedReservation.value = item;
+    selectedReservation.value = item.id;
     isDetailOpen.value = true;
   }
 

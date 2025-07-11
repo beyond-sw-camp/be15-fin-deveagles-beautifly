@@ -24,7 +24,7 @@
     />
 
     <!-- 상세 모달 -->
-    <ReservationDetailModal v-model="isModalOpen" :reservation="selectedReservation" />
+    <ReservationDetailModal :id="selectedReservation" v-model="isModalOpen" :readonly="true" />
   </div>
 </template>
 
@@ -59,6 +59,7 @@
       });
       historyData.value = res.content.map(item => ({
         ...item,
+        id: item.reservationId,
         customerName: item.customerName ?? '미등록 고객',
       }));
       totalItems.value = res.pagination.totalItems;
@@ -80,10 +81,10 @@
   onMounted(fetchData);
 
   const isModalOpen = ref(false);
-  const selectedReservation = ref({});
+  const selectedReservation = ref(null);
 
   function openDetailModal(item) {
-    selectedReservation.value = item;
+    selectedReservation.value = item.id;
     isModalOpen.value = true;
   }
 </script>
