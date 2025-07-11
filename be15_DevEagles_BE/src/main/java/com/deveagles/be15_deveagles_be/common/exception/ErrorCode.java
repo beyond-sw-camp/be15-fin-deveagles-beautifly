@@ -29,6 +29,8 @@ public enum ErrorCode implements ErrorCodeType {
   INVALID_AUTH_CODE("11005", "유효한 인증이 아닙니다.", HttpStatus.BAD_REQUEST),
   STAFF_NOT_FOUND("11006", "존재하지 않는 직원입니다.", HttpStatus.NOT_FOUND),
 
+  // 알림 관련 에러 (12000번대)
+  NOTIFICATION_NOT_FOUND("12001", "존재하지 않는 알림이거나 접근 권한이 없습니다.", HttpStatus.NOT_FOUND),
   // 매장 관련 에러 (20000번대)
   SHOP_NOT_FOUNT("20001", "매장이 존재하지 않습니다.", HttpStatus.NOT_FOUND),
   // 고객 관련 에러 (30000번대)
