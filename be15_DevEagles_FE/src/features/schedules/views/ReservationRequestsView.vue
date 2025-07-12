@@ -104,7 +104,10 @@
   import BaseToast from '@/components/common/BaseToast.vue';
   import BaseTable from '@/components/common/BaseTable.vue';
   import ReservationDetailModal from '@/features/schedules/components/ReservationDetailModal.vue';
-  import { fetchReservationRequests } from '@/features/schedules/api/schedules';
+  import {
+    fetchReservationRequests,
+    updateReservationStatuses,
+  } from '@/features/schedules/api/schedules';
 
   const columns = [
     { key: 'checkbox', title: '', width: '40px' },
@@ -185,17 +188,30 @@
     selectedIds.value = [];
   }
 
-  function confirmSelected() {
-    reservationList.value = reservationList.value.filter(
-      item => !selectedIds.value.includes(item.id)
-    );
-    toast.value.success(`확정 완료: ${selectedIds.value.join(', ')}`);
-    selectedIds.value = [];
+  async function confirmSelected() {
+    try {
+      await updateReservationStatuses(
+        selectedIds.value.map(id => ({
+          reservationId: id,
+          reservationStatusName: 'CONFIRMED',
+        }))
+      );
+      toast.value.success(`확정 완료: ${selectedIds.value.join(', ')}`);
+      selectedIds.value = [];
+      fetchReservations();
+    } catch (e) {
+      toast.value.error('선택 예약 확정 실패');
+    }
   }
 
-  function confirmSingle(id) {
-    reservationList.value = reservationList.value.filter(item => item.id !== id);
-    toast.value.success(`예약 ID ${id} 확정 완료`);
+  async function confirmSingle(id) {
+    try {
+      await updateReservationStatuses([{ reservationId: id, reservationStatusName: 'CONFIRMED' }]);
+      toast.value.success(`예약 확정 완료`);
+      fetchReservations();
+    } catch (e) {
+      toast.value.error('예약 확정 실패');
+    }
   }
 
   function openConfirm(message, callback) {
@@ -223,10 +239,19 @@
     }
   }
 
-  function confirmCancel(reason) {
-    reservationList.value = reservationList.value.filter(item => item.id !== cancelTarget.value.id);
-    toast.value.success(`${reason}로 예약이 취소되었습니다.`);
-    isCancelModalOpen.value = false;
+  async function confirmCancel(reason) {
+    const status = reason === '고객에 의한 예약 취소' ? 'CBC' : 'CBS';
+    try {
+      await updateReservationStatuses([
+        { reservationId: cancelTarget.value.id, reservationStatusName: status },
+      ]);
+      toast.value.success(`${reason}로 예약이 취소되었습니다.`);
+      fetchReservations();
+    } catch (e) {
+      toast.value.error('예약 취소 실패');
+    } finally {
+      isCancelModalOpen.value = false;
+    }
   }
 
   function handleRowClick(item) {
@@ -234,10 +259,18 @@
     isDetailOpen.value = true;
   }
 
-  function cancelFromDetail(reservation) {
-    reservationList.value = reservationList.value.filter(item => item.id !== reservation.id);
-    toast.value.success(`예약 ID ${reservation.id} 취소 완료`);
-    isDetailOpen.value = false;
+  async function cancelFromDetail(reservation) {
+    try {
+      await updateReservationStatuses([
+        { reservationId: reservation.id, reservationStatusName: 'CBC' },
+      ]);
+      toast.value.success(`예약 취소 완료`);
+      fetchReservations();
+    } catch (e) {
+      toast.value.error('예약 취소 실패');
+    } finally {
+      isDetailOpen.value = false;
+    }
   }
 </script>
 

@@ -126,3 +126,7 @@ export const fetchReservationDetail = async id => {
 export const deleteReservation = async reservationId => {
   await api.delete(`/schedules/reservations/${reservationId}`);
 };
+
+export const updateReservationStatuses = async reservationStatusList => {
+  await api.put('/schedules/reservations/status', reservationStatusList);
+};

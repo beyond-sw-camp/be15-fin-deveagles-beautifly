@@ -9,6 +9,7 @@ import com.deveagles.be15_deveagles_be.features.schedules.command.application.dt
 import com.deveagles.be15_deveagles_be.features.schedules.command.application.service.ReservationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -55,13 +56,11 @@ public class ReservationCommandController {
   }
 
   @Operation(summary = "예약 상태 변경", description = "예약 상태를 변경합니다.")
-  @PutMapping("/{reservationId}/status")
-  public ApiResponse<Void> changeReservationStatus(
+  @PutMapping("/status")
+  public ApiResponse<Void> changeReservationStatuses(
       @AuthenticationPrincipal CustomUser user,
-      @PathVariable Long reservationId,
-      @RequestBody UpdateReservationStatusRequest request) {
-    reservationService.changeReservationStatus(
-        user.getShopId(), reservationId, request.reservationStatusName());
+      @RequestBody List<UpdateReservationStatusRequest> requestList) {
+    reservationService.changeReservationStatuses(user.getShopId(), requestList);
     return ApiResponse.success(null);
   }
 }

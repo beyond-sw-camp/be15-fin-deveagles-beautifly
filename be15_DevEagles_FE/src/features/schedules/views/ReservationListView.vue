@@ -4,6 +4,7 @@
       <h1 class="font-screen-title">예약 목록</h1>
     </div>
 
+    <!-- 필터 바 -->
     <div class="filter-bar">
       <div class="filter-fields">
         <BaseForm
@@ -46,6 +47,7 @@
       <BaseButton type="primary" @click="openReservationModal">예약 등록</BaseButton>
     </div>
 
+    <!-- 예약 테이블 -->
     <div class="base-table-wrapper">
       <BaseTable
         :columns="columns"
@@ -94,13 +96,12 @@
               @click="
                 e => {
                   e.stopPropagation();
-                  confirmWithoutModal(item);
+                  openModal(item, 'confirm');
                 }
               "
             >
               예약 확정
             </BaseButton>
-
             <BaseButton
               v-if="['PENDING', 'CONFIRMED'].includes(item.status)"
               outline
@@ -120,12 +121,15 @@
       </BaseTable>
     </div>
 
+    <!-- 상세 모달 -->
     <ReservationDetailModal
       v-if="isDetailOpen"
       :id="selectedReservation"
       v-model="isDetailOpen"
       @cancel-reservation="handleCancelFromDetail"
     />
+
+    <!-- 페이지네이션 -->
     <Pagination
       :current-page="currentPage"
       :total-pages="totalPages"
@@ -134,27 +138,31 @@
       @page-change="page => (currentPage = page)"
     />
 
-    <BaseModal v-model="isModalOpen" :title="modalTitle">
-      <template v-if="modalType === 'confirm'">
-        <p style="text-align: center; font-size: 16px">해당 예약을 확정하시겠습니까?</p>
-      </template>
-      <template v-else>
-        <p style="text-align: center; font-size: 16px">예약을 어떤 사유로 취소하시겠습니까?</p>
-      </template>
+    <!-- 예약 확정 확인 모달 -->
+    <BaseConfirm
+      v-if="modalType === 'confirm'"
+      v-model="isModalOpen"
+      title="예약 확정"
+      message="해당 예약을 확정하시겠습니까?"
+      confirm-text="예"
+      cancel-text="아니오"
+      confirm-type="primary"
+      @confirm="onConfirm"
+      @cancel="onCancel"
+    />
+
+    <!-- 예약 취소 사유 선택 모달 -->
+    <BaseModal v-else v-model="isModalOpen" :title="modalTitle">
+      <p style="text-align: center; font-size: 16px">예약을 어떤 사유로 취소하시겠습니까?</p>
 
       <template #footer>
         <div style="display: flex; gap: 12px; justify-content: flex-end; flex-wrap: wrap">
-          <BaseButton v-if="modalType === 'confirm'" type="primary" @click="onConfirm"
-            >예
+          <BaseButton type="error" @click="confirmCancel('가게에 의한 예약 취소')">
+            가게에 의한 예약 취소
           </BaseButton>
-          <template v-else>
-            <BaseButton type="error" @click="confirmCancel('가게에 의한 예약 취소')">
-              가게에 의한 예약 취소
-            </BaseButton>
-            <BaseButton type="error" @click="confirmCancel('고객에 의한 예약 취소')">
-              고객에 의한 예약 취소
-            </BaseButton>
-          </template>
+          <BaseButton type="error" @click="confirmCancel('고객에 의한 예약 취소')">
+            고객에 의한 예약 취소
+          </BaseButton>
           <BaseButton outline @click="onCancel">닫기</BaseButton>
         </div>
       </template>
@@ -181,8 +189,16 @@
   import ScheduleRegistModal from '@/features/schedules/components/ScheduleRegistModal.vue';
   import ReservationDetailModal from '@/features/schedules/components/ReservationDetailModal.vue';
   import BaseForm from '@/components/common/BaseForm.vue';
-  import { fetchReservationList, getStaffList } from '@/features/schedules/api/schedules';
+  import BaseConfirm from '@/components/common/BaseConfirm.vue';
 
+  import {
+    fetchReservationList,
+    getStaffList,
+    updateReservationStatuses,
+  } from '@/features/schedules/api/schedules';
+
+  const isConfirmDialogOpen = ref(false);
+  const confirmTarget = ref(null);
   const searchText = ref('');
   const selectedDate = ref('thisWeek');
   const selectedStatus = ref('');
@@ -208,6 +224,54 @@
     { key: 'status', title: '예약 상태', width: '140px' },
     { key: 'actions', title: '예약 상태 변경', width: '200px' },
   ];
+
+  function requestConfirm(item) {
+    confirmTarget.value = item;
+    isConfirmDialogOpen.value = true;
+  }
+
+  async function confirmReservation() {
+    const target = reservations.value.find(r => r.id === selectedReservation.value);
+    if (!target) return;
+
+    try {
+      await updateReservationStatuses([
+        {
+          reservationId: target.id,
+          reservationStatusName: 'CONFIRMED',
+        },
+      ]);
+      target.status = 'CONFIRMED';
+      toast.value.success('예약이 확정되었습니다.');
+    } catch (e) {
+      toast.value.error('예약 확정에 실패했습니다.');
+    } finally {
+      isModalOpen.value = false;
+      selectedReservation.value = null;
+    }
+  }
+
+  async function confirmCancel(reason) {
+    const status = reason === '고객에 의한 예약 취소' ? 'CBC' : 'CBS';
+    const target = reservations.value.find(r => r.id === selectedReservation.value);
+    if (!target) return;
+
+    try {
+      await updateReservationStatuses([
+        {
+          reservationId: target.id,
+          reservationStatusName: status,
+        },
+      ]);
+      target.status = status;
+      toast.value.success('예약이 취소되었습니다.');
+    } catch (e) {
+      toast.value.error('예약 취소에 실패했습니다.');
+    } finally {
+      isModalOpen.value = false;
+      selectedReservation.value = null;
+    }
+  }
 
   function getDateRangeByType(type) {
     const now = new Date();
@@ -323,18 +387,6 @@
     isModalOpen.value = true;
   }
 
-  function confirmWithoutModal(item) {
-    item.status = 'CONFIRMED';
-    toast.value.success('예약이 확정되었습니다.');
-  }
-
-  function confirmCancel(reason) {
-    if (!selectedReservation.value) return;
-    selectedReservation.value.status = reason === '고객에 의한 예약 취소' ? 'CBC' : 'CBS';
-    toast.value.success('예약이 취소되었습니다.');
-    isModalOpen.value = false;
-  }
-
   const isDetailOpen = ref(false);
 
   function openDetail(item) {
@@ -350,14 +402,14 @@
   }
 
   function onConfirm() {
-    if (!selectedReservation.value) return;
-    selectedReservation.value.status = '예약 확정';
-    toast.value.success('예약이 확정되었습니다.');
-    isModalOpen.value = false;
+    if (modalType.value === 'confirm') {
+      confirmReservation();
+    }
   }
 
   function onCancel() {
     isModalOpen.value = false;
+    selectedReservation.value = null;
   }
 
   function openReservationModal() {
