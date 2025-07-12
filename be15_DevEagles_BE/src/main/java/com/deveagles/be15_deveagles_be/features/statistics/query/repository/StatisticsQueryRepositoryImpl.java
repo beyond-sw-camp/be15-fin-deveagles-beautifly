@@ -32,10 +32,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
 
 @Repository
 @RequiredArgsConstructor
+@Slf4j
 public class StatisticsQueryRepositoryImpl implements StatisticsQueryRepository {
 
   private final JPAQueryFactory queryFactory;
@@ -1042,9 +1044,8 @@ public class StatisticsQueryRepositoryImpl implements StatisticsQueryRepository 
   private List<ReservationStatisticsResponse> getDayTimeSlotReservationStatistics(
       Long shopId, LocalDate startDate, LocalDate endDate) {
 
-    System.out.println("🔍 [DEBUG] getDayTimeSlotReservationStatistics 시작");
-    System.out.println(
-        "🔍 [DEBUG] shopId: " + shopId + ", startDate: " + startDate + ", endDate: " + endDate);
+    log.info(
+        "요일별 시간대 예약 통계 조회 시작 - shopId: {}, startDate: {}, endDate: {}", shopId, startDate, endDate);
 
     // 전체 예약 데이터 개수 확인
     Long totalReservationCount =
@@ -1064,8 +1065,7 @@ public class StatisticsQueryRepositoryImpl implements StatisticsQueryRepository 
                             ReservationStatusName.CBC, ReservationStatusName.CBS)))
             .fetchOne();
 
-    System.out.println(
-        "🔍 [DEBUG] 기간 내 총 예약 건수: " + (totalReservationCount != null ? totalReservationCount : 0));
+    log.debug("기간 내 총 예약 건수: {}", totalReservationCount != null ? totalReservationCount : 0);
 
     // 예약 설정 확인
     Long settingCount =
@@ -1076,7 +1076,7 @@ public class StatisticsQueryRepositoryImpl implements StatisticsQueryRepository 
                 reservationSetting.id.shopId.eq(shopId).and(reservationSetting.deletedAt.isNull()))
             .fetchOne();
 
-    System.out.println("🔍 [DEBUG] 예약 설정 개수: " + (settingCount != null ? settingCount : 0));
+    log.debug("예약 설정 개수: {}", settingCount != null ? settingCount : 0);
 
     List<ReservationStatisticsResponse> result = new ArrayList<>();
 
@@ -1084,7 +1084,7 @@ public class StatisticsQueryRepositoryImpl implements StatisticsQueryRepository 
     for (int dayOfWeek = 1; dayOfWeek <= 7; dayOfWeek++) { // 1=Monday, 7=Sunday
 
       // 해당 요일의 운영 시간 조회
-      System.out.println("🔍 [DEBUG] 요일 " + dayOfWeek + " 운영시간 조회 중...");
+      log.debug("요일 {} 운영시간 조회 중...", dayOfWeek);
       var setting =
           queryFactory
               .select(
@@ -1103,13 +1103,11 @@ public class StatisticsQueryRepositoryImpl implements StatisticsQueryRepository 
               .fetchOne();
 
       if (setting != null) {
-        System.out.println(
-            "🔍 [DEBUG] 요일 "
-                + dayOfWeek
-                + " 운영시간 찾음: "
-                + setting.get(0, LocalTime.class)
-                + " ~ "
-                + setting.get(1, LocalTime.class));
+        log.debug(
+            "요일 {} 운영시간 찾음: {} ~ {}",
+            dayOfWeek,
+            setting.get(0, LocalTime.class),
+            setting.get(1, LocalTime.class));
         LocalTime startTime = setting.get(0, LocalTime.class);
         LocalTime endTime = setting.get(1, LocalTime.class);
         LocalTime lunchStart = setting.get(2, LocalTime.class);
@@ -1128,7 +1126,7 @@ public class StatisticsQueryRepositoryImpl implements StatisticsQueryRepository 
             currentDate = currentDate.plusDays(1);
           }
 
-          // 해당 요일과 시간대의 실제 예약 수 조회
+          // 해당 요일과 시간대의 실제 예약 수 조회 (요일 조건 추가)
           Long reservedCount =
               queryFactory
                   .select(reservation.count())
@@ -1141,14 +1139,13 @@ public class StatisticsQueryRepositoryImpl implements StatisticsQueryRepository 
                               reservation.reservationStartAt.between(
                                   startDate.atStartOfDay(), endDate.atTime(LocalTime.MAX)))
                           .and(reservation.reservationStartAt.hour().eq(hour))
-                          .and(reservation.reservationStartAt.dayOfWeek().eq(dayOfWeek))
+                          .and(reservation.reservationStartAt.dayOfWeek().eq(dayOfWeek)) // 요일 조건 추가
                           .and(reservation.deletedAt.isNull())
                           .and(
                               reservation.reservationStatusName.notIn(
                                   ReservationStatusName.CBC, ReservationStatusName.CBS)))
                   .fetchOne();
 
-          // 요일 조건 없이 해당 시간대 전체 예약 수도 조회 (비교용)
           if (hour == 10 && dayOfWeek == 1) {
             Long allHourReservations =
                 queryFactory
@@ -1167,11 +1164,12 @@ public class StatisticsQueryRepositoryImpl implements StatisticsQueryRepository 
                                 reservation.reservationStatusName.notIn(
                                     ReservationStatusName.CBC, ReservationStatusName.CBS)))
                     .fetchOne();
-            System.out.println(
-                "🔍 [DEBUG] "
-                    + hour
-                    + "시 전체 예약 수 (요일 조건 없음): "
-                    + (allHourReservations != null ? allHourReservations : 0));
+            log.debug(
+                "{}시 전체 예약 수 (요일 조건 없음): {}",
+                hour,
+                allHourReservations != null ? allHourReservations : 0);
+            log.debug(
+                "{}시 월요일 예약 수 (요일 조건 있음): {}", hour, reservedCount != null ? reservedCount : 0);
           }
 
           int reservedSlots = reservedCount != null ? reservedCount.intValue() : 0;
@@ -1187,15 +1185,12 @@ public class StatisticsQueryRepositoryImpl implements StatisticsQueryRepository 
           int totalSlots = isOperatingHour ? totalDays * 2 : 0; // 시간당 2개 슬롯 (30분 단위)
 
           if (hour == 10 && dayOfWeek == 1) { // 월요일 10시만 샘플 로깅
-            System.out.println(
-                "🔍 [DEBUG] 샘플 조회 (월요일 10시): totalDays="
-                    + totalDays
-                    + ", reservedSlots="
-                    + reservedSlots
-                    + ", totalSlots="
-                    + totalSlots
-                    + ", isOperatingHour="
-                    + isOperatingHour);
+            log.debug(
+                "샘플 조회 (월요일 10시): totalDays={}, reservedSlots={}, totalSlots={}, isOperatingHour={}",
+                totalDays,
+                reservedSlots,
+                totalSlots,
+                isOperatingHour);
           }
           int availableSlots = totalSlots - reservedSlots;
 
@@ -1210,7 +1205,7 @@ public class StatisticsQueryRepositoryImpl implements StatisticsQueryRepository 
 
           result.add(
               new ReservationStatisticsResponse(
-                  startDate, // 기준 날짜
+                  null, // 날짜는 null로 설정 (요일별 합산 데이터이므로)
                   LocalTime.of(hour, 0), // 시간대
                   totalSlots,
                   reservedSlots,
@@ -1223,47 +1218,15 @@ public class StatisticsQueryRepositoryImpl implements StatisticsQueryRepository 
                   dayOfWeekStr // dayOfWeek
                   ));
         }
+      } else {
+        log.debug("요일 {} 운영시간 설정 없음", dayOfWeek);
       }
     }
 
-    System.out.println(
-        "🔍 [DEBUG] getDayTimeSlotReservationStatistics 결과: " + result.size() + "개 항목");
+    log.info("요일별 시간대 예약 통계 조회 완료 - 결과: {}개 항목", result.size());
     if (!result.isEmpty()) {
-      System.out.println(
-          "🔍 [DEBUG] 첫 번째 항목: "
-              + result.get(0).getDisplayKey()
-              + " = "
-              + result.get(0).getReservationRate()
-              + "%");
-    }
-
-    // 임시 테스트 데이터 추가 (실제 데이터가 없을 때)
-    if (result.isEmpty() || totalReservationCount == null || totalReservationCount == 0) {
-      System.out.println("🔍 [DEBUG] 실제 데이터가 없어서 테스트 데이터를 생성합니다.");
-      result.clear();
-
-      // 테스트용 샘플 데이터 생성
-      String[] dayNames = {"MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"};
-      for (int day = 0; day < 7; day++) {
-        for (int hour = 9; hour <= 20; hour++) {
-          // 랜덤한 예약율 생성 (테스트용)
-          double rate = Math.random() * 100;
-          result.add(
-              new ReservationStatisticsResponse(
-                  startDate,
-                  LocalTime.of(hour, 0),
-                  100, // totalSlots
-                  (int) rate, // reservedSlots
-                  (int) (100 - rate), // availableSlots
-                  BigDecimal.valueOf(rate).setScale(2, RoundingMode.HALF_UP),
-                  "DAY_TIME_SLOT",
-                  dayNames[day] + "_" + hour + "시",
-                  null,
-                  null,
-                  dayNames[day]));
-        }
-      }
-      System.out.println("🔍 [DEBUG] 테스트 데이터 " + result.size() + "개 생성 완료");
+      log.debug(
+          "첫 번째 항목: {} = {}%", result.get(0).getDisplayKey(), result.get(0).getReservationRate());
     }
 
     return result;
