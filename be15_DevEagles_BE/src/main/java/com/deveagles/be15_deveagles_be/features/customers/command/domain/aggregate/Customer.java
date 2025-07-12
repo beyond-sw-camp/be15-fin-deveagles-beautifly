@@ -175,5 +175,10 @@ public class Customer {
 
   public void updateRecentVisitDate(LocalDate visitDate) {
     this.recentVisitDate = visitDate;
+    this.modifiedAt = LocalDateTime.now();
+  }
+
+  public void subtractRevenue(int amount) {
+    this.totalRevenue -= amount;
   }
 }

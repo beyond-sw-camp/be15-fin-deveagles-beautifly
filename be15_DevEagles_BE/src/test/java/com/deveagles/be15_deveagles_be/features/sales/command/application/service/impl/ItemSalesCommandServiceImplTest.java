@@ -11,7 +11,11 @@ import com.deveagles.be15_deveagles_be.features.membership.command.domain.reposi
 import com.deveagles.be15_deveagles_be.features.membership.command.domain.repository.CustomerSessionPassRepository;
 import com.deveagles.be15_deveagles_be.features.sales.command.application.dto.request.ItemSalesRequest;
 import com.deveagles.be15_deveagles_be.features.sales.command.application.dto.request.PaymentsInfo;
+import com.deveagles.be15_deveagles_be.features.sales.command.domain.aggregate.ItemSales;
+import com.deveagles.be15_deveagles_be.features.sales.command.domain.aggregate.Payments;
 import com.deveagles.be15_deveagles_be.features.sales.command.domain.aggregate.PaymentsMethod;
+import com.deveagles.be15_deveagles_be.features.sales.command.domain.aggregate.Sales;
+import com.deveagles.be15_deveagles_be.features.sales.command.domain.repository.CustomerMembershipHistoryRepository;
 import com.deveagles.be15_deveagles_be.features.sales.command.domain.repository.ItemSalesRepository;
 import com.deveagles.be15_deveagles_be.features.sales.command.domain.repository.PaymentsRepository;
 import com.deveagles.be15_deveagles_be.features.sales.command.domain.repository.SalesRepository;
@@ -31,6 +35,7 @@ class ItemSalesCommandServiceImplTest {
   private CustomerRepository customerRepository;
   private ItemSalesRepository itemSalesRepository;
   private ItemSalesCommandServiceImpl service;
+  private CustomerMembershipHistoryRepository customerMembershipHistoryRepository;
 
   @BeforeEach
   void setUp() {
@@ -40,6 +45,7 @@ class ItemSalesCommandServiceImplTest {
     paymentsRepository = mock(PaymentsRepository.class);
     customerRepository = mock(CustomerRepository.class);
     itemSalesRepository = mock(ItemSalesRepository.class);
+    customerMembershipHistoryRepository = mock(CustomerMembershipHistoryRepository.class);
 
     service =
         new ItemSalesCommandServiceImpl(
@@ -48,7 +54,8 @@ class ItemSalesCommandServiceImplTest {
             salesRepository,
             paymentsRepository,
             customerRepository,
-            itemSalesRepository);
+            itemSalesRepository,
+            customerMembershipHistoryRepository);
   }
 
   @Test
@@ -114,5 +121,71 @@ class ItemSalesCommandServiceImplTest {
   private void assertThrowsWithCode(Runnable executable, ErrorCode code) {
     BusinessException e = assertThrows(BusinessException.class, executable::run);
     assertEquals(code, e.getErrorCode());
+  }
+
+  @Test
+  @DisplayName("성공: 상품 매출 수정")
+  void successUpdateItemSales() {
+    // given
+    long salesId = 1L;
+    ItemSalesRequest req = validRequest();
+    Customer customer = mock(Customer.class);
+    Sales sales = mock(Sales.class);
+    Payments oldPayment = mock(Payments.class);
+    ItemSales itemSales = mock(ItemSales.class);
+
+    when(salesRepository.findById(salesId)).thenReturn(Optional.of(sales));
+    when(paymentsRepository.findAllBySalesId(salesId)).thenReturn(List.of(oldPayment));
+    when(customerMembershipHistoryRepository.findBySalesIdAndPaymentsId(anyLong(), anyLong()))
+        .thenReturn(Optional.empty()); // history 없이 진행
+    when(itemSalesRepository.findBySalesId(salesId)).thenReturn(Optional.of(itemSales));
+    when(customerRepository.findById(req.getCustomerId())).thenReturn(Optional.of(customer));
+
+    // when
+    service.updateItemSales(salesId, req);
+
+    // then
+    verify(sales)
+        .updateSales(
+            req.getCustomerId(),
+            req.getStaffId(),
+            req.getReservationId(),
+            req.getRetailPrice(),
+            req.getDiscountRate(),
+            req.getDiscountAmount(),
+            req.getTotalAmount(),
+            req.getSalesMemo(),
+            req.getSalesDate());
+    verify(paymentsRepository).save(any());
+    verify(itemSales)
+        .updateItemSales(
+            req.getSecondaryItemId(), req.getQuantity(), req.getDiscountRate(), req.getCouponId());
+    verify(customer).addRevenue(anyInt());
+  }
+
+  @Test
+  @DisplayName("성공: 환불")
+  void successRefundItemSales() {
+    // given
+    long salesId = 1L;
+    Sales sales = mock(Sales.class);
+    Customer customer = mock(Customer.class);
+    Payments oldPayment = mock(Payments.class);
+
+    when(sales.getIsRefunded()).thenReturn(false);
+    when(sales.getCustomerId()).thenReturn(2L);
+    when(sales.getTotalAmount()).thenReturn(9000);
+    when(salesRepository.findById(salesId)).thenReturn(Optional.of(sales));
+    when(paymentsRepository.findAllBySalesId(salesId)).thenReturn(List.of(oldPayment));
+    when(customerMembershipHistoryRepository.findBySalesIdAndPaymentsId(anyLong(), anyLong()))
+        .thenReturn(Optional.empty());
+    when(customerRepository.findById(2L)).thenReturn(Optional.of(customer));
+
+    // when
+    service.refundItemSales(salesId);
+
+    // then
+    verify(sales).setRefunded(true);
+    verify(customer).subtractRevenue(9000);
   }
 }

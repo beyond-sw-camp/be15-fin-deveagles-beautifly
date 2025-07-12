@@ -93,4 +93,25 @@ public class Sales {
   public void delete() {
     this.deletedAt = LocalDateTime.now();
   }
+
+  public void updateSales(
+      Long customerId,
+      Long staffId,
+      Long reservationId,
+      Integer retailPrice,
+      Integer discountRate,
+      Integer discountAmount,
+      Integer totalAmount,
+      String memo,
+      LocalDateTime salesDate) {
+    this.customerId = customerId;
+    this.staffId = staffId;
+    this.reservationId = reservationId;
+    this.retailPrice = retailPrice;
+    this.discountRate = discountRate;
+    this.discountAmount = discountAmount;
+    this.totalAmount = totalAmount;
+    this.salesMemo = memo;
+    this.salesDate = salesDate;
+  }
 }

@@ -44,5 +44,11 @@ public class CustomerPrepaidPass {
 
   public void useAmount(int amount) {
     this.remainingAmount -= amount;
+    this.modifiedAt = LocalDateTime.now();
+  }
+
+  public void restoreAmount(int amount) {
+    this.remainingAmount += amount;
+    this.modifiedAt = LocalDateTime.now();
   }
 }
