@@ -172,15 +172,7 @@
 </template>
 
 <script setup>
-  import {
-    computed,
-    defineProps,
-    defineEmits,
-    onMounted,
-    onBeforeUnmount,
-    ref,
-    watchEffect,
-  } from 'vue';
+  import { computed, defineProps, defineEmits, onMounted, onBeforeUnmount, ref, watch } from 'vue';
   import BaseButton from '@/components/common/BaseButton.vue';
   import BaseForm from '@/components/common/BaseForm.vue';
   import PrimeDatePicker from '@/components/common/PrimeDatePicker.vue';
@@ -286,90 +278,95 @@
     }
   };
 
-  watchEffect(async () => {
-    if (!props.id || !props.type) return;
-    const { data } = await fetchScheduleDetail(props.type, props.id);
-    const d = data.data;
+  watch(
+    () => [props.id, props.type, props.modelValue],
+    async ([id, type, visible]) => {
+      if (!id || !type || !visible) return;
 
-    const convert = (startStr, endStr, showDate = false) => {
-      const parseTime = str => {
-        if (/^\d{2}:\d{2}:\d{2}$/.test(str)) {
-          const today = new Date();
-          const yyyy = today.getFullYear();
-          const mm = String(today.getMonth() + 1).padStart(2, '0');
-          const dd = String(today.getDate()).padStart(2, '0');
-          return new Date(`${yyyy}-${mm}-${dd}T${str}`);
-        }
-        return new Date(str);
-      };
+      const { data } = await fetchScheduleDetail(type, id);
+      const d = data.data;
 
-      const startDate = parseTime(startStr);
-      const endDate = parseTime(endStr);
-
-      if (isNaN(startDate) || isNaN(endDate)) {
-        return {
-          timeRange: '시간 정보 없음',
-          duration: '',
+      const convert = (startStr, endStr, showDate = false) => {
+        const parseTime = str => {
+          if (/^\d{2}:\d{2}:\d{2}$/.test(str)) {
+            const today = new Date();
+            const yyyy = today.getFullYear();
+            const mm = String(today.getMonth() + 1).padStart(2, '0');
+            const dd = String(today.getDate()).padStart(2, '0');
+            return new Date(`${yyyy}-${mm}-${dd}T${str}`);
+          }
+          return new Date(str);
         };
-      }
 
-      const startTime = startDate.toTimeString().slice(0, 5);
-      const endTime = endDate.toTimeString().slice(0, 5);
+        const startDate = parseTime(startStr);
+        const endDate = parseTime(endStr);
 
-      const toYMD = date =>
-        `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+        if (isNaN(startDate) || isNaN(endDate)) {
+          return {
+            timeRange: '시간 정보 없음',
+            duration: '',
+          };
+        }
 
-      const timeRange = showDate
-        ? toYMD(startDate) === toYMD(endDate)
-          ? `${toYMD(startDate)} ${startTime} - ${endTime}`
-          : `${toYMD(startDate)} ${startTime} ~ ${toYMD(endDate)} ${endTime}`
-        : `${startTime} - ${endTime}`;
+        const startTime = startDate.toTimeString().slice(0, 5);
+        const endTime = endDate.toTimeString().slice(0, 5);
 
-      const diffMs = endDate - startDate;
-      const minutes = Math.floor(diffMs / 60000);
-      const hours = Math.floor(minutes / 60);
-      const mins = minutes % 60;
+        const toYMD = date =>
+          `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 
-      const duration = `${hours ? `${hours}시간` : ''} ${mins ? `${mins}분` : ''}`.trim();
+        const timeRange = showDate
+          ? toYMD(startDate) === toYMD(endDate)
+            ? `${toYMD(startDate)} ${startTime} - ${endTime}`
+            : `${toYMD(startDate)} ${startTime} ~ ${toYMD(endDate)} ${endTime}`
+          : `${startTime} - ${endTime}`;
 
-      return {
-        timeRange,
-        duration,
+        const diffMs = endDate - startDate;
+        const minutes = Math.floor(diffMs / 60000);
+        const hours = Math.floor(minutes / 60);
+        const mins = minutes % 60;
+
+        const duration = `${hours ? `${hours}시간` : ''} ${mins ? `${mins}분` : ''}`.trim();
+
+        return {
+          timeRange,
+          duration,
+        };
       };
-    };
 
-    let result = {
-      id: props.id,
-      type: props.type,
-      title: d.title ?? d.leaveTitle,
-      staffName: d.staffName,
-      staffId: d.staffId,
-      memo: d.memo,
-      allDay: false,
-      repeat: 'none',
-    };
+      let result = {
+        id,
+        type,
+        title: d.title ?? d.leaveTitle,
+        staffName: d.staffName,
+        staffId: d.staffId,
+        memo: d.memo,
+        allDay: false,
+        repeat: 'none',
+      };
 
-    if (props.type === 'regular_plan') {
-      result.type = 'regular_plan';
-      if (d.weeklyPlan) {
-        result.repeat = 'weekly';
-        result.date = d.weeklyPlan;
-      } else if (d.monthlyPlan) {
-        result.repeat = 'monthly';
-        result.date = String(d.monthlyPlan);
+      if (type === 'regular_plan') {
+        result.type = 'regular_plan';
+        if (d.weeklyPlan) {
+          result.repeat = 'weekly';
+          result.date = d.weeklyPlan;
+        } else if (d.monthlyPlan) {
+          result.repeat = 'monthly';
+          result.date = String(d.monthlyPlan);
+        }
+        const { timeRange, duration } = convert(d.startAt, d.endAt, false);
+        result.timeRange = timeRange;
+        result.duration = duration;
+      } else {
+        result.type = 'plan';
+        const { timeRange, duration } = convert(d.startAt, d.endAt, true);
+        result.timeRange = timeRange;
+        result.duration = duration;
       }
-      const { timeRange, duration } = convert(d.startAt, d.endAt, false);
-      result.timeRange = timeRange;
-      result.duration = duration;
-    } else {
-      result.type = 'plan';
-      const { timeRange, duration } = convert(d.startAt, d.endAt, true);
-      result.timeRange = timeRange;
-      result.duration = duration;
-    }
 
-    edited.value = result;
-  });
+      edited.value = result;
+    },
+    { immediate: true }
+  );
 
   const handleEsc = e => e.key === 'Escape' && close();
   onMounted(() => window.addEventListener('keydown', handleEsc));

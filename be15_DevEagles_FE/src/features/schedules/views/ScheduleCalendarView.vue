@@ -44,18 +44,24 @@
     </div>
     <ReservationDetailModal
       v-if="modalType === 'reservation'"
+      :id="selectedReservation"
       v-model="isModalOpen"
-      :reservation="selectedReservation"
     />
-    <LeaveDetailModal
-      v-if="modalType === 'leave'"
-      v-model="isModalOpen"
-      :reservation="selectedReservation"
-    />
+
     <PlanDetailModal
-      v-if="modalType === 'plan'"
-      v-model="isModalOpen"
-      :reservation="selectedReservation"
+      v-if="['plan', 'regular_plan'].includes(modalType)"
+      :id="selectedReservation?.id"
+      :model-value="isModalOpen"
+      :type="selectedReservation?.type"
+      @update:model-value="isModalOpen = false"
+    />
+
+    <LeaveDetailModal
+      v-if="['leave', 'regular_leave'].includes(modalType)"
+      :id="selectedReservation?.id"
+      :model-value="isModalOpen"
+      :type="selectedReservation?.type"
+      @update:model-value="isModalOpen = false"
     />
 
     <ScheduleRegistModal v-if="handleClickScheduleRegist" v-model="handleClickScheduleRegist" />
@@ -70,15 +76,9 @@
   import ReservationDetailModal from '@/features/schedules/components/ReservationDetailModal.vue';
   import ScheduleRegistModal from '@/features/schedules/components/ScheduleRegistModal.vue';
   import { getCalendarSchedules, getRegularSchedules } from '@/features/schedules/api/schedules';
-  import { useAuthStore } from '@/store/auth';
   import dayjs from 'dayjs';
 
   const calendarRef = ref(null);
-
-  const authStore = useAuthStore();
-  const shopId = computed(() => authStore.shopId);
-  const staffId = computed(() => authStore.userId);
-  const sidebarTrigger = ref(0);
 
   const searchText = ref('');
   const selectedService = ref('');
@@ -86,7 +86,6 @@
   const selectedType = ref('');
   const schedules = ref([]);
   const regularSchedules = ref([]);
-
   const selectedReservation = ref(null);
   const isModalOpen = ref(false);
   const modalType = ref('');
@@ -109,7 +108,6 @@
     if (!searchParams.value) return;
     searchParams.value.from = formatToLocalDateTime(new Date(from));
     searchParams.value.to = formatToLocalDateTime(new Date(to));
-    fetchSchedules();
   };
 
   const getScheduleTypeParam = () => {
@@ -131,8 +129,6 @@
   const fetchRegularSchedules = async () => {
     try {
       regularSchedules.value = [];
-      console.log('정기 일정 수:', regularSchedules.value.length);
-      console.log('예시:', regularSchedules.value.slice(0, 5));
       const { from, to } = searchParams.value;
 
       const [regularPlan, regularLeave] = await Promise.all([
@@ -156,17 +152,44 @@
 
   // 일정 상세 클릭 시
   const handleClickSchedule = id => {
-    const target = schedules.value.find(item => String(item.id) === String(id));
-    if (target) {
-      selectedReservation.value = target;
-      isModalOpen.value = true;
+    let target =
+      schedules.value.find(item => String(item.id) === String(id)) ||
+      regularSchedules.value.find(item => {
+        const composedId = `${item.id}-${dayjs(item.startAt).format('YYYYMMDD')}`;
+        return composedId === String(id);
+      });
 
-      if (target.scheduleType === 'RESERVATION') modalType.value = 'reservation';
-      else if (target.scheduleType === 'LEAVE') modalType.value = 'leave';
-      else if (target.scheduleType === 'PLAN') modalType.value = 'plan';
-      else if (target.scheduleType === 'REGULAR_PLAN') modalType.value = 'regular_plan';
-      else if (target.scheduleType === 'REGULAR_LEAVE') modalType.value = 'regular_leave';
+    if (!target) return;
+
+    isModalOpen.value = true;
+
+    switch (target.scheduleType) {
+      case 'RESERVATION':
+        selectedReservation.value = target.id;
+        modalType.value = 'reservation';
+        break;
+      case 'LEAVE':
+      case 'REGULAR_LEAVE':
+        selectedReservation.value = {
+          id: target.id,
+          type: target.scheduleType.toLowerCase(),
+        };
+        modalType.value = 'leave';
+        break;
+      case 'PLAN':
+      case 'REGULAR_PLAN':
+        selectedReservation.value = {
+          id: target.id,
+          type: target.scheduleType.toLowerCase(),
+        };
+        modalType.value = 'plan';
+        break;
+      default:
+        isModalOpen.value = false;
+        break;
     }
+    console.log('🧪 selectedReservation', selectedReservation.value);
+    console.log('🧪 modalType', modalType.value);
   };
 
   // 일정 조회 API 호출
@@ -184,7 +207,6 @@
         scheduleType,
       });
 
-      // 항상 정기 일정/휴무도 함께 조회
       await fetchRegularSchedules();
     } catch (err) {
       console.error('일정 조회 실패', err);
@@ -202,6 +224,12 @@
       () => searchParams.value.to,
     ],
     () => {
+      const from = new Date(searchParams.value.from);
+      const to = new Date(searchParams.value.to);
+
+      searchParams.value.from = formatToLocalDateTime(new Date(from.setHours(0, 0, 0, 0)));
+      searchParams.value.to = formatToLocalDateTime(new Date(to.setHours(23, 59, 59, 999)));
+
       fetchSchedules();
     }
   );

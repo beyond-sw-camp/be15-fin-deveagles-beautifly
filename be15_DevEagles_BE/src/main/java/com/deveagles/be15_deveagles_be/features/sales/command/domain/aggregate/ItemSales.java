@@ -40,4 +40,12 @@ public class ItemSales {
 
   @Column(name = "coupon_id", nullable = false)
   private Long couponId;
+
+  public void updateItemSales(
+      Long secondaryItemId, Integer quantity, Integer discountRate, Long couponId) {
+    this.secondaryItemId = secondaryItemId;
+    this.quantity = quantity;
+    this.discountRate = discountRate;
+    this.couponId = couponId;
+  }
 }

@@ -1,86 +1,104 @@
 <script setup>
-  const chats = [
-    { id: 1, title: '가입 문의', preview: 'CRM 도입 절차를 알고 싶어요.' },
-    { id: 2, title: '결제 오류', preview: '결제 페이지 접근이 안됩니다.' },
-    { id: 3, title: '데이터 백업', preview: '지난달 고객 데이터 백업 가능한가요?' },
-    { id: 4, title: '발송 제한', preview: '알림톡이 발송되지 않아요.' },
-    { id: 5, title: '통계 리포트', preview: '직원별 실적 리포트 확인 방법 알려주세요.' },
-  ];
+  import { onMounted, ref } from 'vue';
+  import { getChatRooms } from '@/features/chat/api/chat.js'; // ✅ 너가 만든 API 명칭
+
+  const emit = defineEmits(['select']);
+  const chatRooms = ref([]);
+
+  onMounted(async () => {
+    try {
+      const res = await getChatRooms(); // ✅ 정확한 함수명
+      chatRooms.value = res.data.sort(
+        (a, b) => new Date(b.lastMessageAt || 0) - new Date(a.lastMessageAt || 0)
+      );
+    } catch (e) {
+      console.error('❌ 채팅방 목록 불러오기 실패:', e);
+    }
+  });
 </script>
 
 <template>
-  <div class="chat-list-view">
-    <ul class="chat-list">
-      <li v-for="chat in chats" :key="chat.id" class="chat-list-item">
-        <div class="chat-avatar-circle">
-          {{ chat.title.charAt(0) }}
-        </div>
-        <div class="chat-list-text">
-          <p class="chat-title">{{ chat.title }}</p>
-          <p class="chat-preview">{{ chat.preview }}</p>
-        </div>
-      </li>
-    </ul>
+  <div class="chat-list">
+    <p class="chat-list-title">내가 배정받은 채팅방</p>
+
+    <div
+      v-for="room in chatRooms"
+      :key="room.roomId"
+      class="chat-room-card"
+      @click="$emit('select', room.roomId)"
+    >
+      <div class="room-id">채팅방 ID: {{ room.roomId }}</div>
+
+      <div class="last-message-wrapper">
+        <span class="last-message-label">마지막 메시지:</span>
+        <span class="last-message-content">
+          {{ room.lastMessage || '메시지 없음' }}
+        </span>
+      </div>
+
+      <div v-if="room.lastMessageAt" class="last-message-time">
+        {{ new Date(room.lastMessageAt).toLocaleString() }}
+      </div>
+    </div>
   </div>
 </template>
 
 <style scoped>
-  .chat-list-view {
-    height: 100%;
-    overflow-y: auto;
-  }
-
   .chat-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-  }
-
-  .chat-list-item {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 0.5rem;
-    border-bottom: 1px solid #e5e7eb;
-    cursor: pointer;
-    transition: background-color 0.15s ease;
-  }
-  .chat-list-item:hover {
-    background-color: #f0f2f5;
-  }
-
-  .chat-avatar-circle {
-    width: 34px;
-    height: 34px;
-    border-radius: 50%;
-    background-color: #e0e7ff;
-    color: #3f51b5;
-    font-weight: bold;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 13px;
-    flex-shrink: 0;
-  }
-
-  .chat-list-text {
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    gap: 0.75rem;
   }
 
-  .chat-title {
+  .chat-list-title {
+    font-size: 15px;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+    color: var(--color-gray-800);
+  }
+
+  .chat-room-card {
+    background: white;
+    border: 1px solid var(--color-gray-300);
+    border-radius: 10px;
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  }
+
+  .chat-room-card:hover {
+    background: #f8f9fa;
+  }
+
+  .room-id {
     font-weight: 600;
     font-size: 13px;
-    color: #222;
-    margin-bottom: 1px;
+    color: var(--color-gray-900);
+    margin-bottom: 0.4rem;
+    word-break: break-word;
   }
 
-  .chat-preview {
+  .last-message-wrapper {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .last-message-label {
     font-size: 12px;
-    color: #666;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    color: var(--color-gray-600);
+  }
+
+  .last-message-content {
+    font-size: 13px;
+    color: var(--color-gray-800);
+    margin-top: 2px;
+    word-break: break-word;
+  }
+
+  .last-message-time {
+    font-size: 12px;
+    color: var(--color-gray-500);
+    margin-top: 6px;
   }
 </style>

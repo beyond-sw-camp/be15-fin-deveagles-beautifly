@@ -29,6 +29,8 @@ public enum ErrorCode implements ErrorCodeType {
   INVALID_AUTH_CODE("11005", "유효한 인증이 아닙니다.", HttpStatus.BAD_REQUEST),
   STAFF_NOT_FOUND("11006", "존재하지 않는 직원입니다.", HttpStatus.NOT_FOUND),
 
+  // 알림 관련 에러 (12000번대)
+  NOTIFICATION_NOT_FOUND("12001", "존재하지 않는 알림이거나 접근 권한이 없습니다.", HttpStatus.NOT_FOUND),
   // 매장 관련 에러 (20000번대)
   SHOP_NOT_FOUNT("20001", "매장이 존재하지 않습니다.", HttpStatus.NOT_FOUND),
   // 고객 관련 에러 (30000번대)
@@ -58,6 +60,10 @@ public enum ErrorCode implements ErrorCodeType {
   INVALID_MESSAGE_CANCEL_CONDITION("40014", "예약 취소가 불가능한 상태입니다", HttpStatus.BAD_REQUEST),
   AUTOMATIC_TEMPLATE_ALREADY_EXISTS(
       "40015", "이미 동일한 이벤트 타입으로 메시지가 등록 되어 있습니다.", HttpStatus.BAD_REQUEST),
+
+  // 채팅 관련 에러 (41000번대)
+  CHATROOM_NOT_FOUND("41001", "해당 채팅방을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+
   // 쿠폰 관련 에러 (50000번대)
   COUPON_NOT_FOUND("50001", "쿠폰을 찾을 수 없습니다", HttpStatus.NOT_FOUND),
   COUPON_CODE_DUPLICATE("50002", "이미 존재하는 쿠폰 코드입니다", HttpStatus.CONFLICT),
@@ -141,6 +147,8 @@ public enum ErrorCode implements ErrorCodeType {
   SALES_NOT_FOUND("90006", "매출을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
   SALES_ALREADY_REFUNDED("90007", "이미 환불된 매출입니다.", HttpStatus.BAD_REQUEST),
   SALES_ALREADY_DELETED("90008", "이미 삭제된 매출입니다.", HttpStatus.BAD_REQUEST),
+  ITEMSALES_NOT_FOUND("90010", "상품매출을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+  INVALID_MEMBERSHIP_HISTORY("90011", "횟수권 사용횟수를 찾을 수 없습니다.", HttpStatus.BAD_REQUEST),
   ;
 
   private final String code;

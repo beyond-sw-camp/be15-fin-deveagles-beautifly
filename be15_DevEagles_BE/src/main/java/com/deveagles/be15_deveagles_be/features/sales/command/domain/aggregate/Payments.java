@@ -32,4 +32,8 @@ public class Payments {
 
   @Column(name = "deleted_at")
   private LocalDateTime deletedAt;
+
+  public void softDelete() {
+    this.deletedAt = LocalDateTime.now();
+  }
 }

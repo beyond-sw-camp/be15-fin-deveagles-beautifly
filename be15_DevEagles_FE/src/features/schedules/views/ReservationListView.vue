@@ -4,6 +4,7 @@
       <h1 class="font-screen-title">예약 목록</h1>
     </div>
 
+    <!-- 필터 바 -->
     <div class="filter-bar">
       <div class="filter-fields">
         <BaseForm
@@ -26,22 +27,7 @@
         <BaseForm
           v-model="selectedStaff"
           type="select"
-          :options="[
-            { text: '담당자', value: '' },
-            { text: '박미글', value: '박미글' },
-            { text: '이팀장', value: '이팀장' },
-          ]"
-          style="width: 160px"
-        />
-        <BaseForm
-          v-model="selectedService"
-          type="select"
-          :options="[
-            { text: '시술 종류', value: '' },
-            { text: '커트', value: '커트' },
-            { text: '염색', value: '염색' },
-            { text: '펌', value: '펌' },
-          ]"
+          :options="staffOptions"
           style="width: 160px"
         />
         <BaseForm
@@ -49,11 +35,11 @@
           type="select"
           :options="[
             { text: '예약 상태', value: '' },
-            { text: '예약 대기', value: '예약 대기' },
-            { text: '예약 확정', value: '예약 확정' },
-            { text: '노쇼', value: '노쇼' },
-            { text: '고객에 의한 예약 취소', value: '고객에 의한 예약 취소' },
-            { text: '가게에 의한 예약 취소', value: '가게에 의한 예약 취소' },
+            { text: '예약 대기', value: 'PENDING' },
+            { text: '예약 확정', value: 'CONFIRMED' },
+            { text: '노쇼', value: 'NO_SHOW' },
+            { text: '고객에 의한 예약 취소', value: 'CBC' },
+            { text: '가게에 의한 예약 취소', value: 'CBS' },
           ]"
           style="width: 160px"
         />
@@ -61,10 +47,11 @@
       <BaseButton type="primary" @click="openReservationModal">예약 등록</BaseButton>
     </div>
 
+    <!-- 예약 테이블 -->
     <div class="base-table-wrapper">
       <BaseTable
         :columns="columns"
-        :data="filteredReservations"
+        :data="reservations"
         :striped="true"
         :hover="true"
         row-key="id"
@@ -78,34 +65,45 @@
           <span
             class="badge"
             :class="{
-              'badge-success': value === '예약 확정',
-              'badge-warning': value === '예약 대기',
-              'badge-error': value.includes('취소') || value === '노쇼',
+              'badge-success': value === 'CONFIRMED',
+              'badge-warning': value === 'PENDING',
+              'badge-error': ['NO_SHOW', 'CBC', 'CBS'].includes(value),
             }"
           >
-            {{ value }}
+            {{
+              value === 'CONFIRMED'
+                ? '예약 확정'
+                : value === 'PENDING'
+                  ? '예약 대기'
+                  : value === 'NO_SHOW'
+                    ? '노쇼'
+                    : value === 'CBC'
+                      ? '고객에 의한 예약 취소'
+                      : value === 'CBS'
+                        ? '가게에 의한 예약 취소'
+                        : value
+            }}
           </span>
         </template>
 
         <template #cell-actions="{ item }">
           <div class="action-buttons">
             <BaseButton
-              v-if="item.status === '예약 대기'"
+              v-if="item.status === 'PENDING'"
               outline
               type="primary"
               size="sm"
               @click="
                 e => {
                   e.stopPropagation();
-                  confirmWithoutModal(item);
+                  openModal(item, 'confirm');
                 }
               "
             >
               예약 확정
             </BaseButton>
-
             <BaseButton
-              v-if="item.status === '예약 대기' || item.status === '예약 확정'"
+              v-if="['PENDING', 'CONFIRMED'].includes(item.status)"
               outline
               type="error"
               size="sm"
@@ -123,42 +121,48 @@
       </BaseTable>
     </div>
 
+    <!-- 상세 모달 -->
     <ReservationDetailModal
       v-if="isDetailOpen"
+      :id="selectedReservation"
       v-model="isDetailOpen"
-      :reservation="selectedReservation"
       @cancel-reservation="handleCancelFromDetail"
     />
+
+    <!-- 페이지네이션 -->
     <Pagination
-      :current-page="1"
-      :total-pages="3"
-      :total-items="30"
-      :items-per-page="10"
-      @page-change="page => {}"
-      @items-per-page-change="count => {}"
+      :current-page="currentPage"
+      :total-pages="totalPages"
+      :total-items="totalItems"
+      :items-per-page="itemsPerPage"
+      @page-change="page => (currentPage = page)"
     />
 
-    <BaseModal v-model="isModalOpen" :title="modalTitle">
-      <template v-if="modalType === 'confirm'">
-        <p style="text-align: center; font-size: 16px">해당 예약을 확정하시겠습니까?</p>
-      </template>
-      <template v-else>
-        <p style="text-align: center; font-size: 16px">예약을 어떤 사유로 취소하시겠습니까?</p>
-      </template>
+    <!-- 예약 확정 확인 모달 -->
+    <BaseConfirm
+      v-if="modalType === 'confirm'"
+      v-model="isModalOpen"
+      title="예약 확정"
+      message="해당 예약을 확정하시겠습니까?"
+      confirm-text="예"
+      cancel-text="아니오"
+      confirm-type="primary"
+      @confirm="onConfirm"
+      @cancel="onCancel"
+    />
+
+    <!-- 예약 취소 사유 선택 모달 -->
+    <BaseModal v-else v-model="isModalOpen" :title="modalTitle">
+      <p style="text-align: center; font-size: 16px">예약을 어떤 사유로 취소하시겠습니까?</p>
 
       <template #footer>
         <div style="display: flex; gap: 12px; justify-content: flex-end; flex-wrap: wrap">
-          <BaseButton v-if="modalType === 'confirm'" type="primary" @click="onConfirm"
-            >예</BaseButton
-          >
-          <template v-else>
-            <BaseButton type="error" @click="confirmCancel('가게에 의한 예약 취소')">
-              가게에 의한 예약 취소
-            </BaseButton>
-            <BaseButton type="error" @click="confirmCancel('고객에 의한 예약 취소')">
-              고객에 의한 예약 취소
-            </BaseButton>
-          </template>
+          <BaseButton type="error" @click="confirmCancel('가게에 의한 예약 취소')">
+            가게에 의한 예약 취소
+          </BaseButton>
+          <BaseButton type="error" @click="confirmCancel('고객에 의한 예약 취소')">
+            고객에 의한 예약 취소
+          </BaseButton>
           <BaseButton outline @click="onCancel">닫기</BaseButton>
         </div>
       </template>
@@ -176,7 +180,7 @@
 </template>
 
 <script setup>
-  import { ref, computed } from 'vue';
+  import { ref, watch, onMounted } from 'vue';
   import BaseTable from '@/components/common/BaseTable.vue';
   import BaseModal from '@/components/common/BaseModal.vue';
   import BaseToast from '@/components/common/BaseToast.vue';
@@ -185,51 +189,32 @@
   import ScheduleRegistModal from '@/features/schedules/components/ScheduleRegistModal.vue';
   import ReservationDetailModal from '@/features/schedules/components/ReservationDetailModal.vue';
   import BaseForm from '@/components/common/BaseForm.vue';
+  import BaseConfirm from '@/components/common/BaseConfirm.vue';
 
+  import {
+    fetchReservationList,
+    getStaffList,
+    updateReservationStatuses,
+  } from '@/features/schedules/api/schedules';
+
+  const isConfirmDialogOpen = ref(false);
+  const confirmTarget = ref(null);
   const searchText = ref('');
-  const selectedDate = ref('');
-  const selectedStaff = ref('');
-  const selectedService = ref('');
+  const selectedDate = ref('thisWeek');
   const selectedStatus = ref('');
   const isModalOpen = ref(false);
   const isRegistModalOpen = ref(false);
   const modalType = ref('confirm');
   const modalTitle = ref('');
   const toast = ref(null);
-  let selectedReservation = null;
-
-  const reservations = ref([
-    {
-      id: 1,
-      customer: '김미글',
-      service: '염색',
-      staff: '박미글',
-      phone: '010-2222-2221',
-      date: '2025-06-08T14:00:00',
-      status: '예약 대기',
-      duration: '03:00',
-    },
-    {
-      id: 2,
-      customer: '이예정',
-      service: '커트',
-      staff: '이팀장',
-      phone: '010-2222-2222',
-      date: '2025-06-09T11:00:00',
-      status: '예약 확정',
-      duration: '03:00',
-    },
-    {
-      id: 3,
-      customer: '장현수',
-      service: '펌',
-      staff: '박미글',
-      phone: '010-2222-2223',
-      date: '2025-06-10T15:00:00',
-      status: '노쇼',
-      duration: '03:00',
-    },
-  ]);
+  const selectedReservation = ref(null);
+  const reservations = ref([]);
+  const totalItems = ref(0);
+  const currentPage = ref(1);
+  const itemsPerPage = ref(10);
+  const totalPages = ref(1);
+  const staffOptions = ref([{ text: '담당자', value: '' }]);
+  const selectedStaff = ref('');
 
   const columns = [
     { key: 'customer', title: '고객 이름', width: '120px' },
@@ -240,69 +225,173 @@
     { key: 'actions', title: '예약 상태 변경', width: '200px' },
   ];
 
+  function requestConfirm(item) {
+    confirmTarget.value = item;
+    isConfirmDialogOpen.value = true;
+  }
+
+  async function confirmReservation() {
+    const target = reservations.value.find(r => r.id === selectedReservation.value);
+    if (!target) return;
+
+    try {
+      await updateReservationStatuses([
+        {
+          reservationId: target.id,
+          reservationStatusName: 'CONFIRMED',
+        },
+      ]);
+      target.status = 'CONFIRMED';
+      toast.value.success('예약이 확정되었습니다.');
+    } catch (e) {
+      toast.value.error('예약 확정에 실패했습니다.');
+    } finally {
+      isModalOpen.value = false;
+      selectedReservation.value = null;
+    }
+  }
+
+  async function confirmCancel(reason) {
+    const status = reason === '고객에 의한 예약 취소' ? 'CBC' : 'CBS';
+    const target = reservations.value.find(r => r.id === selectedReservation.value);
+    if (!target) return;
+
+    try {
+      await updateReservationStatuses([
+        {
+          reservationId: target.id,
+          reservationStatusName: status,
+        },
+      ]);
+      target.status = status;
+      toast.value.success('예약이 취소되었습니다.');
+    } catch (e) {
+      toast.value.error('예약 취소에 실패했습니다.');
+    } finally {
+      isModalOpen.value = false;
+      selectedReservation.value = null;
+    }
+  }
+
+  function getDateRangeByType(type) {
+    const now = new Date();
+    const toISO = date => date.toISOString().split('T')[0];
+
+    if (type === 'today') {
+      const today = toISO(now);
+      return { from: today, to: today };
+    } else if (type === 'thisWeek') {
+      const start = new Date(now);
+      start.setDate(now.getDate() - now.getDay());
+      const end = new Date(start);
+      end.setDate(start.getDate() + 6);
+      return { from: toISO(start), to: toISO(end) };
+    } else if (type === 'thisMonth') {
+      const start = new Date(now.getFullYear(), now.getMonth(), 1);
+      const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+      return { from: toISO(start), to: toISO(end) };
+    }
+    return { from: null, to: null };
+  }
+
+  function getDuration(start, end) {
+    const startTime = new Date(start);
+    const endTime = new Date(end);
+    const diffMs = endTime - startTime;
+    const diffMinutes = Math.floor(diffMs / 1000 / 60);
+    const hours = Math.floor(diffMinutes / 60);
+    const minutes = diffMinutes % 60;
+
+    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+  }
+
+  const fetchReservations = async () => {
+    const { from, to } = getDateRangeByType(selectedDate.value);
+
+    const res = await fetchReservationList({
+      staffId: selectedStaff.value || null,
+      reservationStatusName: selectedStatus.value || null,
+      customerKeyword: searchText.value || null,
+      from,
+      to,
+      page: currentPage.value - 1,
+      size: itemsPerPage.value,
+    });
+
+    reservations.value = res.content.map(item => ({
+      id: item.reservationId,
+      customer: item.customerName ?? '미등록 고객',
+      phone: item.customerPhone,
+      service: item.itemNames,
+      staff: item.staffName,
+      date: item.reservationStartAt,
+      status: item.reservationStatusName,
+      duration:
+        item.reservationEndAt && item.reservationStartAt
+          ? getDuration(item.reservationStartAt, item.reservationEndAt)
+          : null,
+    }));
+
+    totalItems.value = res.pagination.totalItems;
+    totalPages.value = res.pagination.totalPages;
+  };
+
+  onMounted(async () => {
+    await fetchStaffOptions();
+    await fetchReservations();
+  });
+
+  const fetchStaffOptions = async () => {
+    try {
+      const res = await getStaffList({ isActive: true });
+      staffOptions.value.push(
+        ...res.map(staff => ({
+          text: staff.staffName,
+          value: staff.staffId,
+        }))
+      );
+    } catch (e) {
+      console.error('담당자 목록 조회 실패:', e);
+    }
+  };
+
+  watch(currentPage, () => {
+    fetchReservations();
+  });
+
+  watch([itemsPerPage, searchText, selectedStaff, selectedDate, selectedStatus], () => {
+    currentPage.value = 1;
+    fetchReservations();
+  });
+
+  watch(itemsPerPage, () => {
+    currentPage.value = 1;
+    fetchReservations();
+  });
+  watch(
+    [
+      () => searchText.value,
+      () => selectedStaff.value,
+      () => selectedDate.value,
+      () => selectedStatus.value,
+    ],
+    () => {
+      currentPage.value = 1;
+      fetchReservations();
+    }
+  );
   function openModal(item, type) {
-    selectedReservation = item;
+    selectedReservation.value = item.id;
     modalType.value = type;
     modalTitle.value = type === 'confirm' ? '예약 확정' : '예약 취소 사유 선택';
     isModalOpen.value = true;
   }
 
-  function confirmWithoutModal(item) {
-    item.status = '예약 확정';
-    toast.value.success('예약이 확정되었습니다.');
-  }
-
-  function confirmCancel(reason) {
-    if (!selectedReservation) return;
-    selectedReservation.status = reason;
-    toast.value.success(`예약이 취소되었습니다.`);
-    isModalOpen.value = false;
-  }
-
-  const filteredReservations = computed(() => {
-    const now = new Date();
-
-    return reservations.value.filter(r => {
-      const matchText =
-        !searchText.value ||
-        r.customer.includes(searchText.value) ||
-        (r.phone && r.phone.includes(searchText.value));
-
-      const matchStaff = !selectedStaff.value || r.staff.includes(selectedStaff.value);
-      const matchService = !selectedService.value || r.service.includes(selectedService.value);
-      const matchStatus = !selectedStatus.value || r.status === selectedStatus.value;
-
-      const reservationDate = new Date(r.date);
-      let matchDate = true;
-
-      if (selectedDate.value === 'today') {
-        const today = now.toISOString().split('T')[0];
-        const resDate = reservationDate.toISOString().split('T')[0];
-        matchDate = today === resDate;
-      } else if (selectedDate.value === 'thisWeek') {
-        const startOfWeek = new Date(now);
-        startOfWeek.setDate(now.getDate() - now.getDay());
-        startOfWeek.setHours(0, 0, 0, 0);
-
-        const endOfWeek = new Date(startOfWeek);
-        endOfWeek.setDate(startOfWeek.getDate() + 6);
-        endOfWeek.setHours(23, 59, 59, 999);
-
-        matchDate = reservationDate >= startOfWeek && reservationDate <= endOfWeek;
-      } else if (selectedDate.value === 'thisMonth') {
-        matchDate =
-          reservationDate.getFullYear() === now.getFullYear() &&
-          reservationDate.getMonth() === now.getMonth();
-      }
-
-      return matchText && matchStaff && matchService && matchStatus && matchDate;
-    });
-  });
-
   const isDetailOpen = ref(false);
 
   function openDetail(item) {
-    selectedReservation = item;
+    selectedReservation.value = item.id;
+    console.log('🔍 선택된 예약 ID:', selectedReservation.value);
     isDetailOpen.value = true;
   }
 
@@ -313,14 +402,14 @@
   }
 
   function onConfirm() {
-    if (!selectedReservation) return;
-    selectedReservation.status = '예약 확정';
-    toast.value.success('예약이 확정되었습니다.');
-    isModalOpen.value = false;
+    if (modalType.value === 'confirm') {
+      confirmReservation();
+    }
   }
 
   function onCancel() {
     isModalOpen.value = false;
+    selectedReservation.value = null;
   }
 
   function openReservationModal() {
@@ -345,6 +434,12 @@
     align-items: center;
   }
 
+  .filter-fields > * {
+    min-width: 160px;
+    flex-shrink: 0;
+    box-sizing: border-box;
+  }
+
   .filter-bar {
     display: flex;
     justify-content: flex-end;
@@ -352,6 +447,7 @@
     gap: 16px;
     flex-wrap: wrap;
     margin-bottom: 24px;
+    width: 100%;
   }
 
   .filter-fields {

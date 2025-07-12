@@ -1,19 +1,95 @@
 <script setup>
-  import { ref } from 'vue';
+  import { ref, onMounted, onUnmounted, nextTick } from 'vue';
   import ChatMessages from './ChatMessages.vue';
   import ChatInput from './ChatInput.vue';
   import ChatListView from './ChatListView.vue';
   import ListIcon from '@/components/icons/ListIcon.vue';
   import HomeIcon from '@/components/icons/HomeIcon.vue';
+  import { safeSubscribeToRoom, sendSocketMessage } from '@/features/chat/composables/socket.js';
+  import { useAuthStore } from '@/store/auth.js';
+  import {
+    createChatRoom,
+    sendGreetingMessage,
+    switchToStaff,
+    getChatMessages,
+  } from '@/features/chat/api/chat.js';
+  import { useChatStore } from '@/store/useChatStore.js';
 
   const emit = defineEmits(['close']);
+  const auth = useAuthStore();
+  const chatStore = useChatStore();
+  const currentView = ref('home');
+  const containerRef = ref(null);
 
-  const currentView = ref('home'); // 'home', 'chat', 'list'
-  const messages = ref([]);
+  function handleClickOutside(event) {
+    if (containerRef.value && !containerRef.value.contains(event.target)) {
+      emit('close');
+    }
+  }
 
-  function openNewChat() {
-    messages.value = [{ from: 'person', text: '안녕하세요! 무엇을 도와드릴까요?' }];
-    currentView.value = 'chat';
+  onMounted(() => {
+    chatStore.setChatModalOpen(true);
+    document.addEventListener('mousedown', handleClickOutside);
+  });
+
+  onUnmounted(() => {
+    chatStore.resetChatState();
+    document.removeEventListener('mousedown', handleClickOutside);
+  });
+
+  async function openNewChat() {
+    try {
+      const res = await createChatRoom();
+      const roomId = res.data.roomId;
+
+      chatStore.setCurrentRoomId(roomId);
+      chatStore.clearMessages();
+      currentView.value = 'chat';
+
+      // ✅ 중복 구독 방지
+      if (chatStore.subscribedRoomId !== roomId) {
+        safeSubscribeToRoom(roomId, msg => {
+          const from =
+            String(msg.senderId) === String(auth.userId) ? 'me' : msg.isCustomer ? 'user' : 'bot';
+          chatStore.addMessage({ from, text: msg.content });
+        });
+        chatStore.setSubscribedRoomId(roomId); // ✅ 현재 구독 중인 방 설정
+      }
+
+      await sendGreetingMessage(roomId);
+      chatStore.addMessage({ type: 'switch-button' });
+    } catch (e) {
+      console.error('❌ 채팅방 생성 실패:', e);
+    }
+  }
+
+  function handleSend(text) {
+    const isStaff = auth.userId === 17;
+
+    const msg = {
+      roomId: chatStore.currentRoomId,
+      senderId: auth.userId,
+      senderName: auth.username ?? auth.staffName,
+      content: text,
+      isCustomer: !isStaff,
+    };
+
+    sendSocketMessage(chatStore.currentRoomId, msg);
+  }
+
+  async function handleSwitch() {
+    try {
+      await switchToStaff(chatStore.currentRoomId);
+      chatStore.addMessage({
+        from: 'bot',
+        text: '상담사에게 연결되었어요. 잠시만 기다려주세요.',
+      });
+    } catch (err) {
+      chatStore.addMessage({
+        from: 'bot',
+        text: '상담사 전환에 실패했어요. 나중에 다시 시도해주세요.',
+      });
+    }
   }
 
   function openList() {
@@ -22,19 +98,42 @@
 
   function goHome() {
     currentView.value = 'home';
+    chatStore.resetChatState();
   }
 
-  function handleSend(text) {
-    messages.value.push({ from: 'user', text });
-    setTimeout(() => {
-      messages.value.push({ from: 'bot', text: '확인했습니다!' });
-    }, 600);
+  async function enterExistingChat(chatRoomId) {
+    try {
+      chatStore.setCurrentRoomId(chatRoomId);
+      chatStore.clearMessages();
+      currentView.value = 'chat';
+
+      // ✅ 구독 여부 확인
+      if (chatStore.subscribedRoomId !== chatRoomId) {
+        safeSubscribeToRoom(chatRoomId, msg => {
+          const from =
+            String(msg.senderId) === String(auth.userId) ? 'me' : msg.isCustomer ? 'user' : 'bot';
+          chatStore.addMessage({ from, text: msg.content });
+        });
+        chatStore.setSubscribedRoomId(chatRoomId); // ✅ 저장
+      }
+
+      const res = await getChatMessages(chatRoomId);
+      res.data.forEach(msg => {
+        const from =
+          String(msg.senderId) === String(auth.userId) ? 'me' : msg.isCustomer ? 'user' : 'bot';
+        chatStore.addMessage({ from, text: msg.content });
+      });
+
+      await nextTick();
+    } catch (e) {
+      console.error('❌ 기존 채팅방 입장 실패:', e);
+      alert('기존 채팅방 입장에 실패했습니다.');
+    }
   }
 </script>
 
 <template>
-  <div class="chat-widget-panel">
-    <!-- Header -->
+  <div ref="containerRef" class="chat-widget-panel">
     <div class="chat-modal-header">
       <img src="@/images/logo_positive.png" class="chat-modal-logo" alt="Beautifly 로고" />
       <div class="chat-modal-header-text">
@@ -44,7 +143,6 @@
       <button class="chat-modal-close" @click="$emit('close')">✖</button>
     </div>
 
-    <!-- Body View -->
     <div class="chat-modal-body">
       <div v-if="currentView === 'home'">
         <p class="chat-greeting">안녕하세요 😊 Beautifly 상담센터입니다.</p>
@@ -52,11 +150,14 @@
           <button class="home-new-button" @click="openNewChat">새 문의하기</button>
         </div>
       </div>
-      <ChatMessages v-else-if="currentView === 'chat'" :messages="messages" />
-      <ChatListView v-else-if="currentView === 'list'" />
+      <ChatMessages
+        v-else-if="currentView === 'chat'"
+        :messages="chatStore.messages"
+        @switch="handleSwitch"
+      />
+      <ChatListView v-else-if="currentView === 'list'" @select="enterExistingChat" />
     </div>
 
-    <!-- Input & Bottom Actions -->
     <div class="chat-modal-footer">
       <ChatInput v-if="currentView === 'chat'" @send="handleSend" />
       <div class="chat-footer-buttons">
@@ -126,7 +227,7 @@
   }
   .chat-modal-body {
     flex: 1;
-    overflow-y: auto;
+    overflow-y: hidden;
     background-color: #f7f9fc;
     padding: 1rem;
   }

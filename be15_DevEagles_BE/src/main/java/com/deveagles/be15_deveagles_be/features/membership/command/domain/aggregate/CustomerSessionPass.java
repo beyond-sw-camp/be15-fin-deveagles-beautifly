@@ -44,5 +44,11 @@ public class CustomerSessionPass {
 
   public void useCount(int count) {
     this.remainingCount -= count;
+    this.modifiedAt = LocalDateTime.now();
+  }
+
+  public void restoreCount(int amount) {
+    this.remainingCount += amount;
+    this.modifiedAt = LocalDateTime.now();
   }
 }
