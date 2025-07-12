@@ -4,12 +4,14 @@ import {
   createAdvancedSalesChartOption,
   createDiscountAnalysisChartOption,
   createSummaryCardsData,
+} from '../config/salesChartOptions.js';
+import {
   createPrimaryItemShareChartOption,
   createSecondaryItemShareChartOption,
   createPrimaryItemTransactionShareChartOption,
   createSecondaryItemTransactionShareChartOption,
-  createPrimaryItemDailyTrendChartOption,
-} from '../config/chartOptions.js';
+} from '../config/itemChartOptions.js';
+import { createPrimaryItemDailyTrendChartOption } from '../config/trendChartOptions.js';
 import { formatCurrency, formatPercentage } from '../utils/formatters.js';
 import salesAnalyticsAPI from '../api/salesAnalytics.js';
 import { useAnalyticsCore } from './useAnalyticsCore.js';
@@ -338,44 +340,52 @@ export function useSalesAnalytics() {
   };
 
   // 차트 옵션 생성 (computed로 반응형 연결)
-  const getDailySalesChartOption = computed(() =>
-    createDailySalesChartOption(dashboardData.dailySales)
-  );
+  const getDailySalesChartOption = computed(() => {
+    return (isDarkMode = false) =>
+      createDailySalesChartOption(dashboardData.dailySales, isDarkMode);
+  });
 
-  const getCategoryChartOption = computed(() =>
-    createAdvancedSalesChartOption(dashboardData.categoryData, filters.chartType)
-  );
+  const getCategoryChartOption = computed(() => {
+    return (isDarkMode = false) =>
+      createAdvancedSalesChartOption(dashboardData.categoryData, filters.chartType, isDarkMode);
+  });
 
-  const getGenderChartOption = computed(() =>
-    createAdvancedSalesChartOption(dashboardData.genderData, 'pie')
-  );
+  const getGenderChartOption = computed(() => {
+    return (isDarkMode = false) =>
+      createAdvancedSalesChartOption(dashboardData.genderData, 'pie', isDarkMode);
+  });
 
-  const getTrendChartOption = computed(() =>
-    createAdvancedSalesChartOption(dashboardData.trendData, 'line')
-  );
+  const getTrendChartOption = computed(() => {
+    return (isDarkMode = false) =>
+      createAdvancedSalesChartOption(dashboardData.trendData, 'line', isDarkMode);
+  });
 
-  const getDiscountChartOption = computed(() =>
-    createDiscountAnalysisChartOption(dashboardData.discountData)
-  );
+  const getDiscountChartOption = computed(() => {
+    return (isDarkMode = false) =>
+      createDiscountAnalysisChartOption(dashboardData.discountData, isDarkMode);
+  });
 
-  const getPrimaryItemShareChartOption = computed(() =>
-    createPrimaryItemShareChartOption(dashboardData.primaryItemData)
-  );
+  const getPrimaryItemShareChartOption = computed(() => {
+    return (isDarkMode = false) =>
+      createPrimaryItemShareChartOption(dashboardData.primaryItemData, isDarkMode);
+  });
 
-  const getSecondaryItemShareChartOption = computed(() =>
-    createSecondaryItemShareChartOption(dashboardData.secondaryItemData)
-  );
+  const getSecondaryItemShareChartOption = computed(() => {
+    return (isDarkMode = false) =>
+      createSecondaryItemShareChartOption(dashboardData.secondaryItemData, isDarkMode);
+  });
 
-  const getPrimaryItemTransactionShareChartOption = computed(() =>
-    createPrimaryItemTransactionShareChartOption(dashboardData.primaryItemData)
-  );
+  const getPrimaryItemTransactionShareChartOption = computed(() => {
+    return (isDarkMode = false) =>
+      createPrimaryItemTransactionShareChartOption(dashboardData.primaryItemData, isDarkMode);
+  });
 
-  const getSecondaryItemTransactionShareChartOption = computed(() =>
-    createSecondaryItemTransactionShareChartOption(dashboardData.secondaryItemData)
-  );
+  const getSecondaryItemTransactionShareChartOption = computed(() => {
+    return (isDarkMode = false) =>
+      createSecondaryItemTransactionShareChartOption(dashboardData.secondaryItemData, isDarkMode);
+  });
 
   const getPrimaryItemDailyTrendChartOption = computed(() => {
-    // 다크모드 상태는 부모 컴포넌트에서 전달받아야 함
     return (isDarkMode = false) =>
       createPrimaryItemDailyTrendChartOption(dashboardData.primaryItemDailyTrendData, isDarkMode);
   });

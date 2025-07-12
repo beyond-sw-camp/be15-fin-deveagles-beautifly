@@ -110,12 +110,11 @@ export function useUsageAnalytics() {
           reservationAnalyticsAPI.getHourlyVisitorStatistics(params),
           reservationAnalyticsAPI.getDailyVisitorStatistics(params),
           reservationAnalyticsAPI.getAllStaffReservationStatistics(params),
-          reservationAnalyticsAPI.getDayTimeSlotReservationData(params), // 요일별/시간대별 데이터로 변경
+          reservationAnalyticsAPI.getDayTimeSlotReservationData(params),
         ]);
 
-      // 요약 데이터 설정 (기본값 제공)
       usageData.overallUtilization = Number(summaryData?.averageReservationRate || 0);
-      usageData.utilizationGrowth = 0; // 성장률 계산 제거
+      usageData.utilizationGrowth = 0;
       usageData.averageUsageTime = Number(summaryData?.averageUsageTime || 30);
       usageData.staffUtilization = Number(summaryData?.averageReservationRate || 0);
       usageData.peakHourUtilization = Number(summaryData?.peakHourReservationRate || 0);
@@ -388,21 +387,24 @@ export function useUsageAnalytics() {
   };
 
   // 차트 옵션 생성 (computed로 반응형 데이터와 연결)
-  const getHourlyUsageChartOption = computed(() =>
-    createHourlyUsageChartOption(usageData.hourlyUsage)
-  );
+  const getHourlyUsageChartOption = computed(() => {
+    return (isDarkMode = false) => createHourlyUsageChartOption(usageData.hourlyUsage, isDarkMode);
+  });
 
-  const getDailyVisitorChartOption = computed(() =>
-    createDailyVisitorChartOption(usageData.dailyVisitorData)
-  );
+  const getDailyVisitorChartOption = computed(() => {
+    return (isDarkMode = false) =>
+      createDailyVisitorChartOption(usageData.dailyVisitorData, isDarkMode);
+  });
 
-  const getStaffReservationChartOption = computed(() =>
-    createStaffReservationChartOption(usageData.staffUsage)
-  );
+  const getStaffReservationChartOption = computed(() => {
+    return (isDarkMode = false) =>
+      createStaffReservationChartOption(usageData.staffUsage, isDarkMode);
+  });
 
-  const getHeatmapChartOption = computed(() =>
-    createHeatmapChartOption(usageData.heatmapData, usageData.heatmapHours)
-  );
+  const getHeatmapChartOption = computed(() => {
+    return (isDarkMode = false) =>
+      createHeatmapChartOption(usageData.heatmapData, usageData.heatmapHours, isDarkMode);
+  });
 
   // 필터 업데이트
   const updateFilters = newFilters => {
