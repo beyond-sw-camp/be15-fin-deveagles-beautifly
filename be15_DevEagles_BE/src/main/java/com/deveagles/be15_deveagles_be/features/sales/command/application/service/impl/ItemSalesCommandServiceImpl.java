@@ -9,13 +9,16 @@ import com.deveagles.be15_deveagles_be.features.membership.command.domain.reposi
 import com.deveagles.be15_deveagles_be.features.sales.command.application.dto.request.ItemSalesRequest;
 import com.deveagles.be15_deveagles_be.features.sales.command.application.dto.request.PaymentsInfo;
 import com.deveagles.be15_deveagles_be.features.sales.command.application.service.ItemSalesCommandService;
+import com.deveagles.be15_deveagles_be.features.sales.command.domain.aggregate.CustomerMembershipHistory;
 import com.deveagles.be15_deveagles_be.features.sales.command.domain.aggregate.ItemSales;
 import com.deveagles.be15_deveagles_be.features.sales.command.domain.aggregate.Payments;
 import com.deveagles.be15_deveagles_be.features.sales.command.domain.aggregate.Sales;
+import com.deveagles.be15_deveagles_be.features.sales.command.domain.repository.CustomerMembershipHistoryRepository;
 import com.deveagles.be15_deveagles_be.features.sales.command.domain.repository.ItemSalesRepository;
 import com.deveagles.be15_deveagles_be.features.sales.command.domain.repository.PaymentsRepository;
 import com.deveagles.be15_deveagles_be.features.sales.command.domain.repository.SalesRepository;
 import jakarta.transaction.Transactional;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -29,6 +32,7 @@ public class ItemSalesCommandServiceImpl implements ItemSalesCommandService {
   private final PaymentsRepository paymentsRepository;
   private final CustomerRepository customerRepository;
   private final ItemSalesRepository itemSalesRepository;
+  private final CustomerMembershipHistoryRepository customerMembershipHistoryRepository;
 
   @Transactional
   @Override
@@ -77,6 +81,8 @@ public class ItemSalesCommandServiceImpl implements ItemSalesCommandService {
               .build();
       paymentsRepository.save(payment);
 
+      Long savedPaymentsId = payment.getPaymentsId(); // 저장된 결제 ID
+
       switch (p.getPaymentsMethod()) {
         case PREPAID_PASS -> {
           var pass =
@@ -84,7 +90,15 @@ public class ItemSalesCommandServiceImpl implements ItemSalesCommandService {
                   .findById(p.getCustomerPrepaidPassId())
                   .orElseThrow(
                       () -> new BusinessException(ErrorCode.CUSTOMERPREPAIDPASS_NOT_FOUND));
+
           pass.useAmount(p.getAmount());
+
+          customerMembershipHistoryRepository.save(
+              CustomerMembershipHistory.builder()
+                  .salesId(sales.getSalesId())
+                  .paymentsId(savedPaymentsId)
+                  .customerPrepaidPassId(pass.getCustomerPrepaidPassId())
+                  .build());
         }
 
         case SESSION_PASS -> {
@@ -96,6 +110,14 @@ public class ItemSalesCommandServiceImpl implements ItemSalesCommandService {
 
           int useCount = p.getUsedCount() != null ? p.getUsedCount() : 1;
           pass.useCount(useCount);
+
+          customerMembershipHistoryRepository.save(
+              CustomerMembershipHistory.builder()
+                  .salesId(sales.getSalesId())
+                  .paymentsId(savedPaymentsId)
+                  .customerSessionPassId(pass.getCustomerSessionPassId())
+                  .usedCount(useCount)
+                  .build());
         }
       }
     }
@@ -117,5 +139,195 @@ public class ItemSalesCommandServiceImpl implements ItemSalesCommandService {
     customer.incrementVisitCount();
     customer.addRevenue(request.getTotalAmount());
     customer.updateRecentVisitDate(request.getSalesDate().toLocalDate());
+  }
+
+  @Transactional
+  @Override
+  public void updateItemSales(Long salesId, ItemSalesRequest request) {
+    // 1. 기존 Sales 조회
+    Sales sales =
+        salesRepository
+            .findById(salesId)
+            .orElseThrow(() -> new BusinessException(ErrorCode.SALES_NOT_FOUND));
+
+    // 1-1. 수정 전 총금액을 로컬 변수에 저장
+    int oldTotalAmount = sales.getTotalAmount();
+
+    // 2. 기존 Payments 조회 및 soft delete + 패스 복원
+    List<Payments> oldPayments = paymentsRepository.findAllBySalesId(salesId);
+
+    for (Payments old : oldPayments) {
+      old.softDelete();
+
+      // customer_membership_history 기반으로 어떤 패스를 썼는지 확인
+      customerMembershipHistoryRepository
+          .findBySalesIdAndPaymentsId(salesId, old.getPaymentsId())
+          .ifPresent(
+              history -> {
+                if (history.getCustomerPrepaidPassId() != null) {
+                  var pass =
+                      customerPrepaidPassRepository
+                          .findById(history.getCustomerPrepaidPassId())
+                          .orElseThrow(
+                              () -> new BusinessException(ErrorCode.CUSTOMERPREPAIDPASS_NOT_FOUND));
+                  pass.restoreAmount(old.getAmount());
+                }
+
+                if (history.getCustomerSessionPassId() != null) {
+                  var pass =
+                      customerSessionPassRepository
+                          .findById(history.getCustomerSessionPassId())
+                          .orElseThrow(
+                              () -> new BusinessException(ErrorCode.CUSTOMERSESSIONPASS_NOT_FOUND));
+                  pass.restoreCount(history.getUsedCount());
+                }
+
+                // history도 soft delete
+                history.softDelete();
+              });
+    }
+
+    // 3. Sales 필드 수정
+    sales.updateSales(
+        request.getCustomerId(),
+        request.getStaffId(),
+        request.getReservationId(),
+        request.getRetailPrice(),
+        request.getDiscountRate(),
+        request.getDiscountAmount(),
+        request.getTotalAmount(),
+        request.getSalesMemo(),
+        request.getSalesDate());
+
+    // 4. 새로운 Payments 추가 + 패스 차감 + history 저장
+    for (PaymentsInfo p : request.getPayments()) {
+      Payments payment =
+          Payments.builder()
+              .salesId(salesId)
+              .paymentsMethod(p.getPaymentsMethod())
+              .amount(p.getAmount())
+              .build();
+      paymentsRepository.save(payment);
+
+      // customer_membership_history 저장용 변수
+      Long customerPrepaidPassId = null;
+      Long customerSessionPassId = null;
+
+      int usedCount = 0;
+      switch (p.getPaymentsMethod()) {
+        case PREPAID_PASS -> {
+          var pass =
+              customerPrepaidPassRepository
+                  .findById(p.getCustomerPrepaidPassId())
+                  .orElseThrow(
+                      () -> new BusinessException(ErrorCode.CUSTOMERPREPAIDPASS_NOT_FOUND));
+          pass.useAmount(p.getAmount());
+          customerPrepaidPassId = pass.getCustomerPrepaidPassId();
+        }
+
+        case SESSION_PASS -> {
+          var pass =
+              customerSessionPassRepository
+                  .findById(p.getCustomerSessionPassId())
+                  .orElseThrow(
+                      () -> new BusinessException(ErrorCode.CUSTOMERSESSIONPASS_NOT_FOUND));
+          usedCount = p.getUsedCount() != null ? p.getUsedCount() : 1;
+          pass.useCount(usedCount);
+          customerSessionPassId = pass.getCustomerSessionPassId();
+        }
+      }
+
+      customerMembershipHistoryRepository.save(
+          CustomerMembershipHistory.builder()
+              .salesId(salesId)
+              .paymentsId(payment.getPaymentsId())
+              .customerPrepaidPassId(customerPrepaidPassId)
+              .customerSessionPassId(customerSessionPassId)
+              .usedCount(usedCount)
+              .build());
+    }
+
+    // 5. ItemSales 수정
+    ItemSales itemSales =
+        itemSalesRepository
+            .findBySalesId(salesId)
+            .orElseThrow(() -> new BusinessException(ErrorCode.ITEMSALES_NOT_FOUND));
+    itemSales.updateItemSales(
+        request.getSecondaryItemId(),
+        request.getQuantity(),
+        request.getDiscountRate(),
+        request.getCouponId());
+
+    // 6. 고객 정보 갱신 (금액 차이 반영)
+    Customer customer =
+        customerRepository
+            .findById(request.getCustomerId())
+            .orElseThrow(() -> new BusinessException(ErrorCode.CUSTOMER_NOT_FOUND));
+
+    int amountDifference = request.getTotalAmount() - oldTotalAmount;
+    customer.addRevenue(amountDifference);
+    customer.updateRecentVisitDate(request.getSalesDate().toLocalDate());
+  }
+
+  @Transactional
+  @Override
+  public void refundItemSales(Long salesId) {
+    // 1. 기존 Sales 조회 및 환불 여부 확인
+    Sales sales =
+        salesRepository
+            .findById(salesId)
+            .orElseThrow(() -> new BusinessException(ErrorCode.SALES_NOT_FOUND));
+
+    if (sales.getIsRefunded()) {
+      throw new BusinessException(ErrorCode.SALES_ALREADY_REFUNDED);
+    }
+
+    int oldTotalAmount = sales.getTotalAmount();
+
+    // 2. 기존 Payments 조회 및 soft delete + 패스 복원
+    List<Payments> oldPayments = paymentsRepository.findAllBySalesId(salesId);
+
+    for (Payments old : oldPayments) {
+      old.softDelete();
+
+      customerMembershipHistoryRepository
+          .findBySalesIdAndPaymentsId(salesId, old.getPaymentsId())
+          .ifPresent(
+              history -> {
+                if (history.getCustomerPrepaidPassId() != null) {
+                  var pass =
+                      customerPrepaidPassRepository
+                          .findById(history.getCustomerPrepaidPassId())
+                          .orElseThrow(
+                              () -> new BusinessException(ErrorCode.CUSTOMERPREPAIDPASS_NOT_FOUND));
+                  pass.restoreAmount(old.getAmount());
+                }
+
+                if (history.getCustomerSessionPassId() != null) {
+                  var pass =
+                      customerSessionPassRepository
+                          .findById(history.getCustomerSessionPassId())
+                          .orElseThrow(
+                              () -> new BusinessException(ErrorCode.CUSTOMERSESSIONPASS_NOT_FOUND));
+                  Integer usedCount = history.getUsedCount();
+                  if (usedCount == null) {
+                    throw new BusinessException(ErrorCode.INVALID_MEMBERSHIP_HISTORY);
+                  }
+                  pass.restoreCount(usedCount);
+                }
+
+                history.softDelete();
+              });
+    }
+
+    // 3. Sales 환불 처리
+    sales.setRefunded(true);
+
+    // 4. 고객 정보 롤백
+    Customer customer =
+        customerRepository
+            .findById(sales.getCustomerId())
+            .orElseThrow(() -> new BusinessException(ErrorCode.CUSTOMER_NOT_FOUND));
+    customer.subtractRevenue(oldTotalAmount);
   }
 }
