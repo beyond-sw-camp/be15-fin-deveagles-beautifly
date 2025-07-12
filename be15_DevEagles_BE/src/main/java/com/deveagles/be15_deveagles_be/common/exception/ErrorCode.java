@@ -145,6 +145,8 @@ public enum ErrorCode implements ErrorCodeType {
   SALES_NOT_FOUND("90006", "매출을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
   SALES_ALREADY_REFUNDED("90007", "이미 환불된 매출입니다.", HttpStatus.BAD_REQUEST),
   SALES_ALREADY_DELETED("90008", "이미 삭제된 매출입니다.", HttpStatus.BAD_REQUEST),
+  ITEMSALES_NOT_FOUND("90010", "상품매출을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+  INVALID_MEMBERSHIP_HISTORY("90011", "횟수권 사용횟수를 찾을 수 없습니다.", HttpStatus.BAD_REQUEST),
   ;
 
   private final String code;

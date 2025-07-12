@@ -36,7 +36,7 @@ public class ItemSalesRequest {
 
   private String salesMemo;
 
-  @NotNull(message = "판매일시를 입력해주세요") private LocalDateTime SalesDate;
+  @NotNull(message = "판매일시를 입력해주세요") private LocalDateTime salesDate;
 
   @NotNull(message = "결제수단을 입력해주세요") private List<PaymentsInfo> payments;
 }
