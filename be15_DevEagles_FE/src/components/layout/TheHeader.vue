@@ -105,17 +105,17 @@
 
             <!-- 🔴 알림 개수 뱃지 -->
             <span
-              v-if="notificationCount > 0"
+              v-if="unreadCount > 0"
               class="absolute -top-1 -right-1 inline-flex items-center justify-center w-4 h-4 text-[10px] font-bold text-white bg-danger rounded-full"
             >
-              {{ notificationCount }}
+              {{ unreadCount }}
             </span>
           </button>
           <span class="tooltip tooltip-bottom tooltip-primary">알림</span>
-        </div>
 
-        <!-- 알림 팝오버 -->
-        <NotificationList v-model="showNotifications" :trigger-element="bellButtonRef" />
+          <!-- ✨ [이동] 팝오버 컴포넌트를 올바른 위치로 이동 -->
+          <NotificationList v-model="showNotifications" :trigger-element="bellButtonRef" />
+        </div>
       </div>
 
       <!-- 사용자 메뉴 -->
@@ -223,6 +223,7 @@
   import { logout } from '@/features/users/api/users.js';
   import customersAPI from '@/features/customer/api/customers.js';
   import { useMetadataStore } from '@/store/metadata.js';
+  import { useNotifications } from '@/features/notifications/composables/useNotifications.js';
 
   const router = useRouter();
   const searchListRef = ref(null);
@@ -234,7 +235,7 @@
   const showUserMenu = ref(false);
   // 알림 관련 상태
   const showNotifications = ref(false);
-  const notificationCount = ref(3);
+  const { unreadCount } = useNotifications();
   const bellButtonRef = ref(null);
   const isSearchFocused = ref(false);
 

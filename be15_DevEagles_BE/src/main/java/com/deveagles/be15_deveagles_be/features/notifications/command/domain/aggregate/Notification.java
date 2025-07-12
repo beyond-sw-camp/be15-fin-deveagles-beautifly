@@ -47,4 +47,8 @@ public class Notification {
     this.content = content;
     this.type = type;
   }
+
+  public void markAsRead() {
+    this.isRead = true;
+  }
 }

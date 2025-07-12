@@ -1,5 +1,7 @@
 package com.deveagles.be15_deveagles_be.features.notifications.command.application.service;
 
+import com.deveagles.be15_deveagles_be.common.exception.BusinessException;
+import com.deveagles.be15_deveagles_be.common.exception.ErrorCode;
 import com.deveagles.be15_deveagles_be.features.notifications.command.application.dto.CreateNotificationRequest;
 import com.deveagles.be15_deveagles_be.features.notifications.command.domain.aggregate.Notification;
 import com.deveagles.be15_deveagles_be.features.notifications.command.domain.repository.NotificationRepository;
@@ -39,5 +41,14 @@ public class NotificationCommandService {
         savedNotification.getType(),
         savedNotification.isRead(),
         savedNotification.getCreatedAt());
+  }
+
+  public void markAsRead(Long shopId, Long notificationId) {
+    Notification notification =
+        notificationRepository
+            .findByNotificationIdAndShopId(notificationId, shopId)
+            .orElseThrow(() -> new BusinessException(ErrorCode.NOTIFICATION_NOT_FOUND));
+
+    notification.markAsRead();
   }
 }
