@@ -276,4 +276,23 @@ public class ShopCommandServiceImplTest {
     verify(shopRepository).save(shop);
     verify(snsRepository).deleteByShopId(shopId);
   }
+
+  @Test
+  @DisplayName("updateReservationTerm: 예약 단위 시간이 정상적으로 업데이트된다")
+  void updateReservationTerm_정상() {
+    // given
+    Long shopId = 1L;
+    Integer term = 10;
+
+    Shop shop = Shop.builder().shopId(shopId).reservationTerm(10).build();
+
+    Mockito.when(shopRepository.findByShopId(shopId)).thenReturn(Optional.of(shop));
+
+    // when
+    shopCommandService.updateReservationTerm(shopId, term);
+
+    // then
+    assertThat(shop.getReservationTerm()).isEqualTo(term);
+    verify(shopRepository).save(shop);
+  }
 }
