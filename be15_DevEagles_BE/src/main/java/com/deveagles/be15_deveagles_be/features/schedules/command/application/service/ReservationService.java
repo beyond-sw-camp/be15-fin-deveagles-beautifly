@@ -8,6 +8,7 @@ import com.deveagles.be15_deveagles_be.features.customers.query.service.Customer
 import com.deveagles.be15_deveagles_be.features.schedules.command.application.dto.request.CreateReservationFullRequest;
 import com.deveagles.be15_deveagles_be.features.schedules.command.application.dto.request.CreateReservationRequest;
 import com.deveagles.be15_deveagles_be.features.schedules.command.application.dto.request.UpdateReservationRequest;
+import com.deveagles.be15_deveagles_be.features.schedules.command.application.dto.request.UpdateReservationStatusRequest;
 import com.deveagles.be15_deveagles_be.features.schedules.command.domain.aggregate.Reservation;
 import com.deveagles.be15_deveagles_be.features.schedules.command.domain.aggregate.ReservationDetail;
 import com.deveagles.be15_deveagles_be.features.schedules.command.domain.aggregate.ReservationStatusName;
@@ -156,21 +157,23 @@ public class ReservationService {
   }
 
   @Transactional
-  public void changeReservationStatus(
-      Long shopId, Long reservationId, ReservationStatusName newStatus) {
-    Reservation reservation =
-        reservationRepository
-            .findById(reservationId)
-            .orElseThrow(() -> new BusinessException(ErrorCode.RESERVATION_NOT_FOUND));
+  public void changeReservationStatuses(
+      Long shopId, List<UpdateReservationStatusRequest> requestList) {
+    for (UpdateReservationStatusRequest request : requestList) {
+      Reservation reservation =
+          reservationRepository
+              .findById(request.reservationId())
+              .orElseThrow(() -> new BusinessException(ErrorCode.RESERVATION_NOT_FOUND));
 
-    if (!reservation.getShopId().equals(shopId)) {
-      throw new BusinessException(ErrorCode.RESERVATION_NOT_FOUND);
+      if (!reservation.getShopId().equals(shopId)) {
+        throw new BusinessException(ErrorCode.RESERVATION_NOT_FOUND);
+      }
+
+      if (reservation.getReservationStatusName() == ReservationStatusName.PAID) {
+        throw new BusinessException(ErrorCode.MODIFY_NOT_ALLOWED_FOR_PAID_RESERVATION);
+      }
+
+      reservation.changeStatus(request.reservationStatusName());
     }
-
-    if (reservation.getReservationStatusName() == ReservationStatusName.PAID) {
-      throw new BusinessException(ErrorCode.MODIFY_NOT_ALLOWED_FOR_PAID_RESERVATION);
-    }
-
-    reservation.changeStatus(newStatus);
   }
 }

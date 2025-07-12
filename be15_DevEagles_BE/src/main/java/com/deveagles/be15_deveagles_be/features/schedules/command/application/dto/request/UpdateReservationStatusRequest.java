@@ -4,4 +4,4 @@ import com.deveagles.be15_deveagles_be.features.schedules.command.domain.aggrega
 import jakarta.validation.constraints.NotNull;
 
 public record UpdateReservationStatusRequest(
-    @NotNull ReservationStatusName reservationStatusName) {}
+    @NotNull Long reservationId, @NotNull ReservationStatusName reservationStatusName) {}
