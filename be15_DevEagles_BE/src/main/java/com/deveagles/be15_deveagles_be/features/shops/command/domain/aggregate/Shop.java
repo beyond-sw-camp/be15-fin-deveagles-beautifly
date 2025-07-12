@@ -1,5 +1,7 @@
 package com.deveagles.be15_deveagles_be.features.shops.command.domain.aggregate;
 
+import com.deveagles.be15_deveagles_be.common.exception.BusinessException;
+import com.deveagles.be15_deveagles_be.common.exception.ErrorCode;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import lombok.*;
@@ -109,5 +111,12 @@ public class Shop {
 
   public void setDescription(String description) {
     this.shopDescription = description;
+  }
+
+  public void updateReservationTerm(int term) {
+    if (term != 10 && term != 30) {
+      throw new BusinessException(ErrorCode.INVALID_RESERVATION_TERM);
+    }
+    this.reservationTerm = term;
   }
 }

@@ -47,19 +47,21 @@
               <PrimeDatePicker
                 v-model="availableTimes[day].start"
                 :time-only="true"
-                :show-time="true"
                 hour-format="24"
-                placeholder="시작"
-                :manual-input="true"
+                :show-button-bar="true"
+                :clearable="false"
+                :manual-input="false"
+                :placeholder="'시간 선택'"
               />
               <div class="time-separator">~</div>
               <PrimeDatePicker
                 v-model="availableTimes[day].end"
                 :time-only="true"
-                :show-time="true"
                 hour-format="24"
-                placeholder="마감"
-                :manual-input="true"
+                :show-button-bar="true"
+                :clearable="false"
+                :manual-input="false"
+                :placeholder="'시간 선택'"
               />
 
               <!-- 점심 시작/마감 -->
@@ -68,19 +70,21 @@
                 <PrimeDatePicker
                   v-model="lunchTimes[day].start"
                   :time-only="true"
-                  :show-time="true"
                   hour-format="24"
-                  placeholder="점심 시작"
-                  :manual-input="true"
+                  :show-button-bar="true"
+                  :clearable="false"
+                  :manual-input="false"
+                  :placeholder="'시간 선택'"
                 />
                 <div class="time-separator">~</div>
                 <PrimeDatePicker
                   v-model="lunchTimes[day].end"
                   :time-only="true"
-                  :show-time="true"
                   hour-format="24"
-                  placeholder="점심 마감"
-                  :manual-input="true"
+                  :show-button-bar="true"
+                  :clearable="false"
+                  :manual-input="false"
+                  :placeholder="'시간 선택'"
                 />
               </template>
             </template>
@@ -112,25 +116,42 @@
       </div>
     </div>
   </div>
+
+  <BaseConfirm
+    v-model="showConfirm"
+    title="예약 설정 저장"
+    message="현재 내용을 저장하시겠습니까?"
+    :confirm-text="'저장'"
+    :cancel-text="'취소'"
+    :confirm-type="'primary'"
+    @confirm="onConfirmSave"
+  />
+
+  <BaseToast ref="toastRef" position="top-right" />
 </template>
 
 <script setup>
-  import { ref } from 'vue';
+  import { ref, onMounted, watch } from 'vue';
   import BaseButton from '@/components/common/BaseButton.vue';
   import PrimeDatePicker from '@/components/common/PrimeDatePicker.vue';
+  import BaseConfirm from '@/components/common/BaseConfirm.vue';
+  import BaseToast from '@/components/common/BaseToast.vue';
+  import {
+    fetchMyReservationSettings,
+    updateReservationSettings,
+  } from '@/features/schedules/api/schedules';
 
   const days = ['월', '화', '수', '목', '금', '토', '일'];
-  const activeDays = ref(['월', '화', '수', '목', '금']);
-  const interval = ref('10');
-  const lunchEnabled = ref(true);
+  const dayIndexToName = { 0: '일', 1: '월', 2: '화', 3: '수', 4: '목', 5: '금', 6: '토', 7: '일' };
+  const activeDays = ref([]);
+  const interval = ref('');
+  const lunchEnabled = ref(false);
 
   const availableTimes = ref({});
   const lunchTimes = ref({});
 
-  for (const day of days) {
-    availableTimes.value[day] = { start: '09:00', end: '18:00' };
-    lunchTimes.value[day] = { start: '12:00', end: '13:00' };
-  }
+  const showConfirm = ref(false);
+  const toastRef = ref();
 
   const toggleDay = day => {
     if (activeDays.value.includes(day)) {
@@ -140,25 +161,163 @@
     }
   };
 
-  const saveSettings = () => {
-    for (const day of activeDays.value) {
-      const { start, end } = availableTimes.value[day];
-      if (!start || !end || start >= end) {
-        alert(`${day}요일의 예약 시간이 올바르지 않습니다.`);
+  const fetchSettings = async () => {
+    try {
+      const data = await fetchMyReservationSettings();
+
+      const available = {};
+      const lunch = {};
+      const active = [];
+      let hasLunchTime = false; // 점심시간이 존재하는지 체크
+
+      const parseTime = (timeStr, defaultHour = null) => {
+        if (!timeStr && defaultHour !== null) {
+          const d = new Date();
+          d.setHours(defaultHour, 0, 0, 0);
+          return d;
+        }
+        if (!timeStr) return null;
+        const [hh, mm] = timeStr.split(':').map(Number);
+        const d = new Date();
+        d.setHours(hh, mm, 0, 0);
+        return d;
+      };
+
+      for (const day of days) {
+        available[day] = {
+          start: parseTime(null, 9),
+          end: parseTime(null, 18),
+        };
+
+        lunch[day] = {
+          start: null,
+          end: null,
+        };
+      }
+
+      for (const setting of data) {
+        const day = dayIndexToName[setting.availableDay];
+        if (!day) continue;
+
+        const availableStart = parseTime(setting.availableStartTime?.slice(0, 5), 9);
+        const availableEnd = parseTime(setting.availableEndTime?.slice(0, 5), 18);
+        available[day] = { start: availableStart, end: availableEnd };
+
+        const lunchStart = parseTime(setting.lunchStartTime?.slice(0, 5));
+        const lunchEnd = parseTime(setting.lunchEndTime?.slice(0, 5));
+        lunch[day] = { start: lunchStart, end: lunchEnd };
+
+        if (lunchStart && lunchEnd) {
+          lunch[day] = { start: lunchStart, end: lunchEnd };
+          hasLunchTime = true;
+        } else {
+          lunch[day] = { start: null, end: null };
+        }
+
+        active.push(day);
+
+        if (!interval.value && setting.reservationUnitMinutes) {
+          interval.value = setting.reservationUnitMinutes.toString();
+        }
+      }
+
+      availableTimes.value = available;
+      lunchTimes.value = lunch;
+      activeDays.value = active;
+      lunchEnabled.value = hasLunchTime;
+
+      console.log('availableTimes:', available);
+      console.log('lunchTimes:', lunch);
+      console.log('점심시간 활성화:', hasLunchTime);
+    } catch (err) {
+      console.error('예약 설정 조회 실패:', err);
+      toastRef.value?.error('예약 설정 정보를 불러오는 데 실패했습니다.');
+    }
+  };
+
+  const toTimeString = value => {
+    if (!value) return null;
+    if (typeof value === 'string') return value.length === 5 ? `${value}:00` : value;
+    const d = new Date(value);
+    return d.toTimeString().slice(0, 8); // HH:mm:ss
+  };
+
+  const onConfirmSave = async () => {
+    const dayToIndex = { 월: 1, 화: 2, 수: 3, 목: 4, 금: 5, 토: 6, 일: 7 };
+    const requestList = [];
+
+    for (const day of days) {
+      const isActive = activeDays.value.includes(day);
+      const dayIndex = dayToIndex[day];
+      if (!isActive) continue;
+
+      const { start, end } = availableTimes.value[day] || {};
+      const startFormatted = toTimeString(start);
+      const endFormatted = toTimeString(end);
+
+      if (!startFormatted || !endFormatted || startFormatted >= endFormatted) {
+        toastRef.value?.error(`${day}요일의 예약 시간이 올바르지 않습니다.`);
         return;
       }
 
+      let lunchStart = null;
+      let lunchEnd = null;
+
       if (lunchEnabled.value) {
-        const { start: lStart, end: lEnd } = lunchTimes.value[day];
-        if (!lStart || !lEnd || lStart >= lEnd) {
-          alert(`${day}요일의 점심시간이 올바르지 않습니다.`);
+        const { start: lStart, end: lEnd } = lunchTimes.value[day] || {};
+        lunchStart = toTimeString(lStart);
+        lunchEnd = toTimeString(lEnd);
+
+        if (!lunchStart || !lunchEnd || lunchStart >= lunchEnd) {
+          toastRef.value?.error(`${day}요일의 점심시간이 올바르지 않습니다.`);
           return;
         }
       }
+
+      requestList.push({
+        availableDay: dayIndex,
+        availableStartTime: startFormatted,
+        availableEndTime: endFormatted,
+        lunchStartTime: lunchStart,
+        lunchEndTime: lunchEnd,
+        reservationTerm: Number(interval.value),
+      });
     }
 
-    alert('✅ 설정이 정상적으로 저장되었습니다!');
+    try {
+      await updateReservationSettings(requestList);
+      toastRef.value?.success('설정이 정상적으로 저장되었습니다!');
+    } catch (err) {
+      console.error('예약 설정 저장 실패:', err);
+      toastRef.value?.error('설정 저장에 실패했습니다.');
+    }
   };
+
+  const saveSettings = () => {
+    showConfirm.value = true;
+  };
+
+  watch(lunchEnabled, enabled => {
+    if (enabled) {
+      for (const day of days) {
+        const lunch = lunchTimes.value[day] || {};
+        if (!lunch.start || !lunch.end) {
+          const defaultLunchStart = new Date();
+          defaultLunchStart.setHours(12, 0, 0, 0);
+
+          const defaultLunchEnd = new Date();
+          defaultLunchEnd.setHours(13, 0, 0, 0);
+
+          lunchTimes.value[day] = {
+            start: defaultLunchStart,
+            end: defaultLunchEnd,
+          };
+        }
+      }
+    }
+  });
+
+  onMounted(fetchSettings);
 </script>
 
 <style scoped>

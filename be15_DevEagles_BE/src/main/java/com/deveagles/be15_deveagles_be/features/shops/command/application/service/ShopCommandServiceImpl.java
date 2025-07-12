@@ -171,4 +171,15 @@ public class ShopCommandServiceImpl implements ShopCommandService {
       }
     }
   }
+
+  @Transactional
+  @Override
+  public void updateReservationTerm(Long shopId, Integer term) {
+    Shop shop =
+        shopRepository
+            .findByShopId(shopId)
+            .orElseThrow(() -> new BusinessException(ErrorCode.SHOP_NOT_FOUNT));
+    shop.updateReservationTerm(term);
+    shopRepository.save(shop);
+  }
 }
