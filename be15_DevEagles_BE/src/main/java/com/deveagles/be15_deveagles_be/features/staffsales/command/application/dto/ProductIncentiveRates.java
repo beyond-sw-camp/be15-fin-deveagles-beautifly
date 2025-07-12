@@ -1,4 +1,4 @@
-package com.deveagles.be15_deveagles_be.features.staffsales.command.application.dto.response;
+package com.deveagles.be15_deveagles_be.features.staffsales.command.application.dto;
 
 import lombok.Builder;
 import lombok.Getter;

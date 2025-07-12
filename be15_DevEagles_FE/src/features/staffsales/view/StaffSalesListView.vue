@@ -147,7 +147,14 @@
     :title="'인센티브 설정'"
     @close="showIncentiveModal = false"
   >
-    <IncentiveSettingModal ref="modalRef" :incentive-data="incentiveData" />
+    <IncentiveSettingModal
+      v-if="incentiveData"
+      ref="modalRef"
+      v-model:selected-staff-id="selectedStaffId"
+      :incentive-data="incentiveData"
+      :toast="toastRef"
+      @saved="handleSaved"
+    />
     <template #footer>
       <div class="footer-btn-row">
         <BaseButton type="primary" @click="modalRef?.handleSave?.()">저장하기</BaseButton>
@@ -203,6 +210,8 @@
   const staffSalesApiData = ref(null);
   const staffNameFilter = ref('');
   const incentiveData = ref(null);
+  const modalRef = ref();
+  const selectedStaffId = ref(null);
 
   const { categoryLabelMap, formatCurrency, getFormattedDates } = useStaffSales();
 
@@ -333,8 +342,20 @@
     }
   };
 
+  const handleSaved = updatedData => {
+    const list = updatedData?.data?.data?.incentiveList ?? [];
+    incentiveData.value = updatedData?.data?.data;
+
+    if (selectedStaffId.value) {
+      const exists = list.some(i => i.staffId === selectedStaffId.value);
+      if (!exists) selectedStaffId.value = null;
+    }
+    fetchStaffSales();
+  };
+
   const openTargetPopup = () => {
     showTargetSalesModal.value = true;
+    fetchStaffSales();
   };
 
   const getRowClass = row => {

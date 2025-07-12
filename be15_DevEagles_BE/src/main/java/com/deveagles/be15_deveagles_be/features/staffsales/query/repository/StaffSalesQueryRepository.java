@@ -7,7 +7,7 @@ import java.util.List;
 
 public interface StaffSalesQueryRepository {
   List<StaffPaymentsSalesResponse> getSalesByStaff(
-      boolean isDetail, Long staffId, LocalDateTime startDate, LocalDateTime endDate);
+      boolean isDetail, Long shopId, Long staffId, LocalDateTime startDate, LocalDateTime endDate);
 
   List<StaffPaymentsDetailSalesResponse> getDetailSalesByStaff(
       Long staffId, Long shopId, LocalDateTime startDate, LocalDateTime endDate);

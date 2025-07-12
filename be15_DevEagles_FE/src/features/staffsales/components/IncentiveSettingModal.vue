@@ -35,8 +35,9 @@
               label="직원 선택"
               :options="staffOptions"
               placeholder="직원을 선택하세요"
+              @update:model-value="v => emit('update:selectedStaffId', v)"
             />
-            <div class="incentive-group">
+            <div v-if="selectedStaffId" class="incentive-group">
               <IncentiveSettingTable v-model="staff.SERVICE" label="시술 (SERVICE)" />
               <IncentiveSettingTable v-model="staff.PRODUCT" label="제품 (PRODUCT)" />
               <IncentiveSettingTable v-model="staff.PREPAID_PASS" label="선불권 (PREPAID_PASS)" />
@@ -54,22 +55,46 @@
   import BaseForm from '@/components/common/BaseForm.vue';
   import BaseToggleSwitch from '@/components/common/BaseToggleSwitch.vue';
   import IncentiveSettingTable from '@/features/staffsales/components/IncentiveSettingTable.vue';
-
-  defineExpose({ handleSave });
+  import { getIncentives, setIncentive } from '@/features/staffsales/api/staffsales.js';
 
   const props = defineProps({
     incentiveData: Object,
+    toast: Object,
+    selectedStaffId: Number,
   });
 
-  const staffOptions = computed(() => {
-    return props.incentiveData.staffList.map(staff => ({
-      text: staff.staffName,
-      value: staff.staffId,
-    }));
-  });
+  const emit = defineEmits(['saved', 'update:selectedStaffId']);
+
+  const staffOptions = computed(
+    () =>
+      props.incentiveData?.staffList?.map(i => ({
+        text: i.staffName ?? '기본값',
+        value: i.staffId,
+      })) ?? []
+  );
 
   const incentiveEnabled = ref(props.incentiveData.incentiveEnabled);
   const mode = ref(props.incentiveData.incentiveType === 'BULK' ? 'bulk' : 'staff');
+
+  const transformIncentivesToProductMap = incentives => {
+    const result = {
+      SERVICE: {},
+      PRODUCT: {},
+      PREPAID_PASS: {},
+      SESSION_PASS: {},
+    };
+
+    for (const [payMethod, categoryValues] of Object.entries(incentives || {})) {
+      if (!categoryValues) continue;
+
+      result.SERVICE[payMethod] = categoryValues.service ?? 0;
+      result.PRODUCT[payMethod] = categoryValues.product ?? 0;
+      result.PREPAID_PASS[payMethod] = categoryValues.prepaidPass ?? 0;
+      result.SESSION_PASS[payMethod] = categoryValues.sessionPass ?? 0;
+    }
+
+    return result;
+  };
 
   const bulk = ref({
     SERVICE: {},
@@ -93,52 +118,78 @@
     SESSION_PASS: {},
   });
 
-  watch(
-    () => staff.value.staff,
-    staffId => {
-      const matched = props.incentiveData.incentiveList.find(i => i.staffId === staffId);
-      const incentives =
-        matched?.incentives ??
-        props.incentiveData.incentiveList.find(i => i.staffId === null)?.incentives;
-
-      if (incentives) {
-        Object.assign(staff.value, {
-          ...staff.value,
-          ...transformIncentivesToProductMap(incentives),
-        });
-      }
-    }
-  );
-
-  const transformIncentivesToProductMap = incentives => {
-    const result = {
-      SERVICE: {},
-      PRODUCT: {},
-      PREPAID_PASS: {},
-      SESSION_PASS: {},
+  const handleSave = async () => {
+    const basePayload = {
+      isActive: incentiveEnabled.value,
     };
+    try {
+      if (!incentiveEnabled.value) {
+        await setIncentive(basePayload);
+        props.toast?.success?.('인센티브 설정이 완료되었습니다.');
+        return;
+      }
+      const type = mode.value === 'bulk' ? 'BULK' : 'STAFF';
+      const target = mode.value === 'bulk' ? bulk.value : staff.value;
 
-    for (const [payMethod, categoryValues] of Object.entries(incentives || {})) {
-      if (!categoryValues) continue;
+      const incentives = {};
 
-      result.SERVICE[payMethod] = categoryValues.service ?? 0;
-      result.PRODUCT[payMethod] = categoryValues.product ?? 0;
-      result.PREPAID_PASS[payMethod] = categoryValues.prepaidPass ?? 0;
-      result.SESSION_PASS[payMethod] = categoryValues.sessionPass ?? 0;
+      for (const category of ['SERVICE', 'PRODUCT', 'SESSION_PASS', 'PREPAID_PASS']) {
+        const categoryKey = category.toLowerCase(); // 깔끔하게 미리 처리
+        const categoryData = target[category] || {};
+
+        for (const method of Object.keys(categoryData)) {
+          if (!incentives[method]) {
+            incentives[method] = {};
+          }
+          incentives[method][categoryKey] = categoryData[method];
+        }
+      }
+
+      const incentiveInfo = {
+        staffId: mode.value === 'staff' ? target.staff : null,
+        incentives,
+      };
+
+      const payload = {
+        ...basePayload,
+        type,
+        incentiveInfo,
+      };
+      await setIncentive(payload);
+      const updated = await getIncentives();
+      emit('saved', updated);
+      props.toast?.success?.('인센티브 설정이 완료되었습니다.');
+    } catch (err) {
+      const message = err.message !== null ? err.message : '인센티브 설정에 실패했습니다.';
+      props.toast?.error?.(message);
+      console.error(`인센티브 설정 실패`, err);
     }
-
-    return result;
   };
 
-  function handleSave() {
-    // TODO: API 연동 또는 부모 emit 등 실제 저장 처리
-    console.log('저장 완료:', {
-      enabled: incentiveEnabled.value,
-      mode: mode.value,
-      bulk: bulk.value,
-      staff: staff.value,
-    });
-  }
+  watch(
+    () => props.selectedStaffId,
+    staffId => {
+      if (!staffId) return;
+
+      const list = props.incentiveData?.incentiveList ?? [];
+      const matched = list.find(i => i.staffId === staffId);
+      const fallback = list.find(i => i.staffId === null);
+
+      const incentives = matched?.incentives ?? fallback?.incentives;
+      if (!incentives) return;
+
+      const mapped = transformIncentivesToProductMap(incentives);
+      staff.value = {
+        staff: staffId,
+        ...mapped,
+      };
+
+      console.log('mapped', mapped);
+      console.log('staff.value', staff.value);
+    },
+    { immediate: true }
+  );
+  defineExpose({ handleSave });
 </script>
 
 <style scoped>

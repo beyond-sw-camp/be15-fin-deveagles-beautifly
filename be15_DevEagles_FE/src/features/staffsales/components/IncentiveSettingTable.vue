@@ -18,7 +18,7 @@
 </template>
 
 <script setup>
-  import { watch, reactive } from 'vue';
+  import { watch, reactive, computed } from 'vue';
 
   const props = defineProps({
     modelValue: {
@@ -42,14 +42,27 @@
     LOCAL: '지역화폐',
   };
 
-  const paymentOptions = Object.keys(paymentOptionLabels);
+  const productType = computed(() => {
+    const match = props.label.match(/\((.*?)\)$/);
+    return match ? match[1] : '';
+  });
+
+  const paymentOptions = computed(() => {
+    const allOptions = Object.keys(paymentOptionLabels);
+
+    if (productType.value === 'PREPAID_PASS' || productType.value === 'SESSION_PASS') {
+      return allOptions.filter(opt => opt !== 'PREPAID_PASS' && opt !== 'SESSION_PASS');
+    }
+
+    return allOptions;
+  });
 
   const localValue = reactive({});
 
   watch(
     () => props.modelValue,
     val => {
-      for (const key of paymentOptions) {
+      for (const key of paymentOptions.value) {
         localValue[key] = val?.[key] ?? 0;
       }
     },

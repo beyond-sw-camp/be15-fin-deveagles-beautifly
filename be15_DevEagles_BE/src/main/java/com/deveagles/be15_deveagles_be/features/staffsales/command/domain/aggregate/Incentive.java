@@ -55,4 +55,8 @@ public class Incentive {
   public void setActive(boolean isActive) {
     this.isActive = isActive;
   }
+
+  public void setIncentiveRatio(int incentive) {
+    this.incentive = incentive;
+  }
 }

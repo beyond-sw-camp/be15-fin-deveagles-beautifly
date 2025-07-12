@@ -1,10 +1,14 @@
 package com.deveagles.be15_deveagles_be.features.staffsales.command.application.service.impl;
 
+import com.deveagles.be15_deveagles_be.common.exception.BusinessException;
+import com.deveagles.be15_deveagles_be.common.exception.ErrorCode;
 import com.deveagles.be15_deveagles_be.features.sales.command.domain.aggregate.PaymentsMethod;
+import com.deveagles.be15_deveagles_be.features.shops.command.domain.aggregate.Shop;
 import com.deveagles.be15_deveagles_be.features.shops.command.repository.ShopRepository;
+import com.deveagles.be15_deveagles_be.features.staffsales.command.application.dto.ProductIncentiveRates;
+import com.deveagles.be15_deveagles_be.features.staffsales.command.application.dto.StaffIncentiveInfo;
+import com.deveagles.be15_deveagles_be.features.staffsales.command.application.dto.request.SetIncentiveRequest;
 import com.deveagles.be15_deveagles_be.features.staffsales.command.application.dto.response.IncentiveListResult;
-import com.deveagles.be15_deveagles_be.features.staffsales.command.application.dto.response.ProductIncentiveRates;
-import com.deveagles.be15_deveagles_be.features.staffsales.command.application.dto.response.StaffIncentiveInfo;
 import com.deveagles.be15_deveagles_be.features.staffsales.command.application.dto.response.StaffSimpleInfo;
 import com.deveagles.be15_deveagles_be.features.staffsales.command.application.service.IncentiveCommandService;
 import com.deveagles.be15_deveagles_be.features.staffsales.command.domain.aggregate.Incentive;
@@ -13,16 +17,15 @@ import com.deveagles.be15_deveagles_be.features.staffsales.command.domain.aggreg
 import com.deveagles.be15_deveagles_be.features.staffsales.command.repository.IncentiveRepository;
 import com.deveagles.be15_deveagles_be.features.users.command.domain.aggregate.Staff;
 import com.deveagles.be15_deveagles_be.features.users.command.repository.UserRepository;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class IncentiveCommandServiceImpl implements IncentiveCommandService {
@@ -42,7 +45,7 @@ public class IncentiveCommandServiceImpl implements IncentiveCommandService {
     List<Staff> staffList = userRepository.findByShopIdAndLeftDateIsNull(shopId);
 
     // 3. 매장 인센티브 조회
-    List<Incentive> incentives = incentiveRepository.findByShopId(shopId);
+    List<Incentive> incentives = incentiveRepository.findByShopIdAndIsActiveTrue(shopId);
 
     // 4. 직원 목록 변환
     List<StaffSimpleInfo> staffSimpleList =
@@ -72,6 +75,41 @@ public class IncentiveCommandServiceImpl implements IncentiveCommandService {
         .build();
   }
 
+  @Override
+  @Transactional
+  public void setIncentive(Long shopId, SetIncentiveRequest request) {
+
+    Shop shop =
+        shopRepository
+            .findByShopId(shopId)
+            .orElseThrow(() -> new BusinessException(ErrorCode.SHOP_NOT_FOUNT));
+
+    if (Boolean.FALSE.equals(request.isActive())) {
+      shop.setIncentive(false);
+      shopRepository.save(shop);
+      return;
+    } else {
+      shop.setIncentive(true);
+      shopRepository.save(shop);
+    }
+
+    Map<PaymentsMethod, ProductIncentiveRates> map = request.incentiveInfo().getIncentives();
+    Long staffId =
+        request.type() == IncentiveType.STAFF ? request.incentiveInfo().getStaffId() : null;
+
+    for (Map.Entry<PaymentsMethod, ProductIncentiveRates> entry : map.entrySet()) {
+      PaymentsMethod method = entry.getKey();
+      ProductIncentiveRates rates = entry.getValue();
+
+      saveOrUpdateIncentive(shopId, staffId, method, ProductType.SERVICE, rates.getService());
+      saveOrUpdateIncentive(shopId, staffId, method, ProductType.PRODUCT, rates.getProduct());
+      saveOrUpdateIncentive(
+          shopId, staffId, method, ProductType.SESSION_PASS, rates.getSessionPass());
+      saveOrUpdateIncentive(
+          shopId, staffId, method, ProductType.PREPAID_PASS, rates.getPrepaidPass());
+    }
+  }
+
   private List<StaffIncentiveInfo> buildStaffIncentiveInfoList(
       List<Incentive> incentives, List<Staff> staffList, IncentiveType type) {
 
@@ -98,7 +136,7 @@ public class IncentiveCommandServiceImpl implements IncentiveCommandService {
               return StaffIncentiveInfo.builder()
                   .staffId(staff.getStaffId())
                   .staffName(staff.getStaffName())
-                  .incentives(rates.isEmpty() ? createZeroRates() : rates)
+                  .incentives(rates.isEmpty() ? ZERO_RATES : rates)
                   .build();
             })
         .toList();
@@ -128,17 +166,71 @@ public class IncentiveCommandServiceImpl implements IncentiveCommandService {
                     })));
   }
 
-  private Map<PaymentsMethod, ProductIncentiveRates> createZeroRates() {
-    return Arrays.stream(PaymentsMethod.values())
-        .collect(
-            Collectors.toMap(
-                Function.identity(),
-                method ->
-                    ProductIncentiveRates.builder()
-                        .service(0)
-                        .product(0)
-                        .sessionPass(0)
-                        .prepaidPass(0)
-                        .build()));
+  private static final Map<PaymentsMethod, ProductIncentiveRates> ZERO_RATES =
+      Arrays.stream(PaymentsMethod.values())
+          .collect(
+              Collectors.toMap(
+                  Function.identity(),
+                  method ->
+                      ProductIncentiveRates.builder()
+                          .service(0)
+                          .product(0)
+                          .sessionPass(0)
+                          .prepaidPass(0)
+                          .build()));
+
+  private void saveOrUpdateIncentive(
+      Long shopId, Long staffId, PaymentsMethod method, ProductType type, int ratio) {
+    if (staffId == null) {
+      // 1. 직원별 설정 isActive false 처리
+      List<Incentive> staffIncentives =
+          incentiveRepository.findStaffSpecificIncentives(shopId, method, type);
+      for (Incentive i : staffIncentives) {
+        i.setActive(false);
+      }
+      incentiveRepository.saveAll(staffIncentives);
+
+      // 2. 일괄 설정 insert or update
+      Optional<Incentive> existing = incentiveRepository.findCommonIncentives(shopId, method, type);
+
+      if (existing.isPresent()) {
+        existing.get().setIncentiveRatio(ratio);
+        existing.get().setActive(true); // 혹시 비활성화돼 있었을 수도 있으니
+        incentiveRepository.save(existing.get());
+      } else {
+        Incentive newIncentive =
+            Incentive.builder()
+                .shopId(shopId)
+                .staffId(null)
+                .paymentsMethod(method)
+                .type(type)
+                .incentive(ratio)
+                .isActive(true)
+                .build();
+        incentiveRepository.save(newIncentive);
+      }
+    } else {
+      // 직원별 설정
+      Optional<Incentive> existing =
+          incentiveRepository.findByShopIdAndStaffIdAndPaymentsMethodAndType(
+              shopId, staffId, method, type);
+
+      if (existing.isPresent()) {
+        existing.get().setIncentiveRatio(ratio);
+        existing.get().setActive(true);
+        incentiveRepository.save(existing.get());
+      } else {
+        Incentive newIncentive =
+            Incentive.builder()
+                .shopId(shopId)
+                .staffId(staffId)
+                .paymentsMethod(method)
+                .type(type)
+                .incentive(ratio)
+                .isActive(true)
+                .build();
+        incentiveRepository.save(newIncentive);
+      }
+    }
   }
 }

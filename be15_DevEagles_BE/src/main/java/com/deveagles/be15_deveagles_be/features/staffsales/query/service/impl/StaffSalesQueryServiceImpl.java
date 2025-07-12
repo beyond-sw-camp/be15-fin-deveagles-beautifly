@@ -1,5 +1,7 @@
 package com.deveagles.be15_deveagles_be.features.staffsales.query.service.impl;
 
+import com.deveagles.be15_deveagles_be.common.exception.BusinessException;
+import com.deveagles.be15_deveagles_be.common.exception.ErrorCode;
 import com.deveagles.be15_deveagles_be.features.sales.command.domain.aggregate.PaymentsMethod;
 import com.deveagles.be15_deveagles_be.features.sales.command.domain.aggregate.SearchMode;
 import com.deveagles.be15_deveagles_be.features.staffsales.command.domain.aggregate.ProductType;
@@ -49,7 +51,7 @@ public class StaffSalesQueryServiceImpl implements StaffSalesQueryService {
                 staff -> {
                   List<StaffPaymentsSalesResponse> paymentsSalesList =
                       staffSalesQueryRepository
-                          .getSalesByStaff(false, staff.getStaffId(), startDate, endDate)
+                          .getSalesByStaff(false, shopId, staff.getStaffId(), startDate, endDate)
                           .stream()
                           .map(
                               response -> {
@@ -137,7 +139,7 @@ public class StaffSalesQueryServiceImpl implements StaffSalesQueryService {
 
                   List<StaffPaymentsSalesResponse> sales =
                       staffSalesQueryRepository.getSalesByStaff(
-                          true, staff.getStaffId(), startDate, endDate);
+                          true, shopId, staff.getStaffId(), startDate, endDate);
 
                   // 직원 요약 정보
                   StaffSalesSummaryResponse summary =
@@ -168,7 +170,7 @@ public class StaffSalesQueryServiceImpl implements StaffSalesQueryService {
     LocalDate endDate = isPeriodMode ? request.endDate() : startDate;
 
     if (!hasAnyTargetForShop(shopId, startDate, endDate)) {
-      return null; // or throw exception or custom result
+      throw new BusinessException(ErrorCode.SHOP_NOT_FOUNT);
     }
 
     List<Staff> staffList = userRepository.findAllByShopId(shopId);

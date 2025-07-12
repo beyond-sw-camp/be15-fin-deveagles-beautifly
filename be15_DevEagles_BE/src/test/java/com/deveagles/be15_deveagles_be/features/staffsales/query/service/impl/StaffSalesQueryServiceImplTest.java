@@ -1,4 +1,4 @@
-package com.deveagles.be15_deveagles_be.features.sales.query.service.impl;
+package com.deveagles.be15_deveagles_be.features.staffsales.query.service.impl;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.*;
@@ -13,7 +13,6 @@ import com.deveagles.be15_deveagles_be.features.staffsales.query.dto.response.*;
 import com.deveagles.be15_deveagles_be.features.staffsales.query.repository.SalesQueryRepository;
 import com.deveagles.be15_deveagles_be.features.staffsales.query.repository.SalesTargetQueryRepository;
 import com.deveagles.be15_deveagles_be.features.staffsales.query.repository.StaffSalesQueryRepository;
-import com.deveagles.be15_deveagles_be.features.staffsales.query.service.impl.StaffSalesQueryServiceImpl;
 import com.deveagles.be15_deveagles_be.features.staffsales.query.service.support.SalesCalculator;
 import com.deveagles.be15_deveagles_be.features.users.command.domain.aggregate.Staff;
 import com.deveagles.be15_deveagles_be.features.users.command.repository.UserRepository;
@@ -89,6 +88,7 @@ public class StaffSalesQueryServiceImplTest {
     given(
             staffSalesQueryRepository.getSalesByStaff(
                 false,
+                shopId,
                 staffId,
                 start.withDayOfMonth(1).atStartOfDay(),
                 start.withDayOfMonth(start.lengthOfMonth()).atTime(23, 59, 59)))
@@ -179,7 +179,7 @@ public class StaffSalesQueryServiceImplTest {
             .deductionList(List.of(deduction))
             .incentiveTotal(2000)
             .build();
-    when(staffSalesQueryRepository.getSalesByStaff(eq(true), eq(staffId), any(), any()))
+    when(staffSalesQueryRepository.getSalesByStaff(eq(true), eq(shopId), eq(staffId), any(), any()))
         .thenReturn(List.of(sales));
 
     // when

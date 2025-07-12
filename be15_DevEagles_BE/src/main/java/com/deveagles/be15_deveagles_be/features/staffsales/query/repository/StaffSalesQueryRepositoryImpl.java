@@ -4,7 +4,9 @@ import com.deveagles.be15_deveagles_be.features.items.command.domain.aggregate.C
 import com.deveagles.be15_deveagles_be.features.items.command.domain.aggregate.QPrimaryItem;
 import com.deveagles.be15_deveagles_be.features.items.command.domain.aggregate.QSecondaryItem;
 import com.deveagles.be15_deveagles_be.features.sales.command.domain.aggregate.*;
+import com.deveagles.be15_deveagles_be.features.staffsales.command.domain.aggregate.ProductType;
 import com.deveagles.be15_deveagles_be.features.staffsales.query.dto.response.*;
+import com.deveagles.be15_deveagles_be.features.staffsales.query.service.support.SalesCalculator;
 import com.querydsl.core.Tuple;
 import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.impl.JPAQueryFactory;
@@ -18,41 +20,64 @@ import org.springframework.stereotype.Repository;
 public class StaffSalesQueryRepositoryImpl implements StaffSalesQueryRepository {
 
   private final JPAQueryFactory queryFactory;
+  private final SalesCalculator salesCalculator;
 
   @Override
   public List<StaffPaymentsSalesResponse> getSalesByStaff(
-      boolean isDetail, Long staffId, LocalDateTime startDate, LocalDateTime endDate) {
+      boolean isDetail, Long shopId, Long staffId, LocalDateTime startDate, LocalDateTime endDate) {
 
     List<StaffPaymentsSalesResponse> result = new ArrayList<>();
 
-    // 서비스/상품은 category 기준
-    if (!isDetail) {
-      result.add(
-          buildSalesResponse(
-              "SERVICE",
-              getSalesIdsByCategory(staffId, startDate, endDate, Category.SERVICE),
-              true));
-      result.add(
-          buildSalesResponse(
-              "PRODUCT",
-              getSalesIdsByCategory(staffId, startDate, endDate, Category.PRODUCT),
-              true));
-    }
-    // 회수권
+    // SERVICE
     result.add(
         buildSalesResponse(
-            "SESSION_PASS", getSessionPassSalesIds(staffId, startDate, endDate), false));
+            "SERVICE",
+            getSalesIdsByCategory(staffId, startDate, endDate, Category.SERVICE),
+            true,
+            shopId,
+            staffId,
+            ProductType.SERVICE));
 
-    // 선불권
+    // PRODUCT
     result.add(
         buildSalesResponse(
-            "PREPAID_PASS", getPrepaidPassSalesIds(staffId, startDate, endDate), false));
+            "PRODUCT",
+            getSalesIdsByCategory(staffId, startDate, endDate, Category.PRODUCT),
+            true,
+            shopId,
+            staffId,
+            ProductType.PRODUCT));
+
+    // SESSION_PASS
+    result.add(
+        buildSalesResponse(
+            "SESSION_PASS",
+            getSessionPassSalesIds(staffId, startDate, endDate),
+            false,
+            shopId,
+            staffId,
+            ProductType.SESSION_PASS));
+
+    // PREPAID_PASS
+    result.add(
+        buildSalesResponse(
+            "PREPAID_PASS",
+            getPrepaidPassSalesIds(staffId, startDate, endDate),
+            false,
+            shopId,
+            staffId,
+            ProductType.PREPAID_PASS));
 
     return result;
   }
 
   private StaffPaymentsSalesResponse buildSalesResponse(
-      String category, List<Long> salesIds, boolean couponApplicable) {
+      String category,
+      List<Long> salesIds,
+      boolean couponApplicable,
+      Long shopId,
+      Long staffId,
+      ProductType productType) {
 
     QSales sales = QSales.sales;
     QItemSales itemSales = QItemSales.itemSales;
@@ -75,15 +100,24 @@ public class StaffSalesQueryRepositoryImpl implements StaffSalesQueryRepository 
             .groupBy(payments.paymentsMethod)
             .fetch();
 
+    Map<PaymentsMethod, Integer> rateMap =
+        salesCalculator.getEffectiveIncentiveRates(shopId, staffId, productType);
+
     List<StaffNetSalesResponse> netSalesList =
         projectionList.stream()
             .map(
-                p ->
-                    StaffNetSalesResponse.builder()
-                        .paymentsMethod(PaymentsMethod.valueOf(p.getPayments()))
-                        .amount(p.getAmount())
-                        .incentiveAmount(0)
-                        .build())
+                p -> {
+                  PaymentsMethod method = PaymentsMethod.valueOf(p.getPayments());
+                  int amount = p.getAmount();
+                  int rate = rateMap.getOrDefault(method, 0);
+                  int incentiveAmount = (int) Math.floor(amount * rate / 100.0);
+
+                  return StaffNetSalesResponse.builder()
+                      .paymentsMethod(method)
+                      .amount(amount)
+                      .incentiveAmount(incentiveAmount)
+                      .build();
+                })
             .toList();
 
     // 할인 공제
@@ -282,13 +316,22 @@ public class StaffSalesQueryRepositoryImpl implements StaffSalesQueryRepository 
                                 List<Long> salesIds = secondaryEntry.getValue();
 
                                 StaffPaymentsSalesResponse saleData =
-                                    buildSalesResponse(category.name(), salesIds, true);
+                                    buildSalesResponse(
+                                        category.name(),
+                                        salesIds,
+                                        true,
+                                        shopId,
+                                        staffId,
+                                        ProductType.valueOf(category.name()));
 
                                 return StaffSecondarySalesResponse.builder()
                                     .secondaryItemName(secondaryEntry.getKey())
                                     .netSalesList(saleData.getNetSalesList())
                                     .deductionList(saleData.getDeductionList())
-                                    .incentiveTotal(0)
+                                    .incentiveTotal(
+                                        saleData.getNetSalesList().stream()
+                                            .mapToInt(StaffNetSalesResponse::getIncentiveAmount)
+                                            .sum())
                                     .build();
                               })
                           .toList();
