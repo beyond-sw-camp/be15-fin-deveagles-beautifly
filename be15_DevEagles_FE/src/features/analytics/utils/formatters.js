@@ -18,7 +18,6 @@ export function formatCurrency(value, options = {}) {
   // 정수로 변환 (소수점 완전 제거)
   const intValue = Math.floor(Number(value));
 
-  // 한국 환경에서는 전체 숫자 표시 선호
   if (shortFormat) {
     if (intValue >= 100000000) {
       return `${Math.floor(intValue / 100000000)}억${showUnit ? '원' : ''}`;
@@ -152,7 +151,7 @@ export function calculateGrowthRate(current, previous) {
 }
 
 /**
- * 컬렉션에서 평균값 계산 - 안전한 계산
+ * 컬렉션에서 평균값 계산
  * @param {Array} data - 데이터 배열
  * @param {string} key - 평균을 구할 키 (optional)
  * @returns {number} 평균값
