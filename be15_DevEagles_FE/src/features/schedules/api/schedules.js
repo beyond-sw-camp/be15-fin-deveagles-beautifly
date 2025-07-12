@@ -27,3 +27,102 @@ export const getRegularSchedules = async params => {
   const response = await api.get('/schedules/calendar/regular', { params });
   return response.data.data;
 };
+
+export const fetchPlanList = async params => {
+  const response = await api.get('/schedules/plans', { params });
+  return response.data.data;
+};
+
+export const fetchLeaveList = async params => {
+  const response = await api.get('/schedules/leaves', { params });
+  return response.data.data;
+};
+
+// 직원 목록 조회 API
+export const getStaffList = async ({
+  page = 1,
+  size = 100,
+  keyword = '',
+  isActive = true,
+} = {}) => {
+  const response = await api.get('/staffs', {
+    params: {
+      page,
+      size,
+      keyword,
+      isActive,
+    },
+  });
+
+  return response.data.data.staffList ?? [];
+};
+
+export const deletePlans = async deleteRequests => {
+  return await api.delete('/schedules/plans', { data: deleteRequests });
+};
+
+export const deleteLeaves = async deleteRequests => {
+  return await api.delete('/schedules/leaves', { data: deleteRequests });
+};
+
+export const fetchScheduleDetail = async (type, id) => {
+  switch (type) {
+    case 'plan':
+      return await api.get(`/schedules/plans/${id}`);
+    case 'regular_plan':
+      return await api.get(`/schedules/plans/regular/${id}`);
+    case 'leave':
+      return await api.get(`/schedules/leaves/${id}`);
+    case 'regular_leave':
+      return await api.get(`/schedules/leaves/regular/${id}`);
+    default:
+      throw new Error('Invalid schedule type');
+  }
+};
+
+export const fetchReservationHistories = async ({ page = 0, size = 10 }) => {
+  const response = await api.get('/schedules/reservations/history', {
+    params: { page, size },
+  });
+  return response.data.data;
+};
+
+export const fetchReservationRequests = async ({ page = 0, size = 10 }) => {
+  const response = await api.get('/schedules/reservations/requests', {
+    params: { page, size },
+  });
+  return response.data.data;
+};
+
+export const fetchReservationList = async ({
+  staffId,
+  reservationStatusName,
+  customerKeyword,
+  from,
+  to,
+  page = 0,
+  size = 10,
+}) => {
+  const response = await api.get('/schedules/reservations', {
+    params: {
+      staffId,
+      reservationStatusName,
+      customerKeyword,
+      from,
+      to,
+      page,
+      size,
+    },
+  });
+
+  return response.data.data;
+};
+
+export const fetchReservationDetail = async id => {
+  const response = await api.get(`/schedules/reservations/${id}`);
+  return response.data.data;
+};
+
+export const deleteReservation = async reservationId => {
+  await api.delete(`/schedules/reservations/${reservationId}`);
+};

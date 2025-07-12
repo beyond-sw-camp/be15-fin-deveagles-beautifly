@@ -70,51 +70,51 @@ public class CouponCommandServiceImpl implements CouponCommandService {
 
   @Override
   public void deleteCoupon(DeleteCouponRequest command) {
-    log.info("쿠폰 삭제 시작 - ID: {}", command.getId());
+    log.info("쿠폰 삭제 시작 - ID: {}, 매장ID: {}", command.getId(), command.getShopId());
 
     Coupon coupon =
         couponJpaRepository
-            .findById(command.getId())
+            .findByIdAndShopIdAndDeletedAtIsNull(command.getId(), command.getShopId())
             .orElseThrow(
                 () -> {
-                  log.warn("쿠폰을 찾을 수 없음 - ID: {}", command.getId());
+                  log.warn("쿠폰을 찾을 수 없음 - ID: {}, 매장ID: {}", command.getId(), command.getShopId());
                   return new BusinessException(ErrorCode.COUPON_NOT_FOUND);
                 });
 
     if (coupon.isDeleted()) {
-      log.warn("이미 삭제된 쿠폰 - ID: {}", command.getId());
+      log.warn("이미 삭제된 쿠폰 - ID: {}, 매장ID: {}", command.getId(), command.getShopId());
       throw new BusinessException(ErrorCode.COUPON_ALREADY_DELETED);
     }
 
     coupon.softDelete();
     couponJpaRepository.save(coupon);
-    log.info("쿠폰 삭제 완료 - ID: {}", command.getId());
+    log.info("쿠폰 삭제 완료 - ID: {}, 매장ID: {}", command.getId(), command.getShopId());
   }
 
   @Override
-  public CouponDto toggleCouponStatus(Long couponId) {
-    log.info("쿠폰 상태 토글 시작 - ID: {}", couponId);
+  public CouponDto toggleCouponStatus(Long couponId, Long shopId) {
+    log.info("쿠폰 상태 토글 시작 - ID: {}, 매장ID: {}", couponId, shopId);
 
     Coupon coupon =
         couponJpaRepository
-            .findById(couponId)
+            .findByIdAndShopIdAndDeletedAtIsNull(couponId, shopId)
             .orElseThrow(
                 () -> {
-                  log.warn("쿠폰을 찾을 수 없음 - ID: {}", couponId);
+                  log.warn("쿠폰을 찾을 수 없음 - ID: {}, 매장ID: {}", couponId, shopId);
                   return new BusinessException(ErrorCode.COUPON_NOT_FOUND);
                 });
 
     if (coupon.isDeleted()) {
-      log.warn("삭제된 쿠폰 상태 변경 시도 - ID: {}", couponId);
+      log.warn("삭제된 쿠폰 상태 변경 시도 - ID: {}, 매장ID: {}", couponId, shopId);
       throw new BusinessException(ErrorCode.DELETED_COUPON_OPERATION_NOT_ALLOWED);
     }
 
     if (coupon.getIsActive()) {
       coupon.deactivate();
-      log.info("쿠폰 비활성화 완료 - ID: {}", couponId);
+      log.info("쿠폰 비활성화 완료 - ID: {}, 매장ID: {}", couponId, shopId);
     } else {
       coupon.activate();
-      log.info("쿠폰 활성화 완료 - ID: {}", couponId);
+      log.info("쿠폰 활성화 완료 - ID: {}, 매장ID: {}", couponId, shopId);
     }
 
     Coupon savedCoupon = couponJpaRepository.save(coupon);

@@ -1,12 +1,14 @@
 <template>
   <div class="layout">
     <TheSidebar @sidebar-toggle="handleSidebarToggle" />
+
     <div class="main-container" :class="{ 'sidebar-collapsed': sidebarCollapsed }">
       <TheHeader />
       <main class="content">
         <router-view />
       </main>
     </div>
+
     <div class="chat-button-wrapper">
       <button
         class="chat-inquiry-button"
@@ -20,26 +22,76 @@
     </div>
 
     <ChatModal v-if="isChatOpen" @close="toggleChat" />
+    <ChatToastProvider />
   </div>
 </template>
 
 <script setup>
-  import { ref } from 'vue';
+  import { ref, onMounted } from 'vue';
   import TheSidebar from './TheSidebar.vue';
   import TheHeader from './TheHeader.vue';
   import ChatModal from '@/features/chat/components/ChatModal.vue';
+  import ChatToastProvider from '@/features/chat/components/ChatToastProvider.vue';
   import { MessageCircleIcon } from '@/components/icons/index.js';
+  import { useChatStore } from '@/store/useChatStore';
+  import { useAuthStore } from '@/store/auth';
+  import { getChatRooms } from '@/features/chat/api/chat.js';
+  import {
+    ensureSocketConnected,
+    safeSubscribeToRoom,
+  } from '@/features/chat/composables/socket.js';
 
   const sidebarCollapsed = ref(false);
   const isHovered = ref(false);
   const isChatOpen = ref(false);
+
+  const chatStore = useChatStore();
+  const auth = useAuthStore();
+
+  function toggleChat() {
+    isChatOpen.value = !isChatOpen.value;
+    chatStore.setChatModalOpen(isChatOpen.value);
+  }
+
   const handleSidebarToggle = isCollapsed => {
     sidebarCollapsed.value = isCollapsed;
   };
 
-  function toggleChat() {
-    isChatOpen.value = !isChatOpen.value;
-  }
+  const handleReceiveMessage = msg => {
+    const isMine = String(msg.senderId) === String(auth.userId);
+    const isSameRoom = String(msg.chatroomId) === String(chatStore.currentRoomId);
+    const isOpen = chatStore.isChatModalOpen;
+
+    if (isSameRoom && isOpen) {
+      chatStore.addMessage({
+        from: isMine ? 'me' : msg.isCustomer ? 'user' : 'bot',
+        text: msg.content,
+      });
+      return;
+    }
+
+    if (!isMine) {
+      chatStore.triggerToast(msg); // ChatToastProvider가 처리
+    }
+  };
+
+  onMounted(async () => {
+    chatStore.setCurrentUserId(auth.userId);
+
+    if (chatStore.isSubscribed) return;
+
+    await ensureSocketConnected(handleReceiveMessage, () => console.warn('❌ WebSocket 인증 실패'));
+
+    try {
+      const res = await getChatRooms();
+      res.data.forEach(room => {
+        safeSubscribeToRoom(room.roomId, handleReceiveMessage);
+      });
+      chatStore.setIsSubscribed(true);
+    } catch (e) {
+      console.error('❌ 채팅방 목록 조회 실패:', e);
+    }
+  });
 </script>
 
 <style scoped>

@@ -38,6 +38,10 @@ repositories {
 }
 
 dependencies {
+    // mongodb
+    implementation 'org.springframework.boot:spring-boot-starter-data-mongodb'
+    // websocket
+    implementation 'org.springframework.boot:spring-boot-starter-websocket'
     implementation 'org.modelmapper:modelmapper:3.2.0'
     implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter:3.0.4'
     implementation 'org.springframework.boot:spring-boot-starter-security'

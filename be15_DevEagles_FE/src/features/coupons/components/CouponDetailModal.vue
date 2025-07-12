@@ -11,7 +11,7 @@
         <div class="detail-grid">
           <div class="detail-item">
             <label class="detail-label">쿠폰명</label>
-            <div class="detail-value">{{ couponData.name }}</div>
+            <div class="detail-value">{{ couponData.couponTitle }}</div>
           </div>
           <div class="detail-item">
             <label class="detail-label">쿠폰 코드</label>
@@ -36,21 +36,39 @@
         <div class="detail-grid-2col">
           <div class="detail-item">
             <label class="detail-label">카테고리</label>
-            <div class="detail-value">{{ couponData.category || '-' }}</div>
+            <div class="detail-value">
+              {{
+                couponData.primaryItemInfo?.category ||
+                couponData.secondaryItemInfo?.category ||
+                '-'
+              }}
+            </div>
           </div>
           <div class="detail-item">
             <label class="detail-label">디자이너</label>
-            <div class="detail-value">{{ couponData.designer || '-' }}</div>
+            <div class="detail-value">
+              {{
+                couponData.designerInfo && couponData.designerInfo.staffName
+                  ? couponData.designerInfo.staffName
+                  : '전체'
+              }}
+            </div>
           </div>
           <div class="detail-item">
             <label class="detail-label">1차 상품</label>
             <div class="detail-value">
-              {{ couponData.product || couponData.primaryProduct || '-' }}
+              {{ couponData.primaryItemInfo?.name || '-' }}
             </div>
           </div>
           <div class="detail-item">
             <label class="detail-label">2차 상품</label>
-            <div class="detail-value">{{ couponData.secondaryProduct || '-' }}</div>
+            <div class="detail-value">
+              {{
+                couponData.secondaryItemInfo && couponData.secondaryItemInfo.name
+                  ? couponData.secondaryItemInfo.name
+                  : '전체'
+              }}
+            </div>
           </div>
         </div>
       </div>
@@ -61,12 +79,12 @@
         <div class="detail-grid-2col">
           <div class="detail-item">
             <label class="detail-label">만료일</label>
-            <div class="detail-value">{{ formatDate(couponData.expiryDate) || '-' }}</div>
+            <div class="detail-value">{{ formatDate(couponData.expirationDate) || '-' }}</div>
           </div>
           <div class="detail-item">
             <label class="detail-label">할인율</label>
             <div class="detail-value">
-              <BaseBadge type="success">{{ couponData.discount }}%</BaseBadge>
+              <BaseBadge type="success">{{ couponData.discountRate }}%</BaseBadge>
             </div>
           </div>
           <div class="detail-item">
@@ -81,12 +99,12 @@
       </div>
 
       <!-- 직원 정보 -->
-      <div v-if="couponData.employeeId" class="detail-section">
+      <div v-if="couponData.designerInfo?.staffId" class="detail-section">
         <h3 class="section-title">담당자 정보</h3>
         <div class="detail-grid">
           <div class="detail-item">
             <label class="detail-label">담당자 ID</label>
-            <div class="detail-value">{{ couponData.employeeId }}</div>
+            <div class="detail-value">{{ couponData.designerInfo?.staffId }}</div>
           </div>
         </div>
       </div>
@@ -96,14 +114,12 @@
 
 <script>
   import BaseWindow from '@/components/common/BaseWindow.vue';
-  import BaseButton from '@/components/common/BaseButton.vue';
   import BaseBadge from '@/components/common/BaseBadge.vue';
 
   export default {
     name: 'CouponDetailModal',
     components: {
       BaseWindow,
-      BaseButton,
       BaseBadge,
     },
     props: {

@@ -1,5 +1,5 @@
 <script setup>
-  import { watch, ref, nextTick } from 'vue';
+  import { watch, ref, nextTick, onMounted, onBeforeUnmount } from 'vue';
   import FullCalendar from '@fullcalendar/vue3';
   import interactionPlugin from '@fullcalendar/interaction';
   import resourceTimeGridPlugin from '@fullcalendar/resource-timegrid';
@@ -10,14 +10,34 @@
   import 'tippy.js/dist/tippy.css';
   import dayjs from 'dayjs';
 
-  const calendarRef = ref(null);
+  let resizeObserver;
+
+  onMounted(() => {
+    const el = calendarRef.value?.$el || calendarRef.value?.el || calendarRef.value;
+    if (el) {
+      resizeObserver = new ResizeObserver(() => {
+        calendarRef.value?.getApi().updateSize();
+      });
+      resizeObserver.observe(el);
+    }
+  });
+
+  onBeforeUnmount(() => {
+    resizeObserver?.disconnect();
+  });
 
   const props = defineProps({
     schedules: {
       type: Array,
       default: () => [],
     },
+    sidebarCollapsedTrigger: {
+      type: [Number, String],
+      default: 0,
+    },
   });
+
+  const calendarRef = ref(null);
 
   const emit = defineEmits(['clickSchedule', 'change-date-range']);
 
@@ -47,6 +67,7 @@
     plugins: [interactionPlugin, resourceTimeGridPlugin, dayGridPlugin, timeGridPlugin],
     initialView: 'dayGridMonth',
     editable: true,
+    eventStartEditable: false,
     eventDurationEditable: false,
     locale: koLocale,
     resources: [],
@@ -164,13 +185,15 @@
 
       const tooltip = tooltipLines.filter(Boolean).join('<br/>');
 
-      tippy(el, {
-        content: tooltip || '스케줄 정보 없음',
-        allowHTML: true,
-        placement: 'top',
-        animation: 'shift-away',
-        delay: [100, 0],
-        theme: 'light',
+      nextTick(() => {
+        tippy(el, {
+          content: tooltip || '스케줄 정보 없음',
+          allowHTML: true,
+          placement: 'top',
+          animation: 'shift-away',
+          delay: [100, 0],
+          theme: 'light',
+        });
       });
     },
   });
@@ -186,6 +209,15 @@
     },
     { immediate: true, deep: true }
   );
+
+  watch(
+    () => props.sidebarCollapsedTrigger,
+    async () => {
+      await nextTick();
+      calendarRef.value?.getApi().updateSize();
+    }
+  );
+
   calendarOptions.value.viewDidMount = arg => {
     const viewType = arg.view.type;
     updateResources(viewType);
@@ -254,6 +286,7 @@
     border-radius: 8px;
     overflow: hidden;
     background-color: white;
+    height: auto;
   }
 
   :deep(.fc-event) {
@@ -266,9 +299,22 @@
 
   :deep(.fc-daygrid-event) {
     display: block !important;
-    width: 100% !important;
-    max-width: 100% !important;
     z-index: 5;
+  }
+
+  :deep(.fc .fc-timegrid-slot-label) {
+    width: 80px !important;
+    min-width: 80px !important;
+    max-width: 80px !important;
+  }
+
+  :deep(.fc .fc-timegrid-slot-label-cushion),
+  :deep(.fc .fc-scrollgrid-shrink-cushion) {
+    display: block !important;
+    text-align: left !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
   }
 
   :deep(.custom-event-style) {
@@ -304,6 +350,10 @@
     height: 100%;
     z-index: 6;
   }
+  :deep(.fc .fc-daygrid-day),
+  :deep(.fc .fc-daygrid-body) {
+    box-sizing: border-box;
+  }
 
   :deep(.custom-event-style .text) {
     padding-left: 6px;
@@ -324,22 +374,21 @@
   :deep(.fc-scrollgrid) {
     border: 2px solid var(--color-primary-main) !important;
     overflow: hidden;
-    width: 100%;
     box-sizing: border-box;
     table-layout: fixed;
   }
+
   :deep(.fc-scrollgrid-section-header > table),
   :deep(.fc-scrollgrid-sync-table) {
     border-spacing: 0 !important;
     border-collapse: collapse !important;
-    width: 100% !important;
     table-layout: fixed !important;
   }
 
   :deep(.fc-col-header-cell-cushion) {
     color: var(--color-neutral-white) !important;
     font-weight: 600 !important;
-    text-decoration: none !important; /* 기본 밑줄 제거 */
+    text-decoration: none !important;
     font-size: 14px;
   }
 
