@@ -97,6 +97,7 @@ public enum ErrorCode implements ErrorCodeType {
   RESERVATION_SETTING_ALREADY_EXISTS("70004", "이미 예약 설정이 존재합니다", HttpStatus.BAD_REQUEST),
   SHOP_NOT_FOUND("70005", "매장을 찾을 수 없습니다", HttpStatus.NOT_FOUND),
   RESERVATION_SETTING_NOT_FOUND("70006", "예약 설정이 존재하지 않습니다.", HttpStatus.NOT_FOUND),
+  INVALID_RESERVATION_TERM("70007", "예약 단위는 1분 이상이어야 합니다", HttpStatus.BAD_REQUEST),
   // 예약 관련 에러 (71000번대)
   RESERVATION_NOT_FOUND("71001", "예약을 찾을 수 없습니다", HttpStatus.NOT_FOUND),
   MODIFY_NOT_ALLOWED_FOR_PAID_RESERVATION(

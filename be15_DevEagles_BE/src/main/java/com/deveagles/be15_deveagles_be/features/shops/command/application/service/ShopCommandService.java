@@ -22,4 +22,6 @@ public interface ShopCommandService {
   GetShopResponse getShop(Long shopId);
 
   void putShop(Long shopId, @Valid PutShopRequest shopRequest);
+
+  void updateReservationTerm(Long shopId, Integer term);
 }
