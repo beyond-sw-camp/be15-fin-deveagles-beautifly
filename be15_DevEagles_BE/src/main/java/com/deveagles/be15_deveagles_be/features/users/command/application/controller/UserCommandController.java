@@ -61,9 +61,9 @@ public class UserCommandController {
     return ResponseEntity.ok().body(ApiResponse.success(is_valid));
   }
 
-  // todo : Auth 적용
   @PostMapping("/account")
   public ResponseEntity<ApiResponse<AccountResponse>> getAccount(
+      @AuthenticationPrincipal CustomUser customUser,
       @RequestBody @Valid GetAccountRequest accountRequest) {
 
     AccountResponse response = userCommandService.getAccount(accountRequest);
@@ -73,6 +73,7 @@ public class UserCommandController {
 
   @PatchMapping("/account")
   public ResponseEntity<ApiResponse<AccountResponse>> patchAccount(
+      @AuthenticationPrincipal CustomUser customUser,
       @RequestBody @Valid PatchAccountRequest accountRequest) {
 
     AccountResponse response = userCommandService.patchAccount(accountRequest);
