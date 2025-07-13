@@ -73,7 +73,6 @@
   import { getStaff } from '@/features/staffs/api/staffs.js';
   import BaseToast from '@/components/common/BaseToast.vue';
   import BaseBadge from '@/components/common/BaseBadge.vue';
-  import { debounce } from 'chart.js/helpers';
   import BaseLoading from '@/components/common/BaseLoading.vue';
 
   const router = useRouter();
@@ -83,7 +82,6 @@
   const page = ref(1);
   const limit = ref(10);
   const totalCount = ref(0);
-  const searchText = ref('');
   const onlyActive = ref(false);
   const loading = ref(false);
 
@@ -96,7 +94,22 @@
 
   const totalPages = computed(() => Math.ceil(totalCount.value / limit.value));
 
+  const searchText = ref('');
+  let typingTimer = null;
+  const debounceDelay = 300;
+
+  // 검색
+  watch(searchText, () => {
+    if (typingTimer) clearTimeout(typingTimer);
+    typingTimer = setTimeout(() => {
+      page.value = 1;
+      fetchStaff();
+    }, debounceDelay);
+  });
+
+  // 엔터 키로 검색
   const handleSearch = () => {
+    if (typingTimer) clearTimeout(typingTimer);
     page.value = 1;
     fetchStaff();
   };
@@ -138,18 +151,10 @@
   const goToDetail = staff => {
     router.push({ name: 'StaffDetail', params: { staffId: staff.staffId } });
   };
+
   onMounted(() => {
     fetchStaff();
   });
-
-  // 검색
-  watch(
-    searchText,
-    debounce(() => {
-      page.value = 1;
-      fetchStaff();
-    }, 400)
-  );
 
   watch(onlyActive, () => {
     page.value = 1;
