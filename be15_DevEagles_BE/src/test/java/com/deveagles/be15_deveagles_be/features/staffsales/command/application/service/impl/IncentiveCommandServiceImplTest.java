@@ -13,8 +13,8 @@ import com.deveagles.be15_deveagles_be.features.staffsales.command.application.d
 import com.deveagles.be15_deveagles_be.features.staffsales.command.application.dto.request.SetIncentiveRequest;
 import com.deveagles.be15_deveagles_be.features.staffsales.command.application.dto.response.IncentiveListResult;
 import com.deveagles.be15_deveagles_be.features.staffsales.command.domain.aggregate.Incentive;
-import com.deveagles.be15_deveagles_be.features.staffsales.command.domain.aggregate.IncentiveType;
 import com.deveagles.be15_deveagles_be.features.staffsales.command.domain.aggregate.ProductType;
+import com.deveagles.be15_deveagles_be.features.staffsales.command.domain.aggregate.StaffSalesSettingType;
 import com.deveagles.be15_deveagles_be.features.staffsales.command.repository.IncentiveRepository;
 import com.deveagles.be15_deveagles_be.features.users.command.domain.aggregate.Staff;
 import com.deveagles.be15_deveagles_be.features.users.command.repository.UserRepository;
@@ -82,7 +82,7 @@ public class IncentiveCommandServiceImplTest {
     // then
     assertThat(result.getShopId()).isEqualTo(shopId);
     assertThat(result.getIncentiveEnabled()).isTrue();
-    assertThat(result.getIncentiveType()).isEqualTo(IncentiveType.BULK);
+    assertThat(result.getStaffSalesSettingType()).isEqualTo(StaffSalesSettingType.BULK);
     assertThat(result.getStaffList()).hasSize(2);
     assertThat(result.getIncentiveList()).hasSize(1); // 일괄 인센티브 1개
   }
@@ -110,7 +110,7 @@ public class IncentiveCommandServiceImplTest {
         StaffIncentiveInfo.builder().staffId(null).staffName(null).incentives(rateMap).build();
 
     SetIncentiveRequest request =
-        new SetIncentiveRequest(true, IncentiveType.BULK, staffIncentiveInfo);
+        new SetIncentiveRequest(true, StaffSalesSettingType.BULK, staffIncentiveInfo);
 
     given(
             incentiveRepository.findStaffSpecificIncentives(
@@ -157,7 +157,7 @@ public class IncentiveCommandServiceImplTest {
         StaffIncentiveInfo.builder().staffId(staffId).staffName("김인센").incentives(rateMap).build();
 
     SetIncentiveRequest request =
-        new SetIncentiveRequest(true, IncentiveType.STAFF, staffIncentiveInfo);
+        new SetIncentiveRequest(true, StaffSalesSettingType.STAFF, staffIncentiveInfo);
 
     given(
             incentiveRepository.findByShopIdAndStaffIdAndPaymentsMethodAndType(
@@ -181,7 +181,7 @@ public class IncentiveCommandServiceImplTest {
 
     given(shopRepository.findByShopId(shopId)).willReturn(Optional.of(shop));
 
-    SetIncentiveRequest request = new SetIncentiveRequest(false, IncentiveType.BULK, null);
+    SetIncentiveRequest request = new SetIncentiveRequest(false, StaffSalesSettingType.BULK, null);
 
     // when
     incentiveCommandService.setIncentive(shopId, request);
@@ -225,7 +225,7 @@ public class IncentiveCommandServiceImplTest {
         StaffIncentiveInfo.builder().staffId(null).staffName(null).incentives(rateMap).build();
 
     SetIncentiveRequest request =
-        new SetIncentiveRequest(true, IncentiveType.BULK, staffIncentiveInfo);
+        new SetIncentiveRequest(true, StaffSalesSettingType.BULK, staffIncentiveInfo);
 
     given(
             incentiveRepository.findStaffSpecificIncentives(
@@ -281,7 +281,7 @@ public class IncentiveCommandServiceImplTest {
         StaffIncentiveInfo.builder().staffId(staffId).staffName("박직원").incentives(rateMap).build();
 
     SetIncentiveRequest request =
-        new SetIncentiveRequest(true, IncentiveType.STAFF, staffIncentiveInfo);
+        new SetIncentiveRequest(true, StaffSalesSettingType.STAFF, staffIncentiveInfo);
 
     given(
             incentiveRepository.findByShopIdAndStaffIdAndPaymentsMethodAndType(
