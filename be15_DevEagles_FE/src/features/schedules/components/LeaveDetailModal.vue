@@ -194,7 +194,7 @@
   };
 
   const leaveTypeLabel = computed(() => {
-    return props.type === 'regular_leave' ? '정기휴무' : '휴무';
+    return props.type === 'regular_leave' ? '정기 휴무' : '휴무';
   });
 
   const displayStart = computed(() => {
