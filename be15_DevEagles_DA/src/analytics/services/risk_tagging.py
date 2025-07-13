@@ -5,6 +5,8 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Tuple
 from enum import Enum
 from decimal import Decimal
+import requests
+import json
 
 import pandas as pd
 from analytics.core.database import get_analytics_db
@@ -28,6 +30,8 @@ class CustomerRiskTaggingService:
         self.analytics_db = get_analytics_db()
         self.logger = get_logger(__name__)
         self.settings = get_settings()
+        self.be_api_url = self.settings.be_api_url
+        self.be_api_timeout = self.settings.be_api_timeout
     
     def analyze_customer_risk(self, customer_id: int) -> Dict:
         """특정 고객의 이탈위험 분석."""
@@ -46,8 +50,8 @@ class CustomerRiskTaggingService:
             # 위험 수준 결정
             risk_level = self._determine_risk_level(risk_score)
             
-            # 추천 태그 생성
-            recommended_tags = self._generate_risk_tags(customer_data, risk_factors, risk_level)
+            # 추천 세그먼트 생성
+            recommended_segments = self._generate_risk_segments(customer_data, risk_factors, risk_level)
             
             # 추천 액션 생성
             recommended_actions = self._generate_recommended_actions(customer_data, risk_factors, risk_level)
@@ -57,71 +61,76 @@ class CustomerRiskTaggingService:
                 'risk_score': risk_score,
                 'risk_level': risk_level,
                 'risk_factors': risk_factors,
-                'recommended_tags': recommended_tags,
+                'recommended_segments': recommended_segments,
                 'recommended_actions': recommended_actions,
-                'assessment_date': datetime.now()
+                'assessment_date': datetime.now().isoformat()
             }
             
         except Exception as e:
-            self.logger.error(f"Failed to analyze risk for customer {customer_id}: {e}")
+            self.logger.error(f"고객 위험도 분석 실패: {customer_id}, error: {e}")
             return {'error': str(e)}
     
-    def tag_all_customers(self, dry_run: bool = False) -> Dict:
-        """모든 고객의 이탈위험 태깅."""
+    def batch_segment_all_customers(self, dry_run: bool = False) -> Dict:
+        """모든 고객 배치 위험 세그먼트 처리."""
         try:
-            # 모든 고객 조회
             customers = self._get_all_customers()
             
-            results = {
-                'total_customers': len(customers),
-                'tagged_customers': 0,
-                'high_risk_customers': 0,
-                'medium_risk_customers': 0,
-                'low_risk_customers': 0,
-                'tags_created': 0,
-                'errors': []
-            }
+            total_customers = len(customers)
+            segmented_customers = 0
+            high_risk_customers = 0
+            medium_risk_customers = 0
+            low_risk_customers = 0
+            segments_created = 0
+            errors = []
             
             for customer in customers:
                 try:
-                    # 위험 분석
-                    risk_analysis = self.analyze_customer_risk(customer['customer_id'])
+                    customer_id = customer['customer_id']
+                    
+                    # 위험도 분석
+                    risk_analysis = self.analyze_customer_risk(customer_id)
                     
                     if 'error' in risk_analysis:
-                        results['errors'].append(f"고객 {customer['customer_id']}: {risk_analysis['error']}")
+                        errors.append(f"고객 {customer_id}: {risk_analysis['error']}")
                         continue
                     
-                    # 위험 수준별 카운트
+                    # 위험 수준별 카운팅
                     risk_level = risk_analysis['risk_level']
-                    if risk_level == RiskLevel.HIGH or risk_level == RiskLevel.CRITICAL:
-                        results['high_risk_customers'] += 1
-                    elif risk_level == RiskLevel.MEDIUM:
-                        results['medium_risk_customers'] += 1
+                    if risk_level in ['high', 'critical']:
+                        high_risk_customers += 1
+                    elif risk_level == 'medium':
+                        medium_risk_customers += 1
                     else:
-                        results['low_risk_customers'] += 1
+                        low_risk_customers += 1
                     
-                    # 태그 적용 (dry_run이 아닌 경우)
+                    # 실제 세그먼트 적용 (dry_run이 아닐 때만)
                     if not dry_run:
-                        tags_applied = self._apply_risk_tags(
-                            customer['customer_id'], 
-                            risk_analysis['recommended_tags']
+                        segments_applied = self._apply_risk_segments(
+                            customer_id, 
+                            risk_analysis['recommended_segments']
                         )
-                        results['tags_created'] += tags_applied
+                        segments_created += segments_applied
                         
-                        # 고객 분석 데이터 업데이트
-                        self._update_customer_risk_data(customer['customer_id'], risk_analysis)
+                        # 위험 데이터 업데이트
+                        self._update_customer_risk_data(customer_id, risk_analysis)
                     
-                    results['tagged_customers'] += 1
+                    segmented_customers += 1
                     
                 except Exception as e:
-                    error_msg = f"고객 {customer['customer_id']} 태깅 실패: {str(e)}"
-                    results['errors'].append(error_msg)
-                    self.logger.error(error_msg)
+                    errors.append(f"고객 {customer.get('customer_id', 'unknown')}: {str(e)}")
             
-            return results
+            return {
+                'total_customers': total_customers,
+                'segmented_customers': segmented_customers,
+                'high_risk_customers': high_risk_customers,
+                'medium_risk_customers': medium_risk_customers,
+                'low_risk_customers': low_risk_customers,
+                'segments_created': segments_created,
+                'errors': errors
+            }
             
         except Exception as e:
-            self.logger.error(f"Failed to tag all customers: {e}")
+            self.logger.error(f"배치 세그먼트 처리 실패: {e}")
             return {'error': str(e)}
     
     def get_risk_distribution(self) -> Dict:
@@ -221,10 +230,10 @@ class CustomerRiskTaggingService:
             self.logger.error(f"Failed to get high risk customers: {e}")
             return []
     
-    def get_customer_risk_tags(self, customer_id: int) -> List[Dict]:
-        """특정 고객의 위험 태그 조회."""
+    def get_customer_risk_segments(self, customer_id: int) -> List[Dict]:
+        """특정 고객의 위험 세그먼트 조회."""
         try:
-            # CRM 데이터베이스에서 태그 조회 (실제 구현에서는 CRM DB 연결 필요)
+            # CRM 데이터베이스에서 세그먼트 조회 (실제 구현에서는 CRM DB 연결 필요)
             # 여기서는 Analytics DB에서 시뮬레이션
             query = """
             SELECT 
@@ -239,75 +248,75 @@ class CustomerRiskTaggingService:
             if not result:
                 return []
             
-            # 현재 상태 기반으로 태그 생성
+            # 현재 상태 기반으로 세그먼트 생성
             risk_level = result[1]
             risk_score = result[2]
             days_since_visit = result[3]
             segment = result[4]
             total_visits = result[5]
             
-            tags = []
+            segments = []
             
-            # 위험 수준 태그
+            # 위험 수준 세그먼트
             if risk_level == 'critical':
-                tags.append({
-                    'tag_type': RiskTag.CHURN_RISK_HIGH.value,
-                    'tag_value': f'위험점수: {risk_score:.1f}',
+                segments.append({
+                    'segment_tag': 'churn_risk_high',
+                    'segment_title': '고위험 이탈',
                     'priority': 10,
-                    'expires_at': datetime.now() + timedelta(days=7)
+                    'expires_at': (datetime.now() + timedelta(days=7)).isoformat()
                 })
             elif risk_level == 'high':
-                tags.append({
-                    'tag_type': RiskTag.CHURN_RISK_HIGH.value,
-                    'tag_value': f'위험점수: {risk_score:.1f}',
+                segments.append({
+                    'segment_tag': 'churn_risk_high',
+                    'segment_title': '고위험 이탈',
                     'priority': 8,
-                    'expires_at': datetime.now() + timedelta(days=14)
+                    'expires_at': (datetime.now() + timedelta(days=14)).isoformat()
                 })
             elif risk_level == 'medium':
-                tags.append({
-                    'tag_type': RiskTag.CHURN_RISK_MEDIUM.value,
-                    'tag_value': f'위험점수: {risk_score:.1f}',
+                segments.append({
+                    'segment_tag': 'churn_risk_medium',
+                    'segment_title': '중위험 이탈',
                     'priority': 5,
-                    'expires_at': datetime.now() + timedelta(days=30)
+                    'expires_at': (datetime.now() + timedelta(days=30)).isoformat()
                 })
             
-            # 세그먼트별 특수 태그
+            # 세그먼트별 특수 세그먼트
             if segment == 'new' and total_visits == 1 and days_since_visit > 7:
-                tags.append({
-                    'tag_type': RiskTag.FIRST_VISIT_FOLLOW_UP.value,
-                    'tag_value': f'{days_since_visit}일 경과',
+                segments.append({
+                    'segment_tag': 'first_visit_follow_up',
+                    'segment_title': '첫 방문 팔로업',
                     'priority': 9,
-                    'expires_at': datetime.now() + timedelta(days=3)
+                    'expires_at': (datetime.now() + timedelta(days=3)).isoformat()
                 })
             
             if segment in ['growing', 'loyal'] and days_since_visit > 30:
-                tags.append({
-                    'tag_type': RiskTag.PATTERN_BREAK_DETECTED.value,
-                    'tag_value': f'{days_since_visit}일 미방문',
+                segments.append({
+                    'segment_tag': 'pattern_break_detected',
+                    'segment_title': '패턴 이상 감지',
                     'priority': 7,
-                    'expires_at': datetime.now() + timedelta(days=14)
+                    'expires_at': (datetime.now() + timedelta(days=14)).isoformat()
                 })
             
             if segment == 'vip' and days_since_visit > 21:
-                tags.append({
-                    'tag_type': RiskTag.VIP_ATTENTION_NEEDED.value,
-                    'tag_value': f'VIP 고객 {days_since_visit}일 미방문',
+                segments.append({
+                    'segment_tag': 'vip_attention_needed',
+                    'segment_title': 'VIP 관심 필요',
                     'priority': 10,
-                    'expires_at': datetime.now() + timedelta(days=7)
+                    'expires_at': (datetime.now() + timedelta(days=7)).isoformat()
                 })
             
             if days_since_visit > 60:
-                tags.append({
-                    'tag_type': RiskTag.REACTIVATION_NEEDED.value,
-                    'tag_value': f'{days_since_visit}일 미방문',
+                segments.append({
+                    'segment_tag': 'reactivation_needed',
+                    'segment_title': '재활성화 필요',
                     'priority': 6,
-                    'expires_at': datetime.now() + timedelta(days=30)
+                    'expires_at': (datetime.now() + timedelta(days=30)).isoformat()
                 })
             
-            return tags
+            return segments
             
         except Exception as e:
-            self.logger.error(f"Failed to get risk tags for customer {customer_id}: {e}")
+            self.logger.error(f"고객 위험 세그먼트 조회 실패: {customer_id}, error: {e}")
             return []
     
     def get_risk_trends(self, days: int = 30) -> Dict:
@@ -501,36 +510,37 @@ class CustomerRiskTaggingService:
         else:
             return RiskLevel.LOW
     
-    def _generate_risk_tags(self, customer_data: Dict, risk_factors: Dict, risk_level: str) -> List[str]:
-        """위험 태그 생성."""
-        tags = []
+    def _generate_risk_segments(self, customer_data: Dict, risk_factors: Dict, risk_level: str) -> List[str]:
+        """위험 세그먼트 생성."""
+        segments = []
         
-        # 위험 수준별 기본 태그
-        if risk_level == RiskLevel.CRITICAL:
-            tags.append(RiskTag.CHURN_RISK_HIGH.value)
-        elif risk_level == RiskLevel.HIGH:
-            tags.append(RiskTag.CHURN_RISK_HIGH.value)
-        elif risk_level == RiskLevel.MEDIUM:
-            tags.append(RiskTag.CHURN_RISK_MEDIUM.value)
+        # 기본 위험 세그먼트
+        if risk_level == 'high' or risk_level == 'critical':
+            segments.append('churn_risk_high')
+        elif risk_level == 'medium':
+            segments.append('churn_risk_medium')
+        else:
+            segments.append('churn_risk_low')
         
-        # 세그먼트별 특수 태그
-        segment = customer_data.get('segment', 'new')
-        days_since_visit = customer_data.get('days_since_last_visit', 0)
-        total_visits = customer_data.get('total_visits', 0)
+        # 추가 세그먼트
+        days_since_visit = risk_factors.get('days_since_last_visit', 0)
+        visit_frequency = risk_factors.get('visit_frequency', 1)
+        is_vip = customer_data.get('is_vip', False)
         
-        if segment == 'new' and total_visits == 1 and days_since_visit > 7:
-            tags.append(RiskTag.FIRST_VISIT_FOLLOW_UP.value)
-        
-        if segment in ['growing', 'loyal'] and days_since_visit > 30:
-            tags.append(RiskTag.PATTERN_BREAK_DETECTED.value)
-        
-        if segment == 'vip' and days_since_visit > 21:
-            tags.append(RiskTag.VIP_ATTENTION_NEEDED.value)
+        if is_vip and (risk_level == 'high' or risk_level == 'critical'):
+            segments.append('vip_attention_needed')
         
         if days_since_visit > 60:
-            tags.append(RiskTag.REACTIVATION_NEEDED.value)
+            segments.append('reactivation_needed')
         
-        return tags
+        if visit_frequency < 0.5:  # 낮은 방문 빈도
+            segments.append('pattern_break_detected')
+        
+        total_visits = customer_data.get('total_visits', 0)
+        if total_visits == 1:
+            segments.append('first_visit_follow_up')
+        
+        return segments
     
     def _generate_recommended_actions(self, customer_data: Dict, risk_factors: Dict, risk_level: str) -> List[str]:
         """추천 액션 생성."""
@@ -570,11 +580,42 @@ class CustomerRiskTaggingService:
         
         return actions
     
-    def _apply_risk_tags(self, customer_id: int, tags: List[str]) -> int:
-        """위험 태그 적용 (실제로는 CRM DB에 저장)."""
-        # 실제 구현에서는 CRM 데이터베이스의 customer_tags 테이블에 저장
-        # 여기서는 시뮬레이션
-        return len(tags)
+    def _apply_risk_segments(self, customer_id: int, segments: List[str]) -> int:
+        """위험 세그먼트 적용 - BE API 호출."""
+        try:
+            # BE API 호출하여 세그먼트 업데이트
+            url = f"{self.be_api_url}/analytics/customers/{customer_id}/update-risk-segments"
+            
+            headers = {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            }
+            
+            # 세그먼트 데이터를 body에 포함
+            request_data = {
+                'segments': segments
+            }
+            
+            response = requests.post(
+                url,
+                headers=headers,
+                json=request_data,
+                timeout=self.be_api_timeout
+            )
+            
+            if response.status_code == 200:
+                self.logger.info(f"고객 {customer_id} 세그먼트 업데이트 성공: {segments}")
+                return len(segments)
+            else:
+                self.logger.error(f"고객 {customer_id} 세그먼트 업데이트 실패: {response.status_code} - {response.text}")
+                return 0
+                
+        except requests.exceptions.RequestException as e:
+            self.logger.error(f"BE API 호출 실패: customer_id={customer_id}, error={e}")
+            return 0
+        except Exception as e:
+            self.logger.error(f"세그먼트 적용 실패: customer_id={customer_id}, error={e}")
+            return 0
     
     def _update_customer_risk_data(self, customer_id: int, risk_analysis: Dict):
         """고객 위험 데이터 업데이트."""

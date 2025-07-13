@@ -101,6 +101,8 @@ class ExternalServicesConfig(BaseModel):
     """External services configuration."""
     workflow_service_url: Optional[str] = None
     notification_webhook_url: Optional[str] = None
+    be_api_url: str = "http://localhost:8080"
+    be_api_timeout: int = 30
 
 
 class LocalDevConfig(BaseModel):
@@ -420,6 +422,16 @@ class Settings(BaseSettings):
     @property
     def notification_webhook_url(self) -> Optional[str]:
         return self._substitute_env_vars(self.external_services.notification_webhook_url) if self.external_services.notification_webhook_url else None
+
+    @property
+    def be_api_url(self) -> str:
+        """Get BE API URL."""
+        return self._substitute_env_vars(self.external_services.be_api_url)
+
+    @property
+    def be_api_timeout(self) -> int:
+        """Get BE API timeout."""
+        return self.external_services.be_api_timeout
 
 
 @lru_cache()

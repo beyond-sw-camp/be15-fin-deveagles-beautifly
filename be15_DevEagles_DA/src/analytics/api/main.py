@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from prometheus_fastapi_instrumentator import Instrumentator
 
 from analytics.api.routes.health import router as health_router
+from analytics.api.routes.risk_tagging import router as risk_tagging_router
 from analytics.core.config import settings
 from analytics.core.database import db_manager
 from analytics.core.logging import get_logger
@@ -71,6 +72,7 @@ if settings.enable_metrics:
 
 # Include routers
 app.include_router(health_router, prefix=settings.api_prefix, tags=["Health"])
+app.include_router(risk_tagging_router, prefix=f"{settings.api_prefix}/analytics", tags=["Risk Tagging"])
 
 # Root endpoint
 @app.get("/")

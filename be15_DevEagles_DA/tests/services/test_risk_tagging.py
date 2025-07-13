@@ -5,10 +5,14 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'src'))
 
+import pytest
+from unittest.mock import Mock, patch
+from datetime import datetime, timedelta
 from analytics.services.risk_tagging import CustomerRiskTaggingService
 from analytics.core.database import get_analytics_db
 from rich.console import Console
 from rich.table import Table
+import requests
 
 console = Console()
 
@@ -188,9 +192,123 @@ def test_individual_functions():
     except Exception as e:
         console.print(f"[red]개별 테스트 실패: {e}[/red]")
 
+def test_be_api_integration():
+    """BE API 연동 테스트."""
+    console.print("\n[bold blue]🔗 BE API 연동 테스트[/bold blue]")
+    
+    try:
+        service = CustomerRiskTaggingService()
+        
+        # Mock된 BE API 응답 테스트
+        with patch('requests.post') as mock_post:
+            # 성공 응답 모의
+            mock_response = Mock()
+            mock_response.status_code = 200
+            mock_response.text = '{"success": true}'
+            mock_post.return_value = mock_response
+            
+            # 세그먼트 적용 테스트
+            segments = ['churn_risk_high', 'vip_attention_needed']
+            result = service._apply_risk_segments(1, segments)
+            
+            console.print(f"✓ 세그먼트 적용 성공: {result}개")
+            console.print(f"  - API URL: {service.be_api_url}")
+            console.print(f"  - 타임아웃: {service.be_api_timeout}초")
+            console.print(f"  - 적용된 세그먼트: {segments}")
+            
+            # API 호출 검증
+            mock_post.assert_called_once()
+            call_args = mock_post.call_args
+            expected_url = f"{service.be_api_url}/analytics/customers/1/update-risk-segments"
+            assert call_args[1]['url'] == expected_url
+            console.print(f"  - API 호출 URL 검증: 성공")
+            
+        # 실패 응답 테스트
+        with patch('requests.post') as mock_post_fail:
+            mock_response_fail = Mock()
+            mock_response_fail.status_code = 500
+            mock_response_fail.text = 'Internal Server Error'
+            mock_post_fail.return_value = mock_response_fail
+            
+            result_fail = service._apply_risk_segments(1, ['churn_risk_high'])
+            assert result_fail == 0
+            console.print(f"✓ 실패 응답 처리: 올바르게 0 반환")
+            
+        # 연결 오류 테스트
+        with patch('requests.post') as mock_post_error:
+            mock_post_error.side_effect = requests.exceptions.RequestException("Connection failed")
+            
+            result_error = service._apply_risk_segments(1, ['churn_risk_high'])
+            assert result_error == 0
+            console.print(f"✓ 연결 오류 처리: 올바르게 0 반환")
+            
+        console.print(f"[bold green]✅ BE API 연동 테스트 완료[/bold green]")
+        
+    except Exception as e:
+        console.print(f"[red]BE API 연동 테스트 실패: {e}[/red]")
+
+
+@patch('requests.post')
+def test_batch_segment_with_api_integration(mock_post):
+    """배치 세그먼트 처리와 API 연동 테스트."""
+    console.print("\n[bold blue]🔄 배치 세그먼트 + API 연동 테스트[/bold blue]")
+    
+    try:
+        service = CustomerRiskTaggingService()
+        
+        # Mock 성공 응답
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.text = '{"success": true}'
+        mock_post.return_value = mock_response
+        
+        # Mock 고객 데이터
+        mock_customers = [
+            {'customer_id': 1, 'name': '홍길동'},
+            {'customer_id': 2, 'name': '김철수'}
+        ]
+        
+        with patch.object(service, '_get_all_customers') as mock_get_all:
+            mock_get_all.return_value = mock_customers
+            
+            with patch.object(service, 'analyze_customer_risk') as mock_analyze:
+                mock_analyze.return_value = {
+                    'customer_id': 1,
+                    'risk_level': 'high',
+                    'recommended_segments': ['churn_risk_high', 'vip_attention_needed'],
+                    'risk_score': 80.0,
+                    'risk_factors': {},
+                    'recommended_actions': []
+                }
+                
+                # 배치 세그먼트 실행 (실제 API 호출 포함)
+                result = service.batch_segment_all_customers(dry_run=False)
+                
+                console.print(f"✓ 배치 세그먼트 처리 완료")
+                console.print(f"  - 총 고객: {result['total_customers']}")
+                console.print(f"  - 세그먼트된 고객: {result['segmented_customers']}")
+                console.print(f"  - 고위험 고객: {result['high_risk_customers']}")
+                console.print(f"  - 생성된 세그먼트: {result['segments_created']}")
+                
+                # API 호출 검증
+                assert mock_post.call_count == 2  # 2명의 고객
+                console.print(f"  - API 호출 횟수: {mock_post.call_count}회")
+                
+        console.print(f"[bold green]✅ 배치 세그먼트 + API 연동 테스트 완료[/bold green]")
+        
+    except Exception as e:
+        console.print(f"[red]배치 세그먼트 + API 연동 테스트 실패: {e}[/red]")
+
+
 if __name__ == "__main__":
     # 기본 테스트 실행
     test_risk_tagging_system()
+    
+    # BE API 연동 테스트 실행
+    test_be_api_integration()
+    
+    # 배치 세그먼트 + API 연동 테스트 실행
+    test_batch_segment_with_api_integration()
     
     # 개별 기능 테스트
     test_individual_functions()
