@@ -7,8 +7,9 @@ import typer
 import uvicorn
 from rich.console import Console
 from rich.table import Table
+from sqlalchemy import text
 
-from analytics.core.config import settings
+from analytics.core.config import settings, get_settings
 from analytics.core.logging import get_logger
 from analytics.core.database import get_analytics_db, get_crm_db
 
@@ -1194,6 +1195,122 @@ def preference(
     
     except Exception as e:
         console.print(f"[red]선호 시술 분석 실패: {e}[/red]")
+        raise typer.Exit(1)
+
+
+@app.command()
+def scheduler(
+    action: str = typer.Argument(..., help="Action: start, stop, status, run-now"),
+    dry_run: bool = typer.Option(False, "--dry-run", help="Dry run mode (for run-now)"),
+):
+    """고객 이탈분석 스케줄러 관리."""
+    console.print(f"[bold blue]고객 이탈분석 스케줄러 - {action.upper()}[/bold blue]")
+    
+    try:
+        if action == "start":
+            # 스케줄러 시작
+            async def start_scheduler():
+                from analytics.services.churn_analysis_scheduler import start_churn_analysis_scheduler
+                await start_churn_analysis_scheduler()
+                console.print("[green]✓ 스케줄러가 시작되었습니다.[/green]")
+                console.print("스케줄러를 중지하려면 Ctrl+C를 누르세요.")
+                
+                # 무한 대기 (Ctrl+C로 중지)
+                try:
+                    while True:
+                        await asyncio.sleep(60)  # 1분마다 체크
+                except KeyboardInterrupt:
+                    console.print("\n[yellow]스케줄러를 중지합니다...[/yellow]")
+                    from analytics.services.churn_analysis_scheduler import stop_churn_analysis_scheduler
+                    await stop_churn_analysis_scheduler()
+                    console.print("[green]✓ 스케줄러가 중지되었습니다.[/green]")
+            
+            asyncio.run(start_scheduler())
+            
+        elif action == "stop":
+            # 스케줄러 중지
+            async def stop_scheduler():
+                from analytics.services.churn_analysis_scheduler import stop_churn_analysis_scheduler
+                await stop_churn_analysis_scheduler()
+                console.print("[green]✓ 스케줄러가 중지되었습니다.[/green]")
+            
+            asyncio.run(stop_scheduler())
+            
+        elif action == "status":
+            # 스케줄러 상태 및 최근 작업 조회
+            async def show_status():
+                from analytics.services.churn_analysis_scheduler import get_churn_scheduler
+                scheduler = await get_churn_scheduler()
+                
+                # 설정 정보 표시
+                config = scheduler.config
+                console.print(f"\n[bold]스케줄러 설정:[/bold]")
+                console.print(f"• 활성화: {config.enabled}")
+                console.print(f"• 실행 시간: 매일 {config.schedule_hour:02d}:{config.schedule_minute:02d} ({config.timezone})")
+                console.print(f"• 세그먼트 업데이트 방식: {config.segment_update_method}")
+                console.print(f"• 자동 세그먼트 적용: {config.auto_apply_segments}")
+                console.print(f"• 알림 활성화: {config.notification.enabled}")
+                
+                # 최근 작업 목록
+                recent_jobs = scheduler.get_recent_jobs(5)
+                if recent_jobs:
+                    console.print(f"\n[bold]최근 작업 (최근 5개):[/bold]")
+                    
+                    table = Table()
+                    table.add_column("작업 ID", style="cyan")
+                    table.add_column("시작 시간", style="green")
+                    table.add_column("상태", style="yellow")
+                    table.add_column("고객수", style="blue")
+                    table.add_column("고위험", style="red")
+                    table.add_column("처리시간", style="magenta")
+                    
+                    for job in recent_jobs:
+                        status_color = {
+                            'completed': '[green]완료[/green]',
+                            'completed_with_errors': '[yellow]완료(오류)[/yellow]',
+                            'failed': '[red]실패[/red]',
+                            'running': '[blue]실행중[/blue]'
+                        }.get(job['status'], job['status'])
+                        
+                        table.add_row(
+                            job['job_id'][-12:],  # 마지막 12자리만
+                            job['start_time'][:16] if job['start_time'] else '',
+                            status_color,
+                            str(job['total_customers']),
+                            str(job['high_risk_customers']),
+                            f"{job['processing_time_seconds']:.1f}s"
+                        )
+                    
+                    console.print(table)
+                else:
+                    console.print(f"\n[yellow]최근 작업이 없습니다.[/yellow]")
+            
+            asyncio.run(show_status())
+            
+        elif action == "run-now":
+            # 즉시 실행
+            async def run_now():
+                from analytics.services.churn_analysis_scheduler import get_churn_scheduler
+                scheduler = await get_churn_scheduler()
+                
+                console.print(f"[yellow]고객 이탈분석을 즉시 실행합니다... (dry_run={dry_run})[/yellow]")
+                
+                result = await scheduler.run_manual_analysis(dry_run=dry_run)
+                
+                if result['status'] == 'completed':
+                    console.print("[green]✓ 분석이 완료되었습니다.[/green]")
+                else:
+                    console.print(f"[red]분석 실패: {result.get('message', 'Unknown error')}[/red]")
+            
+            asyncio.run(run_now())
+            
+        else:
+            console.print(f"[red]Unknown action: {action}[/red]")
+            console.print("Available actions: start, stop, status, run-now")
+            raise typer.Exit(1)
+    
+    except Exception as e:
+        console.print(f"[red]Error: {e}[/red]")
         raise typer.Exit(1)
 
 
