@@ -183,9 +183,6 @@
         staff: staffId,
         ...mapped,
       };
-
-      console.log('mapped', mapped);
-      console.log('staff.value', staff.value);
     },
     { immediate: true }
   );

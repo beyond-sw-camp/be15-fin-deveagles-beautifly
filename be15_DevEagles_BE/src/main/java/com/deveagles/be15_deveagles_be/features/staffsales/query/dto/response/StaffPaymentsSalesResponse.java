@@ -12,4 +12,10 @@ public class StaffPaymentsSalesResponse {
   private List<StaffNetSalesResponse> netSalesList;
   private List<StaffSalesDeductionsResponse> deductionList;
   private int incentiveTotal;
+  private int grossSalesTotal;
+  private int deductionTotal;
+  private int netSalesTotal;
+  private Integer totalDiscount;
+  private Integer totalCoupon;
+  private Integer totalPrepaid;
 }

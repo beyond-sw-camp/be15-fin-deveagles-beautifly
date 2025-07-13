@@ -21,7 +21,11 @@
 
     <!-- 테이블 -->
     <div class="table-wrapper">
+      <div v-if="loading" class="table-loading-overlay">
+        <BaseLoading text="직원 목록을 조회하는 중입니다..." />
+      </div>
       <BaseTable
+        v-if="!loading"
         :columns="columns"
         :data="staffList"
         :hover="true"
@@ -69,7 +73,7 @@
   import { getStaff } from '@/features/staffs/api/staffs.js';
   import BaseToast from '@/components/common/BaseToast.vue';
   import BaseBadge from '@/components/common/BaseBadge.vue';
-  import { debounce } from 'chart.js/helpers';
+  import BaseLoading from '@/components/common/BaseLoading.vue';
 
   const router = useRouter();
   const toastRef = ref();
@@ -78,8 +82,8 @@
   const page = ref(1);
   const limit = ref(10);
   const totalCount = ref(0);
-  const searchText = ref('');
   const onlyActive = ref(false);
+  const loading = ref(false);
 
   const columns = [
     { key: 'staffName', title: '이름', width: '200px' },
@@ -90,12 +94,28 @@
 
   const totalPages = computed(() => Math.ceil(totalCount.value / limit.value));
 
+  const searchText = ref('');
+  let typingTimer = null;
+  const debounceDelay = 300;
+
+  // 검색
+  watch(searchText, () => {
+    if (typingTimer) clearTimeout(typingTimer);
+    typingTimer = setTimeout(() => {
+      page.value = 1;
+      fetchStaff();
+    }, debounceDelay);
+  });
+
+  // 엔터 키로 검색
   const handleSearch = () => {
+    if (typingTimer) clearTimeout(typingTimer);
     page.value = 1;
     fetchStaff();
   };
 
   const fetchStaff = async () => {
+    loading.value = true;
     try {
       const res = await getStaff({
         page: page.value,
@@ -106,6 +126,7 @@
 
       staffList.value = res.data.data.staffList;
       totalCount.value = res.data.data.pagination.totalItems;
+      loading.value = false;
     } catch (err) {
       toastRef.value?.error?.('직원 목록 조회에 실패했습니다.');
     }
@@ -130,18 +151,10 @@
   const goToDetail = staff => {
     router.push({ name: 'StaffDetail', params: { staffId: staff.staffId } });
   };
+
   onMounted(() => {
     fetchStaff();
   });
-
-  // 검색
-  watch(
-    searchText,
-    debounce(() => {
-      page.value = 1;
-      fetchStaff();
-    }, 400)
-  );
 
   watch(onlyActive, () => {
     page.value = 1;

@@ -149,7 +149,7 @@
   >
     <IncentiveSettingModal
       v-if="incentiveData"
-      ref="modalRef"
+      ref="incentiveModalRef"
       v-model:selected-staff-id="selectedStaffId"
       :incentive-data="incentiveData"
       :toast="toastRef"
@@ -157,20 +157,28 @@
     />
     <template #footer>
       <div class="footer-btn-row">
-        <BaseButton type="primary" @click="modalRef?.handleSave?.()">저장하기</BaseButton>
+        <BaseButton type="primary" @click="incentiveModalRef?.handleSave?.()">저장하기</BaseButton>
       </div>
     </template>
   </BaseSlidePanel>
 
   <BaseSlidePanel
     v-if="showTargetSalesModal"
+    :key="'target-slide'"
     title="목표매출 설정"
     @close="showTargetSalesModal = false"
   >
-    <TargetSalesSettingModal ref="targetModalRef" />
+    <TargetSalesSettingModal
+      ref="targetModalRef"
+      :search-mode="searchMode"
+      :selected-month="selectedMonth"
+      :selected-range="selectedRange"
+      :toast="toastRef"
+      @saved="handleSaved"
+    />
     <template #footer>
       <div class="footer-btn-row">
-        <BaseButton type="primary" @click="targetModalRef?.handleSubmit?.()">저장하기</BaseButton>
+        <BaseButton type="primary" @click="targetModalRef?.handleSave?.()">저장하기</BaseButton>
       </div>
     </template>
   </BaseSlidePanel>
@@ -178,7 +186,7 @@
 </template>
 
 <script setup>
-  import { computed, onMounted, ref, watch } from 'vue';
+  import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
   import BaseButton from '@/components/common/BaseButton.vue';
   import BaseForm from '@/components/common/BaseForm.vue';
   import BaseTable from '@/components/common/BaseTable.vue';
@@ -210,7 +218,8 @@
   const staffSalesApiData = ref(null);
   const staffNameFilter = ref('');
   const incentiveData = ref(null);
-  const modalRef = ref();
+  const incentiveModalRef = ref();
+  const targetModalRef = ref();
   const selectedStaffId = ref(null);
 
   const { categoryLabelMap, formatCurrency, getFormattedDates } = useStaffSales();
@@ -276,11 +285,11 @@
     if (!staffSalesApiData.value) return [];
     switch (activeTab.value) {
       case '직원별 상세결산':
-        return flattenDetailData(staffSalesApiData.value.staffSalesList);
+        return flattenDetailData(staffSalesApiData.value);
       case '목표매출':
         return flattenTargetSales(staffSalesApiData.value.staffSalesList);
       default:
-        return flattenStaffSalesList(staffSalesApiData.value.staffSalesList);
+        return flattenStaffSalesList(staffSalesApiData.value);
     }
   });
 
@@ -355,7 +364,6 @@
 
   const openTargetPopup = () => {
     showTargetSalesModal.value = true;
-    fetchStaffSales();
   };
 
   const getRowClass = row => {
@@ -363,6 +371,30 @@
     if (row.category === '총계') return 'staff-summary-row';
     return '';
   };
+  const handleKeydown = e => {
+    const isTyping = ['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName);
+    if (isTyping) return;
+
+    if (e.key === 'Escape') {
+      if (showTargetSalesModal.value) showTargetSalesModal.value = false;
+      else if (showIncentiveModal.value) showIncentiveModal.value = false;
+    }
+
+    if (e.key === 'Enter') {
+      if (showTargetSalesModal.value) {
+        targetModalRef.value?.handleSave?.();
+      } else if (showIncentiveModal.value) {
+        incentiveModalRef.value?.handleSave?.();
+      }
+    }
+  };
+
+  onMounted(() => {
+    window.addEventListener('keydown', handleKeydown);
+  });
+  onBeforeUnmount(() => {
+    window.removeEventListener('keydown', handleKeydown);
+  });
 
   onMounted(() => {
     const { startDate, endDate } = getFormattedDates();

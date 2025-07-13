@@ -1,13 +1,10 @@
 package com.deveagles.be15_deveagles_be.features.staffsales.query.service.impl;
 
-import com.deveagles.be15_deveagles_be.common.exception.BusinessException;
-import com.deveagles.be15_deveagles_be.common.exception.ErrorCode;
 import com.deveagles.be15_deveagles_be.features.sales.command.domain.aggregate.PaymentsMethod;
 import com.deveagles.be15_deveagles_be.features.sales.command.domain.aggregate.SearchMode;
 import com.deveagles.be15_deveagles_be.features.staffsales.command.domain.aggregate.ProductType;
 import com.deveagles.be15_deveagles_be.features.staffsales.query.dto.request.GetStaffSalesListRequest;
 import com.deveagles.be15_deveagles_be.features.staffsales.query.dto.response.*;
-import com.deveagles.be15_deveagles_be.features.staffsales.query.repository.SalesQueryRepository;
 import com.deveagles.be15_deveagles_be.features.staffsales.query.repository.SalesTargetQueryRepository;
 import com.deveagles.be15_deveagles_be.features.staffsales.query.repository.StaffSalesQueryRepository;
 import com.deveagles.be15_deveagles_be.features.staffsales.query.service.StaffSalesQueryService;
@@ -30,21 +27,20 @@ public class StaffSalesQueryServiceImpl implements StaffSalesQueryService {
 
   private final UserRepository userRepository;
   private final SalesTargetQueryRepository salesTargetQueryRepository;
-  private final SalesQueryRepository salesQueryRepository;
   private final StaffSalesQueryRepository staffSalesQueryRepository;
   private final SalesCalculator salesCalculator;
 
   @Override
   public StaffSalesListResult getStaffSales(Long shopId, GetStaffSalesListRequest request) {
 
-    // 1. 기간 계산
+    // 1. 조회 기간 계산
     LocalDateTime startDate = getStartDate(request);
     LocalDateTime endDate = getEndDate(request);
 
-    // 2. 직원 리스트 조회
+    // 2. 재직 중인 직원 리스트 조회
     List<Staff> staffList = userRepository.findByShopIdAndLeftDateIsNull(shopId);
 
-    // 3. 직원별 매출 데이터 조회
+    // 3. 직원별 매출 데이터 생성
     List<StaffSalesListResponse> result =
         staffList.stream()
             .map(
@@ -55,21 +51,24 @@ public class StaffSalesQueryServiceImpl implements StaffSalesQueryService {
                           .stream()
                           .map(
                               response -> {
-                                // 매출 타입
-                                ProductType type = ProductType.valueOf(response.getCategory());
 
-                                // 인센티브 율
+                                // 인센티브율 맵 조회
+                                ProductType type = ProductType.valueOf(response.getCategory());
                                 Map<PaymentsMethod, Integer> incentiveRateMap =
                                     salesCalculator.getEffectiveIncentiveRates(
                                         shopId, staff.getStaffId(), type);
 
-                                // 단건 인센티브 포함
-                                List<StaffNetSalesResponse> netSalesWithIncentive =
+                                // 실매출 리스트 계산 (PREPAID 제외)
+                                List<StaffNetSalesResponse> netSalesList =
                                     response.getNetSalesList().stream()
+                                        .filter(
+                                            net ->
+                                                net.getPaymentsMethod()
+                                                    != PaymentsMethod.PREPAID_PASS)
                                         .map(
                                             net -> {
                                               int amount =
-                                                  net.getAmount() != null ? net.getAmount() : 0;
+                                                  Optional.ofNullable(net.getAmount()).orElse(0);
                                               int rate =
                                                   incentiveRateMap.getOrDefault(
                                                       net.getPaymentsMethod(), 0);
@@ -83,21 +82,39 @@ public class StaffSalesQueryServiceImpl implements StaffSalesQueryService {
                                             })
                                         .toList();
 
-                                // 총 인센티브 합산
+                                // 총 인센티브 합계
                                 int incentiveTotal =
-                                    netSalesWithIncentive.stream()
+                                    netSalesList.stream()
                                         .mapToInt(
-                                            n ->
-                                                n.getIncentiveAmount() != null
-                                                    ? n.getIncentiveAmount()
-                                                    : 0)
+                                            net ->
+                                                Optional.ofNullable(net.getIncentiveAmount())
+                                                    .orElse(0))
                                         .sum();
+
+                                // 총영업액 = 결제 금액 총합
+                                int grossSalesTotal =
+                                    netSalesList.stream()
+                                        .mapToInt(
+                                            net -> Optional.ofNullable(net.getAmount()).orElse(0))
+                                        .sum();
+
+                                // 공제액 계산
+                                int deductionTotal =
+                                    response.getDeductionList().stream()
+                                        .mapToInt(d -> Optional.ofNullable(d.getAmount()).orElse(0))
+                                        .sum();
+
+                                // 실매출 = 총영업액 - 공제액
+                                int netSalesTotal = grossSalesTotal - deductionTotal;
 
                                 return StaffPaymentsSalesResponse.builder()
                                     .category(response.getCategory())
-                                    .netSalesList(netSalesWithIncentive)
+                                    .netSalesList(netSalesList)
                                     .deductionList(response.getDeductionList())
                                     .incentiveTotal(incentiveTotal)
+                                    .grossSalesTotal(grossSalesTotal)
+                                    .deductionTotal(deductionTotal)
+                                    .netSalesTotal(netSalesTotal)
                                     .build();
                               })
                           .toList();
@@ -110,10 +127,10 @@ public class StaffSalesQueryServiceImpl implements StaffSalesQueryService {
                 })
             .toList();
 
-    return StaffSalesListResult.builder()
-        .staffSalesList(result)
-        .totalSummary(salesCalculator.calculateSummary(shopId, result))
-        .build();
+    // 4. 전체 요약 계산
+    StaffSalesSummaryResponse summary = salesCalculator.calculateSummary(shopId, result);
+
+    return StaffSalesListResult.builder().staffSalesList(result).totalSummary(summary).build();
   }
 
   @Override
@@ -132,7 +149,6 @@ public class StaffSalesQueryServiceImpl implements StaffSalesQueryService {
         staffList.stream()
             .map(
                 staff -> {
-                  // ProductType 별 상세 매출 조회
                   List<StaffPaymentsDetailSalesResponse> detailSales =
                       staffSalesQueryRepository.getDetailSalesByStaff(
                           staff.getStaffId(), shopId, startDate, endDate);
@@ -143,7 +159,7 @@ public class StaffSalesQueryServiceImpl implements StaffSalesQueryService {
 
                   // 직원 요약 정보
                   StaffSalesSummaryResponse summary =
-                      salesCalculator.calculateFromDetailList(detailSales);
+                      salesCalculator.calculateFromDetailAndSalesList(detailSales, sales);
 
                   return StaffDetailSalesListResponse.builder()
                       .staffId(staff.getStaffId())
@@ -155,9 +171,12 @@ public class StaffSalesQueryServiceImpl implements StaffSalesQueryService {
                 })
             .toList();
 
+    StaffSalesSummaryResponse totalSummary =
+        salesCalculator.calculateFromSummaryList(shopId, result);
+
     return StaffSalesDetailListResult.builder()
         .staffSalesList(result)
-        .totalSummary(salesCalculator.calculateFromSummaryList(shopId, result))
+        .totalSummary(totalSummary)
         .build();
   }
 
@@ -165,12 +184,18 @@ public class StaffSalesQueryServiceImpl implements StaffSalesQueryService {
   public StaffSalesTargetListResult getStaffSalesTarget(
       Long shopId, GetStaffSalesListRequest request) {
 
-    boolean isPeriodMode = request.searchMode() == SearchMode.PERIOD;
-    LocalDate startDate = request.startDate();
-    LocalDate endDate = isPeriodMode ? request.endDate() : startDate;
+    LocalDate startDate =
+        request.searchMode() == SearchMode.MONTH
+            ? request.startDate().withDayOfMonth(1)
+            : request.startDate();
+
+    LocalDate endDate =
+        request.searchMode() == SearchMode.PERIOD
+            ? request.endDate()
+            : YearMonth.from(request.startDate()).atEndOfMonth();
 
     if (!hasAnyTargetForShop(shopId, startDate, endDate)) {
-      throw new BusinessException(ErrorCode.SHOP_NOT_FOUNT);
+      return null;
     }
 
     List<Staff> staffList = userRepository.findAllByShopId(shopId);
@@ -184,23 +209,9 @@ public class StaffSalesQueryServiceImpl implements StaffSalesQueryService {
                   List<StaffProductTargetSalesResponse> targetList =
                       List.of(
                           buildCombinedTargetResponse(
-                              shopId,
-                              staff.getStaffId(),
-                              ProductType.SERVICE,
-                              ProductType.PRODUCT,
-                              "상품",
-                              startDate,
-                              endDate,
-                              request),
+                              shopId, staffId, true, "상품", startDate, endDate, request),
                           buildCombinedTargetResponse(
-                              shopId,
-                              staff.getStaffId(),
-                              ProductType.SESSION_PASS,
-                              ProductType.PREPAID_PASS,
-                              "회원권",
-                              startDate,
-                              endDate,
-                              request));
+                              shopId, staffId, false, "회원권", startDate, endDate, request));
 
                   int totalTarget =
                       targetList.stream()
@@ -230,45 +241,65 @@ public class StaffSalesQueryServiceImpl implements StaffSalesQueryService {
   private StaffProductTargetSalesResponse buildCombinedTargetResponse(
       Long shopId,
       Long staffId,
-      ProductType type1,
-      ProductType type2,
+      boolean isItems,
       String label,
       LocalDate startDate,
       LocalDate endDate,
       GetStaffSalesListRequest request) {
 
-    LocalDate realEndDate = Optional.ofNullable(endDate).orElse(startDate);
+    List<YearMonth> months = getYearMonthsBetween(startDate, endDate);
+    int totalAdjustedTarget = 0;
 
-    int monthlyTarget1 =
-        salesTargetQueryRepository.findTargetAmount(
-            shopId, staffId, type1, YearMonth.from(startDate));
-    int monthlyTarget2 =
-        salesTargetQueryRepository.findTargetAmount(
-            shopId, staffId, type2, YearMonth.from(startDate));
+    for (YearMonth ym : months) {
+      LocalDate monthStart = ym.atDay(1);
+      LocalDate monthEnd = ym.atEndOfMonth();
 
-    int totalAmount1 =
-        salesQueryRepository.findTotalSales(shopId, staffId, type1, startDate, realEndDate);
-    int totalAmount2 =
-        salesQueryRepository.findTotalSales(shopId, staffId, type2, startDate, realEndDate);
+      LocalDate overlapStart = startDate.isAfter(monthStart) ? startDate : monthStart;
+      LocalDate overlapEnd = endDate.isBefore(monthEnd) ? endDate : monthEnd;
+      int includedDays = (int) ChronoUnit.DAYS.between(overlapStart, overlapEnd) + 1;
 
-    int monthlyTotal = monthlyTarget1 + monthlyTarget2;
-    int totalSales = totalAmount1 + totalAmount2;
+      int monthlyTarget =
+          salesTargetQueryRepository.findTargetAmountByItemsOrMembership(
+              shopId, staffId, isItems, ym);
 
-    int adjustedTarget =
-        salesCalculator.calculateAdjustedTarget(
-            request.searchMode(),
-            monthlyTotal,
-            YearMonth.from(startDate).lengthOfMonth(),
-            getPeriodDays(startDate, Optional.ofNullable(request.endDate()).orElse(startDate)));
+      int adjustedTarget =
+          salesCalculator.calculateAdjustedTarget(
+              request.searchMode(), monthlyTarget, ym.lengthOfMonth(), includedDays);
 
-    double achievement = salesCalculator.calculateAchievementRate(totalSales, adjustedTarget);
+      totalAdjustedTarget += adjustedTarget;
+    }
+
+    ProductType type1 = isItems ? ProductType.SERVICE : ProductType.SESSION_PASS;
+    ProductType type2 = isItems ? ProductType.PRODUCT : ProductType.PREPAID_PASS;
+
+    int actualSales1 =
+        staffSalesQueryRepository.getTargetTotalSales(shopId, staffId, type1, startDate, endDate);
+    int actualSales2 =
+        staffSalesQueryRepository.getTargetTotalSales(shopId, staffId, type2, startDate, endDate);
+    int totalActualSales = actualSales1 + actualSales2;
+
+    double achievement =
+        salesCalculator.calculateAchievementRate(totalActualSales, totalAdjustedTarget);
 
     return StaffProductTargetSalesResponse.builder()
         .label(label)
-        .targetAmount(adjustedTarget)
-        .totalAmount(totalSales)
+        .targetAmount(totalAdjustedTarget)
+        .totalAmount(totalActualSales)
         .achievementRate(achievement)
         .build();
+  }
+
+  private List<YearMonth> getYearMonthsBetween(LocalDate startDate, LocalDate endDate) {
+    List<YearMonth> months = new ArrayList<>();
+    YearMonth current = YearMonth.from(startDate);
+    YearMonth last = YearMonth.from(endDate);
+
+    while (!current.isAfter(last)) {
+      months.add(current);
+      current = current.plusMonths(1);
+    }
+
+    return months;
   }
 
   private LocalDateTime getStartDate(GetStaffSalesListRequest request) {

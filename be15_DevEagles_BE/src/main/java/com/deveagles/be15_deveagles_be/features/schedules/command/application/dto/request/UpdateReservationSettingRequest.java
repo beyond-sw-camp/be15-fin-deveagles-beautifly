@@ -7,4 +7,5 @@ public record UpdateReservationSettingRequest(
     LocalTime availableStartTime,
     LocalTime availableEndTime,
     LocalTime lunchStartTime,
-    LocalTime lunchEndTime) {}
+    LocalTime lunchEndTime,
+    Integer reservationTerm) {}

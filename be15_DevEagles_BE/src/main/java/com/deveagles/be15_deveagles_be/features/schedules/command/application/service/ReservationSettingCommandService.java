@@ -1,10 +1,14 @@
 package com.deveagles.be15_deveagles_be.features.schedules.command.application.service;
 
+import com.deveagles.be15_deveagles_be.common.exception.BusinessException;
+import com.deveagles.be15_deveagles_be.common.exception.ErrorCode;
 import com.deveagles.be15_deveagles_be.features.schedules.command.application.dto.request.UpdateReservationSettingRequest;
 import com.deveagles.be15_deveagles_be.features.schedules.command.domain.aggregate.ReservationSetting;
 import com.deveagles.be15_deveagles_be.features.schedules.command.domain.aggregate.ReservationSettingId;
 import com.deveagles.be15_deveagles_be.features.schedules.command.domain.repository.ReservationSettingRepository;
+import com.deveagles.be15_deveagles_be.features.shops.command.application.service.ShopCommandService;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -16,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class ReservationSettingCommandService {
   private final ReservationSettingRepository reservationSettingRepository;
+  private final ShopCommandService shopCommandService;
 
   @Transactional
   public void updateReservationSettings(
@@ -59,5 +64,17 @@ public class ReservationSettingCommandService {
         reservationSettingRepository.save(setting);
       }
     }
+    requestList.stream()
+        .map(UpdateReservationSettingRequest::reservationTerm)
+        .filter(Objects::nonNull)
+        .findFirst()
+        .ifPresent(
+            term -> {
+              if (term != 10 && term != 30) {
+                throw new BusinessException(ErrorCode.INVALID_RESERVATION_TERM);
+              }
+
+              shopCommandService.updateReservationTerm(shopId, term);
+            });
   }
 }

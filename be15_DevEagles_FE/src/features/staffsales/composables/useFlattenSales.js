@@ -1,9 +1,9 @@
 export function useFlattenSales({ categoryLabelMap, staffNameFilter }) {
-  const flattenStaffSalesList = staffSalesList => {
-    if (!staffSalesList) return [];
+  const flattenStaffSalesList = data => {
+    if (!data.staffSalesList) return [];
     const result = [];
 
-    staffSalesList.forEach(staff => {
+    data.staffSalesList.forEach(staff => {
       if (staffNameFilter.value && !staff.staffName.includes(staffNameFilter.value.trim())) return;
 
       let isFirstRow = true;
@@ -22,9 +22,9 @@ export function useFlattenSales({ categoryLabelMap, staffNameFilter }) {
           DISCOUNT: 0,
           COUPON: 0,
           PREPAID: 0,
-          totalSales: 0,
-          totalDeductions: 0,
-          finalSales: 0,
+          totalSales: payment.netSalesTotal,
+          totalDeductions: payment.deductionTotal,
+          finalSales: payment.grossSalesTotal,
         };
 
         payment.netSalesList?.forEach(({ paymentsMethod, amount, incentiveAmount }) => {
@@ -34,18 +34,15 @@ export function useFlattenSales({ categoryLabelMap, staffNameFilter }) {
           ) {
             row[paymentsMethod] += amount;
             row[`${paymentsMethod}_INCENTIVE`] += incentiveAmount;
-            row.totalSales += amount;
           }
         });
 
         payment.deductionList?.forEach(({ deduction, amount }) => {
           if (Object.prototype.hasOwnProperty.call(row, deduction)) {
             row[deduction] += amount;
-            row.totalDeductions += amount;
           }
         });
 
-        row.finalSales = row.totalSales - row.totalDeductions;
         result.push(row);
         isFirstRow = false;
       });
@@ -62,12 +59,12 @@ export function useFlattenSales({ categoryLabelMap, staffNameFilter }) {
       CASH_INCENTIVE: 0,
       NAVER_PAY_INCENTIVE: 0,
       LOCAL_INCENTIVE: 0,
-      DISCOUNT: 0,
-      COUPON: 0,
-      PREPAID: 0,
-      totalSales: 0,
-      totalDeductions: 0,
-      finalSales: 0,
+      DISCOUNT: data.totalSummary.totalDiscount,
+      COUPON: data.totalSummary.totalCoupon,
+      PREPAID: data.totalSummary.totalPrepaid,
+      totalSales: data.totalSummary.totalNetSales,
+      totalDeductions: data.totalSummary.totalDeduction,
+      finalSales: data.totalSummary.totalGrossSales,
     };
 
     result.forEach(row => {
@@ -75,27 +72,43 @@ export function useFlattenSales({ categoryLabelMap, staffNameFilter }) {
         totals[method] += row[method];
         totals[`${method}_INCENTIVE`] += row[`${method}_INCENTIVE`];
       });
-      ['DISCOUNT', 'COUPON', 'PREPAID', 'totalSales', 'totalDeductions', 'finalSales'].forEach(
-        key => {
-          totals[key] += row[key] || 0;
-        }
-      );
     });
-
     result.push(totals);
     return result;
   };
 
-  const flattenDetailData = staffSalesList => {
-    if (!staffSalesList) return [];
+  const flattenDetailData = data => {
+    if (!data.staffSalesList) return [];
     const result = [];
 
-    staffSalesList.forEach(staff => {
+    const totals = {
+      name: '총계',
+      category: '',
+      primary: '',
+      secondary: '',
+      CARD: 0,
+      CASH: 0,
+      NAVER_PAY: 0,
+      LOCAL: 0,
+      CARD_INCENTIVE: 0,
+      CASH_INCENTIVE: 0,
+      NAVER_PAY_INCENTIVE: 0,
+      LOCAL_INCENTIVE: 0,
+      DISCOUNT: data.totalSummary.totalDiscount,
+      COUPON: data.totalSummary.totalCoupon,
+      PREPAID: data.totalSummary.totalPrepaid,
+      totalSales: data.totalSummary.totalNetSales,
+      totalDeductions: data.totalSummary.totalDeduction,
+      finalSales: data.totalSummary.totalGrossSales,
+    };
+
+    data.staffSalesList.forEach(staff => {
       if (staffNameFilter.value && !staff.staffName.includes(staffNameFilter.value.trim())) return;
 
       const staffRows = [];
       let isFirstRow = true;
 
+      // 상세 매출 (SERVICE / PRODUCT)
       staff.paymentsDetailSalesList?.forEach(payment => {
         const categoryLabel = categoryLabelMap[payment.category] || payment.category;
         payment.primaryList?.forEach(primary => {
@@ -117,9 +130,9 @@ export function useFlattenSales({ categoryLabelMap, staffNameFilter }) {
               DISCOUNT: 0,
               COUPON: 0,
               PREPAID: 0,
-              totalSales: 0,
-              totalDeductions: 0,
-              finalSales: 0,
+              totalSales: secondary.netSalesTotal,
+              totalDeductions: secondary.deductionTotal,
+              finalSales: secondary.grossSalesTotal,
             };
 
             secondary.netSalesList?.forEach(({ paymentsMethod, amount, incentiveAmount }) => {
@@ -129,24 +142,22 @@ export function useFlattenSales({ categoryLabelMap, staffNameFilter }) {
               ) {
                 row[paymentsMethod] += amount;
                 row[`${paymentsMethod}_INCENTIVE`] += incentiveAmount;
-                row.totalSales += amount;
               }
             });
 
             secondary.deductionList?.forEach(({ deduction, amount }) => {
               if (Object.prototype.hasOwnProperty.call(row, deduction)) {
                 row[deduction] += amount;
-                row.totalDeductions += amount;
               }
             });
 
-            row.finalSales = row.totalSales - row.totalDeductions;
             staffRows.push(row);
             isFirstRow = false;
           });
         });
       });
 
+      // 일반 매출 (SESSION_PASS / PREPAID_PASS)
       staff.paymentsSalesList?.forEach(payment => {
         const row = {
           name: isFirstRow ? staff.staffName : '',
@@ -164,9 +175,9 @@ export function useFlattenSales({ categoryLabelMap, staffNameFilter }) {
           DISCOUNT: 0,
           COUPON: 0,
           PREPAID: 0,
-          totalSales: 0,
-          totalDeductions: 0,
-          finalSales: 0,
+          totalSales: payment.netSalesTotal,
+          totalDeductions: payment.deductionTotal,
+          finalSales: payment.grossSalesTotal,
         };
 
         payment.netSalesList?.forEach(({ paymentsMethod, amount, incentiveAmount }) => {
@@ -176,22 +187,20 @@ export function useFlattenSales({ categoryLabelMap, staffNameFilter }) {
           ) {
             row[paymentsMethod] += amount;
             row[`${paymentsMethod}_INCENTIVE`] += incentiveAmount;
-            row.totalSales += amount;
           }
         });
 
         payment.deductionList?.forEach(({ deduction, amount }) => {
           if (Object.prototype.hasOwnProperty.call(row, deduction)) {
             row[deduction] += amount;
-            row.totalDeductions += amount;
           }
         });
 
-        row.finalSales = row.totalSales - row.totalDeductions;
         staffRows.push(row);
         isFirstRow = false;
       });
 
+      // 직원별 총계
       const summaryRow = {
         name: '',
         category: '총계',
@@ -219,15 +228,28 @@ export function useFlattenSales({ categoryLabelMap, staffNameFilter }) {
           summaryRow[`${method}_INCENTIVE`] += row[`${method}_INCENTIVE`];
         });
         ['DISCOUNT', 'COUPON', 'PREPAID', 'totalSales', 'totalDeductions', 'finalSales'].forEach(
-          key => {
-            summaryRow[key] += row[key] || 0;
+          method => {
+            summaryRow[method] += row[method];
           }
         );
       });
-
       result.push(...staffRows, summaryRow);
     });
 
+    result.forEach(row => {
+      if (row.category === '총계') return;
+      ['CARD', 'CASH', 'NAVER_PAY', 'LOCAL'].forEach(method => {
+        totals[method] += row[method];
+        totals[`${method}_INCENTIVE`] += row[`${method}_INCENTIVE`];
+      });
+      ['DISCOUNT', 'COUPON', 'PREPAID', 'totalSales', 'totalDeductions', 'finalSales'].forEach(
+        method => {
+          totals[method] += row[method];
+        }
+      );
+    });
+
+    result.push(totals);
     return result;
   };
 

@@ -10,6 +10,7 @@ import com.deveagles.be15_deveagles_be.features.staffsales.query.service.support
 import com.querydsl.core.Tuple;
 import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.impl.JPAQueryFactory;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 import lombok.RequiredArgsConstructor;
@@ -28,25 +29,25 @@ public class StaffSalesQueryRepositoryImpl implements StaffSalesQueryRepository 
 
     List<StaffPaymentsSalesResponse> result = new ArrayList<>();
 
-    // SERVICE
-    result.add(
-        buildSalesResponse(
-            "SERVICE",
-            getSalesIdsByCategory(staffId, startDate, endDate, Category.SERVICE),
-            true,
-            shopId,
-            staffId,
-            ProductType.SERVICE));
+    if (!isDetail) {
+      result.add(
+          buildSalesResponse(
+              "SERVICE",
+              getSalesIdsByCategory(shopId, staffId, startDate, endDate, Category.SERVICE),
+              true,
+              shopId,
+              staffId,
+              ProductType.SERVICE));
 
-    // PRODUCT
-    result.add(
-        buildSalesResponse(
-            "PRODUCT",
-            getSalesIdsByCategory(staffId, startDate, endDate, Category.PRODUCT),
-            true,
-            shopId,
-            staffId,
-            ProductType.PRODUCT));
+      result.add(
+          buildSalesResponse(
+              "PRODUCT",
+              getSalesIdsByCategory(shopId, staffId, startDate, endDate, Category.PRODUCT),
+              true,
+              shopId,
+              staffId,
+              ProductType.PRODUCT));
+    }
 
     // SESSION_PASS
     result.add(
@@ -165,15 +166,33 @@ public class StaffSalesQueryRepositoryImpl implements StaffSalesQueryRepository 
                 .amount(Optional.ofNullable(prepaidSum).orElse(0))
                 .build());
 
+    // 총계 계산
+    int grossSalesTotal =
+        netSalesList.stream().mapToInt(n -> Optional.ofNullable(n.getAmount()).orElse(0)).sum();
+
+    int deductionTotal =
+        deductionList.stream().mapToInt(d -> Optional.ofNullable(d.getAmount()).orElse(0)).sum();
+
+    int netSalesTotal = grossSalesTotal - deductionTotal;
+
+    int incentiveTotal =
+        netSalesList.stream()
+            .mapToInt(n -> Optional.ofNullable(n.getIncentiveAmount()).orElse(0))
+            .sum();
+
     return StaffPaymentsSalesResponse.builder()
         .category(category)
         .netSalesList(netSalesList)
         .deductionList(deductionList)
+        .grossSalesTotal(grossSalesTotal)
+        .deductionTotal(deductionTotal)
+        .netSalesTotal(netSalesTotal)
+        .incentiveTotal(incentiveTotal)
         .build();
   }
 
   private List<Long> getSalesIdsByCategory(
-      Long staffId, LocalDateTime start, LocalDateTime end, Category category) {
+      Long shopId, Long staffId, LocalDateTime start, LocalDateTime end, Category category) {
     QSales sales = QSales.sales;
     QItemSales itemSales = QItemSales.itemSales;
     QSecondaryItem secondaryItem = QSecondaryItem.secondaryItem;
@@ -190,6 +209,7 @@ public class StaffSalesQueryRepositoryImpl implements StaffSalesQueryRepository 
         .on(secondaryItem.primaryItemId.eq(primaryItem.primaryItemId))
         .where(
             sales.staffId.eq(staffId),
+            sales.shopId.eq(shopId),
             sales.salesDate.between(start, end),
             primaryItem.category.eq(category),
             sales.deletedAt.isNull(),
@@ -244,6 +264,47 @@ public class StaffSalesQueryRepositoryImpl implements StaffSalesQueryRepository 
     result.addAll(getSalesDetailByCategory(staffId, shopId, startDate, endDate, Category.PRODUCT));
 
     return result;
+  }
+
+  @Override
+  public int getTargetTotalSales(
+      Long shopId, Long staffId, ProductType type, LocalDate startDate, LocalDate endDate) {
+    LocalDateTime start = startDate.atStartOfDay();
+    LocalDateTime end = endDate.atTime(23, 59, 59);
+
+    // salesId 조회
+    List<Long> salesIds;
+    boolean couponApplicable;
+    switch (type) {
+      case SERVICE -> {
+        salesIds = getSalesIdsByCategory(shopId, staffId, start, end, Category.SERVICE);
+        couponApplicable = true;
+      }
+      case PRODUCT -> {
+        salesIds = getSalesIdsByCategory(shopId, staffId, start, end, Category.PRODUCT);
+        couponApplicable = true;
+      }
+      case SESSION_PASS -> {
+        salesIds = getSessionPassSalesIds(staffId, start, end);
+        couponApplicable = false;
+      }
+      case PREPAID_PASS -> {
+        salesIds = getPrepaidPassSalesIds(staffId, start, end);
+        couponApplicable = false;
+      }
+      default -> {
+        return 0;
+      }
+    }
+
+    if (salesIds.isEmpty()) {
+      return 0;
+    }
+
+    StaffPaymentsSalesResponse salesData =
+        buildSalesResponse(type.name(), salesIds, couponApplicable, shopId, staffId, type);
+
+    return salesData.getGrossSalesTotal();
   }
 
   private List<StaffPaymentsDetailSalesResponse> getSalesDetailByCategory(
@@ -332,6 +393,9 @@ public class StaffSalesQueryRepositoryImpl implements StaffSalesQueryRepository 
                                         saleData.getNetSalesList().stream()
                                             .mapToInt(StaffNetSalesResponse::getIncentiveAmount)
                                             .sum())
+                                    .netSalesTotal(saleData.getNetSalesTotal())
+                                    .deductionTotal(saleData.getDeductionTotal())
+                                    .grossSalesTotal(saleData.getGrossSalesTotal())
                                     .build();
                               })
                           .toList();
