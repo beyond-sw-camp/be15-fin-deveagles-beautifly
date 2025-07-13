@@ -14,14 +14,17 @@ public interface IncentiveRepository extends JpaRepository<Incentive, Long> {
   @Query(
       """
     SELECT i
-     FROM Incentive i
-     JOIN Shop s ON s.shopId = i.shopId
+    FROM Incentive i
+    JOIN Shop s ON s.shopId = i.shopId
     WHERE i.shopId = :shopId
       AND i.type = :type
       AND i.isActive = true
-      AND (i.staffId IS NULL OR i.staffId = :staffId)
       AND (s.incentiveStatus = true)
-   """)
+      AND (
+        :staffId IS NULL AND i.staffId IS NULL
+        OR :staffId IS NOT NULL AND (i.staffId IS NULL OR i.staffId = :staffId)
+      )
+  """)
   List<Incentive> findActiveIncentivesByShopIdAndType(
       @Param("shopId") Long shopId,
       @Param("type") ProductType type,

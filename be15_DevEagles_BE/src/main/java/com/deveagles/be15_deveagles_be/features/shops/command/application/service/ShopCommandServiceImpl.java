@@ -147,10 +147,11 @@ public class ShopCommandServiceImpl implements ShopCommandService {
 
     shopRepository.save(findShop);
 
-    if (request.snsList().isEmpty()) {
-      snsRepository.deleteByShopId(shopId);
-    } else {
-      // 불필요한 DB 호출 방지를 위한 Map 캐싱
+    if (!request.deletedSnsIds().isEmpty()) {
+      snsRepository.deleteBySnsIdIn(request.deletedSnsIds());
+    }
+
+    if (!request.snsList().isEmpty()) {
       List<Long> existingSnsIds =
           request.snsList().stream().map(SnsRequest::snsId).filter(Objects::nonNull).toList();
 

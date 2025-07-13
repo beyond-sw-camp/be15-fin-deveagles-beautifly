@@ -3,7 +3,7 @@ package com.deveagles.be15_deveagles_be.features.users.query.application.service
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 
-import com.deveagles.be15_deveagles_be.features.users.command.domain.aggregate.Staff;
+import com.deveagles.be15_deveagles_be.features.users.query.application.dto.response.StaffListInfo;
 import com.deveagles.be15_deveagles_be.features.users.query.application.dto.response.StaffsListResponse;
 import com.deveagles.be15_deveagles_be.features.users.query.infraStrucure.repository.StaffQueryRepository;
 import java.util.List;
@@ -36,12 +36,17 @@ public class StaffQueryServiceImplTest {
     String keyword = "홍길동";
     Boolean isActive = true;
 
-    List<Staff> staffList =
+    List<StaffListInfo> staffList =
         List.of(
-            Staff.builder().staffId(1L).staffName("홍길동").email("test@example.com").build(),
-            Staff.builder().staffId(2L).staffName("김철수").email("kim@example.com").build());
+            StaffListInfo.builder().staffId(1L).staffName("홍길동").phoneNumber("01012345678").build(),
+            StaffListInfo.builder()
+                .staffId(2L)
+                .staffName("김철수")
+                .phoneNumber("01098765432")
+                .build());
 
-    Page<Staff> staffPage = new PageImpl<>(staffList, PageRequest.of(0, size), staffList.size());
+    Page<StaffListInfo> staffPage =
+        new PageImpl<>(staffList, PageRequest.of(0, size), staffList.size());
 
     when(staffQueryRepository.searchStaffs(
             shopId, keyword, isActive, PageRequest.of(0, size, Sort.by("staffId").descending())))

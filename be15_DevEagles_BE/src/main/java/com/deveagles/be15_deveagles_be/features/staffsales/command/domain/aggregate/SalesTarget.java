@@ -1,7 +1,6 @@
 package com.deveagles.be15_deveagles_be.features.staffsales.command.domain.aggregate;
 
 import jakarta.persistence.*;
-import java.sql.Date;
 import lombok.*;
 
 @Getter
@@ -32,7 +31,7 @@ public class SalesTarget {
   private int sales;
 
   @Column(name = "target_year", nullable = false)
-  private Date targetYear;
+  private int targetYear;
 
   @Column(name = "target_month", nullable = false)
   private int targetMonth;
@@ -47,7 +46,7 @@ public class SalesTarget {
       boolean membership,
       boolean items,
       int sales,
-      Date targetYear,
+      int targetYear,
       int targetMonth,
       boolean applyStatus) {
     this.staffId = staffId;
@@ -62,5 +61,9 @@ public class SalesTarget {
 
   public void setStatus(boolean status) {
     this.applyStatus = status;
+  }
+
+  public void setSalesAmount(int sales) {
+    this.sales = sales;
   }
 }
