@@ -12,4 +12,5 @@ public record PutShopRequest(
     String phoneNumber,
     String bizNumber,
     String description,
-    List<SnsRequest> snsList) {}
+    List<SnsRequest> snsList,
+    List<Long> deletedSnsIds) {}

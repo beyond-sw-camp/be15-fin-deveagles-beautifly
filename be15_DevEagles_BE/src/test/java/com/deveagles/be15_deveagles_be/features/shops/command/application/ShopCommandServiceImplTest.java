@@ -1,8 +1,9 @@
 package com.deveagles.be15_deveagles_be.features.shops.command.application;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 
 import com.deveagles.be15_deveagles_be.common.exception.BusinessException;
 import com.deveagles.be15_deveagles_be.common.exception.ErrorCode;
@@ -79,7 +80,7 @@ public class ShopCommandServiceImplTest {
             .shopDescription("프리미엄 헤어샵")
             .build();
 
-    Mockito.when(shopRepository.save(Mockito.any(Shop.class))).thenReturn(expectedShop);
+    when(shopRepository.save(Mockito.any(Shop.class))).thenReturn(expectedShop);
 
     // when
     Shop result = shopCommandService.shopRegist(request);
@@ -98,7 +99,7 @@ public class ShopCommandServiceImplTest {
     // given
     String bizNumber = "1234567890";
     ValidBizNumberRequest request = new ValidBizNumberRequest(bizNumber);
-    Mockito.when(shopRepository.findByBusinessNumber(bizNumber))
+    when(shopRepository.findByBusinessNumber(bizNumber))
         .thenReturn(Optional.of(Shop.builder().businessNumber(bizNumber).build()));
 
     // when
@@ -114,7 +115,7 @@ public class ShopCommandServiceImplTest {
     // given
     String bizNumber = "1112233333";
     ValidBizNumberRequest request = new ValidBizNumberRequest(bizNumber);
-    Mockito.when(shopRepository.findByBusinessNumber(bizNumber)).thenReturn(Optional.empty());
+    when(shopRepository.findByBusinessNumber(bizNumber)).thenReturn(Optional.empty());
 
     // when
     Boolean result = shopCommandService.validCheckBizNumber(request);
@@ -143,7 +144,7 @@ public class ShopCommandServiceImplTest {
   void 존재하는_shopId_예외없음() {
     // given
     Long validShopId = 1L;
-    Mockito.when(shopRepository.existsById(validShopId)).thenReturn(true);
+    when(shopRepository.existsById(validShopId)).thenReturn(true);
 
     // when & then
     assertDoesNotThrow(() -> shopCommandService.validateShopExists(validShopId));
@@ -154,7 +155,7 @@ public class ShopCommandServiceImplTest {
   void 존재하지않는_shopId_예외발생() {
     // given
     Long invalidShopId = 999L;
-    Mockito.when(shopRepository.existsById(invalidShopId)).thenReturn(false);
+    when(shopRepository.existsById(invalidShopId)).thenReturn(false);
 
     // when & then
     BusinessException exception =
@@ -189,9 +190,9 @@ public class ShopCommandServiceImplTest {
             new SNS(2L, "https://pf.kakao.com/_test", 1L, SNSType.ETC));
 
     // when
-    Mockito.when(shopRepository.findByShopId(shopId)).thenReturn(Optional.of(shop));
-    Mockito.when(industryRepository.findAll()).thenReturn(industryList);
-    Mockito.when(snsRepository.findByShopId(shopId)).thenReturn(snsList);
+    when(shopRepository.findByShopId(shopId)).thenReturn(Optional.of(shop));
+    when(industryRepository.findAll()).thenReturn(industryList);
+    when(snsRepository.findByShopId(shopId)).thenReturn(snsList);
 
     GetShopResponse response = shopCommandService.getShop(shopId);
 
@@ -203,77 +204,164 @@ public class ShopCommandServiceImplTest {
   }
 
   @Test
-  void putShop_변경사항_있을_때() {
+  @DisplayName("putShop - 매장 정보 수정 및 SNS 처리 성공")
+  void putShop_성공() {
     // given
     Long shopId = 1L;
     Shop existingShop =
         Shop.builder()
             .shopId(shopId)
-            .shopName("기존이름")
-            .address("기존주소")
-            .detailAddress("기존상세주소")
-            .industryId(1L)
-            .phoneNumber("01011112222")
+            .shopName("OldName")
+            .address("Old Address")
+            .detailAddress("Old Detail")
+            .industryId(100L)
+            .phoneNumber("010-0000-0000")
             .businessNumber("1234567890")
-            .shopDescription("기존설명")
+            .shopDescription("Old Description")
             .build();
+
+    when(shopRepository.findByShopId(shopId)).thenReturn(Optional.of(existingShop));
+
+    List<Long> deletedSnsIds = List.of(11L, 12L);
+    List<SnsRequest> snsList =
+        List.of(
+            new SnsRequest(13L, "INSTA", "https://insta.com/new1"),
+            new SnsRequest(null, "ETC", "https://kakao.com/new2"));
 
     PutShopRequest request =
         new PutShopRequest(
-            "새이름",
-            "새주소",
-            "새상세주소",
-            2L,
-            "01099998888",
-            "9998877777",
-            "새설명",
-            List.of(new SnsRequest(10L, "INSTA", "https://insta.com/newshop")));
+            "NewName",
+            "New Address",
+            "New Detail",
+            200L,
+            "010-1234-5678",
+            "0987654321",
+            "New Description",
+            snsList,
+            deletedSnsIds);
 
-    SNS existingSns = SNS.builder().snsId(10L).shopId(shopId).build();
+    SNS existingSns = SNS.builder().snsId(13L).build();
+    when(snsRepository.findBySnsIdIn(List.of(13L))).thenReturn(List.of(existingSns));
 
     // when
-    Mockito.when(shopRepository.findByShopId(shopId)).thenReturn(Optional.of(existingShop));
-    Mockito.when(snsRepository.findBySnsIdIn(List.of(10L))).thenReturn(List.of(existingSns));
-
     shopCommandService.putShop(shopId, request);
 
     // then
-    verify(shopRepository).save(existingShop);
-    verify(snsRepository).findBySnsIdIn(List.of(10L));
-    verify(snsRepository).save(existingSns);
+    // 상점 필드 변경 확인
+    assertThat(existingShop.getShopName()).isEqualTo("NewName");
+    assertThat(existingShop.getAddress()).isEqualTo("New Address");
+    assertThat(existingShop.getDetailAddress()).isEqualTo("New Detail");
+    assertThat(existingShop.getIndustryId()).isEqualTo(200L);
+    assertThat(existingShop.getPhoneNumber()).isEqualTo("010-1234-5678");
+    assertThat(existingShop.getBusinessNumber()).isEqualTo("0987654321");
+    assertThat(existingShop.getShopDescription()).isEqualTo("New Description");
 
-    assertThat(existingShop.getShopName()).isEqualTo("새이름");
-    assertThat(existingShop.getPhoneNumber()).isEqualTo("01099998888");
-    assertThat(existingShop.getShopDescription()).isEqualTo("새설명");
+    // 삭제 확인
+    verify(snsRepository).deleteBySnsIdIn(deletedSnsIds);
+
+    // SNS 저장 확인
+    verify(snsRepository, times(2)).save(any(SNS.class));
   }
 
   @Test
-  void putShop_snsList_비어있을때() {
+  @DisplayName("putShop - 존재하지 않는 상점 예외")
+  void putShop_상점없음() {
+    // given
+    when(shopRepository.findByShopId(anyLong())).thenReturn(Optional.empty());
+
+    PutShopRequest dummyRequest =
+        new PutShopRequest(
+            "name",
+            "addr",
+            "detail",
+            1L,
+            "010",
+            "biz",
+            "desc",
+            Collections.emptyList(),
+            Collections.emptyList());
+
+    // when & then
+    assertThatThrownBy(() -> shopCommandService.putShop(1L, dummyRequest))
+        .isInstanceOf(BusinessException.class)
+        .hasMessageContaining(ErrorCode.SHOP_NOT_FOUNT.getMessage());
+  }
+
+  @Test
+  @DisplayName("putShop - SNS 삭제 및 수정/추가 처리 확인")
+  void putShop_Sns삭제_수정_추가() {
     // given
     Long shopId = 1L;
-    Shop shop =
+
+    Shop existingShop =
         Shop.builder()
             .shopId(shopId)
-            .shopName("이름")
-            .address("주소")
-            .detailAddress("상세주소")
+            .shopName("SameName")
+            .address("Same Address")
+            .detailAddress("Same Detail")
             .industryId(1L)
-            .phoneNumber("010-0000-0000")
-            .businessNumber("000-00-00000")
-            .shopDescription("매장설명")
+            .phoneNumber("010-1111-2222")
+            .businessNumber("1111222233")
+            .shopDescription("Same Description")
             .build();
+
+    when(shopRepository.findByShopId(shopId)).thenReturn(Optional.of(existingShop));
+
+    // 삭제 대상 SNS ID
+    List<Long> deletedSnsIds = List.of(101L, 102L);
+
+    // SNS 수정 및 추가 요청
+    SnsRequest modifySns = new SnsRequest(201L, "INSTA", "https://instagram.com/updated");
+    SnsRequest newSns = new SnsRequest(null, "ETC", "https://kakao.com/new");
+
+    List<SnsRequest> snsList = List.of(modifySns, newSns);
+
+    // 기존 SNS DB
+    SNS existingSns = spy(SNS.builder().snsId(201L).shopId(shopId).build());
+    when(snsRepository.findBySnsIdIn(List.of(201L))).thenReturn(List.of(existingSns));
 
     PutShopRequest request =
         new PutShopRequest(
-            "이름", "주소", "상세주소", 1L, "01000000000", "0000000000", "매장설명", Collections.emptyList());
+            "SameName",
+            "Same Address",
+            "Same Detail",
+            1L,
+            "010-1111-2222",
+            "1111222233",
+            "Same Description",
+            snsList,
+            deletedSnsIds);
 
     // when
-    Mockito.when(shopRepository.findByShopId(shopId)).thenReturn(Optional.of(shop));
-
     shopCommandService.putShop(shopId, request);
 
     // then
+    // 삭제된 SNS ID로 deleteBySnsIdIn 호출 확인
+    verify(snsRepository).deleteBySnsIdIn(deletedSnsIds);
+
+    // 기존 SNS 수정(setSns 호출 확인)
+    verify(existingSns).setSns(SNSType.INSTA, "https://instagram.com/updated");
+
+    // SNS save가 2회 (수정된 existing + 새 SNS)
+    verify(snsRepository, times(2)).save(any(SNS.class));
+  }
+
+  @Test
+  @DisplayName("updateReservationTerm: 예약 단위 시간이 정상적으로 업데이트된다")
+  void updateReservationTerm_정상() {
+    // given
+    Long shopId = 1L;
+    Integer term = 10;
+
+    Shop shop = Shop.builder().shopId(shopId).reservationTerm(10).build();
+
+    when(shopRepository.findByShopId(shopId)).thenReturn(Optional.of(shop));
+
+    // when
+    shopCommandService.updateReservationTerm(shopId, term);
+
+    // then
+    assertThat(shop.getReservationTerm()).isEqualTo(term);
     verify(shopRepository).save(shop);
-    verify(snsRepository).deleteByShopId(shopId);
   }
 }

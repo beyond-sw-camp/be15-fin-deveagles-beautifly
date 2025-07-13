@@ -130,3 +130,17 @@ export const deleteReservation = async reservationId => {
 export const updateReservationStatuses = async reservationStatusList => {
   await api.put('/schedules/reservations/status', reservationStatusList);
 };
+
+export const fetchMyReservationSettings = async () => {
+  const response = await api.get('/schedules/reservation/settings');
+  return response.data;
+};
+
+export const fetchReservationSettings = async shopId => {
+  const response = await api.get(`/schedules/reservation/settings/${shopId}`);
+  return response.data;
+};
+
+export const updateReservationSettings = async settingsList => {
+  return await api.put('/schedules/reservation/settings', settingsList);
+};
