@@ -17,7 +17,7 @@
             <BaseButton :outline="tab !== 'plan'" @click="tab = 'plan'">일정</BaseButton>
             <BaseButton :outline="tab !== 'leave'" @click="tab = 'leave'">휴무</BaseButton>
           </div>
-          <component :is="currentTabComponent" />
+          <component :is="currentTabComponent" ref="formRef" />
         </div>
       </div>
 
@@ -28,6 +28,17 @@
       </div>
     </div>
   </div>
+
+  <BaseConfirm
+    v-model="showConfirm"
+    title="예약 확인"
+    message="해당 예약을 등록하시겠습니까?"
+    confirm-text="등록"
+    cancel-text="취소"
+    @confirm="handleConfirm"
+  />
+
+  <BaseToast ref="toast" />
 </template>
 
 <script setup>
@@ -36,10 +47,20 @@
   import ReservationForm from './ReservationForm.vue';
   import PlanForm from './PlanForm.vue';
   import LeaveForm from './LeaveForm.vue';
+  import { createReservation } from '@/features/schedules/api/schedules.js';
+  import BaseConfirm from '@/components/common/BaseConfirm.vue';
+  import BaseToast from '@/components/common/BaseToast.vue';
+  import dayjs from 'dayjs';
+
+  const showConfirm = ref(false);
+  let confirmCallback = null;
+
+  const formRef = ref();
+  const toast = ref(null);
 
   const props = defineProps({
     modelValue: { type: Boolean, required: true },
-    defaultTab: { type: String, default: 'reservation' }, // 'reservation', 'plan', 'leave'
+    defaultTab: { type: String, default: 'reservation' },
   });
 
   const emit = defineEmits(['update:modelValue']);
@@ -57,8 +78,76 @@
     }
   });
 
-  const submit = () => {
-    alert(`${tab.value} 등록 로직 실행`);
+  const submit = async () => {
+    const data = formRef.value?.form;
+
+    if (!data) {
+      console.log('formRef or form is undefined');
+      return;
+    }
+
+    const requiredFields = [data.staffId, data.date, data.startTime, data.endTime];
+    const isValid = requiredFields.every(Boolean);
+
+    if (!isValid) {
+      toast.value?.error('담당자, 날짜, 시작/종료 시간을 모두 입력해주세요.');
+      return;
+    }
+
+    confirmCallback = async () => {
+      const date = new Date(data.date);
+      const startTime = new Date(data.startTime);
+      const endTime = new Date(data.endTime);
+
+      await submitReservation(
+        {
+          ...data,
+          date,
+          startTime,
+          endTime,
+        },
+        !data.customerId
+      );
+    };
+    showConfirm.value = true;
+  };
+
+  const handleConfirm = async () => {
+    if (typeof confirmCallback === 'function') {
+      await confirmCallback();
+    }
+  };
+
+  const formatDateTime = (date, time) => {
+    if (!(date instanceof Date) || !(time instanceof Date)) return '';
+
+    return dayjs(date)
+      .set('hour', dayjs(time).hour())
+      .set('minute', dayjs(time).minute())
+      .set('second', 0)
+      .set('millisecond', 0)
+      .format('YYYY-MM-DDTHH:mm:ss');
+  };
+
+  const submitReservation = async (formData, isAnonymous) => {
+    try {
+      const payload = {
+        customerId: isAnonymous ? null : formData.customerId,
+        staffId: formData.staffId,
+        secondaryItemIds: formData.selectedItems?.map(item => item.id) || [],
+        reservationDate: dayjs(formData.date).format('YYYY-MM-DD'),
+        reservationStartAt: formatDateTime(formData.date, formData.startTime),
+        reservationEndAt: formatDateTime(formData.date, formData.endTime),
+        reservationMemo: formData.memo || '',
+        staffMemo: formData.staffMemo || '',
+      };
+      await createReservation(payload);
+
+      close();
+    } catch (err) {
+      toast.value?.error('예약 등록 중 오류가 발생했습니다.');
+      console.error(err);
+    }
   };
 
   const close = () => {
