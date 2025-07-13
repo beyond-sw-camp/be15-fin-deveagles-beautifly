@@ -176,8 +176,14 @@
     shop.value.snsList.push({ snsId: null, type: '', snsAddress: '' });
   };
 
+  const deletedSnsIds = ref([]);
+
   const removeSNS = index => {
     if (shop.value.snsList.length > 1) {
+      const sns = shop.value.snsList[index];
+      if (sns.snsId) {
+        deletedSnsIds.value.push(sns.snsId);
+      }
       shop.value.snsList.splice(index, 1);
     }
   };
@@ -251,11 +257,18 @@
     showConfirmModal.value = false;
 
     try {
-      const validSnsList = shop.value.snsList.filter(sns => sns.type && sns.snsAddress);
+      const validSnsList = shop.value.snsList
+        .filter(sns => sns.type && sns.snsAddress)
+        .map(sns => ({
+          snsId: sns.snsId ?? null,
+          type: sns.type,
+          snsAddress: sns.snsAddress,
+        }));
 
       const payload = {
         ...shop.value,
         snsList: validSnsList.length > 0 ? validSnsList : [],
+        deletedSnsIds: [...deletedSnsIds.value],
       };
 
       await putShop(payload);
@@ -292,7 +305,7 @@
   }
   .sns-row {
     display: flex;
-    align-items: stretch; /* ✅ 핵심! center가 아니라 stretch */
+    align-items: stretch;
     gap: 8px;
   }
   .sns-select {
