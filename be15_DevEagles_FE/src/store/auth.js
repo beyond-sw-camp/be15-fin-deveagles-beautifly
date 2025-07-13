@@ -22,10 +22,7 @@ export const useAuthStore = defineStore('auth', () => {
   const grade = ref(null);
 
   const isAuthenticated = computed(
-    () =>
-      !!accessToken.value &&
-      Date.now() < (expirationTime.value || 0) &&
-      userStatus.value === 'ENABLED'
+    () => !!accessToken.value && Date.now() < (expirationTime.value || 0)
   );
 
   async function setAuth(at) {

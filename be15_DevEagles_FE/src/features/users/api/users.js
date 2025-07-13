@@ -8,6 +8,7 @@ const exceptToken = [
   { method: 'post', url: '/shops/valid-biz' },
   { method: 'get', url: '/shops/get-industry' },
   { method: 'post', url: '/auth/login' },
+  { mehtod: 'post', url: `/auth/check-email` },
 ];
 
 api.interceptors.request.use(
