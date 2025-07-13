@@ -21,7 +21,11 @@
 
     <!-- 테이블 -->
     <div class="table-wrapper">
+      <div v-if="loading" class="table-loading-overlay">
+        <BaseLoading text="직원 목록을 조회하는 중입니다..." />
+      </div>
       <BaseTable
+        v-if="!loading"
         :columns="columns"
         :data="staffList"
         :hover="true"
@@ -70,6 +74,7 @@
   import BaseToast from '@/components/common/BaseToast.vue';
   import BaseBadge from '@/components/common/BaseBadge.vue';
   import { debounce } from 'chart.js/helpers';
+  import BaseLoading from '@/components/common/BaseLoading.vue';
 
   const router = useRouter();
   const toastRef = ref();
@@ -80,6 +85,7 @@
   const totalCount = ref(0);
   const searchText = ref('');
   const onlyActive = ref(false);
+  const loading = ref(false);
 
   const columns = [
     { key: 'staffName', title: '이름', width: '200px' },
@@ -96,6 +102,7 @@
   };
 
   const fetchStaff = async () => {
+    loading.value = true;
     try {
       const res = await getStaff({
         page: page.value,
@@ -106,6 +113,7 @@
 
       staffList.value = res.data.data.staffList;
       totalCount.value = res.data.data.pagination.totalItems;
+      loading.value = false;
     } catch (err) {
       toastRef.value?.error?.('직원 목록 조회에 실패했습니다.');
     }
