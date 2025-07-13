@@ -176,3 +176,13 @@ export const createRegularLeave = async payload => {
   const response = await api.post('/schedules/regular-leaves', payload);
   return response.data.data;
 };
+
+export const createPlan = async payload => {
+  const response = await api.post('/schedules/plans', payload);
+  return response.data.data;
+};
+
+export const createRegularPlan = async payload => {
+  const response = await api.post('/schedules/regular-plans', payload);
+  return response.data.data;
+};
