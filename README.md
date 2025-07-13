@@ -48,7 +48,9 @@ deveagles-fin-repo/
  
   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#1-4">1-4. 주요 기능</a>
   
-  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#1-5">1-5. 요구사항 명세서 </a>  
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#1-5">1-5. 요구사항 명세서 </a> 
+
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#1-6">1-6. WBS </a>  
 
 🗃️ <a href="#2">2. DB 모델링</a>
 
@@ -68,6 +70,7 @@ deveagles-fin-repo/
 🗒️ <a href="#6">6. 프로젝트 아키텍처 구조 </a>
 
  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#6-1">6-1. 아키텍처 구조 </a>
+ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#6-2">6-2. 다이어그램 </a>
 
 👾 <a href="#7">7. 기술 스택 </a>
 
@@ -103,7 +106,11 @@ deveagles-fin-repo/
 <br><br>
 
 ### <p id="1-5"> 1-5. 요구사항 명세서 </p>
-<a href="https://docs.google.com/spreadsheets/d/1de8mq1fLxvG3lpLMdgieSpFL43okKb8f5VAxNtNWPLE/edit?gid=1154602031#gid=1154602031"> 요구사항 명세서 </a>
+[요구사항 명세서](https://docs.google.com/spreadsheets/d/1de8mq1fLxvG3lpLMdgieSpFL43okKb8f5VAxNtNWPLE/edit?gid=1154602031#gid=1154602031)
+
+### <p id="1-6"> 1-6. WBS </p>
+[WBS](https://docs.google.com/spreadsheets/d/1961AfrJP8OabgMbm27YaTH3RrsD5D1Qp9p9z-w2splY/edit?gid=901636027#gid=901636027)
+
 
 <br><br>
 
@@ -117,8 +124,35 @@ deveagles-fin-repo/
 <br><br>
 
 ## <p id="3"> 📲 3. 화면 설계</p>
+
+[화면기능명세서](https://docs.google.com/presentation/d/1HQyAsLoTswNbl2u6PCYlA3Vwb7IoGB2Y/edit?slide=id.p1#slide=id.p1)
+
 <details>
-  <summary>  </summary>
+  <summary> 회원 / 직원 </summary>
+</details>
+
+<details>
+  <summary> 고객 </summary>
+</details>
+
+<details>
+  <summary> SMS / 챗봇 </summary>
+</details>
+
+<details>
+  <summary> 일정 관리 </summary>
+</details>
+
+<details>
+  <summary> 상품 / 매출 </summary>
+</details>
+
+<details>
+  <summary> 마케팅 / 데이터 분석 </summary>
+</details>
+
+<details>
+  <summary> 알림 </summary>
 </details>
 
 <br><br>
@@ -132,21 +166,25 @@ deveagles-fin-repo/
 
 <details>
 <summary> 🔍 Swagger API 열기 </summary>
-  
 </details>
 
 <br><br>
 
 ### <p id="5-2"> 5-2. 프론트엔드 단위 테스트 결과 </p>
+[프론트엔드 단위테스트](https://docs.google.com/spreadsheets/d/1FzMi2wAkGpdgU23Jc0TpxOCsrnXXxjCKGR8KUUb6x08/edit?gid=0#gid=0)
+
 
 <br><br>
-
 
 ## <p id="6"> 🗒️ 6. 프로젝트 아키텍처 구조 </p>
 ### <p id="6-1">6-1. 아키텍처 구조 </p>
 <details>
   <summary> 🧱 아키텍처 열기 </summary>
   ![프로젝트 아키텍처](https://github.com/user-attachments/assets/92d33032-243a-43ec-8f65-20621c12b18e)
+</details>
+
+<details>
+  <summary> </summary>
 </details>
 
 <br><br>
