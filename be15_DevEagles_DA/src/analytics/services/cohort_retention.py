@@ -123,33 +123,17 @@ class CohortRetentionAnalyzer:
         """
         
         print("고객 데이터 로딩...")
-        raw_conn = self.crm_engine.raw_connection()
-        try:
-            self.customer_data = pd.read_sql_query(customer_query, raw_conn)
-        finally:
-            raw_conn.close()
+        self.customer_data = pd.read_sql_query(customer_query, self.crm_engine)
 
         print("예약 데이터 로딩...")
-        raw_conn = self.crm_engine.raw_connection()
-        try:
-            self.reservation_data = pd.read_sql_query(reservation_query, raw_conn)
-        finally:
-            raw_conn.close()
+        self.reservation_data = pd.read_sql_query(reservation_query, self.crm_engine)
 
         print("매장 데이터 로딩...")
-        raw_conn = self.crm_engine.raw_connection()
-        try:
-            self.shop_data = pd.read_sql_query(shop_query, raw_conn)
-        finally:
-            raw_conn.close()
+        self.shop_data = pd.read_sql_query(shop_query, self.crm_engine)
         
         # 매출 데이터 로드
         print("매출 데이터 로딩...")
-        raw_conn = self.crm_engine.raw_connection()
-        try:
-            self.sales_data = pd.read_sql_query(sales_query, raw_conn)
-        finally:
-            raw_conn.close()
+        self.sales_data = pd.read_sql_query(sales_query, self.crm_engine)
         
         print(f"✅ 로드 완료 - 고객: {len(self.customer_data):,}명, 예약: {len(self.reservation_data):,}건, 매장: {len(self.shop_data):,}개")
         
@@ -669,7 +653,7 @@ Average Retention - 1M: {month1_retention:.1%}  |  3M: {month3_retention:.1%}  |
                 tmp = self.sales_data.copy()
                 tmp['age'] = (current_date - pd.to_datetime(tmp['birthdate'])).dt.days / 365.25
                 tmp['age_group'] = pd.cut(tmp['age'], bins=[0,30,40,50,60,100], labels=['20대','30대','40대','50대','60대+'], right=False)
-                age_aov_df = tmp.groupby('age_group')['total_amount'].mean().reset_index()
+                age_aov_df = tmp.groupby('age_group', observed=True)['total_amount'].mean().reset_index()
             
             print(f"\n✅ 코호트 리텐션 분석 완료!")
             
