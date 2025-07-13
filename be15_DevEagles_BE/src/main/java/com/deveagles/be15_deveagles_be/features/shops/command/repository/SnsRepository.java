@@ -10,4 +10,6 @@ public interface SnsRepository extends JpaRepository<SNS, Long> {
   List<SNS> findBySnsIdIn(List<Long> existingSnsIds);
 
   void deleteByShopId(Long shopId);
+
+  void deleteBySnsIdIn(List<Long> longs);
 }
