@@ -166,3 +166,13 @@ export const createReservation = async payload => {
   const response = await api.post('/schedules/reservations/shop', payload);
   return response.data.data;
 };
+
+export const createLeave = async payload => {
+  const response = await api.post('/schedules/leaves', payload);
+  return response.data.data;
+};
+
+export const createRegularLeave = async payload => {
+  const response = await api.post('/schedules/regular-leaves', payload);
+  return response.data.data;
+};

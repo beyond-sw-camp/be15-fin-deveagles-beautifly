@@ -47,7 +47,11 @@
   import ReservationForm from './ReservationForm.vue';
   import PlanForm from './PlanForm.vue';
   import LeaveForm from './LeaveForm.vue';
-  import { createReservation } from '@/features/schedules/api/schedules.js';
+  import {
+    createReservation,
+    createLeave,
+    createRegularLeave,
+  } from '@/features/schedules/api/schedules.js';
   import BaseConfirm from '@/components/common/BaseConfirm.vue';
   import BaseToast from '@/components/common/BaseToast.vue';
   import dayjs from 'dayjs';
@@ -86,20 +90,42 @@
       return;
     }
 
-    const requiredFields = [data.staffId, data.date, data.startTime, data.endTime];
-    const isValid = requiredFields.every(Boolean);
+    let isValid = false;
+    let requiredFields = [];
 
-    if (!isValid) {
-      toast.value?.error('담당자, 날짜, 시작/종료 시간을 모두 입력해주세요.');
-      return;
+    if (tab.value === 'reservation') {
+      requiredFields = [data.staffId, data.date, data.startTime, data.endTime];
+      isValid = requiredFields.every(Boolean);
+      if (!isValid) {
+        toast.value?.error('담당자, 날짜, 시작/종료 시간을 모두 입력해주세요.');
+        return;
+      }
+    } else if (tab.value === 'leave') {
+      requiredFields = [data.staff, data.title];
+      if (data.repeat === 'none') {
+        requiredFields.push(data.date);
+      } else if (data.repeat === 'weekly') {
+        requiredFields.push(data.weeklyLeave);
+      } else if (data.repeat === 'monthly') {
+        requiredFields.push(data.monthlyLeave);
+      }
+
+      isValid = requiredFields.every(Boolean);
+      if (!isValid) {
+        toast.value?.error('모든 필수 항목을 입력해주세요.');
+        return;
+      }
     }
+
+    // 일정(plan) 유효성 검사 추가 시 여기에 작성
+    // else if (tab.value === 'plan') { ... }
 
     confirmCallback = async () => {
       const date = new Date(data.date);
       const startTime = new Date(data.startTime);
       const endTime = new Date(data.endTime);
 
-      await submitReservation(
+      await submitSchedule(
         {
           ...data,
           date,
@@ -109,6 +135,7 @@
         !data.customerId
       );
     };
+
     showConfirm.value = true;
   };
 
@@ -129,8 +156,31 @@
       .format('YYYY-MM-DDTHH:mm:ss');
   };
 
-  const submitReservation = async (formData, isAnonymous) => {
+  const submitSchedule = async (formData, isAnonymous) => {
     try {
+      if (tab.value === 'leave') {
+        if (formData.repeat === 'none') {
+          await createLeave({
+            staffId: formData.staff,
+            leaveTitle: formData.title,
+            leaveAt: dayjs(formData.date).format('YYYY-MM-DD'),
+            leaveMemo: formData.memo || '',
+          });
+        } else {
+          await createRegularLeave({
+            staffId: formData.staff,
+            regularLeaveTitle: formData.title,
+            regularLeaveMemo: formData.memo || '',
+            weeklyLeave: formData.repeat === 'weekly' ? formData.weeklyLeave : null,
+            monthlyLeave: formData.repeat === 'monthly' ? formData.monthlyLeave : null,
+          });
+        }
+
+        toast.value?.success('휴무가 등록되었습니다.');
+        close();
+        return;
+      }
+
       const payload = {
         customerId: isAnonymous ? null : formData.customerId,
         staffId: formData.staffId,
