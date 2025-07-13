@@ -10,13 +10,13 @@ import com.deveagles.be15_deveagles_be.features.sales.command.domain.aggregate.S
 import com.deveagles.be15_deveagles_be.features.staffsales.command.domain.aggregate.ProductType;
 import com.deveagles.be15_deveagles_be.features.staffsales.query.dto.request.GetStaffSalesListRequest;
 import com.deveagles.be15_deveagles_be.features.staffsales.query.dto.response.*;
-import com.deveagles.be15_deveagles_be.features.staffsales.query.repository.SalesQueryRepository;
 import com.deveagles.be15_deveagles_be.features.staffsales.query.repository.SalesTargetQueryRepository;
 import com.deveagles.be15_deveagles_be.features.staffsales.query.repository.StaffSalesQueryRepository;
 import com.deveagles.be15_deveagles_be.features.staffsales.query.service.support.SalesCalculator;
 import com.deveagles.be15_deveagles_be.features.users.command.domain.aggregate.Staff;
 import com.deveagles.be15_deveagles_be.features.users.command.repository.UserRepository;
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.DisplayName;
@@ -37,8 +37,6 @@ public class StaffSalesQueryServiceImplTest {
   @Mock private StaffSalesQueryRepository staffSalesQueryRepository;
 
   @Mock private SalesTargetQueryRepository salesTargetQueryRepository;
-
-  @Mock private SalesQueryRepository salesQueryRepository;
 
   @Mock private SalesCalculator salesCalculator;
 
@@ -159,16 +157,16 @@ public class StaffSalesQueryServiceImplTest {
     when(staffSalesQueryRepository.getDetailSalesByStaff(eq(staffId), eq(shopId), any(), any()))
         .thenReturn(List.of(detailSales));
 
-    // 요약 계산 결과
     StaffSalesSummaryResponse summary =
         StaffSalesSummaryResponse.builder()
-            .totalNetSales(20000)
-            .totalDiscount(3000)
-            .totalCoupon(0)
-            .totalPrepaid(0)
-            .totalIncentiveAmount(2000)
+            .totalGrossSales(100000)
+            .totalNetSales(90000)
+            .totalDeduction(10000)
+            .totalIncentiveAmount(3000)
             .build();
-    when(salesCalculator.calculateFromDetailList(any())).thenReturn(summary);
+
+    given(salesCalculator.calculateFromDetailAndSalesList(any(), any())).willReturn(summary);
+
     when(salesCalculator.calculateFromSummaryList(eq(shopId), any())).thenReturn(summary);
 
     // 기본 매출 리스트
@@ -194,72 +192,60 @@ public class StaffSalesQueryServiceImplTest {
     assertThat(response.getStaffName()).isEqualTo(staffName);
     assertThat(response.getPaymentsSalesList()).hasSize(1);
     assertThat(response.getPaymentsDetailSalesList()).hasSize(1);
-    assertThat(response.getSummary().getTotalNetSales()).isEqualTo(20000);
-    assertThat(response.getSummary().getTotalIncentiveAmount()).isEqualTo(2000);
+    assertThat(response.getSummary().getTotalNetSales()).isEqualTo(90000);
+    assertThat(response.getSummary().getTotalIncentiveAmount()).isEqualTo(3000);
   }
 
+  @DisplayName("getStaffSalesTarget - 성공")
   @Test
   void getStaffSalesTarget_성공() {
     // given
     Long shopId = 1L;
-    LocalDate start = LocalDate.of(2024, 6, 1);
-    LocalDate end = LocalDate.of(2024, 6, 30);
+    GetStaffSalesListRequest request =
+        new GetStaffSalesListRequest(SearchMode.MONTH, LocalDate.of(2024, 6, 1), null);
 
-    GetStaffSalesListRequest request = new GetStaffSalesListRequest(SearchMode.PERIOD, start, end);
+    LocalDate startDate = LocalDate.of(2024, 6, 1);
+    LocalDate endDate = LocalDate.of(2024, 6, 30);
 
-    Staff staff = Staff.builder().staffId(100L).staffName("승철이").build();
-
-    given(userRepository.findAllByShopId(shopId)).willReturn(List.of(staff));
     given(salesTargetQueryRepository.existsTargetForShopInMonths(eq(shopId), anyList()))
         .willReturn(true);
 
-    // 상품 + 회원권에 대한 Target/Actual 매핑
+    Staff staff = Staff.builder().staffId(10L).staffName("최승철").build();
+
+    given(userRepository.findAllByShopId(shopId)).willReturn(List.of(staff));
+
     given(
-            salesTargetQueryRepository.findTargetAmount(
-                eq(shopId), eq(100L), eq(ProductType.SERVICE), any()))
+            salesTargetQueryRepository.findTargetAmountByItemsOrMembership(
+                eq(shopId), eq(10L), eq(true), any()))
+        .willReturn(500000);
+    given(
+            salesTargetQueryRepository.findTargetAmountByItemsOrMembership(
+                eq(shopId), eq(10L), eq(false), any()))
+        .willReturn(200000);
+
+    given(
+            staffSalesQueryRepository.getTargetTotalSales(
+                shopId, 10L, ProductType.SERVICE, startDate, endDate))
+        .willReturn(300000);
+    given(
+            staffSalesQueryRepository.getTargetTotalSales(
+                shopId, 10L, ProductType.PRODUCT, startDate, endDate))
         .willReturn(100000);
     given(
-            salesTargetQueryRepository.findTargetAmount(
-                eq(shopId), eq(100L), eq(ProductType.PRODUCT), any()))
+            staffSalesQueryRepository.getTargetTotalSales(
+                shopId, 10L, ProductType.SESSION_PASS, startDate, endDate))
         .willReturn(50000);
     given(
-            salesTargetQueryRepository.findTargetAmount(
-                eq(shopId), eq(100L), eq(ProductType.SESSION_PASS), any()))
-        .willReturn(30000);
-    given(
-            salesTargetQueryRepository.findTargetAmount(
-                eq(shopId), eq(100L), eq(ProductType.PREPAID_PASS), any()))
-        .willReturn(20000);
-
-    given(
-            salesQueryRepository.findTotalSales(
-                eq(shopId), eq(100L), eq(ProductType.SERVICE), eq(start), eq(end)))
-        .willReturn(120000);
-    given(
-            salesQueryRepository.findTotalSales(
-                eq(shopId), eq(100L), eq(ProductType.PRODUCT), eq(start), eq(end)))
-        .willReturn(30000);
-    given(
-            salesQueryRepository.findTotalSales(
-                eq(shopId), eq(100L), eq(ProductType.SESSION_PASS), eq(start), eq(end)))
-        .willReturn(25000);
-    given(
-            salesQueryRepository.findTotalSales(
-                eq(shopId), eq(100L), eq(ProductType.PREPAID_PASS), eq(start), eq(end)))
+            staffSalesQueryRepository.getTargetTotalSales(
+                shopId, 10L, ProductType.PREPAID_PASS, startDate, endDate))
         .willReturn(10000);
 
-    // 합산: 상품(150000), 회원권(50000)
     given(
             salesCalculator.calculateAdjustedTarget(
-                eq(SearchMode.PERIOD), eq(150000), anyInt(), anyInt()))
-        .willReturn(140000);
-    given(
-            salesCalculator.calculateAdjustedTarget(
-                eq(SearchMode.PERIOD), eq(50000), anyInt(), anyInt()))
-        .willReturn(50000);
+                eq(SearchMode.MONTH), anyInt(), anyInt(), anyInt()))
+        .willAnswer(invocation -> invocation.getArgument(1)); // monthlyTarget 그대로 반환
 
-    given(salesCalculator.calculateAchievementRate(150000, 140000)).willReturn(107.1);
-    given(salesCalculator.calculateAchievementRate(35000, 50000)).willReturn(70.0);
+    given(salesCalculator.calculateAchievementRate(anyInt(), anyInt())).willReturn(80.0);
 
     // when
     StaffSalesTargetListResult result = staffSalesQueryService.getStaffSalesTarget(shopId, request);
@@ -267,24 +253,12 @@ public class StaffSalesQueryServiceImplTest {
     // then
     assertThat(result).isNotNull();
     assertThat(result.getStaffSalesList()).hasSize(1);
-
     StaffSalesTargetResponse response = result.getStaffSalesList().get(0);
-    assertThat(response.getStaffId()).isEqualTo(100L);
-    assertThat(response.getStaffName()).isEqualTo("승철이");
+    assertThat(response.getStaffId()).isEqualTo(10L);
     assertThat(response.getTargetSalesList()).hasSize(2);
-
-    StaffProductTargetSalesResponse 상품 = response.getTargetSalesList().get(0);
-    StaffProductTargetSalesResponse 회원권 = response.getTargetSalesList().get(1);
-
-    assertThat(상품.getLabel()).isEqualTo("상품");
-    assertThat(상품.getTargetAmount()).isEqualTo(140000);
-    assertThat(상품.getTotalAmount()).isEqualTo(150000);
-    assertThat(상품.getAchievementRate()).isEqualTo(107.1);
-
-    assertThat(회원권.getLabel()).isEqualTo("회원권");
-    assertThat(회원권.getTargetAmount()).isEqualTo(50000);
-    assertThat(회원권.getTotalAmount()).isEqualTo(35000);
-    assertThat(회원권.getAchievementRate()).isEqualTo(70.0);
+    assertThat(response.getTotalTargetAmount()).isEqualTo(700000);
+    assertThat(response.getTotalActualAmount()).isEqualTo(460000);
+    assertThat(response.getTotalAchievementRate()).isEqualTo(80.0);
   }
 
   @Test
@@ -304,5 +278,82 @@ public class StaffSalesQueryServiceImplTest {
 
     // then
     assertThat(result).isNull();
+  }
+
+  @DisplayName("getStaffSalesTarget - 월간 SearchMode의 날짜 범위 계산 검증")
+  @Test
+  void getStaffSalesTarget_월간범위계산_정확성검증() {
+    // given
+    Long shopId = 1L;
+    LocalDate anyDayInMonth = LocalDate.of(2024, 6, 15); // 중간 날짜
+
+    GetStaffSalesListRequest request =
+        new GetStaffSalesListRequest(SearchMode.MONTH, anyDayInMonth, null);
+
+    given(salesTargetQueryRepository.existsTargetForShopInMonths(eq(shopId), anyList()))
+        .willReturn(true);
+
+    Staff staff = Staff.builder().staffId(7L).staffName("이도겸").build();
+    given(userRepository.findAllByShopId(shopId)).willReturn(List.of(staff));
+
+    // 월간 요청 → 자동으로 6월 1일 ~ 6월 30일로 계산됨
+    YearMonth june = YearMonth.of(2024, 6);
+
+    given(salesTargetQueryRepository.findTargetAmountByItemsOrMembership(shopId, 7L, true, june))
+        .willReturn(300000);
+    given(salesTargetQueryRepository.findTargetAmountByItemsOrMembership(shopId, 7L, false, june))
+        .willReturn(200000);
+
+    given(
+            staffSalesQueryRepository.getTargetTotalSales(
+                shopId,
+                7L,
+                ProductType.SERVICE,
+                LocalDate.of(2024, 6, 1),
+                LocalDate.of(2024, 6, 30)))
+        .willReturn(250000);
+    given(
+            staffSalesQueryRepository.getTargetTotalSales(
+                shopId,
+                7L,
+                ProductType.PRODUCT,
+                LocalDate.of(2024, 6, 1),
+                LocalDate.of(2024, 6, 30)))
+        .willReturn(100000);
+    given(
+            staffSalesQueryRepository.getTargetTotalSales(
+                shopId,
+                7L,
+                ProductType.SESSION_PASS,
+                LocalDate.of(2024, 6, 1),
+                LocalDate.of(2024, 6, 30)))
+        .willReturn(50000);
+    given(
+            staffSalesQueryRepository.getTargetTotalSales(
+                shopId,
+                7L,
+                ProductType.PREPAID_PASS,
+                LocalDate.of(2024, 6, 1),
+                LocalDate.of(2024, 6, 30)))
+        .willReturn(10000);
+
+    given(
+            salesCalculator.calculateAdjustedTarget(
+                eq(SearchMode.MONTH), anyInt(), anyInt(), anyInt()))
+        .willAnswer(invocation -> invocation.getArgument(1)); // monthlyTarget 그대로
+
+    given(salesCalculator.calculateAchievementRate(anyInt(), anyInt())).willReturn(75.0);
+
+    // when
+    StaffSalesTargetListResult result = staffSalesQueryService.getStaffSalesTarget(shopId, request);
+
+    // then
+    assertThat(result).isNotNull();
+    StaffSalesTargetResponse response = result.getStaffSalesList().get(0);
+
+    assertThat(response.getStaffName()).isEqualTo("이도겸");
+    assertThat(response.getTotalTargetAmount()).isEqualTo(500000);
+    assertThat(response.getTotalActualAmount()).isEqualTo(410000);
+    assertThat(response.getTotalAchievementRate()).isEqualTo(75.0);
   }
 }
