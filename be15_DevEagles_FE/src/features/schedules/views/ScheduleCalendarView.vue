@@ -5,31 +5,41 @@
     </div>
 
     <div class="filter-bar filter-align-right">
-      <input
+      <BaseForm
         v-model="searchText"
         type="text"
         placeholder="고객명 또는 연락처 검색"
-        class="input input-search"
+        style="width: 200px"
       />
-      <select v-model="selectedService" class="input input-select">
-        <option value="">시술 종류</option>
-        <option value="커트">커트</option>
-        <option value="염색">염색</option>
-        <option value="펌">펌</option>
-      </select>
-      <select v-model="selectedStaff" class="input input-select">
-        <option value="">담당자</option>
-        <option value="최민수">최민수</option>
-        <option value="이채은">이채은</option>
-      </select>
-      <select v-model="selectedType" class="input input-select">
-        <option value="">스케줄</option>
-        <option value="reservation">예약</option>
-        <option value="leave">휴무</option>
-        <option value="plan">일정</option>
-        <option value="regular_leave">정기 휴무</option>
-        <option value="regular_plan">정기 일정</option>
-      </select>
+      <BaseForm
+        v-model="selectedService"
+        type="text"
+        placeholder="시술명 검색"
+        style="width: 200px"
+      />
+      <BaseForm
+        v-if="staffOptions"
+        v-model="selectedStaff"
+        type="select"
+        :options="staffOptions"
+        class="select-wide"
+        style="width: 200px"
+      />
+      <BaseForm
+        v-model="selectedType"
+        type="select"
+        :options="[
+          { text: '스케줄', value: '' },
+          { text: '예약', value: 'reservation' },
+          { text: '휴무', value: 'leave' },
+          { text: '일정', value: 'plan' },
+          { text: '정기 휴무', value: 'regular_leave' },
+          { text: '정기 일정', value: 'regular_plan' },
+        ]"
+        class="select-wide"
+        style="width: 200px"
+      />
+
       <button class="btn btn-primary schedule-btn" @click="handleClickScheduleRegist = true">
         스케줄 등록
       </button>
@@ -75,8 +85,13 @@
   import PlanDetailModal from '@/features/schedules/components/PlanDetailModal.vue';
   import ReservationDetailModal from '@/features/schedules/components/ReservationDetailModal.vue';
   import ScheduleRegistModal from '@/features/schedules/components/ScheduleRegistModal.vue';
-  import { getCalendarSchedules, getRegularSchedules } from '@/features/schedules/api/schedules';
+  import {
+    getCalendarSchedules,
+    getRegularSchedules,
+    getStaffList,
+  } from '@/features/schedules/api/schedules';
   import dayjs from 'dayjs';
+  import BaseForm from '@/components/common/BaseForm.vue';
 
   const calendarRef = ref(null);
 
@@ -90,7 +105,7 @@
   const isModalOpen = ref(false);
   const modalType = ref('');
   const handleClickScheduleRegist = ref(false);
-
+  const staffOptions = ref([{ text: '담당자', value: '' }]);
   const searchParams = ref({ from: '', to: '' });
 
   // 날짜를 LocalDateTime 포맷으로 변환하는 유틸 함수
@@ -108,6 +123,20 @@
     if (!searchParams.value) return;
     searchParams.value.from = formatToLocalDateTime(new Date(from));
     searchParams.value.to = formatToLocalDateTime(new Date(to));
+  };
+
+  const fetchStaffList = async () => {
+    try {
+      const res = await getStaffList({ isActive: true });
+      staffOptions.value.push(
+        ...res.map(staff => ({
+          text: staff.staffName,
+          value: staff.staffId,
+        }))
+      );
+    } catch (e) {
+      console.error('담당자 목록 조회 실패:', e);
+    }
   };
 
   const getScheduleTypeParam = () => {
@@ -131,15 +160,22 @@
       regularSchedules.value = [];
       const { from, to } = searchParams.value;
 
+      const baseParams = {
+        from: from?.split('T')[0],
+        to: to?.split('T')[0],
+      };
+
+      const staffIdParam = selectedStaff.value ? { staffId: selectedStaff.value } : {};
+
       const [regularPlan, regularLeave] = await Promise.all([
         getRegularSchedules({
-          from: from?.split('T')[0],
-          to: to?.split('T')[0],
+          ...baseParams,
+          ...staffIdParam,
           scheduleType: 'REGULAR_PLAN',
         }),
         getRegularSchedules({
-          from: from?.split('T')[0],
-          to: to?.split('T')[0],
+          ...baseParams,
+          ...staffIdParam,
           scheduleType: 'REGULAR_LEAVE',
         }),
       ]);
@@ -201,13 +237,25 @@
       schedules.value = await getCalendarSchedules({
         from,
         to,
-        customerKeyword: searchText.value,
-        itemKeyword: selectedService.value,
-        staffId: selectedStaff.value,
+        ...(searchText.value && { customerKeyword: searchText.value }),
+        ...(selectedService.value && { itemKeyword: selectedService.value }),
+        ...(selectedStaff.value !== '' &&
+        selectedStaff.value !== undefined &&
+        selectedStaff.value !== null
+          ? { staffId: selectedStaff.value }
+          : {}),
         scheduleType,
       });
 
       await fetchRegularSchedules();
+      console.log('🧪 필터 파라미터', {
+        from,
+        to,
+        ...(searchText.value && { customerKeyword: searchText.value }),
+        ...(selectedService.value && { itemKeyword: selectedService.value }),
+        ...(selectedStaff.value ? { staffId: selectedStaff.value } : {}),
+        ...(getScheduleTypeParam() && { scheduleType: getScheduleTypeParam() }),
+      });
     } catch (err) {
       console.error('일정 조회 실패', err);
     }
@@ -243,6 +291,7 @@
     searchParams.value.from = formatToLocalDateTime(firstDay);
     searchParams.value.to = formatToLocalDateTime(lastDay);
 
+    fetchStaffList();
     fetchSchedules();
   });
 
@@ -331,12 +380,12 @@
     justify-content: flex-end;
   }
 
-  .input-search {
-    width: 240px;
-  }
-
-  .input-select {
-    width: 160px;
+  .form-group {
+    display: flex;
+    align-items: center;
+    margin: 0;
+    padding: 0;
+    width: 200px !important;
   }
 
   .schedule-btn {

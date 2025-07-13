@@ -373,7 +373,7 @@
   onBeforeUnmount(() => window.removeEventListener('keydown', handleEsc));
 
   const planTypeLabel = computed(() => {
-    return edited.value?.type === 'regular_plan' ? '정기일정' : '일정';
+    return edited.value?.type === 'regular_plan' ? '정기 일정' : '일정';
   });
 </script>
 
