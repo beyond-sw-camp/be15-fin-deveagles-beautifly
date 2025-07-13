@@ -3,6 +3,7 @@ import Home from '../views/Home.vue';
 import { staffRoutes } from '@/features/staffs/route.js';
 import { scheduleRoutes } from '@/features/schedules/routes.js';
 import { userRoutes } from '@/features/users/route.js';
+import { useAuthStore } from '@/store/auth.js';
 
 const routes = [
   // 레이아웃이 없는 관련 페이지 (최상위)
@@ -202,6 +203,25 @@ const routes = [
 const router = createRouter({
   history: createWebHistory(),
   routes,
+});
+
+router.beforeEach((to, from, next) => {
+  const authStore = useAuthStore();
+
+  const publicPages = [
+    '/login',
+    '/sign-up',
+    '/verify-reset',
+    '/edit-pwd',
+    '/reserve/**',
+    '/p/:shopId',
+  ];
+  const authRequired = !publicPages.includes(to.path);
+
+  if (authRequired && !authStore.isAuthenticated) {
+    return next('/login');
+  }
+  next();
 });
 
 export default router;
