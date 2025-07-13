@@ -7,6 +7,7 @@ import com.deveagles.be15_deveagles_be.common.jwt.RestAuthenticationEntryPoint;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -35,7 +36,6 @@ public class SecurityConfig {
 
     http.csrf(AbstractHttpConfigurer::disable)
         .cors(Customizer.withDefaults())
-        .csrf(AbstractHttpConfigurer::disable)
         .sessionManagement(
             session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .exceptionHandling(
@@ -43,7 +43,38 @@ public class SecurityConfig {
                 exception
                     .authenticationEntryPoint(restAuthenticationEntryPoint)
                     .accessDeniedHandler(restAccessDeniedHandler))
-        .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
+        .authorizeHttpRequests(
+            auth ->
+                auth.requestMatchers(
+                        HttpMethod.POST,
+                        "/auth/login",
+                        "/auth/check-email",
+                        "/auth/refresh",
+                        "/users",
+                        "/users/valid-id",
+                        "/users/valid-email",
+                        "/shops/valid-biz",
+                        "/schedules/reservations")
+                    .permitAll()
+                    .requestMatchers(HttpMethod.PATCH, "/users/password")
+                    .permitAll()
+                    .requestMatchers(
+                        HttpMethod.GET,
+                        "/shops/get-industry",
+                        "/schedules/reservation/settings",
+                        "/schedules/reservation/settings/{shopId}")
+                    .permitAll()
+                    .requestMatchers(
+                        "/v3/api-docs/**",
+                        "/swagger-ui/**",
+                        "/swagger-ui.html",
+                        "/swagger-ui/index.html",
+                        "/swagger-resources/**")
+                    .permitAll()
+                    .requestMatchers(HttpMethod.OPTIONS, "/**")
+                    .permitAll()
+                    .anyRequest()
+                    .authenticated())
         .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
 
     return http.build();
