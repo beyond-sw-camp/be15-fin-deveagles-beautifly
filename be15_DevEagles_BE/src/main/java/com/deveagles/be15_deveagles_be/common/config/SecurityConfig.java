@@ -45,7 +45,9 @@ public class SecurityConfig {
                     .accessDeniedHandler(restAccessDeniedHandler))
         .authorizeHttpRequests(
             auth ->
-                auth.requestMatchers(
+                auth.requestMatchers("/notifications/subscribe")
+                    .permitAll()
+                    .requestMatchers(
                         HttpMethod.POST,
                         "/auth/login",
                         "/auth/check-email",
