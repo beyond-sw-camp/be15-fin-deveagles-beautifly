@@ -1,7 +1,8 @@
 """
-DevEagles 비즈니스 인텔리전스 대시보드
+DevEagles 비즈니스 인텔리전스 대시보드 (DuckDB 버전)
 
 고객 리텐션, 매출 분석, 고객 세그멘테이션 등 종합적인 비즈니스 분석을 제공합니다.
+ETL 파이프라인을 통해 DuckDB에서 데이터를 불러와 분석합니다.
 """
 
 import dash
@@ -25,16 +26,16 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from analytics.core.config import settings
 from analytics.core.database import get_crm_db, get_analytics_db
-from analytics.services.cohort_retention import CohortRetentionAnalyzer
-from analytics.services.churn_prediction import ChurnPredictionService
+from analytics.services.cohort_retention_duckdb import CohortRetentionAnalyzerDuckDB
+from analytics.services.churn_prediction_duckdb import ChurnPredictionServiceDuckDB
 from analytics.dashboard.utils.serializers import serialize_results, deserialize_results
 from analytics.dashboard.utils.decorators import ensure_results
 from analytics.dashboard.components.common import kpi_card, empty_figure
 from analytics.dashboard.constants import BRAND_COLORS
 from analytics.dashboard.theme import BOOTSTRAP_THEME
 
-class BusinessIntelligenceDashboard:
-    """DevEagles 비즈니스 인텔리전스 대시보드"""
+class BusinessIntelligenceDashboardDuckDB:
+    """DevEagles 비즈니스 인텔리전스 대시보드 (DuckDB 버전)"""
     
     def __init__(self):
         # BOOTSTRAP theme for professional look
@@ -47,13 +48,13 @@ class BusinessIntelligenceDashboard:
         self._cached_serialized = None
 
         # 캐시된 분석 결과 로드
-        self.cache_path = Path(__file__).parent / "cached_analysis.json"
+        self.cache_path = Path(__file__).parent / "cached_analysis_duckdb.json"
         if self.cache_path.exists():
             try:
                 with open(self.cache_path, "r", encoding="utf-8") as f:
                     self._cached_serialized = json.load(f)
                 self.analysis_results = self._deserialize_results(self._cached_serialized.get("results", self._cached_serialized))
-                print("🔄 이전 분석 결과 캐시 로드 완료")
+                print("🔄 이전 분석 결과 캐시 로드 완료 (DuckDB)")
             except Exception as e:
                 print(f"⚠️  캐시 로드 실패: {e}")
 
@@ -81,10 +82,10 @@ class BusinessIntelligenceDashboard:
                     html.Div([
             dbc.Row([
                 dbc.Col([
-                                html.H1("Beautifly BI", 
+                                html.H1("Beautifly BI (DuckDB)", 
                                        className="text-white mb-0",
                                        style={"fontWeight": "300", "fontSize": "2.5rem", "letterSpacing": "2px"}),
-                                html.P("Business Intelligence Dashboard", 
+                                html.P("Business Intelligence Dashboard - ETL Pipeline", 
                                       className="text-white-50 mb-0",
                                       style={"fontSize": "1rem", "fontWeight": "300"})
                             ], width=8),
@@ -93,7 +94,7 @@ class BusinessIntelligenceDashboard:
                                     html.P(datetime.now().strftime("%Y년 %m월 %d일"), 
                                           className="text-white-50 mb-0 text-end",
                                           style={"fontSize": "0.9rem"}),
-                                    html.P("실시간 업데이트", 
+                                    html.P("DuckDB 데이터 소스", 
                                           className="text-white mb-0 text-end",
                                           style={"fontSize": "0.8rem"})
                                 ])
@@ -152,7 +153,7 @@ class BusinessIntelligenceDashboard:
             dbc.Row([
                 dbc.Col([
                     html.Hr(style={"borderColor": "#dee2e6", "marginTop": "3rem"}),
-                    html.P("© 2025 DevEagles Analytics | Business Intelligence Platform", 
+                    html.P("© 2025 DevEagles Analytics | Business Intelligence Platform (DuckDB)", 
                           className="text-center text-muted",
                           style={"fontSize": "0.9rem", "marginTop": "1rem"})
                 ])
@@ -205,18 +206,17 @@ class BusinessIntelligenceDashboard:
                         dbc.Spinner(color="primary", size="sm"),
                     ], width=1),
                     dbc.Col([
-                        html.H5("🔄 데이터 분석 진행 중...", className="mb-1"),
-                        html.P("고객 데이터를 로드하고 코호트 분석을 수행하고 있습니다. 잠시만 기다려주세요.", className="mb-0")
+                        html.H5("🔄 DuckDB 데이터 분석 진행 중...", className="mb-1"),
+                        html.P("ETL 파이프라인 데이터를 로드하고 분석을 수행하고 있습니다. 잠시만 기다려주세요.", className="mb-0")
                     ], width=11)
                 ])
             ], color="info", className="mb-4")
             
             try:
-                # 분석기 초기화
-                crm_engine = get_crm_db()
+                # DuckDB 기반 분석기 초기화
                 analytics_engine = get_analytics_db()
-                self.analyzer = CohortRetentionAnalyzer(crm_engine, analytics_engine)
-                self.churn_service = ChurnPredictionService(crm_engine)
+                self.analyzer = CohortRetentionAnalyzerDuckDB()
+                self.churn_service = ChurnPredictionServiceDuckDB()
                 
                 # 분석 실행
                 base_results = self.analyzer.run_full_analysis()
@@ -234,7 +234,7 @@ class BusinessIntelligenceDashboard:
                     except Exception as e:
                         print(f"⚠️  캐시 저장 실패: {e}")
 
-                    return (self._create_alert("✅ 분석이 성공적으로 완료되었습니다!", "success"),
+                    return (self._create_alert("✅ DuckDB 분석이 성공적으로 완료되었습니다!", "success"),
                             {"results": serialized},
                             {"is_loading": False},
                             None,
@@ -931,7 +931,7 @@ class BusinessIntelligenceDashboard:
                 dbc.Col([
                     dbc.Card([
                         dbc.CardHeader([
-                            html.H5("📋 Analysis Control Panel", className="mb-0")
+                            html.H5("📋 Analysis Control Panel (DuckDB)", className="mb-0")
                         ]),
                         dbc.CardBody([
                             dbc.ButtonGroup([
@@ -1006,7 +1006,7 @@ class BusinessIntelligenceDashboard:
                 dbc.Col([
                     dbc.Card([
                         dbc.CardHeader([
-                            html.H5("🔄 Cohort Retention Analysis", className="mb-0")
+                            html.H5("🔄 Cohort Retention Analysis (DuckDB)", className="mb-0")
                         ]),
                         dbc.CardBody([
                             dbc.Row([
@@ -1104,7 +1104,7 @@ class BusinessIntelligenceDashboard:
                 dbc.Col([
                     dbc.Card([
                         dbc.CardHeader([
-                            html.H5("💰 Revenue Analytics Dashboard", className="mb-0")
+                            html.H5("💰 Revenue Analytics Dashboard (DuckDB)", className="mb-0")
                         ]),
                         dbc.CardBody([
                             html.P("Comprehensive revenue analysis across all business dimensions", 
@@ -1162,7 +1162,7 @@ class BusinessIntelligenceDashboard:
                 dbc.Col([
                     dbc.Card([
                         dbc.CardHeader([
-                            html.H5("👥 Customer Segmentation Analysis", className="mb-0")
+                            html.H5("👥 Customer Segmentation Analysis (DuckDB)", className="mb-0")
                         ]),
                         dbc.CardBody([
                             html.P("Advanced customer segmentation based on behavior and demographics", 
@@ -1217,7 +1217,7 @@ class BusinessIntelligenceDashboard:
                 dbc.Col([
                     dbc.Card([
                         dbc.CardHeader([
-                            html.H5("📈 Performance Metrics Dashboard", className="mb-0")
+                            html.H5("📈 Performance Metrics Dashboard (DuckDB)", className="mb-0")
                         ]),
                         dbc.CardBody([
                             html.P("Key performance indicators and business metrics", 
@@ -1468,9 +1468,9 @@ class BusinessIntelligenceDashboard:
 
     def run_server(self, host='0.0.0.0', port=8050, debug=True):
         """대시보드 서버 실행"""
-        print(f"🚀 DevEagles Business Intelligence Dashboard")
+        print(f"🚀 DevEagles Business Intelligence Dashboard (DuckDB)")
         print(f"🌐 접속 주소: http://{host}:{port}")
-        print(f"종합적인 비즈니스 분석을 확인하세요!")
+        print(f"💾 데이터 소스: ETL Pipeline → DuckDB")
         
         self.app.run(host=host, port=port, debug=debug)
 
