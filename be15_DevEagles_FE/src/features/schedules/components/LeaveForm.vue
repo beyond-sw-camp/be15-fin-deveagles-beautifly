@@ -1,7 +1,20 @@
 <template>
   <div>
-    <!-- 휴무 날짜 (한 줄) -->
+    <!-- 반복 여부 -->
     <div class="row row-inline">
+      <label class="label-wide">반복</label>
+      <BaseForm
+        v-model="form.repeat"
+        type="select"
+        :options="[
+          { text: '반복 안함', value: 'none' },
+          { text: '매주', value: 'weekly' },
+          { text: '매달', value: 'monthly' },
+        ]"
+      />
+    </div>
+    <!-- 휴무 날짜 (한 줄) -->
+    <div v-if="form.repeat === 'none'" class="row row-inline">
       <label class="label-wide">휴무 날짜</label>
       <div class="flat-flex">
         <PrimeDatePicker
@@ -15,51 +28,100 @@
       </div>
     </div>
 
-    <!-- 반복 여부 -->
-    <div class="row row-inline">
-      <label class="label-wide">반복</label>
-      <select v-model="form.repeat" class="input">
-        <option value="none">반복 안함</option>
-        <option value="weekly">매주</option>
-        <option value="monthly">매달</option>
-      </select>
+    <div v-if="form.repeat === 'weekly'" class="row row-inline">
+      <label class="label-wide">요일 선택</label>
+      <BaseForm
+        v-model="form.weeklyLeave"
+        type="select"
+        :options="[
+          { text: '월요일', value: 'MON' },
+          { text: '화요일', value: 'TUE' },
+          { text: '수요일', value: 'WED' },
+          { text: '목요일', value: 'THU' },
+          { text: '금요일', value: 'FRI' },
+          { text: '토요일', value: 'SAT' },
+          { text: '일요일', value: 'SUN' },
+        ]"
+      />
+    </div>
+
+    <div v-if="form.repeat === 'monthly'" class="row row-inline">
+      <label class="label-wide">일 선택</label>
+      <BaseForm
+        v-model="form.monthlyLeave"
+        type="select"
+        :options="
+          Array.from({ length: 31 }, (_, i) => ({
+            text: `${i + 1}일`,
+            value: i + 1,
+          }))
+        "
+      />
     </div>
 
     <!-- 휴무 제목 -->
     <div class="row row-inline">
       <label class="label-wide">휴무 제목</label>
-      <input v-model="form.title" type="text" class="input" />
+      <BaseForm v-model="form.title" type="text" />
     </div>
 
     <!-- 담당자 -->
     <div class="row row-inline">
       <label class="label-wide">담당자</label>
-      <select v-model="form.staff" class="input">
-        <option value="">담당자</option>
-        <option value="김이글">김이글</option>
-        <option value="박이글">박이글</option>
-      </select>
+      <BaseForm
+        v-model="form.staff"
+        type="select"
+        :options="staffOptions"
+        class="input"
+        style="max-width: 400px"
+      />
     </div>
 
     <!-- 메모 -->
     <div class="row align-top">
       <label class="label-wide">메모</label>
-      <textarea v-model="form.memo" rows="3" class="input" />
+      <BaseForm v-model="form.memo" type="textarea" :rows="3" />
     </div>
   </div>
 </template>
 
 <script setup>
-  import { ref } from 'vue';
+  import { onMounted, ref } from 'vue';
   import PrimeDatePicker from '@/components/common/PrimeDatePicker.vue';
+  import BaseForm from '@/components/common/BaseForm.vue';
+  import { getStaffList } from '@/features/schedules/api/schedules.js';
 
   const form = ref({
     date: '',
     repeat: 'none',
+    weeklyLeave: '',
+    monthlyLeave: '',
     title: '',
-    staff: '',
+    staffId: '',
     memo: '',
   });
+  const staffOptions = ref([{ text: '담당자 선택', value: '' }]);
+
+  const fetchStaffList = async () => {
+    try {
+      const res = await getStaffList({ isActive: true });
+      staffOptions.value = [
+        { text: '담당자 선택', value: '' },
+        ...res.map(staff => ({
+          text: staff.staffName,
+          value: staff.staffId,
+        })),
+      ];
+    } catch (e) {
+      console.error('담당자 목록 조회 실패:', e);
+    }
+  };
+
+  onMounted(() => {
+    fetchStaffList();
+  });
+
+  defineExpose({ form });
 </script>
 
 <style scoped>
@@ -119,6 +181,14 @@
 
   .row textarea {
     resize: vertical;
+  }
+
+  .form-group {
+    display: flex;
+    align-items: center;
+    margin: 0;
+    padding: 0;
+    width: 200px !important;
   }
 
   .flat-flex {
