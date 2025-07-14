@@ -6,6 +6,8 @@ import com.deveagles.be15_deveagles_be.features.auth.command.application.model.C
 import com.deveagles.be15_deveagles_be.features.messages.query.dto.response.SmsDetailResponse;
 import com.deveagles.be15_deveagles_be.features.messages.query.dto.response.SmsListResponse;
 import com.deveagles.be15_deveagles_be.features.messages.query.service.SmsQueryService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -24,6 +26,12 @@ public class SmsQueryController {
 
   private final SmsQueryService smsQueryService;
 
+  @Operation(summary = "문자 발송 내역 목록 조회", description = "현재 로그인한 매장의 문자 발송 내역을 페이지네이션 형태로 조회합니다.")
+  @ApiResponses({
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+        responseCode = "200",
+        description = "조회 성공")
+  })
   @GetMapping
   public ResponseEntity<ApiResponse<PagedResult<SmsListResponse>>> getSmsList(
       @AuthenticationPrincipal CustomUser customUser,
@@ -41,6 +49,15 @@ public class SmsQueryController {
     return ResponseEntity.ok(ApiResponse.success(result));
   }
 
+  @Operation(summary = "문자 발송 상세 조회", description = "특정 메시지 ID를 기준으로 문자 발송 상세 내용을 조회합니다.")
+  @ApiResponses({
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+        responseCode = "200",
+        description = "조회 성공"),
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+        responseCode = "404",
+        description = "메시지를 찾을 수 없음")
+  })
   @GetMapping("/{messageId}")
   public ResponseEntity<ApiResponse<SmsDetailResponse>> getSmsDetail(
       @AuthenticationPrincipal CustomUser customUser, @PathVariable Long messageId) {
