@@ -8,12 +8,14 @@ import com.deveagles.be15_deveagles_be.features.messages.command.application.dto
 import com.deveagles.be15_deveagles_be.features.messages.command.application.service.MessageTemplateService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+@Tag(name = "템플릿 관리", description = "템플릿 관련 관리 API")
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/message/templates")

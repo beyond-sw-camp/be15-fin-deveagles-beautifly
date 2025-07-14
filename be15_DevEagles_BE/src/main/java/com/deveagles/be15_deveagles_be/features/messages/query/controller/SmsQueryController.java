@@ -8,6 +8,7 @@ import com.deveagles.be15_deveagles_be.features.messages.query.dto.response.SmsL
 import com.deveagles.be15_deveagles_be.features.messages.query.service.SmsQueryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+@Tag(name = "메시지 조회", description = "메시지 조회 관련 API")
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/message")

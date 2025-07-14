@@ -7,11 +7,13 @@ import com.deveagles.be15_deveagles_be.features.chat.command.application.dto.res
 import com.deveagles.be15_deveagles_be.features.chat.command.application.service.ChatRoomService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+@Tag(name = "채팅방 관리", description = "채팅방 관리 관련 API")
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/chatrooms")
