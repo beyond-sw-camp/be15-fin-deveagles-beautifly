@@ -144,3 +144,45 @@ export const fetchReservationSettings = async shopId => {
 export const updateReservationSettings = async settingsList => {
   return await api.put('/schedules/reservation/settings', settingsList);
 };
+
+export const searchCustomers = async keyword => {
+  const response = await api.get('/customers/elasticsearch/search', {
+    params: { keyword },
+  });
+  return response.data.data;
+};
+
+export const getActiveSecondaryItems = async () => {
+  const response = await api.get('/secondary-items/active');
+  return response.data.data;
+};
+
+export const getAllPrimaryItems = async () => {
+  const response = await api.get('/primary-items');
+  return response.data.data;
+};
+
+export const createReservation = async payload => {
+  const response = await api.post('/schedules/reservations/shop', payload);
+  return response.data.data;
+};
+
+export const createLeave = async payload => {
+  const response = await api.post('/schedules/leaves', payload);
+  return response.data.data;
+};
+
+export const createRegularLeave = async payload => {
+  const response = await api.post('/schedules/regular-leaves', payload);
+  return response.data.data;
+};
+
+export const createPlan = async payload => {
+  const response = await api.post('/schedules/plans', payload);
+  return response.data.data;
+};
+
+export const createRegularPlan = async payload => {
+  const response = await api.post('/schedules/regular-plans', payload);
+  return response.data.data;
+};
