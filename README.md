@@ -167,7 +167,18 @@ deveagles-fin-repo/
 <br>
 
 ### <p id="1-5"> 1-5. 요구사항 명세서 </p>
-🔗 요구사항 명세서 정리 문서 : [요구사항 명세서](https://docs.google.com/spreadsheets/d/1de8mq1fLxvG3lpLMdgieSpFL43okKb8f5VAxNtNWPLE/edit?gid=1154602031#gid=1154602031)
+🔗 요구사항 명세서 정리 문서 : [요구사항 명세서](https://docs.google.com/spreadsheets/d/1QsbQNKa9EMI_HvH0SSB9mqT7v0UMyPQ9jpQerkvcixg/edit?gid=0#gid=0)
+
+<details>
+  <summary> 🔍 요구사항 명세서 열기 </summary>
+
+  ![요구사항명세서1](https://github.com/user-attachments/assets/b1d786bf-3cd3-462e-8b48-c88449d32225)
+  ![요구사항명세서2](https://github.com/user-attachments/assets/6436bbd7-b592-4ef8-b1a1-9ead497de9a7)
+  ![요구사항명세서3](https://github.com/user-attachments/assets/c15bb46c-d17c-4e13-af25-7d0d3e85e113)
+  
+  
+</details>
+
 
 ### <p id="1-6"> 1-6. WBS </p>
 🔗 WBS 정리 문서 : [WBS](https://docs.google.com/spreadsheets/d/1961AfrJP8OabgMbm27YaTH3RrsD5D1Qp9p9z-w2splY/edit?gid=901636027#gid=901636027)
@@ -242,10 +253,10 @@ deveagles-fin-repo/
 
 ### <p id="5-1"> 5-1. Swagger API 문서 
 
+🔗 API 문서 : [Swagger](https://64etuor.github.io/700_studies/2501-2507-%ED%95%9C%ED%99%94beyond-sw%EC%BA%A0%ED%94%84/1_%ED%94%84%EB%A1%9C%EC%A0%9D%ED%8A%B8/%EC%B5%9C%EC%A2%85-%ED%94%84%EB%A1%9C%EC%A0%9D%ED%8A%B8/dist/index.html) 
+
 <details>
   <summary> 🔍 Swagger API 열기 </summary>
-  
-  🔗 API 문서 : [Swagger](https://64etuor.github.io/700_studies/2501-2507-%ED%95%9C%ED%99%94beyond-sw%EC%BA%A0%ED%94%84/1_%ED%94%84%EB%A1%9C%EC%A0%9D%ED%8A%B8/%EC%B5%9C%EC%A2%85-%ED%94%84%EB%A1%9C%EC%A0%9D%ED%8A%B8/dist/index.html) 
   
   ![SWAGGER](https://github.com/user-attachments/assets/f951ab7f-7ae9-4b6e-becc-c0dbaafc17b1)
 
@@ -255,10 +266,11 @@ deveagles-fin-repo/
 
 ### <p id="5-2"> 5-2. 백엔드 단위 테스트 결과 </p>
 
+🔗 테스트 결과서 : [백엔드 단위테스트](https://64etuor.github.io/700_studies/2501-2507-%ED%95%9C%ED%99%94beyond-sw%EC%BA%A0%ED%94%84/1_%ED%94%84%EB%A1%9C%EC%A0%9D%ED%8A%B8/%EC%B5%9C%EC%A2%85-%ED%94%84%EB%A1%9C%EC%A0%9D%ED%8A%B8/jacoco/test/test/index.html)
+
 <details>
   <summary> 🔍 백엔드 단위 테스트 열기 </summary>
- 🔗 테스트 결과서 : [백엔드 단위테스트](https://64etuor.github.io/700_studies/2501-2507-%ED%95%9C%ED%99%94beyond-sw%EC%BA%A0%ED%94%84/1_%ED%94%84%EB%A1%9C%EC%A0%9D%ED%8A%B8/%EC%B5%9C%EC%A2%85-%ED%94%84%EB%A1%9C%EC%A0%9D%ED%8A%B8/jacoco/test/test/index.html)
-
+  
  ![백엔드단위테스트](https://github.com/user-attachments/assets/923b5c80-494d-4201-93e9-140ee93f002a)
   
 </details>
@@ -267,6 +279,86 @@ deveagles-fin-repo/
 
 ### <p id="5-2"> 5-2. 프론트엔드 단위 테스트 결과 </p>
 🔗 테스트 결과서 : [프론트엔드 단위테스트](https://docs.google.com/spreadsheets/d/1FzMi2wAkGpdgU23Jc0TpxOCsrnXXxjCKGR8KUUb6x08/edit?gid=0#gid=0)
+
+#### 프론트엔드 시연 GIF
+<details>
+  <summary> 회원 </summary>
+  
+  - 로그인 / 로그아웃
+  ![로그인/ 로그아웃](https://github.com/user-attachments/assets/f3c9c1e1-af3c-4f63-8ff9-096a2434e0ba)
+ 
+  - 회원가입
+  ![회원가입](https://github.com/user-attachments/assets/60ca3da6-ee92-45f0-b70d-8285443234d9)
+
+</details>
+
+<details>
+  <summary> 직원 결산 </summary>
+  
+  - 직원 결산 조회
+    ![결산 / 상세결산 조회](https://github.com/user-attachments/assets/e6422b47-57af-42ee-8783-2491239f0a20)
+
+  - 목표 매출 조회
+    ![목표 매출 조회](https://github.com/user-attachments/assets/1333a79a-ca22-44c5-a61d-7c090e8724e8)
+
+       
+</details>
+
+<details>
+  <summary> 상품 / 매출 </summary>
+
+  - 상품 수정
+   ![회원권 수정](https://github.com/user-attachments/assets/2f7cb6a0-6cac-4b2e-88d8-b5c2ee499f51)
+
+  - 매출 등록
+   ![회원권_매출등록](https://github.com/user-attachments/assets/b7710a22-cc08-4788-b9a7-3ed1bec2dfb6)
+
+  
+</details>
+
+<details>
+  <summary> 예약 / 일정 </summary>
+
+  - 예약 조회 / 확정
+   ![예약_조회_확정](https://github.com/user-attachments/assets/fbb68359-eee0-4459-90b3-03eac0b53268)
+
+  - 일정 조회
+  ![일정_조회](https://github.com/user-attachments/assets/5652d2c0-a834-406f-a5fc-5069cc3774e8)
+
+</details>
+
+<details>
+  <summary> 알림 </summary>
+  
+  - 예약 알림
+  ![알림_예약](https://github.com/user-attachments/assets/e865aef4-a1ef-433f-8eb9-a7bf75be2cf8)
+  
+</details>
+
+
+<details>
+  <summary> 데이터 분석 </summary>
+
+  - AirFlow ETL
+  ![Airflow DAG ETL](https://github.com/user-attachments/assets/7d294db1-55f1-4813-9ed2-3b6f195ca377)
+  
+</details>
+
+<details>
+  <summary> chat </summary>
+
+  - 채팅
+  ![채팅](https://github.com/user-attachments/assets/dc154ebb-bda1-4f22-b9d5-8b1edb95bef4)
+
+</details>
+
+<details>
+  <summary> 프로필링크 </summary>
+  
+  ![프로필링크](https://github.com/user-attachments/assets/7ca6701c-85ca-4e0a-8410-e353f25cb564)
+  
+</details>
+
 
 <br><br>
 
