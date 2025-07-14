@@ -64,9 +64,11 @@ deveagles-fin-repo/
 
 🛠️ <a href="#5">5. 단위 테스트 </a>
 
- &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#5-1">5-1. 백엔드 단위 테스트 결과 (swagger API) </a>
+ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#5-1">5-1. Swagger API 문서 </a>
+
+ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#5-2">5-2. 백엔드 단위 테스트 결과 </a>
  
- &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#5-2">5-2. 프론트엔드 단위 테스트 결과 </a>
+ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#5-3">5-3. 프론트엔드 단위 테스트 결과 </a>
 
 🗒️ <a href="#6">6. 프로젝트 아키텍처 구조 </a>
 
@@ -277,7 +279,7 @@ deveagles-fin-repo/
 
 <br>
 
-### <p id="5-2"> 5-2. 프론트엔드 단위 테스트 결과 </p>
+### <p id="5-3"> 5-3. 프론트엔드 단위 테스트 결과 </p>
 🔗 테스트 결과서 : [프론트엔드 단위테스트](https://docs.google.com/spreadsheets/d/1FzMi2wAkGpdgU23Jc0TpxOCsrnXXxjCKGR8KUUb6x08/edit?gid=0#gid=0)
 
 #### 프론트엔드 시연 GIF
