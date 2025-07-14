@@ -94,7 +94,11 @@ class ChurnPredictionService:  # pylint: disable=too-many-instance-attributes
             """
         )
 
-        df = pd.read_sql_query(query, self.crm_engine)
+        raw_conn = self.crm_engine.raw_connection()
+        try:
+            df = pd.read_sql_query(query, raw_conn)
+        finally:
+            raw_conn.close()
 
         self.logger.info("Loaded %s customers", f"{len(df):,}")
         return df
