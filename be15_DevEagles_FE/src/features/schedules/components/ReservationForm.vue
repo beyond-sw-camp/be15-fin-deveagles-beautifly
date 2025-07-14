@@ -1,14 +1,26 @@
 <template>
   <div>
     <!-- 고객 검색 -->
-    <div class="row row-inline">
+    <div class="row row-inline" style="position: relative">
       <label class="label-wide">고객명 - 연락처</label>
-      <input
+      <BaseForm
         v-model="form.customer"
         type="text"
-        class="input"
         placeholder="고객명 또는 연락처 검색"
+        @focus="showSuggestions = true"
+        @blur="handleBlur"
       />
+
+      <ul v-if="showSuggestions && customerSuggestions.length > 0" class="autocomplete-list">
+        <li
+          v-for="(customer, index) in customerSuggestions"
+          :key="index"
+          class="autocomplete-item"
+          @click="selectCustomer(customer)"
+        >
+          {{ customer.customerName }} - {{ customer.phoneNumber }}
+        </li>
+      </ul>
     </div>
 
     <!-- 예약 날짜 및 시간 -->
@@ -31,7 +43,7 @@
           v-model="form.startTime"
           :show-time="true"
           :time-only="true"
-          :clearable="false"
+          :clearable="true"
           hour-format="24"
           placeholder="시작 시간"
           style="width: 130px"
@@ -43,7 +55,7 @@
           v-model="form.endTime"
           :show-time="true"
           :time-only="true"
-          :clearable="false"
+          :clearable="true"
           hour-format="24"
           placeholder="종료 시간"
           style="width: 130px"
@@ -77,45 +89,114 @@
             <button class="remove-btn" @click="removeService(index)">✕</button>
           </div>
         </div>
-        <BaseButton class="add-button" @click="selectService">+ 상품 선택</BaseButton>
+        <BaseButton class="add-button" @click="showItemModal = true">+ 상품 선택</BaseButton>
       </div>
     </div>
 
     <!-- 담당자 -->
     <div class="row row-inline">
       <label class="label-wide">담당자</label>
-      <select v-model="form.staff" class="input">
-        <option value="">담당자 미정</option>
-        <option value="김이글">김이글</option>
-        <option value="박이글">박이글</option>
-      </select>
+      <BaseForm
+        v-model="form.staffId"
+        type="select"
+        :options="staffOptions"
+        class="input"
+        style="max-width: 400px"
+      />
     </div>
 
     <!-- 특이사항 -->
     <div class="row row-inline">
       <label class="label-wide">특이사항</label>
-      <input v-model="form.note" type="text" class="input" />
+      <BaseForm v-model="form.note" type="text" placeholder="특이사항 입력" />
     </div>
 
     <!-- 메모 -->
     <div class="row align-top">
       <label class="label-wide">메모</label>
-      <textarea v-model="form.memo" rows="3" class="input" />
+      <BaseForm v-model="form.memo" type="textarea" rows="3" />
     </div>
   </div>
+
+  <SelectSecondaryItemModal v-model="showItemModal" @select="addServiceFromModal" />
 </template>
 
 <script setup>
-  import { ref } from 'vue';
+  import { ref, watch, onMounted } from 'vue';
   import BaseButton from '@/components/common/BaseButton.vue';
   import PrimeDatePicker from '@/components/common/PrimeDatePicker.vue';
+  import { searchCustomers, getStaffList } from '@/features/schedules/api/schedules.js';
+  import BaseForm from '@/components/common/BaseForm.vue';
+  const customerSuggestions = ref([]);
+  const showSuggestions = ref(false);
+  import SelectSecondaryItemModal from '@/features/schedules/components/SelectSecondaryItemModal.vue';
+  const showItemModal = ref(false);
+  import dayjs from 'dayjs';
+  const staffOptions = ref([{ text: '담당자 선택', value: '' }]);
+
+  const updateEndTimeAndDuration = () => {
+    const start = form.value.startTime;
+    if (!(start instanceof Date) || isNaN(start)) return;
+
+    const totalMinutes = selectedServices.value.reduce((sum, item) => {
+      const parsed = parseInt(item.duration);
+      return sum + (isNaN(parsed) ? 0 : parsed);
+    }, 0);
+
+    const hours = String(Math.floor(totalMinutes / 60)).padStart(2, '0');
+    const minutes = String(totalMinutes % 60).padStart(2, '0');
+    form.value.duration = `${hours}:${minutes}`;
+
+    const end = dayjs(start).add(totalMinutes, 'minute');
+    form.value.endTime = end.toDate();
+  };
+
+  const addServiceFromModal = item => {
+    selectedServices.value.push({
+      category: item.primaryItemName,
+      name: item.secondaryItemName,
+      selectedItems: item.secondaryItemId,
+      duration: item.timeTaken != null ? `${item.timeTaken}분` : '상품',
+      price: item.secondaryItemPrice,
+    });
+    updateEndTimeAndDuration();
+  };
 
   const form = ref({
+    customer: '',
+    customerId: null,
+    selectedCustomer: null,
+    staffId: '',
     date: null,
-    startTime: null,
-    endTime: null,
+    startTime: new Date(0, 0, 0, 0, 0),
+    endTime: new Date(0, 0, 0, 0, 0),
     duration: '',
   });
+
+  const handleBlur = () => {
+    setTimeout(() => {
+      showSuggestions.value = false;
+    }, 200);
+  };
+  const fetchStaffList = async () => {
+    try {
+      const res = await getStaffList({ isActive: true });
+      staffOptions.value = [
+        { text: '담당자 선택', value: '' },
+        ...res.map(staff => ({
+          text: staff.staffName,
+          value: staff.staffId,
+        })),
+      ];
+    } catch (e) {
+      console.error('담당자 목록 조회 실패:', e);
+    }
+  };
+  const selectCustomer = customer => {
+    form.value.customer = `${customer.customerName} - ${customer.phoneNumber}`;
+    form.value.customerId = customer.customerId;
+    showSuggestions.value = false;
+  };
 
   const updateDuration = () => {
     const start = form.value.startTime;
@@ -132,27 +213,42 @@
     }
   };
 
-  const selectedServices = ref([
-    {
-      category: '염색',
-      name: '전체염색',
-      duration: '1시간 30분',
-      price: 50000,
-    },
-  ]);
-
-  const selectService = () => {
-    selectedServices.value.push({
-      category: '커트',
-      name: '베이직컷',
-      duration: '30분',
-      price: 20000,
-    });
-  };
+  const selectedServices = ref([]);
 
   const removeService = index => {
     selectedServices.value.splice(index, 1);
   };
+  onMounted(() => {
+    fetchStaffList();
+  });
+  watch(
+    () => form.value.customer,
+    async keyword => {
+      if (!keyword || keyword.trim() === '') {
+        customerSuggestions.value = [];
+        showSuggestions.value = false;
+        return;
+      }
+
+      try {
+        const result = await searchCustomers(keyword.trim());
+        customerSuggestions.value = result;
+        showSuggestions.value = result.length > 0;
+      } catch (e) {
+        console.error('❌ 고객 검색 실패', e);
+        customerSuggestions.value = [];
+        showSuggestions.value = false;
+      }
+    }
+  );
+  watch(
+    () => [form.value.startTime, selectedServices.value.map(s => s.duration)],
+    () => {
+      updateEndTimeAndDuration();
+    },
+    { deep: true }
+  );
+  defineExpose({ form });
 </script>
 
 <style scoped>
@@ -161,6 +257,30 @@
     align-items: flex-start;
     margin-bottom: 14px;
     width: 100%;
+  }
+
+  .autocomplete-list {
+    position: absolute;
+    top: 38px;
+    left: 120px;
+    width: 400px;
+    max-height: 250px;
+    overflow-y: auto;
+    background: white;
+    border: 1px solid var(--color-gray-300);
+    border-radius: 4px;
+    z-index: 10;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  }
+
+  .autocomplete-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+
+  .autocomplete-item:hover {
+    background-color: var(--color-primary-50);
   }
 
   .row-inline {
@@ -256,6 +376,14 @@
   .card-left {
     display: flex;
     flex-direction: column;
+  }
+
+  .form-group {
+    display: flex;
+    align-items: center;
+    margin: 0;
+    padding: 0;
+    width: 200px !important;
   }
 
   .service-name {

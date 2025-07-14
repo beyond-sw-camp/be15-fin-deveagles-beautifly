@@ -67,7 +67,7 @@ public class SecurityConfig {
                         "/schedules/reservation/settings/{shopId}")
                     .permitAll()
                     .requestMatchers(
-                        "/v3/api-docs/**",
+                        "/api-docs/**",
                         "/swagger-ui/**",
                         "/swagger-ui.html",
                         "/swagger-ui/index.html",
