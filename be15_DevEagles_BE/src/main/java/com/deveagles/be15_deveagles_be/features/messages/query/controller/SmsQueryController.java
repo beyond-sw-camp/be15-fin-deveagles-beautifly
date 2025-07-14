@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/messages")
+@RequestMapping("/message")
 public class SmsQueryController {
 
   private final SmsQueryService smsQueryService;
@@ -29,8 +29,15 @@ public class SmsQueryController {
       @AuthenticationPrincipal CustomUser customUser,
       @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC)
           Pageable pageable) {
+
+    System.out.println(customUser.getShopId());
     PagedResult<SmsListResponse> result =
         smsQueryService.getSmsList(customUser.getShopId(), pageable);
+    System.out.println("📦 [백엔드 응답 디버깅]");
+    System.out.println("→ totalItems = " + result.getPagination().getTotalItems());
+    System.out.println("→ totalPages = " + result.getPagination().getTotalPages());
+    System.out.println("→ currentPage = " + result.getPagination().getCurrentPage());
+    System.out.println("→ content.size() = " + result.getContent().size());
     return ResponseEntity.ok(ApiResponse.success(result));
   }
 
