@@ -92,11 +92,11 @@ deveagles-fin-repo/
 <br>
 
 ### <p id="1-2"> 1-2. 배경 및 필요성 </p>
-<img width="560" height="454" alt="image" src="https://github.com/user-attachments/assets/1ce132a0-f7f2-465a-982d-28c5718eb156" />
+<img width="800" height="600" alt="image" src="https://github.com/user-attachments/assets/66467b8c-5a07-4066-b368-8c2f4f7fb774" />
 
 #### 💄 1. 뷰티 산업의 성장과 디지털 전환의 필요
 - 2025년 글로벌 뷰티 및 퍼스널 케어 시장 규모는 약 **6,772억 달러**로 예상됨
-- 코로나19 이후 **비대면 트렌드와 디지털 전환**이 빠르게 확산되면서, 뷰티 업계에서도 **고객 데이터를 기반으로 한 관리 및 마케팅의 중요성**이 커지고 있음
+- 코로나19 이후 **비대면 트렌드와 디지털 전환**이 빠르게 확산되며, 뷰티 업계에서도 **고객 데이터를 기반으로 한 관리 및 마케팅의 중요성**이 커지고 있음
 - 그러나 실제 현장에서는 여전히 **수기 작성이나 엑셀** 등 비효율적인 방식으로 고객/예약/시술 이력을 관리하는 경우가 다수 존재
 
 #### 🧾 2. 현장 중심의 불편한 운영 실태
@@ -190,30 +190,45 @@ deveagles-fin-repo/
 
 <details>
   <summary> 회원 / 직원 </summary>
+  
+  ![회원](https://github.com/user-attachments/assets/a2e386bc-ba7a-4675-938d-088b72fbc6fa)
+  ![직원](https://github.com/user-attachments/assets/e6b06c47-6c59-4bbf-9c29-b0d0fcf1c3cf)
+
 </details>
 
 <details>
   <summary> 고객 </summary>
+
+  ![고객](https://github.com/user-attachments/assets/72e02bd0-fc65-4a19-9740-b65314e5e2c4)
+  
 </details>
 
 <details>
-  <summary> SMS / 챗봇 </summary>
+  <summary> SMS / 챗봇 / 알림 </summary>
+  
+  ![SMS](https://github.com/user-attachments/assets/272abebc-5393-45eb-921c-459e0017936c)  
+  
 </details>
 
 <details>
   <summary> 일정 관리 </summary>
+  
+  ![일정관리](https://github.com/user-attachments/assets/c1f94c33-1d35-45db-9cbc-0ae3e5dbfdc2)
+  
 </details>
 
 <details>
   <summary> 상품 / 매출 </summary>
+
+  ![상품/회원권/ 매출관리](https://github.com/user-attachments/assets/66909b06-7ea3-4e9d-99d3-f21e4989d276)
+  
 </details>
 
 <details>
-  <summary> 마케팅 / 데이터 분석 </summary>
-</details>
+  <summary> 캠페인 / 데이터 분석 / 워크플로우 </summary>
 
-<details>
-  <summary> 알림 </summary>
+  ![캠페인 / 데이터 분석 / 워크플로우](https://github.com/user-attachments/assets/672cf08c-ac43-4318-8252-7c78b032ddaf) 
+  
 </details>
 
 <br><br>
@@ -223,17 +238,35 @@ deveagles-fin-repo/
 <br><br>
 
 ##  <p id="5"> 🛠️ 5. 단위 테스트 </p>
-### <p id="5-1"> 5-1. 백엔드 단위 테스트 결과 (swagger API) </p>
+
+
+### <p id="5-1"> 5-1. Swagger API 문서 
 
 <details>
-<summary> 🔍 Swagger API 열기 </summary>
+  <summary> 🔍 Swagger API 열기 </summary>
+  
+  🔗 API 문서 : [Swagger](https://64etuor.github.io/700_studies/2501-2507-%ED%95%9C%ED%99%94beyond-sw%EC%BA%A0%ED%94%84/1_%ED%94%84%EB%A1%9C%EC%A0%9D%ED%8A%B8/%EC%B5%9C%EC%A2%85-%ED%94%84%EB%A1%9C%EC%A0%9D%ED%8A%B8/dist/index.html) 
+  
+  ![SWAGGER](https://github.com/user-attachments/assets/f951ab7f-7ae9-4b6e-becc-c0dbaafc17b1)
+
 </details>
 
-<br><br>
+<br>
+
+### <p id="5-2"> 5-2. 백엔드 단위 테스트 결과 </p>
+
+<details>
+  <summary> 🔍 백엔드 단위 테스트 열기 </summary>
+ 🔗 테스트 결과서 : [백엔드 단위테스트](https://64etuor.github.io/700_studies/2501-2507-%ED%95%9C%ED%99%94beyond-sw%EC%BA%A0%ED%94%84/1_%ED%94%84%EB%A1%9C%EC%A0%9D%ED%8A%B8/%EC%B5%9C%EC%A2%85-%ED%94%84%EB%A1%9C%EC%A0%9D%ED%8A%B8/jacoco/test/test/index.html)
+
+ ![백엔드단위테스트](https://github.com/user-attachments/assets/923b5c80-494d-4201-93e9-140ee93f002a)
+  
+</details>
+
+<br>
 
 ### <p id="5-2"> 5-2. 프론트엔드 단위 테스트 결과 </p>
 🔗 테스트 결과서 : [프론트엔드 단위테스트](https://docs.google.com/spreadsheets/d/1FzMi2wAkGpdgU23Jc0TpxOCsrnXXxjCKGR8KUUb6x08/edit?gid=0#gid=0)
-
 
 <br><br>
 
@@ -409,6 +442,72 @@ feat: JWT 토큰 발급 로직 추가 #123
 <br><br>
 
 ##  <p id="9"> 🐞 9. 트러블슈팅</p>
+
+### 9.1 예약 내역 상세 조회 시 시술명이 null로 표시되는 오류
+- **문제 상황**
+  - 고객 예약 상세 조회 시 시술명(`primaryItem.name`)이 `null`로 표시됨
+- **원인 분석**
+  - `reservation_item` 테이블에서 `primary_item`과 조인 누락
+  - Mapper 쿼리에서 `LEFT JOIN primary_item` 빠짐
+- **해결 방법**
+  - SQL 쿼리에 `LEFT JOIN primary_item` 추가
+  - `@Results`에서 `primaryItem.name`을 정상 맵핑
+  
+---
+
+### 9.2 회원 가입 시 이메일 인증 성공해도 실패로 응답되는 오류
+- **문제 상황**
+  - 이메일 인증 코드가 일치하는데도 인증 실패 응답을 반환
+- **원인 분석**
+  - 인증 성공 후 이메일 인증 상태(`is_verified`) 업데이트 누락
+- **해결 방법**
+  - 인증 성공 시 `emailAuthRepository.updateIsVerified(email, true)` 호출 추가
+
+---
+
+### 9.3 직원 수정 시 대표 색상 업데이트가 되지 않는 오류
+- **문제 상황**
+  - 직원 정보 수정 시 대표 색상(color)이 변경되지 않음
+- **원인 분석**
+  - `updateColor()` 호출 누락
+- **해결 방법**
+  - `staff.updateColor(request.color())` 로직 추가
+
+---
+
+### 9.4 결제 수단별 실매출 계산 오류
+- **문제 상황**
+  - `PREPAID` 결제 방식이 실매출에 포함되어 실매출 총합이 부정확함
+- **원인 분석**
+  - `PREPAID`는 선불권으로 공제 항목에 포함되어야 하나 실매출로 계산됨
+- **해결 방법**
+  - `SalesCalculator.calculateFromDetailList()` 로직 수정
+  - `PREPAID` 항목은 무조건 deduction으로 처리하도록 분기
+
+---
+
+### 9.5 목표 매출 등록 시 기존 데이터 덮어쓰지 않는 오류
+- **문제 상황**
+  - `BULK` 등록 시 기존 직원별(`staffId` 존재) 목표 매출 데이터가 그대로 유지됨
+- **원인 분석**
+  - `applyStatus = false` 업데이트 누락
+- **해결 방법**
+  - `setSalesTarget()`에서 기존 데이터 조회 후 `applyStatus = false`로 일괄 갱신 로직 추가
+
+---
+
+### 9.6 회원권 사용 내역에서 할인/쿠폰 금액이 잘못 표시됨
+- **문제 상황**
+  - `deduction` 항목의 할인/쿠폰 금액이 잘못 계산됨 (중복 또는 누락)
+- **원인 분석**
+  - 할인(`discount`) 및 쿠폰(`coupon`) 항목 계산 기준이 일관되지 않음
+- **해결 방법**
+  - 쿠폰 금액은 `coupon.discount_rate` 기준으로 계산
+  - 전체 deduction 로직을 `SalesCalculator`에서 통일 처리
+
+---
+
+📁 *실 프로젝트 이슈 기반으로 구성된 트러블슈팅 리포트입니다.*
 
 <br><br>
 
