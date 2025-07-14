@@ -80,9 +80,6 @@ dependencies {
     // Elasticsearch
     implementation 'org.springframework.boot:spring-boot-starter-data-elasticsearch'
 
-    // HATEOAS
-    implementation 'org.springframework.boot:spring-boot-starter-hateoas'
-
     // sms
     // https://mvnrepository.com/artifact/org.json/json
     implementation 'net.nurigo:sdk:4.3.2'
