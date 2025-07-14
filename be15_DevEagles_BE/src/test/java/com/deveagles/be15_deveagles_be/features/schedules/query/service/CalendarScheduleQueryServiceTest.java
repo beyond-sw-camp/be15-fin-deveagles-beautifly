@@ -48,7 +48,7 @@ public class CalendarScheduleQueryServiceTest {
     LocalDate from = LocalDate.of(2025, 7, 1);
     LocalDate to = LocalDate.of(2025, 7, 10);
     CalendarRegularRequest request =
-        new CalendarRegularRequest(ScheduleType.REGULAR_PLAN, from, to);
+        new CalendarRegularRequest(ScheduleType.REGULAR_PLAN, from, to, 1L);
 
     when(calendarScheduleQueryMapper.findRegularSchedules(1L, request))
         .thenReturn(List.of(regularSchedule));

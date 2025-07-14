@@ -10,6 +10,7 @@ import com.deveagles.be15_deveagles_be.features.customers.query.service.Customer
 import com.deveagles.be15_deveagles_be.features.schedules.command.application.dto.request.CreateReservationFullRequest;
 import com.deveagles.be15_deveagles_be.features.schedules.command.application.dto.request.CreateReservationRequest;
 import com.deveagles.be15_deveagles_be.features.schedules.command.application.dto.request.UpdateReservationRequest;
+import com.deveagles.be15_deveagles_be.features.schedules.command.application.dto.request.UpdateReservationStatusRequest;
 import com.deveagles.be15_deveagles_be.features.schedules.command.domain.aggregate.Reservation;
 import com.deveagles.be15_deveagles_be.features.schedules.command.domain.aggregate.ReservationDetail;
 import com.deveagles.be15_deveagles_be.features.schedules.command.domain.aggregate.ReservationStatusName;
@@ -206,46 +207,62 @@ class ReservationServiceTest {
   }
 
   @Test
-  @DisplayName("예약 상태 변경 성공")
-  void changeReservationStatus_success() {
+  @DisplayName("예약 상태 일괄 변경 성공")
+  void changeReservationStatuses_success() {
     // given
-    Long reservationId = 1L;
-    Reservation reservation =
+    Long shopId = 1L;
+
+    Reservation res1 =
         Reservation.builder()
-            .reservationId(reservationId)
-            .shopId(1L)
+            .reservationId(100L)
+            .shopId(shopId)
             .reservationStatusName(ReservationStatusName.PENDING)
             .build();
 
-    when(reservationRepository.findById(reservationId)).thenReturn(Optional.of(reservation));
+    Reservation res2 =
+        Reservation.builder()
+            .reservationId(101L)
+            .shopId(shopId)
+            .reservationStatusName(ReservationStatusName.PENDING)
+            .build();
+
+    when(reservationRepository.findById(100L)).thenReturn(Optional.of(res1));
+    when(reservationRepository.findById(101L)).thenReturn(Optional.of(res2));
+
+    List<UpdateReservationStatusRequest> requestList =
+        List.of(
+            new UpdateReservationStatusRequest(100L, ReservationStatusName.CONFIRMED),
+            new UpdateReservationStatusRequest(101L, ReservationStatusName.CBC));
 
     // when
-    reservationService.changeReservationStatus(1L, reservationId, ReservationStatusName.CONFIRMED);
+    reservationService.changeReservationStatuses(shopId, requestList);
 
     // then
-    assertThat(reservation.getReservationStatusName()).isEqualTo(ReservationStatusName.CONFIRMED);
+    assertThat(res1.getReservationStatusName()).isEqualTo(ReservationStatusName.CONFIRMED);
+    assertThat(res2.getReservationStatusName()).isEqualTo(ReservationStatusName.CBC);
   }
 
   @Test
-  @DisplayName("예약 상태 변경 실패 - 이미 결제 완료")
-  void changeReservationStatus_paid() {
+  @DisplayName("예약 상태 일괄 변경 실패 - PAID 상태 포함")
+  void changeReservationStatuses_paid_throws() {
     // given
-    Long reservationId = 1L;
-    Reservation reservation =
+    Long shopId = 1L;
+
+    Reservation paidReservation =
         Reservation.builder()
-            .reservationId(reservationId)
-            .shopId(1L)
+            .reservationId(100L)
+            .shopId(shopId)
             .reservationStatusName(ReservationStatusName.PAID)
             .build();
 
-    when(reservationRepository.findById(reservationId)).thenReturn(Optional.of(reservation));
+    when(reservationRepository.findById(100L)).thenReturn(Optional.of(paidReservation));
+
+    List<UpdateReservationStatusRequest> requestList =
+        List.of(new UpdateReservationStatusRequest(100L, ReservationStatusName.CONFIRMED));
 
     // then
-    assertThatThrownBy(
-            () ->
-                reservationService.changeReservationStatus(
-                    1L, reservationId, ReservationStatusName.CONFIRMED))
+    assertThatThrownBy(() -> reservationService.changeReservationStatuses(shopId, requestList))
         .isInstanceOf(BusinessException.class)
-        .hasMessageContaining("PAID 상태의 예약은 수정할 수 없습니다"); // MODIFY_NOT_ALLOWED_FOR_PAID_RESERVATION
+        .hasMessageContaining("PAID 상태의 예약은 수정할 수 없습니다");
   }
 }

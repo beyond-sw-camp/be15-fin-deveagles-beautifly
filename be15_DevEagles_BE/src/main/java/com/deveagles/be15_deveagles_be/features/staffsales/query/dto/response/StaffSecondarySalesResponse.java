@@ -12,4 +12,7 @@ public class StaffSecondarySalesResponse {
   private List<StaffNetSalesResponse> netSalesList;
   private List<StaffSalesDeductionsResponse> deductionList;
   private int incentiveTotal;
+  private int netSalesTotal;
+  private int deductionTotal;
+  private int grossSalesTotal;
 }

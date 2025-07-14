@@ -38,8 +38,8 @@
                     AND (c.customer_name LIKE CONCAT('%', #{request.customerKeyword}, '%')
                     OR c.customer_phone LIKE CONCAT('%', #{request.customerKeyword}, '%'))
                 </if>
-                <if test="itemKeyword != null and itemKeyword != ''">
-                    AND si.secondary_item_name LIKE CONCAT('%', #{itemKeyword}, '%')
+                <if test="request.itemKeyword != null and request.itemKeyword != ''">
+                    AND si.secondary_item_name LIKE CONCAT('%', #{request.itemKeyword}, '%')
                 </if>
                 <if test="request.staffId != null">
                     AND s.staff_id = #{request.staffId}
@@ -69,8 +69,9 @@
                 <if test="request.from != null and request.to != null">
                     AND p.plan_start_at BETWEEN #{request.from} AND #{request.to}
                 </if>
-
-
+                <if test="request.staffId != null">
+                    AND s.staff_id = #{request.staffId}
+                </if>
       )
                 ORDER BY startAt ASC
             </when>
@@ -97,7 +98,9 @@
                 <if test="request.from != null and request.to != null">
                     AND l.leave_at BETWEEN #{request.from} AND #{request.to}
                 </if>
-
+                <if test="request.staffId != null">
+                    AND s.staff_id = #{request.staffId}
+                </if>
               )
                 ORDER BY startAt ASC
             </when>
@@ -126,6 +129,13 @@
                 AND s.shop_id = #{shopId}
                 <if test="request.from != null and request.to != null">
                     AND r.reservation_start_at BETWEEN #{request.from} AND #{request.to}
+                </if>
+                <if test="request.customerKeyword != null and request.customerKeyword != ''">
+                    AND (c.customer_name LIKE CONCAT('%', #{request.customerKeyword}, '%')
+                    OR c.phone_number LIKE CONCAT('%', #{request.customerKeyword}, '%'))
+                </if>
+                <if test="request.itemKeyword != null and request.itemKeyword != ''">
+                    AND si.secondary_item_name LIKE CONCAT('%', #{request.itemKeyword}, '%')
                 </if>
                 <if test="request.staffId != null">
                     AND s.staff_id = #{request.staffId}
@@ -205,6 +215,9 @@
                 FROM regular_plan rp
                 JOIN staff s ON rp.staff_id = s.staff_id
                 WHERE s.shop_id = #{shopId}
+                <if test="request.staffId != null">
+                    AND s.staff_id = #{request.staffId}
+                </if>
             </when>
 
             <!-- 정기 휴무 조회 -->
@@ -223,6 +236,9 @@
                 FROM regular_leave rl
                 JOIN staff s ON rl.staff_id = s.staff_id
                 WHERE s.shop_id = #{shopId}
+                <if test="request.staffId != null">
+                    AND s.staff_id = #{request.staffId}
+                </if>
             </when>
 
         </choose>

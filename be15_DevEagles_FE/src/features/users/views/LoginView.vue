@@ -99,9 +99,7 @@
       const res = await login(params.value);
 
       await authStore.setAuth(res.data.data.accessToken);
-
-      toastRef.value?.success?.('로그인 성공!');
-      router.push('/');
+      await router.push('/');
     } catch (err) {
       shake.value = true;
 

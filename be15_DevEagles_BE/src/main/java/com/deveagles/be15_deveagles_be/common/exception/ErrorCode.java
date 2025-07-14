@@ -29,6 +29,8 @@ public enum ErrorCode implements ErrorCodeType {
   INVALID_AUTH_CODE("11005", "유효한 인증이 아닙니다.", HttpStatus.BAD_REQUEST),
   STAFF_NOT_FOUND("11006", "존재하지 않는 직원입니다.", HttpStatus.NOT_FOUND),
 
+  // 알림 관련 에러 (12000번대)
+  NOTIFICATION_NOT_FOUND("12001", "존재하지 않는 알림이거나 접근 권한이 없습니다.", HttpStatus.NOT_FOUND),
   // 매장 관련 에러 (20000번대)
   SHOP_NOT_FOUNT("20001", "매장이 존재하지 않습니다.", HttpStatus.NOT_FOUND),
   // 고객 관련 에러 (30000번대)
@@ -100,6 +102,7 @@ public enum ErrorCode implements ErrorCodeType {
   RESERVATION_SETTING_ALREADY_EXISTS("70004", "이미 예약 설정이 존재합니다", HttpStatus.BAD_REQUEST),
   SHOP_NOT_FOUND("70005", "매장을 찾을 수 없습니다", HttpStatus.NOT_FOUND),
   RESERVATION_SETTING_NOT_FOUND("70006", "예약 설정이 존재하지 않습니다.", HttpStatus.NOT_FOUND),
+  INVALID_RESERVATION_TERM("70007", "예약 단위는 1분 이상이어야 합니다", HttpStatus.BAD_REQUEST),
   // 예약 관련 에러 (71000번대)
   RESERVATION_NOT_FOUND("71001", "예약을 찾을 수 없습니다", HttpStatus.NOT_FOUND),
   MODIFY_NOT_ALLOWED_FOR_PAID_RESERVATION(
@@ -150,6 +153,18 @@ public enum ErrorCode implements ErrorCodeType {
   SALES_ALREADY_DELETED("90008", "이미 삭제된 매출입니다.", HttpStatus.BAD_REQUEST),
   ITEMSALES_NOT_FOUND("90010", "상품매출을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
   INVALID_MEMBERSHIP_HISTORY("90011", "횟수권 사용횟수를 찾을 수 없습니다.", HttpStatus.BAD_REQUEST),
+
+  // 분석 관련 에러 (95000번대)
+  ANALYTICS_SERVER_CONNECTION_FAILED("95001", "분석 서버 연결에 실패했습니다", HttpStatus.INTERNAL_SERVER_ERROR),
+  ANALYTICS_CUSTOMER_RISK_ANALYSIS_FAILED(
+      "95002", "고객 위험도 분석에 실패했습니다", HttpStatus.INTERNAL_SERVER_ERROR),
+  ANALYTICS_HIGH_RISK_CUSTOMER_QUERY_FAILED(
+      "95003", "고위험 고객 목록 조회에 실패했습니다", HttpStatus.INTERNAL_SERVER_ERROR),
+  ANALYTICS_BATCH_TAGGING_FAILED("95004", "배치 위험 태깅에 실패했습니다", HttpStatus.INTERNAL_SERVER_ERROR),
+  ANALYTICS_RISK_SEGMENT_UPDATE_FAILED(
+      "95005", "위험 세그먼트 업데이트에 실패했습니다", HttpStatus.INTERNAL_SERVER_ERROR),
+  ANALYTICS_INVALID_PARAMETER("95006", "분석 요청 파라미터가 유효하지 않습니다", HttpStatus.BAD_REQUEST),
+  ANALYTICS_RESULT_PARSING_FAILED("95007", "분석 결과 파싱에 실패했습니다", HttpStatus.INTERNAL_SERVER_ERROR),
   ;
 
   private final String code;

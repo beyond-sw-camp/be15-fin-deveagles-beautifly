@@ -11,6 +11,7 @@ import com.deveagles.be15_deveagles_be.features.schedules.command.application.dt
 import com.deveagles.be15_deveagles_be.features.schedules.command.domain.aggregate.ReservationSetting;
 import com.deveagles.be15_deveagles_be.features.schedules.command.domain.aggregate.ReservationSettingId;
 import com.deveagles.be15_deveagles_be.features.schedules.command.domain.repository.ReservationSettingRepository;
+import com.deveagles.be15_deveagles_be.features.shops.command.application.service.ShopCommandServiceImpl;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
@@ -27,11 +28,11 @@ class ReservationSettingCommandServiceTest {
   @InjectMocks private ReservationSettingCommandService reservationSettingCommandService;
 
   @Mock private ReservationSettingRepository reservationSettingRepository;
+  @Mock private ShopCommandServiceImpl shopCommandService;
 
   @Test
   void 기존_요일이_요청에_없으면_softDelete_처리된다() {
     Long shopId = 1L;
-
     ReservationSetting oldSetting =
         ReservationSetting.builder()
             .id(new ReservationSettingId(shopId, 0))
@@ -45,7 +46,7 @@ class ReservationSettingCommandServiceTest {
 
     UpdateReservationSettingRequest req =
         new UpdateReservationSettingRequest(
-            1, LocalTime.of(10, 0), LocalTime.of(17, 0), null, null);
+            1, LocalTime.of(10, 0), LocalTime.of(17, 0), null, null, 10);
 
     reservationSettingCommandService.updateReservationSettings(shopId, List.of(req));
 
@@ -70,7 +71,7 @@ class ReservationSettingCommandServiceTest {
 
     UpdateReservationSettingRequest req =
         new UpdateReservationSettingRequest(
-            1, LocalTime.of(10, 0), LocalTime.of(17, 0), null, null);
+            1, LocalTime.of(10, 0), LocalTime.of(17, 0), null, null, 10);
 
     reservationSettingCommandService.updateReservationSettings(shopId, List.of(req));
 
@@ -88,7 +89,8 @@ class ReservationSettingCommandServiceTest {
     when(reservationSettingRepository.findById(id)).thenReturn(Optional.empty());
 
     UpdateReservationSettingRequest req =
-        new UpdateReservationSettingRequest(2, LocalTime.of(9, 0), LocalTime.of(17, 0), null, null);
+        new UpdateReservationSettingRequest(
+            2, LocalTime.of(9, 0), LocalTime.of(17, 0), null, null, 10);
 
     reservationSettingCommandService.updateReservationSettings(shopId, List.of(req));
 
@@ -111,7 +113,12 @@ class ReservationSettingCommandServiceTest {
 
     UpdateReservationSettingRequest req =
         new UpdateReservationSettingRequest(
-            3, LocalTime.of(10, 0), LocalTime.of(18, 0), LocalTime.of(9, 0), LocalTime.of(9, 30));
+            3,
+            LocalTime.of(10, 0),
+            LocalTime.of(18, 0),
+            LocalTime.of(9, 0),
+            LocalTime.of(9, 30),
+            10);
 
     given(reservationSettingRepository.findAllSettingsIncludingDeleted(shopId))
         .willReturn(List.of(setting));
@@ -136,7 +143,7 @@ class ReservationSettingCommandServiceTest {
 
     UpdateReservationSettingRequest req =
         new UpdateReservationSettingRequest(
-            1, LocalTime.of(18, 0), LocalTime.of(10, 0), null, null);
+            1, LocalTime.of(18, 0), LocalTime.of(10, 0), null, null, 10);
 
     given(reservationSettingRepository.findAllSettingsIncludingDeleted(shopId))
         .willReturn(List.of(setting));
@@ -161,7 +168,12 @@ class ReservationSettingCommandServiceTest {
 
     UpdateReservationSettingRequest req =
         new UpdateReservationSettingRequest(
-            2, LocalTime.of(9, 0), LocalTime.of(18, 0), LocalTime.of(13, 0), LocalTime.of(12, 30));
+            2,
+            LocalTime.of(9, 0),
+            LocalTime.of(18, 0),
+            LocalTime.of(13, 0),
+            LocalTime.of(12, 30),
+            10);
 
     given(reservationSettingRepository.findAllSettingsIncludingDeleted(shopId))
         .willReturn(List.of(setting));
@@ -171,5 +183,20 @@ class ReservationSettingCommandServiceTest {
             () -> reservationSettingCommandService.updateReservationSettings(shopId, List.of(req)))
         .isInstanceOf(BusinessException.class)
         .hasMessageContaining("점심시간 시작은 종료보다 빨라야 합니다");
+  }
+
+  @Test
+  void 예약_단위시간이_유효하지_않으면_예외가_발생한다() {
+    Long shopId = 1L;
+
+    UpdateReservationSettingRequest req =
+        new UpdateReservationSettingRequest(
+            1, LocalTime.of(9, 0), LocalTime.of(18, 0), null, null, 25 // invalid term
+            );
+
+    assertThatThrownBy(
+            () -> reservationSettingCommandService.updateReservationSettings(shopId, List.of(req)))
+        .isInstanceOf(BusinessException.class)
+        .hasMessageContaining("예약 단위는 1분 이상이어야 합니다");
   }
 }

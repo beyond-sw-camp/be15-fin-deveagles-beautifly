@@ -1,19 +1,79 @@
 <template>
   <div>
-    <!-- 일정 날짜 및 시간 -->
     <div class="row row-inline">
-      <label class="label-wide">일정 날짜</label>
+      <label class="label-wide">반복</label>
+      <BaseForm
+        v-model="form.repeat"
+        type="select"
+        :options="[
+          { text: '반복 안함', value: 'none' },
+          { text: '매주', value: 'weekly' },
+          { text: '매달', value: 'monthly' },
+        ]"
+        placeholder="반복 선택"
+      />
+    </div>
+
+    <div v-if="form.repeat === 'weekly'" class="row row-inline">
+      <label class="label-wide">요일 선택</label>
+      <BaseForm
+        v-model="form.weeklyPlan"
+        type="select"
+        :options="[
+          { text: '월요일', value: 'MON' },
+          { text: '화요일', value: 'TUE' },
+          { text: '수요일', value: 'WED' },
+          { text: '목요일', value: 'THU' },
+          { text: '금요일', value: 'FRI' },
+          { text: '토요일', value: 'SAT' },
+          { text: '일요일', value: 'SUN' },
+        ]"
+        placeholder="요일 선택"
+      />
+    </div>
+
+    <div v-if="form.repeat === 'monthly'" class="row row-inline">
+      <label class="label-wide">일 선택</label>
+      <BaseForm
+        v-model="form.monthlyPlan"
+        type="select"
+        :options="
+          Array.from({ length: 31 }, (_, i) => ({
+            text: `${i + 1}일`,
+            value: i + 1,
+          }))
+        "
+        placeholder="일 선택"
+      />
+    </div>
+
+    <div v-if="form.repeat === 'none'" class="row row-inline">
+      <label class="label-wide">날짜</label>
       <div class="flat-flex">
-        <!-- 날짜는 항상 표시 -->
         <PrimeDatePicker
-          v-model="form.date"
+          v-model="form.startDate"
           :show-time="false"
-          :show-button-bar="true"
           :clearable="false"
           hour-format="24"
-          placeholder="날짜 선택"
+          placeholder="시작 날짜"
           style="width: 160px"
+          @update:model-value="updateDuration"
         />
+        <PrimeDatePicker
+          v-model="form.endDate"
+          :show-time="false"
+          :clearable="false"
+          hour-format="24"
+          placeholder="마감 날짜"
+          style="width: 160px"
+          @update:model-value="updateDuration"
+        />
+      </div>
+    </div>
+
+    <div class="row row-inline">
+      <label class="label-wide">시간</label>
+      <div class="flat-flex">
         <PrimeDatePicker
           v-model="form.startTime"
           :show-time="true"
@@ -21,6 +81,7 @@
           :clearable="false"
           hour-format="24"
           placeholder="시작 시간"
+          style="width: 160px"
           @update:model-value="updateDuration"
         />
         <PrimeDatePicker
@@ -30,10 +91,9 @@
           :clearable="false"
           hour-format="24"
           placeholder="종료 시간"
+          style="width: 160px"
           @update:model-value="updateDuration"
         />
-
-        <!-- 소요 시간 -->
         <input
           :value="form.duration"
           type="text"
@@ -41,74 +101,114 @@
           placeholder="소요 시간"
           readonly
         />
-
-        <!-- 종일 체크 -->
         <label class="checkbox-inline">
           <input v-model="form.allDay" type="checkbox" /> 종일
         </label>
       </div>
     </div>
 
-    <!-- 반복 여부 -->
-    <div class="row row-inline">
-      <label class="label-wide">반복</label>
-      <select v-model="form.repeat" class="input">
-        <option value="none">반복 안함</option>
-        <option value="weekly">매주</option>
-        <option value="monthly">매달</option>
-      </select>
-    </div>
-
-    <!-- 일정 제목 -->
     <div class="row row-inline">
       <label class="label-wide">일정 제목</label>
-      <input v-model="form.title" type="text" class="input" />
+      <BaseForm v-model="form.title" type="text" />
     </div>
 
-    <!-- 담당자 -->
     <div class="row row-inline">
       <label class="label-wide">담당자</label>
-      <select v-model="form.staff" class="input">
-        <option value="">담당자</option>
-        <option value="김이글">김이글</option>
-        <option value="박이글">박이글</option>
-      </select>
+      <BaseForm
+        v-model="form.staff"
+        type="select"
+        :options="staffOptions"
+        class="input"
+        style="max-width: 400px"
+      />
     </div>
 
-    <!-- 메모 -->
     <div class="row align-top">
       <label class="label-wide">메모</label>
-      <textarea v-model="form.memo" rows="3" class="input" />
+      <BaseForm v-model="form.memo" type="textarea" :rows="3" />
     </div>
   </div>
 </template>
 
 <script setup>
-  import { ref, watch } from 'vue';
+  import { onMounted, ref, watch } from 'vue';
   import PrimeDatePicker from '@/components/common/PrimeDatePicker.vue';
+  import BaseForm from '@/components/common/BaseForm.vue';
+  import { getStaffList } from '@/features/schedules/api/schedules.js';
+
+  const staffOptions = ref([{ text: '담당자 선택', value: '' }]);
 
   const form = ref({
     date: null,
-    startTime: null,
-    endTime: null,
+    startTime: new Date(0, 0, 0, 0, 0),
+    endTime: new Date(0, 0, 0, 0, 0),
     duration: '',
     allDay: false,
     repeat: 'none',
+    weeklyPlan: '',
+    monthlyPlan: null,
     title: '',
     staff: '',
     memo: '',
   });
 
-  const updateDuration = () => {
-    const start = form.value.startTime;
-    const end = form.value.endTime;
+  const fetchStaffList = async () => {
+    try {
+      const res = await getStaffList({ isActive: true });
+      staffOptions.value = [
+        { text: '담당자 선택', value: '' },
+        ...res.map(staff => ({
+          text: staff.staffName,
+          value: staff.staffId,
+        })),
+      ];
+    } catch (e) {
+      console.error('담당자 목록 조회 실패:', e);
+    }
+  };
+  onMounted(() => {
+    fetchStaffList();
+  });
 
-    if (start instanceof Date && end instanceof Date && end > start) {
-      const diff = end - start;
-      const mins = Math.floor(diff / 60000);
-      const hours = String(Math.floor(mins / 60)).padStart(2, '0');
-      const minutes = String(mins % 60).padStart(2, '0');
-      form.value.duration = `${hours}:${minutes}`;
+  const updateDuration = () => {
+    const startDate = form.value.startDate;
+    const endDate = form.value.endDate;
+    const startTime = form.value.startTime;
+    const endTime = form.value.endTime;
+
+    if (
+      startDate instanceof Date &&
+      endDate instanceof Date &&
+      startTime instanceof Date &&
+      endTime instanceof Date
+    ) {
+      // 1. 날짜+시간 조합
+      const start = new Date(
+        startDate.getFullYear(),
+        startDate.getMonth(),
+        startDate.getDate(),
+        startTime.getHours(),
+        startTime.getMinutes()
+      );
+
+      const end = new Date(
+        endDate.getFullYear(),
+        endDate.getMonth(),
+        endDate.getDate(),
+        endTime.getHours(),
+        endTime.getMinutes()
+      );
+
+      // 2. 유효성 및 차이 계산
+      if (end > start) {
+        const diff = end.getTime() - start.getTime();
+        const totalMinutes = Math.floor(diff / 1000 / 60);
+        const hours = String(Math.floor(totalMinutes / 60)).padStart(2, '0');
+        const minutes = String(totalMinutes % 60).padStart(2, '0');
+        form.value.duration = `${hours}:${minutes}`;
+      } else {
+        form.value.duration = '';
+      }
     } else {
       form.value.duration = '';
     }
@@ -117,15 +217,26 @@
   watch(
     () => form.value.allDay,
     val => {
-      const base = form.value.date instanceof Date ? form.value.date : new Date();
-      const y = base.getFullYear();
-      const m = base.getMonth();
-      const d = base.getDate();
+      const startDate = form.value.startDate instanceof Date ? form.value.startDate : new Date();
+      const endDate = form.value.endDate instanceof Date ? form.value.endDate : new Date();
 
       if (val) {
-        form.value.startTime = new Date(y, m, d, 0, 0);
-        form.value.endTime = new Date(y, m, d, 23, 59);
-        form.value.duration = '23:59';
+        form.value.startTime = new Date(
+          startDate.getFullYear(),
+          startDate.getMonth(),
+          startDate.getDate(),
+          0,
+          0
+        );
+        form.value.endTime = new Date(
+          endDate.getFullYear(),
+          endDate.getMonth(),
+          endDate.getDate(),
+          23,
+          59
+        );
+
+        updateDuration();
       } else {
         form.value.startTime = null;
         form.value.endTime = null;
@@ -143,6 +254,40 @@
       form.value.allDay = false;
     }
   });
+  watch([() => form.value.startDate, () => form.value.endDate], () => {
+    if (form.value.allDay) {
+      const startDate = form.value.startDate instanceof Date ? form.value.startDate : new Date();
+      const endDate = form.value.endDate instanceof Date ? form.value.endDate : new Date();
+
+      form.value.startTime = new Date(
+        startDate.getFullYear(),
+        startDate.getMonth(),
+        startDate.getDate(),
+        0,
+        0
+      );
+      form.value.endTime = new Date(
+        endDate.getFullYear(),
+        endDate.getMonth(),
+        endDate.getDate(),
+        23,
+        59
+      );
+      updateDuration();
+    }
+  });
+  watch(
+    () => form.value.repeat,
+    val => {
+      if (val !== 'none') {
+        form.value.duration = '';
+      } else {
+        updateDuration();
+      }
+    }
+  );
+
+  defineExpose({ form });
 </script>
 
 <style scoped>
@@ -184,6 +329,14 @@
     box-sizing: border-box;
     background-color: var(--color-neutral-white);
     color: var(--color-neutral-dark);
+  }
+
+  .form-group {
+    display: flex;
+    align-items: center;
+    margin: 0;
+    padding: 0;
+    width: 200px !important;
   }
 
   .input-date {

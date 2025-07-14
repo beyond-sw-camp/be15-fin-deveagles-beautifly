@@ -12,8 +12,8 @@ import com.deveagles.be15_deveagles_be.features.staffsales.command.application.d
 import com.deveagles.be15_deveagles_be.features.staffsales.command.application.dto.response.StaffSimpleInfo;
 import com.deveagles.be15_deveagles_be.features.staffsales.command.application.service.IncentiveCommandService;
 import com.deveagles.be15_deveagles_be.features.staffsales.command.domain.aggregate.Incentive;
-import com.deveagles.be15_deveagles_be.features.staffsales.command.domain.aggregate.IncentiveType;
 import com.deveagles.be15_deveagles_be.features.staffsales.command.domain.aggregate.ProductType;
+import com.deveagles.be15_deveagles_be.features.staffsales.command.domain.aggregate.StaffSalesSettingType;
 import com.deveagles.be15_deveagles_be.features.staffsales.command.repository.IncentiveRepository;
 import com.deveagles.be15_deveagles_be.features.users.command.domain.aggregate.Staff;
 import com.deveagles.be15_deveagles_be.features.users.command.repository.UserRepository;
@@ -60,7 +60,8 @@ public class IncentiveCommandServiceImpl implements IncentiveCommandService {
 
     // 5. 직원별 인센티브 여부 판단
     boolean isStaffBased = incentives.stream().anyMatch(i -> i.getStaffId() != null);
-    IncentiveType type = isStaffBased ? IncentiveType.STAFF : IncentiveType.BULK;
+    StaffSalesSettingType type =
+        isStaffBased ? StaffSalesSettingType.STAFF : StaffSalesSettingType.BULK;
 
     // 6. 직원별 인센티브
     List<StaffIncentiveInfo> incentiveInfoList =
@@ -69,7 +70,7 @@ public class IncentiveCommandServiceImpl implements IncentiveCommandService {
     return IncentiveListResult.builder()
         .shopId(shopId)
         .incentiveEnabled(incentiveEnabled)
-        .incentiveType(type)
+        .staffSalesSettingType(type)
         .staffList(staffSimpleList)
         .incentiveList(incentiveInfoList)
         .build();
@@ -95,7 +96,7 @@ public class IncentiveCommandServiceImpl implements IncentiveCommandService {
 
     Map<PaymentsMethod, ProductIncentiveRates> map = request.incentiveInfo().getIncentives();
     Long staffId =
-        request.type() == IncentiveType.STAFF ? request.incentiveInfo().getStaffId() : null;
+        request.type() == StaffSalesSettingType.STAFF ? request.incentiveInfo().getStaffId() : null;
 
     for (Map.Entry<PaymentsMethod, ProductIncentiveRates> entry : map.entrySet()) {
       PaymentsMethod method = entry.getKey();
@@ -111,9 +112,9 @@ public class IncentiveCommandServiceImpl implements IncentiveCommandService {
   }
 
   private List<StaffIncentiveInfo> buildStaffIncentiveInfoList(
-      List<Incentive> incentives, List<Staff> staffList, IncentiveType type) {
+      List<Incentive> incentives, List<Staff> staffList, StaffSalesSettingType type) {
 
-    if (type == IncentiveType.BULK) {
+    if (type == StaffSalesSettingType.BULK) {
       // 일괄 인센티브만 필터
       Map<PaymentsMethod, ProductIncentiveRates> rateMap = mapIncentivesToRate(incentives, null);
 
